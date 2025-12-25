@@ -1,18 +1,36 @@
-## Getting Started
+# Realite RPG Classes Plugin
 
-Welcome to the VS Code Java world. Here is a guideline to help you get started to write Java code in Visual Studio Code.
+Плагин для Minecraft (Paper / Spigot), добавляющий RPG-систему классов, опыта и эволюций.
 
-## Folder Structure
+## Текущий функционал
 
-The workspace contains two folders by default, where:
+📊 Система опыта (XP), завязанная на действия игрока  
+🧬 Эволюция классов при достижении нужного уровня  
+🎁 Награды за эволюцию (деньги, предметы, ресурсы)  
+💬 Уведомления в чате о доступной и успешной эволюции  
+🧙 Гибкая и расширяемая система классов  
 
-- `src`: the folder to maintain sources
-- `lib`: the folder to maintain dependencies
+## Примеры классов
 
-Meanwhile, the compiled output files will be generated in the `bin` folder by default.
+🏹 Лучник  
+⛏ Шахтёр  
+⚗ Алхимик  
 
-> If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there.
+## Команды
 
-## Dependency Management
+/class
+/class evolve
 
-The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
+## Совместимость
+
+Minecraft 1.20.1-1.21.10
+Paper / Spigot
+Java 17/21
+
+## Планируется добавить
+
+🧾 Квесты с привязкой к классам
+🧙 NPC и сюжетную RPG-составляющую
+🎯 Уникальные задания и механики для каждого класса
+🔗 Интеграцию с экономикой и другими плагинами
+📦 Возможность вынести квесты в отдельный плагин

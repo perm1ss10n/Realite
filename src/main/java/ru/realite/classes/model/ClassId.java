@@ -1,6 +1,7 @@
 package ru.realite.classes.model;
 
 public enum ClassId {
+    WANDERER,
     WARRIOR,
     ARCHER,
     MINER,

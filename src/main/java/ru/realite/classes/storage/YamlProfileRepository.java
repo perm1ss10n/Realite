@@ -15,7 +15,7 @@ public class YamlProfileRepository {
     public YamlProfileRepository(File dataFolder) {
         this.playersDir = new File(dataFolder, "players");
         if (!playersDir.exists()) {
-            //noinspection ResultOfMethodCallIgnored
+            // noinspection ResultOfMethodCallIgnored
             playersDir.mkdirs();
         }
     }
@@ -28,7 +28,8 @@ public class YamlProfileRepository {
         File f = file(uuid);
         PlayerProfile p = new PlayerProfile(uuid);
 
-        if (!f.exists()) return p;
+        if (!f.exists())
+            return p;
 
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(f);
 
@@ -37,10 +38,24 @@ public class YamlProfileRepository {
         p.setClassLevel(yml.getInt("classLevel", 0));
         p.setClassXp(yml.getLong("classXp", 0L));
 
-        // новые поля (обратно-совместимо: если их нет в yml -> дефолты)
+        // старые поля
         p.setEvolutionRewardTaken(yml.getBoolean("evolutionRewardTaken", false));
         p.setLastClassChange(yml.getLong("lastClassChange", 0L));
         p.setEvolutionNotified(yml.getBoolean("evolutionNotified", false));
+
+        // новые поля
+        p.setStarterClass(yml.getBoolean("starterClass", false));
+
+        var sec = yml.getConfigurationSection("maxLevelByClass");
+        java.util.Map<String, Integer> map = new java.util.HashMap<>();
+        if (sec != null) {
+            for (String key : sec.getKeys(false)) {
+                map.put(key, sec.getInt(key, 0));
+            }
+        }
+        p.setMaxLevelByClass(map);
+
+        p.setMasteredClasses(new java.util.HashSet<>(yml.getStringList("masteredClasses")));
 
         return p;
     }
@@ -49,15 +64,26 @@ public class YamlProfileRepository {
         File f = file(profile.getUuid());
         YamlConfiguration yml = new YamlConfiguration();
 
-        if (profile.getClassId() != null) yml.set("class", profile.getClassId().name());
+        if (profile.getClassId() != null)
+            yml.set("class", profile.getClassId().name());
         yml.set("evolution", profile.getEvolution());
         yml.set("classLevel", profile.getClassLevel());
         yml.set("classXp", profile.getClassXp());
 
-        // новые поля
+        // старые поля
         yml.set("evolutionRewardTaken", profile.isEvolutionRewardTaken());
         yml.set("lastClassChange", profile.getLastClassChange());
         yml.set("evolutionNotified", profile.isEvolutionNotified());
+
+        // новые поля
+        yml.set("starterClass", profile.isStarterClass());
+
+        yml.set("maxLevelByClass", null);
+        for (var e : profile.getMaxLevelByClass().entrySet()) {
+            yml.set("maxLevelByClass." + e.getKey(), e.getValue());
+        }
+
+        yml.set("masteredClasses", new java.util.ArrayList<>(profile.getMasteredClasses()));
 
         try {
             yml.save(f);

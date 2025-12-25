@@ -4,23 +4,35 @@ no-class: "&cКласс не выбран. Напиши &e/class choose"
 already-chosen: "&cКласс уже выбран. Для смены: &e/class change"
 cant-change: "&cСменить класс можно только на финальной эволюции или с донат-правом."
 
-usage: "&eИспользование: &f/class&7, &f/class choose&7, &f/class change&7, &f/class evolve"
+usage: "&eИспользование: &f/class&7, &f/class choose&7, &f/class change&7, &f/class info&7, &f/class evolve"
 
 chosen: "&aКласс выбран: &e{class}"
 
-status2: "&aКласс: &e{class} &7| &aУровень: &e{level} &7| &aXP: &e{xp}&7/&e{need} &7| &aЭволюция: &e{evolution}"
+no-permission: "&cНет прав."
+reloaded: "&aКонфиги перезагружены: &fconfig.yml, classes.yml, messages.yml, xp.yml"
 
-xp-gain: "&7+{xp} XP (&f{reason}&7)"
-level-up: "&aУровень класса повышен: &e{level}"
+status: "&aКласс: &e{class} &7| &aЭволюция: &e{evolution}"
 
-evolution-available: "&6⚡ Доступна эволюция класса! &eИспользуй &a/class evolve"
-evolve-no-next: "&7Дальше эволюционировать некуда."
-evolve-not-ready: "&cЭволюция недоступна. Нужен уровень: &e{level}"
-evolve-cost-items: "&7Требуется предметов: &f{items}"
-evolve-cost-money: "&7Требуется денег: &f{money}"
-evolve-no-items: "&cНе хватает предметов."
+evolution-available: "&aДоступна эволюция! &e{class} &7→ &6{evolution} &7(ур. {required}). Используй &a/class evolve"
+
+evolved: "&aЭволюция успешна! &e{class} &7→ &6{evolution}"
+
+evolve-no-class: "&cУ тебя нет класса."
+evolve-already-max: "&cТы уже на максимальной эволюции."
+evolve-not-enough-level: "&cНе хватает уровня для эволюции."
 evolve-no-money: "&cНе хватает денег."
+evolve-no-items: "&cНе хватает предметов для эволюции."
 
-evolve-success: "&aЭволюция выполнена: &e{title}"
-evolve-reward-money: "&aНаграда: &e+{money} монет"
-evolve-reward-items: "&aНаграда: &e{items}"
+class-locked: "&5Этот путь пока запечатан. &dТы ещё не познал все тайны нужных классов."
+class-locked-requirements: "&7Нужно пройти до конца: &e{req}"
+
+mastered-yes: "&aпройден до конца"
+mastered-no: "&cне пройден"
+
+info-header: "&6&lКласс: &e{class}"
+info-body:
+  - "&7Эволюция: &a{evolution}"
+  - "&7Уровень: &b{level}"
+  - "&7XP: &b{xp}&7 / до след. ур: &b{xpToNext}"
+  - "&7След. эволюция: &e{nextEvolution} &7(ур. {nextRequired})"
+  - "&7Мастерство: {mastered}"

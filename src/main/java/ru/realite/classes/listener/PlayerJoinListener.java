@@ -1,36 +1,36 @@
 package ru.realite.classes.listener;
 
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.plugin.Plugin;
-import ru.realite.classes.gui.ClassSelectMenu;
+import ru.realite.classes.model.ClassId;
 import ru.realite.classes.service.ClassService;
 
 public class PlayerJoinListener implements Listener {
 
-    private final Plugin plugin;
     private final ClassService classService;
-    private final ClassSelectMenu menu;
 
-    public PlayerJoinListener(Plugin plugin, ClassService classService, ClassSelectMenu menu) {
-        this.plugin = plugin;
+    public PlayerJoinListener(ClassService classService) {
         this.classService = classService;
-        this.menu = menu;
     }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
-        Player p = e.getPlayer();
-        var profile = classService.getProfile(p);
-        if (profile.hasClass()) return;
+        var player = e.getPlayer();
+        var profile = classService.getProfile(player);
 
-        Bukkit.getScheduler().runTaskLater(
-                plugin,
-                () -> p.openInventory(menu.create()),
-                20L
-        );
+        if (profile == null) return;
+
+        // Если у игрока ещё нет класса — назначаем Странника
+        if (!profile.hasClass()) {
+            classService.assignClass(player, ClassId.WANDERER);
+
+            profile.setStarterClass(true);
+            classService.save(profile);
+
+            player.sendMessage("§6Добро пожаловать, странник.");
+            player.sendMessage("§7Ты начал путь с базового класса §eСтранник§7.");
+            player.sendMessage("§7Чтобы выбрать другой класс, напиши §a/class choose§7.");
+        }
     }
 }

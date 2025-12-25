@@ -1,5 +1,31 @@
 classes:
 
+  WANDERER:
+    icon: LEATHER_BOOTS
+    name: "Странник"
+    lore:
+      - "Стартовый класс без особых бонусов."
+      - "Можно в любой момент сменить на другой прокачиваемый класс."
+    xp-per-level: 100
+    evolutions:
+      - id: "dust"
+        title: "Пыль дорог"
+        rewards:
+          money: 0
+          items: []
+      - id: "veteran"
+        title: "Бывалый"
+        required-level: 3
+        rewards:
+          money: 0
+          items: []
+      - id: "oldwolf"
+        title: "Старый волк"
+        required-level: 6
+        rewards:
+          money: 0
+          items: []
+  
   WARRIOR:
     icon: IRON_SWORD
     name: "Воин"
@@ -55,8 +81,7 @@ classes:
           items:
             - "DIAMOND:8"
             - "GOLDEN_APPLE:2"
-
-
+  
   ARCHER:
     icon: BOW
     name: "Лучник"
@@ -111,7 +136,6 @@ classes:
           items:
             - "TIPPED_ARROW:16"
             - "PHANTOM_MEMBRANE:8"
-
 
   MINER:
     icon: IRON_PICKAXE
@@ -168,7 +192,6 @@ classes:
           items:
             - "DIAMOND:4"
             - "EMERALD:8"
-
 
   ALCHEMIST:
     icon: BREWING_STAND
@@ -230,7 +253,6 @@ classes:
             - "GOLDEN_APPLE:2"
             - "ENDER_PEARL:16"
 
-
   MERCHANT:
     icon: EMERALD
     name: "Торговец"
@@ -289,3 +311,130 @@ classes:
           items:
             - "DIAMOND:16"
             - "EMERALD_BLOCK:4"
+
+# Скрытые классы:
+
+  MERCENARY:
+    hidden: true
+    icon: NETHERITE_SWORD
+    name: "Наёмник"
+    lore:
+      - "Скрытый класс."
+      - "Доступен только тем, кто прошёл путь воина до конца."
+      - "Сила, опыт и золото — его единственные принципы."
+    requires-mastered:
+      - WARRIOR
+    effects:
+      - "HERO_OF_THE_VILLAGE:0"
+    xp-per-money: 0.01     # 50 монет прибыли = 1 XP
+    xp-per-level: 120
+    evolutions:
+      - id: mercenary
+        title: "Наёмник"
+        rewards:
+          money: 500
+          items:
+            - "COOKED_BEEF:16"
+            - "IRON_INGOT:16"
+
+      - id: veteran_mercenary
+        title: "Ветеран-наёмник"
+        required-level: 15
+        cost:
+          money: 1000
+          items:
+            - "IRON_INGOT:64"
+        rewards:
+          money: 1500
+          items:
+            - "DIAMOND:4"
+            - "GOLDEN_APPLE:2"
+
+      - id: elite_mercenary
+        title: "Элитный наёмник"
+        required-level: 30
+        cost:
+          money: 3000
+          items:
+            - "DIAMOND:16"
+        rewards:
+          money: 3000
+          items:
+            - "NETHERITE_SCRAP:1"
+            - "ENCHANTED_GOLDEN_APPLE:1"
+
+      - id: legend_mercenary
+        title: "Легендарный наёмник"
+        required-level: 50
+        cost:
+          money: 8000
+          items:
+            - "NETHERITE_INGOT:1"
+        rewards:
+          money: 6000
+          items:
+            - "NETHERITE_SCRAP:3"
+            - "DIAMOND:16"
+  
+  WARLOCK:
+    hidden: true
+    icon: ENCHANTING_TABLE
+    name: "Чернокнижник"
+    lore:
+      - "Скрытый класс."
+      - "Мастер запретных знаний и тёмных экспериментов."
+      - "Требует полного пути алхимика и бродяги."
+    requires-mastered:
+      - ALCHEMIST
+      - WANDERER
+    xp-per-level: 130
+    evolutions:
+      - id: warlock
+        title: "Чернокнижник"
+        rewards:
+          money: 400
+          items:
+            - "BLAZE_POWDER:16"
+            - "GHAST_TEAR:2"
+
+      - id: dark_adept
+        title: "Адепт тьмы"
+        required-level: 15
+        cost:
+          money: 1200
+          items:
+            - "FERMENTED_SPIDER_EYE:16"
+            - "ENDER_PEARL:8"
+        rewards:
+          money: 1600
+          items:
+            - "GLOWSTONE_DUST:32"
+            - "REDSTONE:32"
+
+      - id: shadow_master
+        title: "Мастер теней"
+        required-level: 30
+        cost:
+          money: 3500
+          items:
+            - "WITHER_ROSE:4"
+            - "SOUL_SAND:32"
+        rewards:
+          money: 3500
+          items:
+            - "DRAGON_BREATH:4"
+            - "ENDER_PEARL:16"
+
+      - id: arch_warlock
+        title: "Архичернокнижник"
+        required-level: 50
+        cost:
+          money: 10000
+          items:
+            - "DRAGON_BREATH:8"
+            - "NETHER_STAR:1"
+        rewards:
+          money: 7000
+          items:
+            - "NETHER_STAR:1"
+            - "ENCHANTED_GOLDEN_APPLE:1"

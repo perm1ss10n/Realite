@@ -1,12 +1,12 @@
 name: RealiteClasses
-version: 0.2.0
+version: 1.0.0
 main: ru.realite.classes.RealiteClassesPlugin
 api-version: "1.21"
 
 commands:
   class:
-    description: "Классы персонажей"
-    usage: "/class [choose|change]"
+    description: "Меню классов и эволюций"
+    usage: /class [choose|change|info|evolve|reload]
     aliases: [classes]
 
 permissions:
@@ -36,4 +36,8 @@ permissions:
 
   realiteclass.admin.addxp:
     description: "Админ: добавить XP игроку"
+    default: op
+  
+  realiteclass.reload:
+    description: "Разрешает перезагрузить конфиги плагина"
     default: op

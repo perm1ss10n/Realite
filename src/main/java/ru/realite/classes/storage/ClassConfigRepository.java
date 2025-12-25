@@ -14,6 +14,8 @@ public class ClassConfigRepository {
 
     public static class ClassDef {
         public final ClassId id;
+        public final boolean hidden;
+        public final java.util.Set<ClassId> requiresMastered;
         public final String name;
         public final List<String> lore;
         public final Material icon;
@@ -25,41 +27,48 @@ public class ClassConfigRepository {
 
         public final List<EvolutionDef> evolutions;
 
-        public ClassDef(ClassId id, String name, List<String> lore, Material icon,
-                        List<String> effects,
-                        int xpPerLevel, double xpPerMoney,
-                        List<EvolutionDef> evolutions) {
+        public ClassDef(ClassId id, Material icon, String name, List<String> lore, List<String> effects,
+                int xpPerLevel, double xpPerMoney, List<EvolutionDef> evolutions,
+                boolean hidden, java.util.Set<ClassId> requiresMastered) {
             this.id = id;
+            this.icon = icon;
             this.name = name;
             this.lore = lore;
-            this.icon = icon;
             this.effects = effects;
             this.xpPerLevel = xpPerLevel;
             this.xpPerMoney = xpPerMoney;
             this.evolutions = evolutions;
+            this.hidden = hidden;
+            this.requiresMastered = requiresMastered;
         }
 
         public EvolutionDef firstEvolution() {
-            if (evolutions == null || evolutions.isEmpty()) return null;
+            if (evolutions == null || evolutions.isEmpty())
+                return null;
             return evolutions.get(0);
         }
 
         public EvolutionDef finalEvolution() {
-            if (evolutions == null || evolutions.isEmpty()) return null;
+            if (evolutions == null || evolutions.isEmpty())
+                return null;
             return evolutions.get(evolutions.size() - 1);
         }
 
         public EvolutionDef findEvolution(String id) {
-            if (id == null) return null;
-            if (evolutions == null) return null;
+            if (id == null)
+                return null;
+            if (evolutions == null)
+                return null;
             for (EvolutionDef e : evolutions) {
-                if (e.id.equalsIgnoreCase(id)) return e;
+                if (e.id.equalsIgnoreCase(id))
+                    return e;
             }
             return null;
         }
 
         public EvolutionDef nextEvolution(String currentId) {
-            if (evolutions == null || evolutions.isEmpty()) return null;
+            if (evolutions == null || evolutions.isEmpty())
+                return null;
 
             // если currentId пустой — значит первая стадия
             if (currentId == null || currentId.isBlank()) {
@@ -69,7 +78,8 @@ public class ClassConfigRepository {
             for (int i = 0; i < evolutions.size(); i++) {
                 if (evolutions.get(i).id.equalsIgnoreCase(currentId)) {
                     int next = i + 1;
-                    if (next >= evolutions.size()) return null;
+                    if (next >= evolutions.size())
+                        return null;
                     return evolutions.get(next);
                 }
             }
@@ -91,14 +101,17 @@ public class ClassConfigRepository {
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
 
         ConfigurationSection classes = yml.getConfigurationSection("classes");
-        if (classes == null) return;
+        if (classes == null)
+            return;
 
         for (String key : classes.getKeys(false)) {
             ClassId id = ClassId.fromString(key);
-            if (id == null) continue;
+            if (id == null)
+                continue;
 
             ConfigurationSection s = classes.getConfigurationSection(key);
-            if (s == null) continue;
+            if (s == null)
+                continue;
 
             String name = s.getString("name", id.name());
             List<String> lore = s.getStringList("lore");
@@ -115,14 +128,24 @@ public class ClassConfigRepository {
             double xpPerMoney = s.getDouble("xp-per-money", 0.0);
 
             List<EvolutionDef> evolutions = parseEvolutions(s.getMapList("evolutions"));
+            boolean hidden = s.getBoolean("hidden", false);
 
-            map.put(id, new ClassDef(id, name, lore, icon, effects, xpPerLevel, xpPerMoney, evolutions));
+            java.util.Set<ClassId> req = new java.util.HashSet<>();
+            for (String rid : s.getStringList("requires-mastered")) {
+                ClassId cid = ClassId.fromString(rid);
+                if (cid != null)
+                    req.add(cid);
+            }
+
+            map.put(id, new ClassDef(id, icon, name, lore, effects, xpPerLevel, xpPerMoney, evolutions, hidden, req));
+
         }
     }
 
     private List<EvolutionDef> parseEvolutions(List<Map<?, ?>> list) {
         List<EvolutionDef> out = new ArrayList<>();
-        if (list == null) return out;
+        if (list == null)
+            return out;
 
         for (Map<?, ?> raw : list) {
             String id = str(raw.get("id"));
@@ -137,8 +160,10 @@ public class ClassConfigRepository {
             double rewardMoney = rewards != null ? doublev(rewards.get("money"), 0) : 0;
             List<ItemAmount> rewardItems = rewards != null ? parseItems(rewards.get("items")) : List.of();
 
-            if (id == null || id.isBlank()) continue;
-            if (title == null || title.isBlank()) title = id;
+            if (id == null || id.isBlank())
+                continue;
+            if (title == null || title.isBlank())
+                title = id;
 
             out.add(new EvolutionDef(id, title, requiredLevel, costMoney, costItems, rewardMoney, rewardItems));
         }
@@ -146,40 +171,60 @@ public class ClassConfigRepository {
     }
 
     private List<ItemAmount> parseItems(Object obj) {
-        if (!(obj instanceof List<?> l)) return List.of();
+        if (!(obj instanceof List<?> l))
+            return List.of();
 
         List<ItemAmount> out = new ArrayList<>();
         for (Object o : l) {
-            if (!(o instanceof String s)) continue;
+            if (!(o instanceof String s))
+                continue;
             String[] parts = s.trim().split(":");
-            if (parts.length != 2) continue;
+            if (parts.length != 2)
+                continue;
 
             Material mat = Material.matchMaterial(parts[0].trim().toUpperCase());
             int amt;
-            try { amt = Integer.parseInt(parts[1].trim()); }
-            catch (NumberFormatException e) { continue; }
+            try {
+                amt = Integer.parseInt(parts[1].trim());
+            } catch (NumberFormatException e) {
+                continue;
+            }
 
-            if (mat == null || amt <= 0) continue;
+            if (mat == null || amt <= 0)
+                continue;
             out.add(new ItemAmount(mat, amt));
         }
         return out;
     }
 
-    private static String str(Object o) { return o == null ? null : String.valueOf(o); }
+    private static String str(Object o) {
+        return o == null ? null : String.valueOf(o);
+    }
 
     private static int intv(Object o, int def) {
-        if (o == null) return def;
-        try { return Integer.parseInt(String.valueOf(o)); } catch (Exception e) { return def; }
+        if (o == null)
+            return def;
+        try {
+            return Integer.parseInt(String.valueOf(o));
+        } catch (Exception e) {
+            return def;
+        }
     }
 
     private static double doublev(Object o, double def) {
-        if (o == null) return def;
-        try { return Double.parseDouble(String.valueOf(o)); } catch (Exception e) { return def; }
+        if (o == null)
+            return def;
+        try {
+            return Double.parseDouble(String.valueOf(o));
+        } catch (Exception e) {
+            return def;
+        }
     }
 
     @SuppressWarnings("unchecked")
     private static Map<?, ?> map(Object o) {
-        if (o instanceof Map<?, ?> m) return m;
+        if (o instanceof Map<?, ?> m)
+            return m;
         return null;
     }
 

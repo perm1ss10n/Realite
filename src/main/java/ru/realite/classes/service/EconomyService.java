@@ -17,11 +17,11 @@ public class EconomyService {
         }
 
         // 2) Берём провайдера экономики через Vault
-        RegisteredServiceProvider<Economy> rsp =
-                plugin.getServer().getServicesManager().getRegistration(Economy.class);
+        RegisteredServiceProvider<Economy> rsp = plugin.getServer().getServicesManager().getRegistration(Economy.class);
 
         if (rsp == null || rsp.getProvider() == null) {
-            plugin.getLogger().warning("[Economy] Vault found, but no economy provider installed. Money will be ignored.");
+            plugin.getLogger()
+                    .warning("[Economy] Vault found, but no economy provider installed. Money will be ignored.");
             return;
         }
 
@@ -36,19 +36,31 @@ public class EconomyService {
 
     /** Хватает ли денег. Если экономики нет — НЕ блокируем. */
     public boolean has(Player player, double amount) {
-        if (!isAvailable()) return true;
+        if (!isAvailable())
+            return true;
         return economy.has(player, amount);
     }
 
-    /** Списать деньги. Если экономики нет — считаем успешным (чтобы не ломать геймплей). */
+    /**
+     * Списать деньги. Если экономики нет — считаем успешным (чтобы не ломать
+     * геймплей).
+     */
     public boolean withdraw(Player player, double amount) {
-        if (!isAvailable()) return true;
+        if (!isAvailable())
+            return true;
         return economy.withdrawPlayer(player, amount).transactionSuccess();
     }
 
     /** Выдать деньги. Если экономики нет — просто игнорируем. */
     public void deposit(Player player, double amount) {
-        if (!isAvailable()) return;
+        if (!isAvailable())
+            return;
         economy.depositPlayer(player, amount);
+    }
+
+    public double getBalance(org.bukkit.entity.Player player) {
+        if (economy == null)
+            return 0.0;
+        return economy.getBalance(player);
     }
 }
