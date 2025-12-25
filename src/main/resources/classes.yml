@@ -1,0 +1,291 @@
+classes:
+
+  WARRIOR:
+    icon: IRON_SWORD
+    name: "Воин"
+    lore:
+      - "+ ближний бой и выживаемость"
+      - "- дальний бой"
+    effects:
+      - "DAMAGE_RESISTANCE:0"
+    xp-per-level: 100
+    evolutions:
+      - id: soldier
+        title: "Солдат"
+        rewards:
+          money: 100
+          items:
+            - "COOKED_BEEF:8"
+            - "TORCH:16"
+
+      - id: knight
+        title: "Рыцарь"
+        required-level: 10
+        cost:
+          items:
+            - "COOKED_BEEF:32"
+            - "COOKED_PORKCHOP:32"
+        rewards:
+          money: 300
+          items:
+            - "SHIELD:1"
+            - "IRON_INGOT:16"
+
+      - id: legionary
+        title: "Легионер"
+        required-level: 25
+        cost:
+          items:
+            - "COOKED_BEEF:128"
+        rewards:
+          money: 700
+          items:
+            - "IRON_INGOT:32"
+            - "GOLD_INGOT:8"
+
+      - id: emperor
+        title: "Император"
+        required-level: 50
+        cost:
+          money: 5000
+          items:
+            - "NETHERITE_INGOT:1"
+        rewards:
+          money: 1500
+          items:
+            - "DIAMOND:8"
+            - "GOLDEN_APPLE:2"
+
+
+  ARCHER:
+    icon: BOW
+    name: "Лучник"
+    lore:
+      - "+ дальний бой и мобильность"
+      - "- слаб в ближнем бою"
+    effects:
+      - "SPEED:0"
+    xp-per-level: 100
+    evolutions:
+      - id: hunter
+        title: "Охотник"
+        rewards:
+          money: 100
+          items:
+            - "ARROW:32"
+            - "FEATHER:8"
+
+      - id: sniper
+        title: "Снайпер"
+        required-level: 10
+        cost:
+          items:
+            - "FEATHER:32"
+        rewards:
+          money: 300
+          items:
+            - "ARROW:64"
+            - "STRING:16"
+
+      - id: ranger
+        title: "Следопыт"
+        required-level: 25
+        cost:
+          items:
+            - "FEATHER:96"
+        rewards:
+          money: 700
+          items:
+            - "ARROW:128"
+            - "SPECTRAL_ARROW:16"
+
+      - id: legend
+        title: "Легенда"
+        required-level: 50
+        cost:
+          money: 3000
+          items:
+            - "FEATHER:256"
+        rewards:
+          money: 1200
+          items:
+            - "TIPPED_ARROW:16"
+            - "PHANTOM_MEMBRANE:8"
+
+
+  MINER:
+    icon: IRON_PICKAXE
+    name: "Шахтёр"
+    lore:
+      - "+ добыча ресурсов"
+      - "+ устойчивость к падениям"
+      - "- слаб в PvP"
+    effects:
+      - "FAST_DIGGING:0"
+    xp-per-level: 100
+    evolutions:
+      - id: digger
+        title: "Копатель"
+        rewards:
+          money: 100
+          items:
+            - "TORCH:32"
+            - "BREAD:8"
+
+      - id: excavator
+        title: "Экскаватор"
+        required-level: 10
+        cost:
+          items:
+            - "IRON_ORE:32"
+        rewards:
+          money: 300
+          items:
+            - "IRON_INGOT:16"
+            - "COAL:32"
+
+      - id: miner
+        title: "Шахтёр-мастер"
+        required-level: 25
+        cost:
+          items:
+            - "IRON_ORE:96"
+        rewards:
+          money: 700
+          items:
+            - "IRON_INGOT:32"
+            - "REDSTONE:64"
+
+      - id: deepmaster
+        title: "Повелитель глубин"
+        required-level: 50
+        cost:
+          money: 2000
+          items:
+            - "IRON_ORE:192"
+        rewards:
+          money: 1200
+          items:
+            - "DIAMOND:4"
+            - "EMERALD:8"
+
+
+  ALCHEMIST:
+    icon: BREWING_STAND
+    name: "Алхимик"
+    lore:
+      - "+ бонусы к зельям"
+      - "+ ночное зрение"
+      - "- меньше здоровья"
+    effects:
+      - "NIGHT_VISION:0"
+      - "HUNGER:0"
+    xp-per-level: 100
+    evolutions:
+      - id: apprentice
+        title: "Ученик"
+        rewards:
+          money: 100
+          items:
+            - "GLASS_BOTTLE:16"
+            - "NETHER_WART:8"
+
+      - id: alchemist
+        title: "Алхимик"
+        required-level: 10
+        cost:
+          items:
+            - "BLAZE_ROD:8"
+            - "NETHER_WART:32"
+        rewards:
+          money: 400
+          items:
+            - "REDSTONE:32"
+            - "GLOWSTONE_DUST:16"
+
+      - id: archmage
+        title: "Архимаг"
+        required-level: 25
+        cost:
+          items:
+            - "BLAZE_ROD:24"
+            - "GHAST_TEAR:8"
+        rewards:
+          money: 900
+          items:
+            - "GUNPOWDER:32"
+            - "FERMENTED_SPIDER_EYE:8"
+
+      - id: overlord
+        title: "Владыка зелий"
+        required-level: 50
+        cost:
+          money: 8000
+          items:
+            - "BLAZE_ROD:64"
+            - "DRAGON_BREATH:8"
+        rewards:
+          money: 1500
+          items:
+            - "GOLDEN_APPLE:2"
+            - "ENDER_PEARL:16"
+
+
+  MERCHANT:
+    icon: EMERALD
+    name: "Торговец"
+    lore:
+      - "+ опыт за прибыль"
+      - "+ выгодные сделки"
+    effects:
+      - "HERO_OF_THE_VILLAGE:0"
+    xp-per-money: 0.02     # 50 монет прибыли = 1 XP
+    xp-per-level: 100
+    evolutions:
+      - id: peddler
+        title: "Лавочник"
+        rewards:
+          money: 200
+          items:
+            - "EMERALD:4"
+
+      - id: trader
+        title: "Купец"
+        required-level: 10
+        cost:
+          money: 500
+          items:
+            - "GOLD_BLOCK:4"
+        rewards:
+          money: 600
+          items:
+            - "EMERALD:12"
+            - "GOLD_INGOT:16"
+
+      - id: tycoon
+        title: "Магнат"
+        required-level: 25
+        cost:
+          money: 2500
+          items:
+            - "GOLD_BLOCK:16"
+            - "EMERALD_BLOCK:4"
+        rewards:
+          money: 1500
+          items:
+            - "DIAMOND:4"
+            - "EMERALD:32"
+
+      - id: oligarch
+        title: "Олигарх"
+        required-level: 50
+        cost:
+          money: 10000
+          items:
+            - "GOLD_BLOCK:64"
+            - "DIAMOND_BLOCK:8"
+        rewards:
+          money: 4000
+          items:
+            - "DIAMOND:16"
+            - "EMERALD_BLOCK:4"

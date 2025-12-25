@@ -1,0 +1,10 @@
+effects:
+  tick-seconds: 5
+  clear-managed-effects: true
+
+storage:
+  autosave-minutes: 5
+
+permissions:
+  change-class: "realiteclass.change"
+  admin-reload: "realiteclass.admin.reload"

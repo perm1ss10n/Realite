@@ -1,0 +1,26 @@
+only-players: "&cТолько игрок может использовать эту команду."
+
+no-class: "&cКласс не выбран. Напиши &e/class choose"
+already-chosen: "&cКласс уже выбран. Для смены: &e/class change"
+cant-change: "&cСменить класс можно только на финальной эволюции или с донат-правом."
+
+usage: "&eИспользование: &f/class&7, &f/class choose&7, &f/class change&7, &f/class evolve"
+
+chosen: "&aКласс выбран: &e{class}"
+
+status2: "&aКласс: &e{class} &7| &aУровень: &e{level} &7| &aXP: &e{xp}&7/&e{need} &7| &aЭволюция: &e{evolution}"
+
+xp-gain: "&7+{xp} XP (&f{reason}&7)"
+level-up: "&aУровень класса повышен: &e{level}"
+
+evolution-available: "&6⚡ Доступна эволюция класса! &eИспользуй &a/class evolve"
+evolve-no-next: "&7Дальше эволюционировать некуда."
+evolve-not-ready: "&cЭволюция недоступна. Нужен уровень: &e{level}"
+evolve-cost-items: "&7Требуется предметов: &f{items}"
+evolve-cost-money: "&7Требуется денег: &f{money}"
+evolve-no-items: "&cНе хватает предметов."
+evolve-no-money: "&cНе хватает денег."
+
+evolve-success: "&aЭволюция выполнена: &e{title}"
+evolve-reward-money: "&aНаграда: &e+{money} монет"
+evolve-reward-items: "&aНаграда: &e{items}"

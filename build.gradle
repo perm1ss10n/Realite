@@ -1,0 +1,32 @@
+plugins {
+    id 'java'
+}
+
+group = 'ru.realite'
+version = '0.2.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+
+    // Vault API
+    maven { url = 'https://jitpack.io' }
+}
+
+dependencies {
+    compileOnly "io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT"
+
+    // Vault API (только для компиляции; на сервере Vault.jar всё равно должен быть установлен)
+    compileOnly "com.github.MilkBowl:VaultAPI:1.7"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}
