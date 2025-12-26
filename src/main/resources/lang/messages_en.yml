@@ -29,7 +29,8 @@ reloaded: "&aConfigs reloaded: &fconfig.yml, classes.yml, lang/messages_*.yml, x
 
 status: "&aClass: &e{class} &7| &aEvolution: &e{evolution}"
 
-evolution-available: "&aEvolution available! &e{class} &7→ &6{evolution} &7(level {required}). Use &a/class evolve"
+# UPDATED: shows level + money + items
+evolution-available: "&aEvolution available! &e{class} &7→ &6{evolution} &7(level {required}) &7| &e{money} &7| &e{items} &7. Use &a/class evolve"
 
 evolved: "&aEvolution successful! &e{class} &7→ &6{evolution}"
 
@@ -51,4 +52,5 @@ info-body:
   - "&7Level: &b{level}"
   - "&7XP: &b{xp}&7 / to next level: &b{xpToNext}"
   - "&7Next evolution: &e{nextEvolution} &7(level {nextRequired})"
+  - "&7Cost: &e{nextCostMoney} &7| items: &e{nextCostItems}"
   - "&7Mastery: {mastered}"

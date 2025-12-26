@@ -11,6 +11,8 @@ import ru.realite.classes.service.EconomyService;
 import ru.realite.classes.service.EvolutionService;
 import ru.realite.classes.storage.ClassConfigRepository;
 import ru.realite.classes.storage.XpConfigRepository;
+import ru.realite.classes.util.ChatTemplate;
+import ru.realite.classes.util.ItemComponents;
 import ru.realite.classes.util.Messages;
 
 import java.util.Map;
@@ -26,17 +28,16 @@ public class ClassCommand implements CommandExecutor {
     private final EconomyService economy;
     private final Messages messages;
 
-    // xpConfig сейчас не обязателен в команде, но пусть будет под рукой
     @SuppressWarnings("unused")
     private final XpConfigRepository xpConfig;
 
     public ClassCommand(RealiteClassesPlugin plugin,
-            ClassService classService,
-            EvolutionService evolutionService,
-            ClassConfigRepository classConfig,
-            EconomyService economy,
-            Messages messages,
-            XpConfigRepository xpConfig) {
+                        ClassService classService,
+                        EvolutionService evolutionService,
+                        ClassConfigRepository classConfig,
+                        EconomyService economy,
+                        Messages messages,
+                        XpConfigRepository xpConfig) {
         this.plugin = plugin;
         this.classService = classService;
         this.evolutionService = evolutionService;
@@ -57,7 +58,6 @@ public class ClassCommand implements CommandExecutor {
         if (prof == null)
             return true;
 
-        // /class
         if (args.length == 0) {
             p.sendMessage(messages.get("class-help-header"));
 
@@ -70,7 +70,6 @@ public class ClassCommand implements CommandExecutor {
                     p.sendMessage(line);
                 }
             }
-
             return true;
         }
 
@@ -88,7 +87,6 @@ public class ClassCommand implements CommandExecutor {
             }
 
             case "choose" -> {
-                // Разрешаем /class choose, если игрок пока "Странник" (стартовый класс)
                 boolean isWanderer = prof.getClassId() == ru.realite.classes.model.ClassId.WANDERER;
 
                 if (prof.hasClass() && !isWanderer) {
@@ -128,8 +126,7 @@ public class ClassCommand implements CommandExecutor {
 
                 int xpPerLevel = (def != null ? Math.max(1, def.xpPerLevel) : 100);
                 long xpToNext = xpPerLevel - (xp % xpPerLevel);
-                if (xpToNext == xpPerLevel)
-                    xpToNext = 0;
+                if (xpToNext == xpPerLevel) xpToNext = 0;
 
                 var cur = evolutionService.getCurrentEvolution(prof);
                 String curTitle = (cur != null ? cur.title : "-");
@@ -138,14 +135,18 @@ public class ClassCommand implements CommandExecutor {
                 String nextTitle = (next != null ? next.title : "-");
                 String nextReq = (next != null ? String.valueOf(next.requiredLevel) : "-");
 
+                String nextCostMoney = "-";
+                if (next != null) {
+                    nextCostMoney = String.valueOf((long) Math.max(0, next.costMoney));
+                }
+
                 boolean mastered = prof.hasMastered(prof.getClassId());
                 String masteredText = mastered ? messages.get("mastered-yes") : messages.get("mastered-no");
 
-                // header
                 p.sendMessage(messages.format("info-header", Map.of(
-                        "class", className)));
+                        "class", className
+                )));
 
-                // body (list)
                 var vars = Map.of(
                         "evolution", curTitle,
                         "level", String.valueOf(level),
@@ -153,12 +154,27 @@ public class ClassCommand implements CommandExecutor {
                         "xpToNext", String.valueOf(xpToNext),
                         "nextEvolution", nextTitle,
                         "nextRequired", nextReq,
-                        "mastered", masteredText);
+                        "nextCostMoney", nextCostMoney,
+                        "mastered", masteredText
+                );
+
+                var itemsComponent = (next != null)
+                        ? ItemComponents.listOrDash(next.costItems)
+                        : ItemComponents.listOrDash(null);
 
                 for (String line : messages.getList("info-body")) {
-                    p.sendMessage(messages.formatLine(line, vars));
+                    if (line.contains("{nextCostItems}")) {
+                        ChatTemplate.sendWithComponent(
+                                p,
+                                line,
+                                vars,
+                                "{nextCostItems}",
+                                itemsComponent
+                        );
+                    } else {
+                        p.sendMessage(messages.formatLine(line, vars));
+                    }
                 }
-
                 return true;
             }
 
@@ -180,7 +196,8 @@ public class ClassCommand implements CommandExecutor {
 
                     p.sendMessage(messages.format("evolved", Map.of(
                             "class", className,
-                            "evolution", evoTitle)));
+                            "evolution", evoTitle
+                    )));
                 } else {
                     p.sendMessage(messages.get("evolve-" + res));
                 }

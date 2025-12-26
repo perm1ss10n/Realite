@@ -1,2 +1,27 @@
 #Gradle build output
 /build/
+.gradle/file-system.probe
+.gradle/9.2.1/checksums/checksums.lock
+.gradle/9.2.1/checksums/sha1-checksums.bin
+.gradle/9.2.1/executionHistory/executionHistory.bin
+.gradle/9.2.1/executionHistory/executionHistory.lock
+.gradle/9.2.1/fileHashes/fileHashes.bin
+.gradle/9.2.1/fileHashes/fileHashes.lock
+.gradle/9.2.1/fileHashes/resourceHashesCache.bin
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+.gradle/buildOutputCleanup/outputFiles.bin
+.vscode/settings.json
+build/classes/java/main/ru/realite/classes/RealiteClassesPlugin.class
+build/classes/java/main/ru/realite/classes/command/ClassCommand.class
+build/classes/java/main/ru/realite/classes/listener/MenuListener.class
+build/classes/java/main/ru/realite/classes/listener/PlayerQuitListener.class
+build/classes/java/main/ru/realite/classes/model/ClassId.class
+build/classes/java/main/ru/realite/classes/model/PlayerProfile.class
+build/classes/java/main/ru/realite/classes/service/EvolutionService.class
+build/classes/java/main/ru/realite/classes/storage/YamlProfileRepository.class
+build/classes/java/main/ru/realite/classes/util/Messages.class
+build/reports/problems/problems-report.html
+build/resources/main/config.yml
+build/resources/main/messages.yml
+build/resources/main/plugin.yml
+build/tmp/compileJava/previous-compilation-data.bin

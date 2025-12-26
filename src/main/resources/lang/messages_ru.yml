@@ -25,7 +25,7 @@ reloaded: "&aКонфиги перезагружены: &fconfig.yml, classes.ym
 
 status: "&aКласс: &e{class} &7| &aЭволюция: &e{evolution}"
 
-evolution-available: "&aДоступна эволюция! &e{class} &7→ &6{evolution} &7(ур. {required}). Используй &a/class evolve"
+evolution-available: "&aДоступна эволюция! &e{class} &7→ &6{evolution} &7(ур. {required}) &7| &e{money} &7| &e{items} &7. Используй &a/class evolve"
 
 evolved: "&aЭволюция успешна! &e{class} &7→ &6{evolution}"
 
@@ -47,4 +47,5 @@ info-body:
   - "&7Уровень: &b{level}"
   - "&7XP: &b{xp}&7 / до след. ур: &b{xpToNext}"
   - "&7След. эволюция: &e{nextEvolution} &7(ур. {nextRequired})"
+  - "&7Стоимость: &e{nextCostMoney} &7| предметы: &e{nextCostItems}"
   - "&7Мастерство: {mastered}"

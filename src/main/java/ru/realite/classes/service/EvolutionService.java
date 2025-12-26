@@ -217,4 +217,38 @@ public class EvolutionService {
             return true;
         return hasChangePermission(player) || isFinalEvolution(profile);
     }
+
+    // =========================================================
+    // NEW: удобные методы для уведомления "Доступна эволюция"
+    // =========================================================
+
+    /**
+     * True, если игрок прямо сейчас уже может эволюционировать (по уровню).
+     */
+    public boolean isEvolutionAvailableNow(PlayerProfile profile) {
+        var next = getNextEvolution(profile);
+        if (next == null)
+            return false;
+        return profile.getClassLevel() >= next.requiredLevel;
+    }
+
+    /**
+     * True, если игрок "пересёк порог" required-level при апе уровня:
+     * oldLevel < required && newLevel >= required.
+     * Используй это, чтобы не спамить уведомление.
+     */
+    public boolean becameEvolutionAvailable(int oldLevel, int newLevel, PlayerProfile profile) {
+        if (profile == null || !profile.hasClass())
+            return false;
+
+        var next = getNextEvolution(profile);
+        if (next == null)
+            return false;
+
+        int req = next.requiredLevel;
+        if (req <= 0)
+            return false;
+
+        return oldLevel < req && newLevel >= req;
+    }
 }
