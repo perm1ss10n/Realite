@@ -1,0 +1,54 @@
+#
+# Sorry for my English, I'm Russian :)
+# English messages for RealiteClasses
+
+only-players: "&cOnly players can use this command."
+
+no-class: "&cNo class selected. Type &e/class choose"
+already-chosen: "&cClass already selected. To change it, use: &e/class change"
+cant-change: "&cYou can only change your class at the final evolution stage or with a donor permission."
+
+usage: "&eUsage: &f/class&7, &f/class choose&7, &f/class change&7, &f/class info&7, &f/class evolve"
+
+class-help-header: "&6&lRealiteClasses &7— commands:"
+
+class-help:
+  - "&e/class choose &7— choose your main class (available for Wanderer)"
+  - "&e/class change &7— change your class (if allowed)"
+  - "&e/class info &7— view class information and progress"
+  - "&e/class evolve &7— attempt to evolve your class"
+  - "&e/class settings &7— interface and HUD settings"
+
+class-help-admin:
+  - "&e/class reload &7— reload plugin configs"
+
+chosen: "&aClass selected: &e{class}"
+
+no-permission: "&cYou do not have permission."
+reloaded: "&aConfigs reloaded: &fconfig.yml, classes.yml, lang/messages_*.yml, xp.yml"
+
+status: "&aClass: &e{class} &7| &aEvolution: &e{evolution}"
+
+evolution-available: "&aEvolution available! &e{class} &7→ &6{evolution} &7(level {required}). Use &a/class evolve"
+
+evolved: "&aEvolution successful! &e{class} &7→ &6{evolution}"
+
+evolve-no-class: "&cYou have no class."
+evolve-already-max: "&cYou are already at the maximum evolution."
+evolve-not-enough-level: "&cNot enough level to evolve."
+evolve-no-money: "&cNot enough money."
+evolve-no-items: "&cRequired items are missing."
+
+class-locked: "&5This path is sealed for now. &dYou have yet to uncover all the secrets of the required classes."
+class-locked-requirements: "&7You must fully complete: &e{req}"
+
+mastered-yes: "&acompleted"
+mastered-no: "&cnot completed"
+
+info-header: "&6&lClass: &e{class}"
+info-body:
+  - "&7Evolution: &a{evolution}"
+  - "&7Level: &b{level}"
+  - "&7XP: &b{xp}&7 / to next level: &b{xpToNext}"
+  - "&7Next evolution: &e{nextEvolution} &7(level {nextRequired})"
+  - "&7Mastery: {mastered}"

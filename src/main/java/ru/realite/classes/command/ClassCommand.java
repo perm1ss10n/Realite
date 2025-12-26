@@ -5,7 +5,6 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import ru.realite.classes.RealiteClassesPlugin;
-import ru.realite.classes.gui.ClassSelectMenu;
 import ru.realite.classes.gui.ClassSettingsMenu;
 import ru.realite.classes.service.ClassService;
 import ru.realite.classes.service.EconomyService;
@@ -60,20 +59,18 @@ public class ClassCommand implements CommandExecutor {
 
         // /class
         if (args.length == 0) {
-            if (!prof.hasClass()) {
-                p.sendMessage(messages.get("no-class"));
-                return true;
+            p.sendMessage(messages.get("class-help-header"));
+
+            for (String line : messages.getList("class-help")) {
+                p.sendMessage(line);
             }
 
-            var def = classConfig.get(prof.getClassId());
-            String className = (def != null ? def.name : prof.getClassId().name());
+            if (p.hasPermission("realiteclass.reload")) {
+                for (String line : messages.getList("class-help-admin")) {
+                    p.sendMessage(line);
+                }
+            }
 
-            var cur = evolutionService.getCurrentEvolution(prof);
-            String evoTitle = (cur != null ? cur.title : "-");
-
-            p.sendMessage(messages.format("status", Map.of(
-                    "class", className,
-                    "evolution", evoTitle)));
             return true;
         }
 
@@ -91,10 +88,14 @@ public class ClassCommand implements CommandExecutor {
             }
 
             case "choose" -> {
-                if (prof.hasClass()) {
+                // Разрешаем /class choose, если игрок пока "Странник" (стартовый класс)
+                boolean isWanderer = prof.getClassId() == ru.realite.classes.model.ClassId.WANDERER;
+
+                if (prof.hasClass() && !isWanderer) {
                     p.sendMessage(messages.get("already-chosen"));
                     return true;
                 }
+
                 p.openInventory(plugin.getMenu().create());
                 return true;
             }
@@ -107,7 +108,7 @@ public class ClassCommand implements CommandExecutor {
                 p.openInventory(plugin.getMenu().create());
                 return true;
             }
-            
+
             case "settings" -> {
                 new ClassSettingsMenu().open(p);
                 return true;
@@ -140,12 +141,24 @@ public class ClassCommand implements CommandExecutor {
                 boolean mastered = prof.hasMastered(prof.getClassId());
                 String masteredText = mastered ? messages.get("mastered-yes") : messages.get("mastered-no");
 
-                p.sendMessage("§6§lКласс: §e" + className);
-                p.sendMessage("§7Эволюция: §a" + curTitle);
-                p.sendMessage("§7Уровень: §b" + level);
-                p.sendMessage("§7XP: §b" + xp + " §7/ до след. ур: §b" + xpToNext);
-                p.sendMessage("§7След. эволюция: §e" + nextTitle + " §7(ур. " + nextReq + ")");
-                p.sendMessage("§7Мастерство: " + masteredText);
+                // header
+                p.sendMessage(messages.format("info-header", Map.of(
+                        "class", className)));
+
+                // body (list)
+                var vars = Map.of(
+                        "evolution", curTitle,
+                        "level", String.valueOf(level),
+                        "xp", String.valueOf(xp),
+                        "xpToNext", String.valueOf(xpToNext),
+                        "nextEvolution", nextTitle,
+                        "nextRequired", nextReq,
+                        "mastered", masteredText);
+
+                for (String line : messages.getList("info-body")) {
+                    p.sendMessage(messages.formatLine(line, vars));
+                }
+
                 return true;
             }
 

@@ -6,10 +6,22 @@ cant-change: "&cСменить класс можно только на фина�
 
 usage: "&eИспользование: &f/class&7, &f/class choose&7, &f/class change&7, &f/class info&7, &f/class evolve"
 
+class-help-header: "&6&lRealiteClasses &7— команды:"
+
+class-help:
+  - "&e/class choose &7— выбрать основной класс (доступно для Странника)"
+  - "&e/class change &7— сменить класс (если разрешено)"
+  - "&e/class info &7— информация о классе и прогрессе"
+  - "&e/class evolve &7— попытаться эволюционировать класс"
+  - "&e/class settings &7— настройки интерфейса"
+
+class-help-admin:
+  - "&e/class reload &7— перезагрузить конфиги"
+
 chosen: "&aКласс выбран: &e{class}"
 
 no-permission: "&cНет прав."
-reloaded: "&aКонфиги перезагружены: &fconfig.yml, classes.yml, messages.yml, xp.yml"
+reloaded: "&aКонфиги перезагружены: &fconfig.yml, classes.yml, lang/messages_*.yml, xp.yml"
 
 status: "&aКласс: &e{class} &7| &aЭволюция: &e{evolution}"
 

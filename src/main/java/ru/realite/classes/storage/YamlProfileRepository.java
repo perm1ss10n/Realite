@@ -57,7 +57,7 @@ public class YamlProfileRepository {
         p.setMaxLevelByClass(map);
 
         p.setMasteredClasses(new java.util.HashSet<>(yml.getStringList("masteredClasses")));
-        p.setHudMode(ru.realite.classes.model.HudMode.fromString(yml.getString("hudMode")));
+        p.setHudMode(HudMode.fromString(yml.getString("hudMode")));
 
         return p;
     }
