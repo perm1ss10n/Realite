@@ -1,0 +1,43 @@
+name: RealiteClasses
+version: 1.2.3
+main: ru.realite.classes.RealiteClassesPlugin
+api-version: "1.21"
+
+commands:
+  class:
+    description: "Меню классов и эволюций"
+    usage: /class [choose|change|info|evolve|setting|reload]
+    aliases: [classes]
+
+permissions:
+  realiteclass.choose:
+    description: "Разрешает выбрать класс (если ещё не выбран)"
+    default: true
+
+  realiteclass.change:
+    description: "Разрешает сменить класс в любой момент (минуя ограничения по эволюции)"
+    default: false
+
+  realiteclass.admin.*:
+    description: "Доступ ко всем админ-командам RealiteClasses"
+    default: op
+    children:
+      realiteclass.admin.set: true
+      realiteclass.admin.reset: true
+      realiteclass.admin.addxp: true
+
+  realiteclass.admin.set:
+    description: "Админ: установить класс игроку"
+    default: op
+
+  realiteclass.admin.reset:
+    description: "Админ: сбросить профиль/класс игрока"
+    default: op
+
+  realiteclass.admin.addxp:
+    description: "Админ: добавить XP игроку"
+    default: op
+  
+  realiteclass.reload:
+    description: "Разрешает перезагрузить конфиги плагина"
+    default: op

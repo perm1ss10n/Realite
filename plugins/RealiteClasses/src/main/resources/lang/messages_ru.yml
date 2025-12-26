@@ -1,0 +1,51 @@
+only-players: "&cТолько игрок может использовать эту команду."
+
+no-class: "&cКласс не выбран. Напиши &e/class choose"
+already-chosen: "&cКласс уже выбран. Для смены: &e/class change"
+cant-change: "&cСменить класс можно только на финальной эволюции или с донат-правом."
+
+usage: "&eИспользование: &f/class&7, &f/class choose&7, &f/class change&7, &f/class info&7, &f/class evolve"
+
+class-help-header: "&6&lRealiteClasses &7— команды:"
+
+class-help:
+  - "&e/class choose &7— выбрать основной класс (доступно для Странника)"
+  - "&e/class change &7— сменить класс (если разрешено)"
+  - "&e/class info &7— информация о классе и прогрессе"
+  - "&e/class evolve &7— попытаться эволюционировать класс"
+  - "&e/class settings &7— настройки интерфейса"
+
+class-help-admin:
+  - "&e/class reload &7— перезагрузить конфиги"
+
+chosen: "&aКласс выбран: &e{class}"
+
+no-permission: "&cНет прав."
+reloaded: "&aКонфиги перезагружены: &fconfig.yml, classes.yml, lang/messages_*.yml, xp.yml"
+
+status: "&aКласс: &e{class} &7| &aЭволюция: &e{evolution}"
+
+evolution-available: "&aДоступна эволюция! &e{class} &7→ &6{evolution} &7(ур. {required}) &7| &e{money} &7| &e{items} &7. Используй &a/class evolve"
+
+evolved: "&aЭволюция успешна! &e{class} &7→ &6{evolution}"
+
+evolve-no-class: "&cУ тебя нет класса."
+evolve-already-max: "&cТы уже на максимальной эволюции."
+evolve-not-enough-level: "&cНе хватает уровня для эволюции."
+evolve-no-money: "&cНе хватает денег."
+evolve-no-items: "&cНе хватает предметов для эволюции."
+
+class-locked: "&5Этот путь пока запечатан. &dТы ещё не познал все тайны нужных классов."
+class-locked-requirements: "&7Нужно пройти до конца: &e{req}"
+
+mastered-yes: "&aпройден до конца"
+mastered-no: "&cне пройден"
+
+info-header: "&6&lКласс: &e{class}"
+info-body:
+  - "&7Эволюция: &a{evolution}"
+  - "&7Уровень: &b{level}"
+  - "&7XP: &b{xp}&7 / до след. ур: &b{xpToNext}"
+  - "&7След. эволюция: &e{nextEvolution} &7(ур. {nextRequired})"
+  - "&7Стоимость: &e{nextCostMoney} &7| предметы: &e{nextCostItems}"
+  - "&7Мастерство: {mastered}"

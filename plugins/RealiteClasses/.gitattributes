@@ -1,0 +1,5 @@
+*.html linguist-vendored
+* text=auto
+*.java text eol=lf
+*.yml  text eol=lf
+*.gradle text eol=lf
