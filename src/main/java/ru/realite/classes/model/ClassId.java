@@ -6,7 +6,9 @@ public enum ClassId {
     ARCHER,
     MINER,
     ALCHEMIST,
-    MERCHANT;
+    MERCHANT,
+    MERCENARY, //Чтобы было видно скрытые классы, возможно и не нужно будет
+    WARLOCK;
 
     public static ClassId fromString(String s) {
         if (s == null) return null;
