@@ -1,5 +1,6 @@
 package ru.realite.classes;
 
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.classes.command.ClassCommand;
 import ru.realite.classes.gui.ClassSelectMenu;
@@ -7,6 +8,7 @@ import ru.realite.classes.listener.ClassActionXpListener;
 import ru.realite.classes.listener.MenuListener;
 import ru.realite.classes.listener.PlayerJoinListener;
 import ru.realite.classes.listener.PlayerQuitListener;
+import ru.realite.classes.service.ClassHudService;
 import ru.realite.classes.service.ClassService;
 import ru.realite.classes.service.EconomyService;
 import ru.realite.classes.service.EffectService;
@@ -51,10 +53,18 @@ public final class RealiteClassesPlugin extends JavaPlugin {
 
         EconomyService economy = new EconomyService(this);
 
-        ProgressionService progressionService =
-                new ProgressionService(classService, classConfig, evolutionService, messages);
+        ProgressionService progressionService = new ProgressionService(classService, classConfig, evolutionService,
+                messages);
 
         this.xpConfig = new XpConfigRepository(getDataFolder(), getLogger());
+
+        ClassHudService hudService = new ClassHudService(classService, classConfig, evolutionService);
+
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            for (var p : Bukkit.getOnlinePlayers()) {
+                hudService.tick(p);
+            }
+        }, 20L, 20L); // раз в секунду
 
         // эффекты
         int tickSeconds = getConfig().getInt("effects.tick-seconds", 5);
@@ -65,8 +75,7 @@ public final class RealiteClassesPlugin extends JavaPlugin {
                 this,
                 () -> getServer().getOnlinePlayers().forEach(effectService::applyFor),
                 20L,
-                tickSeconds * 20L
-        );
+                tickSeconds * 20L);
 
         // GUI
         this.menu = new ClassSelectMenu(this, classConfig);
@@ -74,39 +83,33 @@ public final class RealiteClassesPlugin extends JavaPlugin {
         // команды
         if (getCommand("class") != null) {
             getCommand("class").setExecutor(new ClassCommand(
-                    this,                // 👈 передаем плагин, чтобы дергать reload
+                    this, // 👈 передаем плагин, чтобы дергать reload
                     classService,
                     evolutionService,
                     classConfig,
                     economy,
-                    menu,
                     messages,
-                    xpConfig
-            ));
+                    xpConfig));
         } else {
             getLogger().severe("Command /class is not defined in plugin.yml!");
         }
 
         // листенеры
         getServer().getPluginManager().registerEvents(
-                new MenuListener(classService, classConfig, evolutionService, messages),
-                this
-        );
+                new MenuListener(classService, classConfig, evolutionService, messages, hudService),
+                this);
 
         getServer().getPluginManager().registerEvents(
                 new PlayerJoinListener(classService),
-                this
-        );
+                this);
 
         getServer().getPluginManager().registerEvents(
-                new PlayerQuitListener(classService),
-                this
-        );
+                new PlayerQuitListener(classService, hudService),
+                this);
 
         getServer().getPluginManager().registerEvents(
                 new ClassActionXpListener(classService, progressionService, xpConfig),
-                this
-        );
+                this);
 
         // автосейв
         int autosaveMinutes = getConfig().getInt("storage.autosave-minutes", 5);
@@ -131,18 +134,32 @@ public final class RealiteClassesPlugin extends JavaPlugin {
     public void reloadAll() {
         reloadConfig();
 
-        if (classConfig != null) classConfig.reload();
-        if (messages != null) messages.reload();
-        if (xpConfig != null) xpConfig.reload();
+        if (classConfig != null)
+            classConfig.reload();
+        if (messages != null)
+            messages.reload();
+        if (xpConfig != null)
+            xpConfig.reload();
 
         // пересоздаем меню, потому что оно строится на classConfig
         this.menu = new ClassSelectMenu(this, classConfig);
     }
 
-    public Messages getMessages() { return messages; }
-    public ClassConfigRepository getClassConfig() { return classConfig; }
-    public XpConfigRepository getXpConfig() { return xpConfig; }
-    public ClassSelectMenu getMenu() { return menu; }
+    public Messages getMessages() {
+        return messages;
+    }
+
+    public ClassConfigRepository getClassConfig() {
+        return classConfig;
+    }
+
+    public XpConfigRepository getXpConfig() {
+        return xpConfig;
+    }
+
+    public ClassSelectMenu getMenu() {
+        return menu;
+    }
 
     @Override
     public void onDisable() {

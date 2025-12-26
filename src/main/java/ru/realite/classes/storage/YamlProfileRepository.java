@@ -3,6 +3,7 @@ package ru.realite.classes.storage;
 import org.bukkit.configuration.file.YamlConfiguration;
 import ru.realite.classes.model.ClassId;
 import ru.realite.classes.model.PlayerProfile;
+import ru.realite.classes.model.HudMode;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,6 +57,7 @@ public class YamlProfileRepository {
         p.setMaxLevelByClass(map);
 
         p.setMasteredClasses(new java.util.HashSet<>(yml.getStringList("masteredClasses")));
+        p.setHudMode(ru.realite.classes.model.HudMode.fromString(yml.getString("hudMode")));
 
         return p;
     }
@@ -90,5 +92,7 @@ public class YamlProfileRepository {
         } catch (IOException e) {
             throw new RuntimeException("Failed to save profile " + profile.getUuid(), e);
         }
+
+        yml.set("hudMode", profile.getHudMode().name());
     }
 }

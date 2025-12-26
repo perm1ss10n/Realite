@@ -6,6 +6,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import ru.realite.classes.RealiteClassesPlugin;
 import ru.realite.classes.gui.ClassSelectMenu;
+import ru.realite.classes.gui.ClassSettingsMenu;
 import ru.realite.classes.service.ClassService;
 import ru.realite.classes.service.EconomyService;
 import ru.realite.classes.service.EvolutionService;
@@ -31,13 +32,12 @@ public class ClassCommand implements CommandExecutor {
     private final XpConfigRepository xpConfig;
 
     public ClassCommand(RealiteClassesPlugin plugin,
-                        ClassService classService,
-                        EvolutionService evolutionService,
-                        ClassConfigRepository classConfig,
-                        EconomyService economy,
-                        ClassSelectMenu menuIgnored,
-                        Messages messages,
-                        XpConfigRepository xpConfig) {
+            ClassService classService,
+            EvolutionService evolutionService,
+            ClassConfigRepository classConfig,
+            EconomyService economy,
+            Messages messages,
+            XpConfigRepository xpConfig) {
         this.plugin = plugin;
         this.classService = classService;
         this.evolutionService = evolutionService;
@@ -55,7 +55,8 @@ public class ClassCommand implements CommandExecutor {
         }
 
         var prof = classService.getProfile(p);
-        if (prof == null) return true;
+        if (prof == null)
+            return true;
 
         // /class
         if (args.length == 0) {
@@ -72,8 +73,7 @@ public class ClassCommand implements CommandExecutor {
 
             p.sendMessage(messages.format("status", Map.of(
                     "class", className,
-                    "evolution", evoTitle
-            )));
+                    "evolution", evoTitle)));
             return true;
         }
 
@@ -107,6 +107,11 @@ public class ClassCommand implements CommandExecutor {
                 p.openInventory(plugin.getMenu().create());
                 return true;
             }
+            
+            case "settings" -> {
+                new ClassSettingsMenu().open(p);
+                return true;
+            }
 
             case "info" -> {
                 if (!prof.hasClass()) {
@@ -122,7 +127,8 @@ public class ClassCommand implements CommandExecutor {
 
                 int xpPerLevel = (def != null ? Math.max(1, def.xpPerLevel) : 100);
                 long xpToNext = xpPerLevel - (xp % xpPerLevel);
-                if (xpToNext == xpPerLevel) xpToNext = 0;
+                if (xpToNext == xpPerLevel)
+                    xpToNext = 0;
 
                 var cur = evolutionService.getCurrentEvolution(prof);
                 String curTitle = (cur != null ? cur.title : "-");
@@ -161,8 +167,7 @@ public class ClassCommand implements CommandExecutor {
 
                     p.sendMessage(messages.format("evolved", Map.of(
                             "class", className,
-                            "evolution", evoTitle
-                    )));
+                            "evolution", evoTitle)));
                 } else {
                     p.sendMessage(messages.get("evolve-" + res));
                 }

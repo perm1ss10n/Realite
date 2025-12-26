@@ -11,6 +11,7 @@ public class PlayerProfile {
     // =====================
     private ClassId classId; // null = не выбран
     private String evolution; // например "soldier"
+    private HudMode hudMode = HudMode.BOSSBAR;
 
     // =====================
     // PROGRESSION
@@ -137,6 +138,14 @@ public class PlayerProfile {
 
     public void setEvolutionNotified(boolean evolutionNotified) {
         this.evolutionNotified = evolutionNotified;
+    }
+
+    public HudMode getHudMode() {
+        return hudMode;
+    }
+
+    public void setHudMode(HudMode hudMode) {
+        this.hudMode = (hudMode != null ? hudMode : HudMode.BOSSBAR);
     }
 
     // =====================
