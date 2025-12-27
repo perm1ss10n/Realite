@@ -1,0 +1,26 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'ru.realite'
+version = '1.2.3'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Ничего paper/spigot сюда не тащим.
+    // Core должен быть "чистым" и переиспользуемым.
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}

@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group = 'ru.realite'
@@ -14,19 +15,35 @@ java {
 repositories {
     mavenCentral()
     maven { url = 'https://repo.papermc.io/repository/maven-public/' }
-
-    // Vault API
-    maven { url = 'https://jitpack.io' }
+    maven { url = 'https://jitpack.io' } // Vault API
 }
 
 dependencies {
     compileOnly "io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT"
 
-    // Vault API (только для компиляции; на сервере Vault.jar всё равно должен быть установлен)
+    // Vault API только для компиляции
     compileOnly "com.github.MilkBowl:VaultAPI:1.7"
+
+    // ВАЖНО: Core как implementation, и мы его зашьём в jar через shadow
+    implementation project(":RealiteCore")
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.release = 21
+}
+
+// Чтобы итоговый jar был именно "fat/shaded"
+tasks.jar {
+    enabled = false
+}
+
+tasks.shadowJar {
+    archiveClassifier.set("") // чтобы файл был без "-all"
+    // relocation пока не нужен, т.к. это твои пакеты ru.realite.*
+    // Если позже будешь тащить внешние либы в Core — тогда релокации добавим.
+}
+
+tasks.build {
+    dependsOn tasks.shadowJar
 }
