@@ -1,7 +1,9 @@
-package ru.realite.core.module;
+package ru.realite.core.impl;
 
-import ru.realite.core.CoreContext;
-import ru.realite.core.Platform;
+import ru.realite.core.api.CoreApi;
+import ru.realite.core.api.Module;
+import ru.realite.core.api.ModuleManager;
+import ru.realite.core.api.Platform;
 
 import java.util.*;
 
@@ -11,19 +13,20 @@ import java.util.*;
  * - сортирует по зависимостям
  * - включает/выключает
  */
-public final class ModuleManager {
+public final class ModuleManagerImpl implements ModuleManager {
 
-    private final CoreContext ctx;
+    private final CoreApi core;
     private final Platform log;
 
     private final Map<String, Module> modulesById = new LinkedHashMap<>();
     private final List<Module> enabledOrder = new ArrayList<>();
 
-    public ModuleManager(CoreContext ctx) {
-        this.ctx = Objects.requireNonNull(ctx, "ctx");
-        this.log = ctx.platform();
+    public ModuleManagerImpl(CoreApi core) {
+        this.core = Objects.requireNonNull(core, "core");
+        this.log = core.platform();
     }
 
+    @Override
     public void register(Module module) {
         Objects.requireNonNull(module, "module");
         String id = Objects.requireNonNull(module.id(), "module.id()");
@@ -37,14 +40,17 @@ public final class ModuleManager {
         }
     }
 
+    @Override
     public Module get(String id) {
         return modulesById.get(id);
     }
 
+    @Override
     public Collection<Module> all() {
         return Collections.unmodifiableCollection(modulesById.values());
     }
 
+    @Override
     public void enableAll() {
         List<Module> ordered = topoSort(modulesById);
 
@@ -53,7 +59,7 @@ public final class ModuleManager {
         for (Module m : ordered) {
             try {
                 log.info("Enabling module: " + m.id());
-                m.onEnable(ctx);
+                m.onEnable(core);
                 enabledOrder.add(m);
             } catch (Exception e) {
                 log.error("Failed to enable module: " + m.id(), e);
@@ -63,6 +69,7 @@ public final class ModuleManager {
         }
     }
 
+    @Override
     public void disableAll() {
         // выключаем в обратном порядке
         ListIterator<Module> it = enabledOrder.listIterator(enabledOrder.size());

@@ -1,4 +1,4 @@
-package ru.realite.core;
+package ru.realite.core.api;
 
 /**
  * Абстракция над платформой (Paper/Spigot/и т.п.).
