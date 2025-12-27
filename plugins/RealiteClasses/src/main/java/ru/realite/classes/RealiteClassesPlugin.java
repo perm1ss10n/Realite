@@ -2,11 +2,9 @@ package ru.realite.classes;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
-import ru.realite.core.CoreContext;
-import ru.realite.core.Platform;
-import ru.realite.core.Services;
 
 import ru.realite.classes.command.ClassCommand;
+import ru.realite.classes.core.CoreAccess;
 import ru.realite.classes.gui.ClassSelectMenu;
 import ru.realite.classes.listener.ClassActionXpListener;
 import ru.realite.classes.listener.MenuListener;
@@ -26,13 +24,16 @@ import ru.realite.classes.storage.YamlProfileRepository;
 
 import ru.realite.classes.util.Messages;
 
+import ru.realite.core.api.CoreApi;
+import ru.realite.core.api.Platform;
+
 import java.io.File;
 import java.io.InputStream;
 
 public final class RealiteClassesPlugin extends JavaPlugin {
 
-    // ===== Core (вариант 1: Core отдельным плагином) =====
-    private CoreContext core;
+    // ===== Core (Core отдельным плагином) =====
+    private CoreApi core;
     private Platform platform;
 
     // ===== configs / util =====
@@ -56,9 +57,9 @@ public final class RealiteClassesPlugin extends JavaPlugin {
     public void onEnable() {
         long start = System.currentTimeMillis();
 
-        // --- подключаемся к RealiteCore ---
-        this.core = Services.require(CoreContext.class);
-        this.platform = Services.require(Platform.class);
+        // --- подключаемся к RealiteCore через Bukkit ServicesManager ---
+        this.core = CoreAccess.core();
+        this.platform = core.platform();
 
         // --- resources ---
         saveDefaultConfig();
@@ -79,18 +80,16 @@ public final class RealiteClassesPlugin extends JavaPlugin {
                         classConfig,
                         economyService,
                         messages,
-                        xpConfig
-                )
-        );
+                        xpConfig));
 
         // --- listeners ---
         Bukkit.getPluginManager().registerEvents(
                 new MenuListener(classService, classConfig, evolutionService, messages, hudService),
-                this
-        );
+                this);
         Bukkit.getPluginManager().registerEvents(new PlayerJoinListener(classService, effectService), this);
         Bukkit.getPluginManager().registerEvents(new PlayerQuitListener(classService, hudService), this);
-        Bukkit.getPluginManager().registerEvents(new ClassActionXpListener(classService, progressionService, xpConfig), this);
+        Bukkit.getPluginManager().registerEvents(new ClassActionXpListener(classService, progressionService, xpConfig),
+                this);
 
         platform.info("[Classes] Enabled in " + (System.currentTimeMillis() - start) + "ms");
     }
@@ -98,10 +97,11 @@ public final class RealiteClassesPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         if (classService != null) {
-            // по твоему ClassService есть saveAll()
             classService.saveAll();
         }
-        if (platform != null) platform.info("[Classes] Disabled");
+        if (platform != null) {
+            platform.info("[Classes] Disabled");
+        }
     }
 
     /**
@@ -126,30 +126,38 @@ public final class RealiteClassesPlugin extends JavaPlugin {
         // --- economy ---
         this.economyService = new EconomyService(this);
 
-        // --- evolution (по сигнатуре: только config + permission) ---
+        // --- evolution ---
         String changePermission = getConfig().getString("change-class-permission", "realite.classes.change");
         this.evolutionService = new EvolutionService(classConfig, changePermission);
 
-        // --- class service (по сигнатуре: repo + evolutionService) ---
+        // --- class service ---
         this.classService = new ClassService(profiles, evolutionService);
 
-        // --- progression (по сигнатуре) ---
+        // --- progression ---
         this.progressionService = new ProgressionService(classService, classConfig, evolutionService, messages);
 
-        // --- effects (по сигнатуре) ---
+        // --- effects ---
         boolean clearManaged = getConfig().getBoolean("clear-managed-effects", true);
         this.effectService = new EffectService(classService, classConfig, clearManaged);
 
-        // --- HUD (по сигнатуре) ---
+        // --- HUD ---
         this.hudService = new ClassHudService(classService, classConfig, evolutionService);
 
-        // --- menu (по сигнатуре: plugin + classConfig) ---
+        // --- menu ---
         this.menu = new ClassSelectMenu(this, classConfig);
 
         platform.info("[Classes] reloadAll completed");
     }
 
-    // ===== getters (то, что реально используется из других классов) =====
+    // ===== getters =====
+
+    public CoreApi core() {
+        return core;
+    }
+
+    public Platform platform() {
+        return platform;
+    }
 
     public ClassService getClassService() {
         return classService;
@@ -181,14 +189,6 @@ public final class RealiteClassesPlugin extends JavaPlugin {
 
     public ProgressionService getProgressionService() {
         return progressionService;
-    }
-
-    public CoreContext core() {
-        return core;
-    }
-
-    public Platform platform() {
-        return platform;
     }
 
     // ===== utils =====
