@@ -1,12 +1,12 @@
 name: RealiteClasses
-version: 1.0.0
+version: 1.2.3
 main: ru.realite.classes.RealiteClassesPlugin
 api-version: "1.21"
 
 commands:
   class:
     description: "Меню классов и эволюций"
-    usage: /class [choose|change|info|evolve|reload]
+    usage: /class [choose|change|info|evolve|setting|reload]
     aliases: [classes]
 
 permissions:

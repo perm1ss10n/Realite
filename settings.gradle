@@ -1,0 +1,6 @@
+rootProject.name = "realite"
+
+include("RealiteCore")
+include("plugins:RealiteClasses")
+include("plugins:RealiteQuests")
+include("plugins:RealiteCityInfrastructure")

@@ -1,3 +1,4 @@
+lang: "ru"
 effects:
   tick-seconds: 5
   clear-managed-effects: true
