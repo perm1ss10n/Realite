@@ -1,21 +1,30 @@
 package ru.realite.classes.core;
 
-import ru.realite.core.CoreContext;
-import ru.realite.core.Platform;
-import ru.realite.core.Services;
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.RegisteredServiceProvider;
+import ru.realite.core.api.CoreApi;
+import ru.realite.core.api.Platform;
 
-/**
- * Единая точка доступа к RealiteCore из модуля Classes.
- */
 public final class CoreAccess {
 
-    private CoreAccess() {}
+    private static CoreApi core;
 
-    public static CoreContext core() {
-        return Services.require(CoreContext.class);
+    public static CoreApi core() {
+        if (core == null) {
+            RegisteredServiceProvider<CoreApi> rsp =
+                    Bukkit.getServicesManager().getRegistration(CoreApi.class);
+
+            if (rsp == null) {
+                throw new IllegalStateException("CoreApi not found. Is RealiteCore enabled?");
+            }
+            core = rsp.getProvider();
+        }
+        return core;
     }
 
     public static Platform log() {
-        return Services.require(Platform.class);
+        return core().platform();
     }
+
+    private CoreAccess() {}
 }

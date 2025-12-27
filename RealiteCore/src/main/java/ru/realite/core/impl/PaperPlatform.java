@@ -1,6 +1,7 @@
-package ru.realite.core;
+package ru.realite.core.impl;
 
 import org.bukkit.plugin.java.JavaPlugin;
+import ru.realite.core.api.Platform;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
