@@ -1,0 +1,3 @@
+# Gradle wrapper must stay LF for Linux runners
+gradlew text eol=lf
+*.sh text eol=lf
