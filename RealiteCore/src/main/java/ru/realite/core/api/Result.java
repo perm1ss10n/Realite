@@ -1,4 +1,4 @@
-package ru.realite.core;
+package ru.realite.core.api;
 
 import java.util.Objects;
 import java.util.function.Function;

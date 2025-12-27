@@ -1,7 +1,11 @@
-package ru.realite.core;
+package ru.realite.core.impl;
 
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
-import ru.realite.core.module.ModuleManager;
+import ru.realite.core.api.CoreApi;
+import ru.realite.core.api.ModuleManager;
+import ru.realite.core.api.Platform;
+import ru.realite.core.api.Services;
 
 /**
  * Главный плагин ядра.
@@ -16,13 +20,15 @@ import ru.realite.core.module.ModuleManager;
  */
 public final class RealiteCorePlugin extends JavaPlugin {
 
-    private CoreContext core;
+    private CoreApi core;
     private ModuleManager modules;
+    private Services services;
 
     @Override
     public void onEnable() {
         // 1) Platform
         Platform platform = new PaperPlatform(this);
+        this.services = new ServicesImpl();
 
         // 2) Data folder
         saveDefaultConfig(); // если нет config.yml, не упадёт, просто создаст папку
@@ -33,25 +39,28 @@ public final class RealiteCorePlugin extends JavaPlugin {
         }
 
         // 3) Context + Services
-        this.core = new CoreContext(this, platform);
+        this.core = new CoreContext(this, platform, services);
 
         // Если используете Services как глобальный реестр — можно зарегистрировать базовые вещи:
         // (Если у тебя Services как я предлагал — с запретом перезаписи — это безопасно)
         try {
-            Services.register(Platform.class, platform);
-            Services.register(CoreContext.class, core);
+            services.register(Platform.class, platform);
+            services.register(CoreApi.class, core);
         } catch (Exception e) {
             // если вдруг при /reload что-то осталось
             platform.warn("Services already had some entries. Clearing and re-registering...");
-            Services.clear();
-            Services.register(Platform.class, platform);
-            Services.register(CoreContext.class, core);
+            services.clear();
+            services.register(Platform.class, platform);
+            services.register(CoreApi.class, core);
         }
+
+        getServer().getServicesManager()
+                .register(CoreApi.class, core, this, ServicePriority.Normal);
 
         platform.info("RealiteCore enabled.");
 
         // 4) Modules
-        this.modules = new ModuleManager(core);
+        this.modules = new ModuleManagerImpl(core);
 
         // Пока регистрация ручная (чтобы не усложнять).
         // Позже сделаем автопоиск через ServiceLoader.
@@ -68,7 +77,9 @@ public final class RealiteCorePlugin extends JavaPlugin {
         }
 
         // чистим сервисы ядра (чтобы /reload не ловил мусор)
-        Services.clear();
+        if (services != null) {
+            services.clear();
+        }
 
         if (core != null) {
             core.platform().info("RealiteCore disabled.");
@@ -85,7 +96,7 @@ public final class RealiteCorePlugin extends JavaPlugin {
         // Где ClassesModuleAdapter — это тонкий класс, который вызывает onEnable у Classes-плагина/модуля.
     }
 
-    public CoreContext core() {
+    public CoreApi core() {
         return core;
     }
 

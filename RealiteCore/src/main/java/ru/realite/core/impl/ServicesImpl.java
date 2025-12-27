@@ -1,4 +1,6 @@
-package ru.realite.core;
+package ru.realite.core.impl;
+
+import ru.realite.core.api.Services;
 
 import java.util.Map;
 import java.util.Objects;
@@ -13,20 +15,19 @@ import java.util.concurrent.ConcurrentHashMap;
  * - register() по умолчанию ЗАПРЕЩАЕТ перезапись, чтобы не ловить "тихие" баги.
  * - если тебе реально нужно заменить — используй replace().
  */
-public final class Services {
+public final class ServicesImpl implements Services {
 
-    private static final Map<Class<?>, Object> REGISTRY = new ConcurrentHashMap<>();
-
-    private Services() {}
+    private final Map<Class<?>, Object> registry = new ConcurrentHashMap<>();
 
     /**
      * Регистрирует сервис. Перезапись запрещена (бросает исключение).
      */
-    public static <T> void register(Class<T> type, T impl) {
+    @Override
+    public <T> void register(Class<T> type, T impl) {
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(impl, "impl");
 
-        Object prev = REGISTRY.putIfAbsent(type, impl);
+        Object prev = registry.putIfAbsent(type, impl);
         if (prev != null) {
             throw new IllegalStateException("Service already registered: " + type.getName()
                     + " (existing=" + prev.getClass().getName() + ", new=" + impl.getClass().getName() + ")");
@@ -36,29 +37,32 @@ public final class Services {
     /**
      * Регистрирует сервис, если его ещё нет. Возвращает true, если реально зарегистрировали.
      */
-    public static <T> boolean registerIfAbsent(Class<T> type, T impl) {
+    @Override
+    public <T> boolean registerIfAbsent(Class<T> type, T impl) {
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(impl, "impl");
-        return REGISTRY.putIfAbsent(type, impl) == null;
+        return registry.putIfAbsent(type, impl) == null;
     }
 
     /**
      * Явно заменяет сервис (перезапись разрешена).
      * Возвращает предыдущую реализацию или null.
      */
-    public static <T> T replace(Class<T> type, T impl) {
+    @Override
+    public <T> T replace(Class<T> type, T impl) {
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(impl, "impl");
-        Object prev = REGISTRY.put(type, impl);
+        Object prev = registry.put(type, impl);
         return prev == null ? null : type.cast(prev);
     }
 
     /**
      * Требует сервис (если не зарегистрирован — кидает исключение).
      */
-    public static <T> T require(Class<T> type) {
+    @Override
+    public <T> T require(Class<T> type) {
         Objects.requireNonNull(type, "type");
-        Object v = REGISTRY.get(type);
+        Object v = registry.get(type);
         if (v == null) throw new IllegalStateException("Service not registered: " + type.getName());
         return type.cast(v);
     }
@@ -66,33 +70,37 @@ public final class Services {
     /**
      * Получает сервис или null.
      */
-    public static <T> T get(Class<T> type) {
+    @Override
+    public <T> T get(Class<T> type) {
         Objects.requireNonNull(type, "type");
-        Object v = REGISTRY.get(type);
+        Object v = registry.get(type);
         return v == null ? null : type.cast(v);
     }
 
     /**
      * Проверка наличия сервиса.
      */
-    public static boolean has(Class<?> type) {
+    @Override
+    public boolean has(Class<?> type) {
         Objects.requireNonNull(type, "type");
-        return REGISTRY.containsKey(type);
+        return registry.containsKey(type);
     }
 
     /**
      * Удаляет сервис. Возвращает удалённое значение или null.
      */
-    public static <T> T unregister(Class<T> type) {
+    @Override
+    public <T> T unregister(Class<T> type) {
         Objects.requireNonNull(type, "type");
-        Object removed = REGISTRY.remove(type);
+        Object removed = registry.remove(type);
         return removed == null ? null : type.cast(removed);
     }
 
     /**
      * Полная очистка (например, при disable/reload ядра).
      */
-    public static void clear() {
-        REGISTRY.clear();
+    @Override
+    public void clear() {
+        registry.clear();
     }
 }

@@ -1,6 +1,4 @@
-package ru.realite.core.module;
-
-import ru.realite.core.CoreContext;
+package ru.realite.core.api;
 
 import java.util.List;
 
@@ -25,7 +23,7 @@ public interface Module {
     /**
      * Включение модуля.
      */
-    void onEnable(CoreContext ctx) throws Exception;
+    void onEnable(CoreApi core) throws Exception;
 
     /**
      * Выключение модуля (обязательно освобождаем ресурсы/хендлеры/таски).
