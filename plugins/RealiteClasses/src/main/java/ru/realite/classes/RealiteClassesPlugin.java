@@ -4,7 +4,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import ru.realite.classes.command.ClassCommand;
-import ru.realite.classes.core.CoreAccess;
 import ru.realite.classes.gui.ClassSelectMenu;
 import ru.realite.classes.listener.ClassActionXpListener;
 import ru.realite.classes.listener.MenuListener;
@@ -25,12 +24,13 @@ import ru.realite.classes.storage.YamlProfileRepository;
 import ru.realite.classes.util.Messages;
 
 import ru.realite.core.api.CoreApi;
+import ru.realite.core.api.CoreModuleEntrypoint;
 import ru.realite.core.api.Platform;
 
 import java.io.File;
 import java.io.InputStream;
 
-public final class RealiteClassesPlugin extends JavaPlugin {
+public final class RealiteClassesPlugin extends JavaPlugin implements CoreModuleEntrypoint {
 
     // ===== Core (Core отдельным плагином) =====
     private CoreApi core;
@@ -52,13 +52,32 @@ public final class RealiteClassesPlugin extends JavaPlugin {
 
     // ===== gui =====
     private ClassSelectMenu menu;
+    private final RealiteClassesEntrypoint entrypoint = new RealiteClassesEntrypoint(this);
+    private boolean initialized;
+    private boolean shuttingDown;
 
     @Override
     public void onEnable() {
+        try {
+            initialize(ru.realite.classes.core.CoreAccess.core());
+        } catch (Exception e) {
+            getLogger().warning("CoreApi not available yet. Waiting for module enable.");
+        }
+    }
+
+    @Override
+    public void onDisable() {
+        shutdownModule();
+    }
+
+    public void initialize(CoreApi core) {
+        if (initialized) {
+            return;
+        }
+        this.shuttingDown = false;
         long start = System.currentTimeMillis();
 
-        // --- подключаемся к RealiteCore через Bukkit ServicesManager ---
-        this.core = CoreAccess.core();
+        this.core = java.util.Objects.requireNonNull(core, "core");
         this.platform = core.platform();
 
         // --- resources ---
@@ -91,17 +110,25 @@ public final class RealiteClassesPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new ClassActionXpListener(classService, progressionService, xpConfig),
                 this);
 
+        initialized = true;
         platform.info("[Classes] Enabled in " + (System.currentTimeMillis() - start) + "ms");
     }
 
-    @Override
-    public void onDisable() {
+    public void shutdownModule() {
+        if (!initialized || shuttingDown) {
+            return;
+        }
+        shuttingDown = true;
         if (classService != null) {
             classService.saveAll();
         }
         if (platform != null) {
             platform.info("[Classes] Disabled");
         }
+        initialized = false;
+        shuttingDown = false;
+        core = null;
+        platform = null;
     }
 
     /**
@@ -189,6 +216,11 @@ public final class RealiteClassesPlugin extends JavaPlugin {
 
     public ProgressionService getProgressionService() {
         return progressionService;
+    }
+
+    @Override
+    public ru.realite.core.api.Module module() {
+        return entrypoint.module();
     }
 
     // ===== utils =====
