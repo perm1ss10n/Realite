@@ -20,6 +20,7 @@ public final class ModuleManagerImpl implements ModuleManager {
 
     private final Map<String, Module> modulesById = new LinkedHashMap<>();
     private final List<Module> enabledOrder = new ArrayList<>();
+    private boolean enabled;
 
     public ModuleManagerImpl(CoreApi core) {
         this.core = Objects.requireNonNull(core, "core");
@@ -52,25 +53,40 @@ public final class ModuleManagerImpl implements ModuleManager {
 
     @Override
     public void enableAll() {
+        if (enabled) {
+            log.warn("Modules are already enabled. Skipping enableAll().");
+            return;
+        }
         List<Module> ordered = topoSort(modulesById);
 
-        log.info("Enabling modules: " + ordered.stream().map(Module::id).toList());
+        log.info("Enabling modules (" + ordered.size() + "): "
+                + ordered.stream().map(Module::id).toList());
 
-        for (Module m : ordered) {
-            try {
+        try {
+            for (Module m : ordered) {
                 log.info("Enabling module: " + m.id());
                 m.onEnable(core);
                 enabledOrder.add(m);
-            } catch (Exception e) {
-                log.error("Failed to enable module: " + m.id(), e);
-                // если модуль не включился — безопаснее остановить остальные
-                throw new IllegalStateException("Failed to enable module: " + m.id(), e);
             }
+        } catch (Exception e) {
+            log.error("Failed to enable module. Rolling back enabled modules...", e);
+            disableEnabledModules();
+            throw new IllegalStateException("Failed to enable modules", e);
         }
+        enabled = true;
     }
 
     @Override
     public void disableAll() {
+        if (!enabled) {
+            log.warn("Modules are not enabled. Skipping disableAll().");
+            return;
+        }
+        disableEnabledModules();
+        enabled = false;
+    }
+
+    private void disableEnabledModules() {
         // выключаем в обратном порядке
         ListIterator<Module> it = enabledOrder.listIterator(enabledOrder.size());
         while (it.hasPrevious()) {

@@ -87,13 +87,11 @@ public final class RealiteCorePlugin extends JavaPlugin {
     }
 
     private void registerBuiltinModules() {
-        // Сейчас тут пусто.
-        // Пример как будет:
-        //
-        // modules.register(new ClassesModuleAdapter());
-        // modules.register(new QuestsModuleAdapter());
-        //
-        // Где ClassesModuleAdapter — это тонкий класс, который вызывает onEnable у Classes-плагина/модуля.
+        modules.register(new BukkitPluginModuleAdapter(
+                "classes",
+                "RealiteClasses",
+                java.util.List.of()
+        ));
     }
 
     public CoreApi core() {
