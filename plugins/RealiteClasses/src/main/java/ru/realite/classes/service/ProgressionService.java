@@ -3,7 +3,6 @@ package ru.realite.classes.service;
 import org.bukkit.entity.Player;
 import ru.realite.classes.model.PlayerProfile;
 import ru.realite.classes.storage.ClassConfigRepository;
-import ru.realite.classes.util.ItemFormat;
 import ru.realite.classes.util.Messages;
 import ru.realite.classes.util.ChatTemplate;
 import ru.realite.classes.util.ItemComponents;

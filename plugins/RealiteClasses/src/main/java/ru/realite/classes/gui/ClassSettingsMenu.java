@@ -7,6 +7,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 import java.util.List;
 
@@ -15,9 +17,14 @@ public class ClassSettingsMenu implements InventoryHolder {
     public static final String TITLE = "Class Settings";
 
     private final Inventory inv;
+    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
+
+    private static Component c(String s) {
+        return LEGACY.deserialize(s);
+    }
 
     public ClassSettingsMenu() {
-        this.inv = Bukkit.createInventory(this, 9, TITLE);
+        this.inv = Bukkit.createInventory(this, 9, c(TITLE));   
         build();
     }
 
@@ -26,22 +33,18 @@ public class ClassSettingsMenu implements InventoryHolder {
 
         inv.setItem(1, item(Material.DRAGON_BREATH, "§6BossBar", List.of(
                 "§7Полоска сверху экрана",
-                "§7Рекомендуется (дефолт)"
-        )));
+                "§7Рекомендуется (дефолт)")));
 
         inv.setItem(3, item(Material.PAPER, "§aActionBar", List.of(
                 "§7Текст над хотбаром снизу",
-                "§7Может перетираться другими плагинами"
-        )));
+                "§7Может перетираться другими плагинами")));
 
         inv.setItem(5, item(Material.OAK_SIGN, "§bSidebar", List.of(
                 "§7Список справа (scoreboard)",
-                "§7Может конфликтовать с другими scoreboard"
-        )));
+                "§7Может конфликтовать с другими scoreboard")));
 
         inv.setItem(7, item(Material.BARRIER, "§cOff", List.of(
-                "§7Скрыть HUD класса"
-        )));
+                "§7Скрыть HUD класса")));
     }
 
     public void open(Player p) {
@@ -57,8 +60,8 @@ public class ClassSettingsMenu implements InventoryHolder {
         ItemStack it = new ItemStack(mat);
         ItemMeta meta = it.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName(name);
-            meta.setLore(lore);
+            meta.displayName(c(name));
+            meta.lore(lore.stream().map(ClassSettingsMenu::c).toList());
             it.setItemMeta(meta);
         }
         return it;

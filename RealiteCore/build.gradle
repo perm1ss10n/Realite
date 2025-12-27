@@ -1,9 +1,9 @@
 plugins {
-    id 'java-library'
+    id 'java'
 }
 
 group = 'ru.realite'
-version = '1.2.3'
+version = '0.1.0'
 
 java {
     toolchain {
@@ -13,11 +13,12 @@ java {
 
 repositories {
     mavenCentral()
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
 }
 
 dependencies {
-    // Ничего paper/spigot сюда не тащим.
-    // Core должен быть "чистым" и переиспользуемым.
+    // Core — это Bukkit/Paper plugin, поэтому API нужно хотя бы compileOnly
+    compileOnly "io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT"
 }
 
 tasks.withType(JavaCompile).configureEach {

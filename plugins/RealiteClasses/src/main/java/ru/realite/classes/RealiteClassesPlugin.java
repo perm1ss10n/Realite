@@ -2,194 +2,165 @@ package ru.realite.classes;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+import ru.realite.core.CoreContext;
+import ru.realite.core.Platform;
+import ru.realite.core.Services;
+
 import ru.realite.classes.command.ClassCommand;
 import ru.realite.classes.gui.ClassSelectMenu;
 import ru.realite.classes.listener.ClassActionXpListener;
 import ru.realite.classes.listener.MenuListener;
 import ru.realite.classes.listener.PlayerJoinListener;
 import ru.realite.classes.listener.PlayerQuitListener;
+
 import ru.realite.classes.service.ClassHudService;
 import ru.realite.classes.service.ClassService;
 import ru.realite.classes.service.EconomyService;
 import ru.realite.classes.service.EffectService;
 import ru.realite.classes.service.EvolutionService;
 import ru.realite.classes.service.ProgressionService;
+
 import ru.realite.classes.storage.ClassConfigRepository;
 import ru.realite.classes.storage.XpConfigRepository;
 import ru.realite.classes.storage.YamlProfileRepository;
+
 import ru.realite.classes.util.Messages;
+
 import java.io.File;
 import java.io.InputStream;
 
 public final class RealiteClassesPlugin extends JavaPlugin {
 
-    private ClassService classService;
+    // ===== Core (вариант 1: Core отдельным плагином) =====
+    private CoreContext core;
+    private Platform platform;
 
-    // держим как поля, чтобы reload работал
+    // ===== configs / util =====
     private Messages messages;
     private ClassConfigRepository classConfig;
     private XpConfigRepository xpConfig;
+
+    // ===== services =====
+    private YamlProfileRepository profiles;
+    private EconomyService economyService;
+    private EvolutionService evolutionService;
+    private ClassService classService;
+    private ProgressionService progressionService;
+    private EffectService effectService;
+    private ClassHudService hudService;
+
+    // ===== gui =====
     private ClassSelectMenu menu;
 
     @Override
     public void onEnable() {
         long start = System.currentTimeMillis();
 
-        // ===== ресурсы и конфиги =====
-        saveDefaultConfig();
+        // --- подключаемся к RealiteCore ---
+        this.core = Services.require(CoreContext.class);
+        this.platform = Services.require(Platform.class);
 
+        // --- resources ---
+        saveDefaultConfig();
         saveIfNotExists("classes.yml");
         saveIfNotExists("xp.yml");
-
-        // локализации
         saveIfNotExists("lang/messages_ru.yml");
         saveIfNotExists("lang/messages_en.yml");
 
-        // ===== ASCII + старт =====
-        getLogger().info("");
-        getLogger().info("§b  ____            _ _ _        _____ _                          ");
-        getLogger().info("§b |  _ \\ ___  __ _| (_) |_ ___ | ____| | __ _ ___ ___  ___  ___ ");
-        getLogger().info("§b | |_) / _ \\/ _` | | | __/ _ \\|  _| | |/ _` / __/ __|/ _ \\/ __|");
-        getLogger().info("§b |  _ <  __/ (_| | | | ||  __/| |___| | (_| \\__ \\__ \\  __/\\__ \\");
-        getLogger().info("§b |_| \\_\\___|\\__,_|_|_|\\__\\___||_____|_|\\__,_|___/___/\\___||___/");
-        getLogger().info("§7 RealiteClasses v" + getDescription().getVersion());
-        getLogger().info("");
+        // --- init ---
+        reloadAll();
 
-        // ===== Vault check =====
-        var vault = getServer().getPluginManager().getPlugin("Vault");
-        if (vault == null || !vault.isEnabled()) {
-            getLogger().warning("Vault не найден или выключен!");
-            getLogger().warning("Экономические функции будут недоступны.");
-            getLogger().warning("Установи Vault + экономику (EssentialsX Economy, CMI, etc).");
-        } else {
-            getLogger().info("Vault найден: §a" + vault.getDescription().getVersion());
+        // --- command ---
+        getCommand("class").setExecutor(
+                new ClassCommand(
+                        this,
+                        classService,
+                        evolutionService,
+                        classConfig,
+                        economyService,
+                        messages,
+                        xpConfig
+                )
+        );
+
+        // --- listeners ---
+        Bukkit.getPluginManager().registerEvents(
+                new MenuListener(classService, classConfig, evolutionService, messages, hudService),
+                this
+        );
+        Bukkit.getPluginManager().registerEvents(new PlayerJoinListener(classService, effectService), this);
+        Bukkit.getPluginManager().registerEvents(new PlayerQuitListener(classService, hudService), this);
+        Bukkit.getPluginManager().registerEvents(new ClassActionXpListener(classService, progressionService, xpConfig), this);
+
+        platform.info("[Classes] Enabled in " + (System.currentTimeMillis() - start) + "ms");
+    }
+
+    @Override
+    public void onDisable() {
+        if (classService != null) {
+            // по твоему ClassService есть saveAll()
+            classService.saveAll();
         }
+        if (platform != null) platform.info("[Classes] Disabled");
+    }
 
-        // ===== репозитории =====
-        YamlProfileRepository profileRepo = new YamlProfileRepository(getDataFolder());
+    /**
+     * Полная перезагрузка всей логики классов
+     */
+    public void reloadAll() {
+        reloadConfig();
 
-        this.classConfig = new ClassConfigRepository(getDataFolder());
-        this.classConfig.reload();
+        File data = getDataFolder();
 
+        // --- messages ---
         String lang = getConfig().getString("lang", "ru");
         this.messages = new Messages(this, lang);
 
-        String changePerm = getConfig().getString(
-                "permissions.change-class",
-                "realiteclass.change");
+        // --- configs ---
+        this.classConfig = new ClassConfigRepository(data);
+        this.xpConfig = new XpConfigRepository(data, getLogger());
 
-        // ===== сервисы =====
-        EvolutionService evolutionService = new EvolutionService(classConfig, changePerm);
-        this.classService = new ClassService(profileRepo, evolutionService);
+        // --- repositories ---
+        this.profiles = new YamlProfileRepository(data);
 
-        EconomyService economy = new EconomyService(this); // сам решит, есть Vault или нет
+        // --- economy ---
+        this.economyService = new EconomyService(this);
 
-        ProgressionService progressionService = new ProgressionService(
-                classService,
-                classConfig,
-                evolutionService,
-                messages);
+        // --- evolution (по сигнатуре: только config + permission) ---
+        String changePermission = getConfig().getString("change-class-permission", "realite.classes.change");
+        this.evolutionService = new EvolutionService(classConfig, changePermission);
 
-        this.xpConfig = new XpConfigRepository(getDataFolder(), getLogger());
+        // --- class service (по сигнатуре: repo + evolutionService) ---
+        this.classService = new ClassService(profiles, evolutionService);
 
-        ClassHudService hudService = new ClassHudService(
-                classService,
-                classConfig,
-                evolutionService);
+        // --- progression (по сигнатуре) ---
+        this.progressionService = new ProgressionService(classService, classConfig, evolutionService, messages);
 
-        Bukkit.getScheduler().runTaskTimer(this, () -> {
-            for (var p : Bukkit.getOnlinePlayers()) {
-                hudService.tick(p);
-            }
-        }, 20L, 20L);
+        // --- effects (по сигнатуре) ---
+        boolean clearManaged = getConfig().getBoolean("clear-managed-effects", true);
+        this.effectService = new EffectService(classService, classConfig, clearManaged);
 
-        // ===== эффекты =====
-        int tickSeconds = getConfig().getInt("effects.tick-seconds", 5);
-        boolean clearManaged = getConfig().getBoolean("effects.clear-managed-effects", true);
+        // --- HUD (по сигнатуре) ---
+        this.hudService = new ClassHudService(classService, classConfig, evolutionService);
 
-        EffectService effectService = new EffectService(
-                classService,
-                classConfig,
-                clearManaged);
-
-        getServer().getScheduler().runTaskTimer(
-                this,
-                () -> getServer().getOnlinePlayers().forEach(effectService::applyFor),
-                20L,
-                tickSeconds * 20L);
-
-        // ===== GUI =====
+        // --- menu (по сигнатуре: plugin + classConfig) ---
         this.menu = new ClassSelectMenu(this, classConfig);
 
-        // ===== команды =====
-        if (getCommand("class") != null) {
-            getCommand("class").setExecutor(new ClassCommand(
-                    this,
-                    classService,
-                    evolutionService,
-                    classConfig,
-                    economy,
-                    messages,
-                    xpConfig));
-        } else {
-            getLogger().severe("Command /class is not defined in plugin.yml!");
-        }
-
-        // ===== листенеры =====
-        getServer().getPluginManager().registerEvents(
-                new MenuListener(classService, classConfig, evolutionService, messages, hudService),
-                this);
-
-        getServer().getPluginManager().registerEvents(
-                new PlayerJoinListener(classService),
-                this);
-
-        getServer().getPluginManager().registerEvents(
-                new PlayerQuitListener(classService, hudService),
-                this);
-
-        getServer().getPluginManager().registerEvents(
-                new ClassActionXpListener(classService, progressionService, xpConfig),
-                this);
-
-        // ===== автосейв =====
-        int autosaveMinutes = getConfig().getInt("storage.autosave-minutes", 5);
-        if (autosaveMinutes > 0) {
-            long period = autosaveMinutes * 60L * 20L;
-            getServer().getScheduler().runTaskTimer(this, () -> {
-                try {
-                    classService.saveAll();
-                } catch (Exception e) {
-                    getLogger().log(java.util.logging.Level.SEVERE, "AutoSave failed", e);
-                }
-            }, period, period);
-        }
-
-        long took = System.currentTimeMillis() - start;
-        getLogger().info("§aRealiteClasses успешно запущен. §7(" + took + "ms)");
-        getLogger().info("");
+        platform.info("[Classes] reloadAll completed");
     }
 
-    public void reloadAll() {
-        /**
-         * Перезагрузка всех конфигов (messages/classes/xp + config.yml).
-         * Важно: menu пересоздаем, чтобы обновились иконки/лоры.
-         */
-        reloadConfig();
+    // ===== getters (то, что реально используется из других классов) =====
 
-        if (classConfig != null)
-            classConfig.reload();
-        if (messages != null)
-            messages.reload(getConfig().getString("lang", "ru"));
-        if (xpConfig != null)
-            xpConfig.reload();
-
-        // пересоздаем меню, потому что оно строится на classConfig
-        this.menu = new ClassSelectMenu(this, classConfig);
+    public ClassService getClassService() {
+        return classService;
     }
 
     public Messages getMessages() {
         return messages;
+    }
+
+    public ClassSelectMenu getMenu() {
+        return menu;
     }
 
     public ClassConfigRepository getClassConfig() {
@@ -200,17 +171,35 @@ public final class RealiteClassesPlugin extends JavaPlugin {
         return xpConfig;
     }
 
-    public ClassSelectMenu getMenu() {
-        return menu;
+    public EconomyService getEconomyService() {
+        return economyService;
     }
+
+    public EvolutionService getEvolutionService() {
+        return evolutionService;
+    }
+
+    public ProgressionService getProgressionService() {
+        return progressionService;
+    }
+
+    public CoreContext core() {
+        return core;
+    }
+
+    public Platform platform() {
+        return platform;
+    }
+
+    // ===== utils =====
 
     private void saveIfNotExists(String resourcePath) {
         try {
             File out = new File(getDataFolder(), resourcePath);
-            if (out.exists())
-                return;
+            if (out.exists()) return;
 
-            // если ресурса нет в JAR — не падаем
+            out.getParentFile().mkdirs();
+
             try (InputStream in = getResource(resourcePath)) {
                 if (in == null) {
                     getLogger().warning("Resource not found in jar: " + resourcePath);
@@ -222,13 +211,5 @@ public final class RealiteClassesPlugin extends JavaPlugin {
         } catch (Exception e) {
             getLogger().warning("Failed to save resource: " + resourcePath + " (" + e.getMessage() + ")");
         }
-    }
-
-    @Override
-    public void onDisable() {
-        if (classService != null) {
-            classService.saveAll();
-        }
-        getLogger().info("RealiteClasses disabled.");
     }
 }

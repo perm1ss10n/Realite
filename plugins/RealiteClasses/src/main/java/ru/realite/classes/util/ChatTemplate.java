@@ -1,13 +1,15 @@
 package ru.realite.classes.util;
 
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
 
 public final class ChatTemplate {
+
+    private static final LegacyComponentSerializer LEGACY_AMP = LegacyComponentSerializer.legacyAmpersand();
+    private static final LegacyComponentSerializer LEGACY_SEC = LegacyComponentSerializer.legacySection();
 
     private ChatTemplate() {}
 
@@ -21,7 +23,12 @@ public final class ChatTemplate {
                                          String template,
                                          Map<String, String> vars,
                                          String itemsKey,
-                                         BaseComponent itemsComponent) {
+                                         Component itemsComponent) {
+
+        if (player == null || template == null) return;
+        if (itemsKey == null || itemsKey.isBlank()) itemsKey = "{items}";
+        if (vars == null) vars = Map.of();
+        if (itemsComponent == null) itemsComponent = Component.empty();
 
         String marker = "__ITEMS__MARKER__";
 
@@ -30,22 +37,30 @@ public final class ChatTemplate {
 
         // 2) подставляем остальные переменные
         for (var e : vars.entrySet()) {
-            s = s.replace("{" + e.getKey() + "}", e.getValue());
+            s = s.replace("{" + e.getKey() + "}", String.valueOf(e.getValue()));
         }
 
-        // 3) режем по marker и склеиваем компонентами
+        // 3) режем по marker и склеиваем Component’ами
         String[] parts = s.split(marker, -1);
 
-        TextComponent msg = new TextComponent("");
+        Component msg = Component.empty();
         for (int i = 0; i < parts.length; i++) {
             if (!parts[i].isEmpty()) {
-                msg.addExtra(new TextComponent(ChatColor.translateAlternateColorCodes('&', parts[i])));
+                // поддерживаем и & и § на всякий случай
+                Component part = deserializeLegacy(parts[i]);
+                msg = msg.append(part);
             }
             if (i < parts.length - 1) {
-                msg.addExtra(itemsComponent);
+                msg = msg.append(itemsComponent);
             }
         }
 
-        player.spigot().sendMessage(msg);
+        player.sendMessage(msg);
+    }
+
+    private static Component deserializeLegacy(String text) {
+        // если кто-то передал уже '§' — тоже переварим
+        if (text.indexOf('§') >= 0) return LEGACY_SEC.deserialize(text);
+        return LEGACY_AMP.deserialize(text);
     }
 }

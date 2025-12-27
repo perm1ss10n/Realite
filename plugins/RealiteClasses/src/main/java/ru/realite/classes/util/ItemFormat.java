@@ -1,5 +1,7 @@
 package ru.realite.classes.util;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -12,6 +14,8 @@ import java.util.stream.Collectors;
 
 public final class ItemFormat {
 
+    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
+
     private ItemFormat() {}
 
     /** Красивое имя предмета: кастомное displayName -> I18N name (если есть) -> из MATERIAL_ENUM */
@@ -21,9 +25,15 @@ public final class ItemFormat {
         ItemStack stack = new ItemStack(material);
         ItemMeta meta = stack.getItemMeta();
 
-        // 1) Если у предмета есть displayName (обычно не будет для ванильных, но пусть будет)
-        if (meta != null && meta.hasDisplayName()) {
-            return stripColor(meta.getDisplayName());
+        // 1) Если у предмета есть displayName (Adventure Component)
+        if (meta != null) {
+            Component dn = meta.displayName();
+            if (dn != null) {
+                String s = LEGACY.serialize(dn);
+                if (s != null && !s.isBlank()) {
+                    return stripColor(s);
+                }
+            }
         }
 
         // 2) Попробуем ItemStack#getI18NDisplayName() (есть в CraftBukkit/Paper, но не везде)

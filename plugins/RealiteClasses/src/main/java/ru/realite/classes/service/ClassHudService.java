@@ -10,6 +10,7 @@ import org.bukkit.scoreboard.*;
 import ru.realite.classes.model.HudMode;
 import ru.realite.classes.model.PlayerProfile;
 import ru.realite.classes.storage.ClassConfigRepository;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,8 +25,8 @@ public class ClassHudService {
     private final Map<UUID, BossBar> bossBars = new HashMap<>();
 
     public ClassHudService(ClassService classService,
-                           ClassConfigRepository classConfig,
-                           EvolutionService evolutionService) {
+            ClassConfigRepository classConfig,
+            EvolutionService evolutionService) {
         this.classService = classService;
         this.classConfig = classConfig;
         this.evolutionService = evolutionService;
@@ -92,7 +93,8 @@ public class ClassHudService {
 
         bar.setTitle(title);
         bar.setProgress(clamp(progress01));
-        if (!bar.getPlayers().contains(p)) bar.addPlayer(p);
+        if (!bar.getPlayers().contains(p))
+            bar.addPlayer(p);
         bar.setVisible(true);
     }
 
@@ -113,12 +115,14 @@ public class ClassHudService {
         p.sendActionBar(Component.empty());
     }
 
-    private void showSidebar(Player p, PlayerProfile prof, String className, String evoRoman, long inLevel, int xpPerLevel) {
-        // ВАЖНО: если у тебя другой плагин держит scoreboard — будет конфликт.
-        // Пока ок, для MVP.
+    private void showSidebar(Player p, PlayerProfile prof, String className, String evoRoman, long inLevel,
+            int xpPerLevel) {
         Scoreboard sb = Bukkit.getScoreboardManager().getNewScoreboard();
-        Objective obj = sb.registerNewObjective("realiteclass", "dummy", Component.text("§6§lКласс"));
-        obj.setDisplaySlot(DisplaySlot.SIDEBAR);
+        Objective obj = sb.registerNewObjective(
+                "realiteclass",
+                Criteria.DUMMY,
+                LegacyComponentSerializer.legacySection().deserialize("§6§lКласс"),
+                RenderType.INTEGER);
 
         setLine(obj, 6, "§7Класс: §e" + className);
         setLine(obj, 5, "§7Эволюция: §a(" + evoRoman + ")");
@@ -145,8 +149,10 @@ public class ClassHudService {
     }
 
     private static double clamp(double v) {
-        if (v < 0) return 0;
-        if (v > 1) return 1;
+        if (v < 0)
+            return 0;
+        if (v > 1)
+            return 1;
         return v;
     }
 

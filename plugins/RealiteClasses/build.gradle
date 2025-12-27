@@ -20,12 +20,10 @@ repositories {
 
 dependencies {
     compileOnly "io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT"
-
-    // Vault API только для компиляции
     compileOnly "com.github.MilkBowl:VaultAPI:1.7"
 
-    // ВАЖНО: Core как implementation, и мы его зашьём в jar через shadow
-    implementation project(":RealiteCore")
+    // Вариант 1: Core отдельным плагином. Только для компиляции!
+    compileOnly project(":RealiteCore")
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -33,15 +31,13 @@ tasks.withType(JavaCompile).configureEach {
     options.release = 21
 }
 
-// Чтобы итоговый jar был именно "fat/shaded"
+// Собираем именно shadowJar как итоговый артефакт
 tasks.jar {
     enabled = false
 }
 
 tasks.shadowJar {
-    archiveClassifier.set("") // чтобы файл был без "-all"
-    // relocation пока не нужен, т.к. это твои пакеты ru.realite.*
-    // Если позже будешь тащить внешние либы в Core — тогда релокации добавим.
+    archiveClassifier.set("") // без "-all"
 }
 
 tasks.build {

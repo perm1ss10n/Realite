@@ -221,7 +221,6 @@ public class ClassConfigRepository {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private static Map<?, ?> map(Object o) {
         if (o instanceof Map<?, ?> m)
             return m;
