@@ -3,6 +3,7 @@ package ru.realite.core.impl;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.core.api.CoreApi;
+import ru.realite.core.api.ConfigService;
 import ru.realite.core.api.EventBus;
 import ru.realite.core.api.Module;
 import ru.realite.core.api.ModuleId;
@@ -12,6 +13,7 @@ import ru.realite.core.api.ModuleProvider;
 import ru.realite.core.api.Platform;
 import ru.realite.core.api.Scheduler;
 import ru.realite.core.api.Services;
+import ru.realite.core.api.StorageService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -60,12 +62,16 @@ public final class RealiteCorePlugin extends JavaPlugin {
         try {
             services.register(Platform.class, platform);
             services.register(CoreApi.class, core);
+            services.register(ConfigService.class, new ConfigServiceImpl(platform));
+            services.register(StorageService.class, new StorageServiceImpl(platform));
         } catch (Exception e) {
             // если вдруг при /reload что-то осталось
             platform.warn("Services already had some entries. Clearing and re-registering...");
             services.clear();
             services.register(Platform.class, platform);
             services.register(CoreApi.class, core);
+            services.register(ConfigService.class, new ConfigServiceImpl(platform));
+            services.register(StorageService.class, new StorageServiceImpl(platform));
         }
 
         getServer().getServicesManager()
