@@ -1,0 +1,21 @@
+# Default limits for city plots
+limits:
+  defaultPlotsPerPlayer: 3
+
+# Storage settings
+storage:
+  sqliteFile: "city.sqlite"
+
+logging:
+  debug: false
+
+# Future city area behavior
+cityArea:
+  defaultDeny: true
+
+plots:
+  types:
+    home:
+      enabled: true
+    shop:
+      enabled: true
