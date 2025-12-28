@@ -3,7 +3,7 @@ package ru.realite.core.impl;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.ServerLoadEvent;
-import org.bukkit.plugin.HandlerList;
+import org.bukkit.event.HandlerList;
 import ru.realite.core.api.ModuleManager;
 import ru.realite.core.api.Platform;
 
