@@ -8,6 +8,7 @@ import ru.realite.core.api.ModuleManager;
 import ru.realite.core.api.ModuleMetadata;
 import ru.realite.core.api.ModuleState;
 import ru.realite.core.api.Platform;
+import ru.realite.core.api.StorageService;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -160,6 +161,10 @@ public final class ModuleManagerImpl implements ModuleManager {
             disableModule(id);
         }
         enabledOrder.clear();
+        StorageService storageService = core.services().get(StorageService.class);
+        if (storageService != null) {
+            storageService.shutdown();
+        }
     }
 
     @Override
