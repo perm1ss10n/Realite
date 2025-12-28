@@ -43,6 +43,13 @@ public final class ModuleManagerImpl implements ModuleManager {
         this.log = core.platform();
     }
 
+    void registerFailed(ModuleMetadata metadata, String reason, Exception e) {
+        Objects.requireNonNull(metadata, "metadata");
+        ModuleId id = Objects.requireNonNull(metadata.id(), "metadata.id()");
+        modulesById.putIfAbsent(id, new FailedModule(metadata));
+        markFailed(id, reason, e);
+    }
+
     @Override
     public void register(Module module) {
         Objects.requireNonNull(module, "module");
@@ -278,5 +285,33 @@ public final class ModuleManagerImpl implements ModuleManager {
     private void markFailed(ModuleId id, String reason, Exception e) {
         log.error("Module failed: " + id + ". " + reason, e);
         states.put(id, ModuleState.FAILED);
+    }
+
+    private static final class FailedModule implements Module {
+        private final ModuleMetadata metadata;
+
+        private FailedModule(ModuleMetadata metadata) {
+            this.metadata = metadata;
+        }
+
+        @Override
+        public ModuleMetadata metadata() {
+            return metadata;
+        }
+
+        @Override
+        public void onLoad(ModuleContext ctx) {
+            // no-op
+        }
+
+        @Override
+        public void onEnable(ModuleContext ctx) {
+            // no-op
+        }
+
+        @Override
+        public void onDisable(ModuleContext ctx) {
+            // no-op
+        }
     }
 }
