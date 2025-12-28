@@ -3,12 +3,12 @@ package ru.realite.core.impl;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
-import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.CoreModuleEntrypoint;
 import ru.realite.core.api.Module;
+import ru.realite.core.api.ModuleContext;
+import ru.realite.core.api.ModuleMetadata;
 import ru.realite.core.api.Platform;
 
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -16,52 +16,33 @@ import java.util.Objects;
  */
 public final class BukkitPluginModuleAdapter implements Module {
 
-    private final String moduleId;
+    private final ModuleMetadata metadata;
     private final String pluginName;
-    private final List<String> dependsOn;
     private Module delegate;
-    private boolean enabled;
 
-    public BukkitPluginModuleAdapter(String moduleId, String pluginName, List<String> dependsOn) {
-        this.moduleId = Objects.requireNonNull(moduleId, "moduleId");
+    public BukkitPluginModuleAdapter(ModuleMetadata metadata, String pluginName) {
+        this.metadata = Objects.requireNonNull(metadata, "metadata");
         this.pluginName = Objects.requireNonNull(pluginName, "pluginName");
-        this.dependsOn = List.copyOf(Objects.requireNonNull(dependsOn, "dependsOn"));
-        if (moduleId.isBlank()) {
-            throw new IllegalArgumentException("moduleId is blank");
-        }
         if (pluginName.isBlank()) {
             throw new IllegalArgumentException("pluginName is blank");
         }
     }
 
     @Override
-    public String id() {
-        return moduleId;
+    public ModuleMetadata metadata() {
+        return metadata;
     }
 
     @Override
-    public List<String> dependsOn() {
-        return dependsOn;
-    }
-
-    @Override
-    public void onEnable(CoreApi core) throws Exception {
-        if (enabled) {
-            core.platform().warn("Module adapter '" + moduleId + "' is already enabled.");
+    public void onLoad(ModuleContext ctx) throws Exception {
+        if (delegate != null) {
             return;
         }
-        Platform log = core.platform();
+        Platform log = ctx.logger();
         PluginManager pluginManager = Bukkit.getPluginManager();
         Plugin plugin = pluginManager.getPlugin(pluginName);
         if (plugin == null) {
             throw new IllegalStateException("Plugin not found: " + pluginName);
-        }
-
-        if (!plugin.isEnabled()) {
-            throw new IllegalStateException(
-                    "Plugin '" + pluginName + "' is not enabled for module '" + moduleId + "'. " +
-                            "Enable the plugin before activating this module."
-            );
         }
 
         if (!(plugin instanceof CoreModuleEntrypoint entrypoint)) {
@@ -73,17 +54,34 @@ public final class BukkitPluginModuleAdapter implements Module {
             throw new IllegalStateException("Entrypoint module is null for plugin '" + pluginName + "'");
         }
 
+        if (!module.metadata().id().equals(metadata.id())) {
+            log.warn("Module metadata mismatch for plugin '" + pluginName + "': adapter="
+                    + metadata.id() + ", module=" + module.metadata().id());
+        }
+
         this.delegate = module;
-        module.onEnable(core);
-        enabled = true;
+        delegate.onLoad(ctx);
     }
 
     @Override
-    public void onDisable() throws Exception {
-        if (!enabled || delegate == null) {
+    public void onEnable(ModuleContext ctx) throws Exception {
+        if (delegate == null) {
+            onLoad(ctx);
+        }
+        Plugin plugin = Bukkit.getPluginManager().getPlugin(pluginName);
+        if (plugin == null || !plugin.isEnabled()) {
+            throw new IllegalStateException(
+                    "Plugin '" + pluginName + "' is not enabled for module '" + metadata.id() + "'."
+            );
+        }
+        delegate.onEnable(ctx);
+    }
+
+    @Override
+    public void onDisable(ModuleContext ctx) throws Exception {
+        if (delegate == null) {
             return;
         }
-        delegate.onDisable();
-        enabled = false;
+        delegate.onDisable(ctx);
     }
 }

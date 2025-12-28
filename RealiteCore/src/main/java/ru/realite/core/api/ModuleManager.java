@@ -8,11 +8,17 @@ import java.util.Collection;
 public interface ModuleManager {
     void register(Module module);
 
-    Module get(String id);
-
-    Collection<Module> all();
+    void loadAll();
 
     void enableAll();
 
     void disableAll();
+
+    void enable(ModuleId id);
+
+    void disable(ModuleId id);
+
+    ModuleState state(ModuleId id);
+
+    Collection<Module> modules();
 }

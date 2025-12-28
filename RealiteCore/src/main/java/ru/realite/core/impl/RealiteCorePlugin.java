@@ -4,10 +4,14 @@ import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.EventBus;
+import ru.realite.core.api.ModuleId;
 import ru.realite.core.api.ModuleManager;
+import ru.realite.core.api.ModuleMetadata;
 import ru.realite.core.api.Platform;
 import ru.realite.core.api.Scheduler;
 import ru.realite.core.api.Services;
+
+import java.util.Set;
 
 /**
  * Главный плагин ядра.
@@ -93,14 +97,22 @@ public final class RealiteCorePlugin extends JavaPlugin {
 
     private void registerBuiltinModules() {
         modules.register(new BukkitPluginModuleAdapter(
-                "classes",
-                "RealiteClasses",
-                java.util.List.of()
+                new ModuleMetadata(
+                        new ModuleId("realite-classes"),
+                        "RealiteClasses",
+                        getDescription().getVersion(),
+                        Set.of()
+                ),
+                "RealiteClasses"
         ));
         modules.register(new BukkitPluginModuleAdapter(
-                "quests",
-                "RealiteQuests",
-                java.util.List.of("classes")
+                new ModuleMetadata(
+                        new ModuleId("realite-quests"),
+                        "RealiteQuests",
+                        getDescription().getVersion(),
+                        Set.of()
+                ),
+                "RealiteQuests"
         ));
     }
 
