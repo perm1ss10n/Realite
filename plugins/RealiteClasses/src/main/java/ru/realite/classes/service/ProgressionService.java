@@ -2,13 +2,13 @@ package ru.realite.classes.service;
 
 import org.bukkit.entity.Player;
 import ru.realite.classes.core.CoreAccess;
-import ru.realite.classes.event.ClassLevelUpEvent;
 import ru.realite.classes.event.EvolutionUnlockedEvent;
 import ru.realite.classes.model.PlayerProfile;
 import ru.realite.classes.storage.ClassConfigRepository;
 import ru.realite.classes.util.Messages;
 import ru.realite.classes.util.ChatTemplate;
 import ru.realite.classes.util.ItemComponents;
+import ru.realite.core.api.events.ClassLevelUpEvent;
 
 import java.util.Map;
 
@@ -58,7 +58,7 @@ public class ProgressionService {
         if (newLevel != oldLevel) {
             p.setClassLevel(newLevel);
             CoreAccess.core().events().publish(
-                    new ClassLevelUpEvent(player.getUniqueId(), p.getClassId(), newLevel));
+                    new ClassLevelUpEvent(player.getUniqueId(), p.getClassId().name(), newLevel));
 
             // перманентный прогресс по уровню (на будущее)
             int prevMax = p.getMaxLevelByClass().getOrDefault(p.getClassId().name(), 0);

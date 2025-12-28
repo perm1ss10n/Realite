@@ -1,0 +1,7 @@
+name: RealiteQuests
+version: 1.0.0
+main: ru.realite.quests.RealiteQuestsPlugin
+api-version: "1.21"
+
+depend:
+  - RealiteCore

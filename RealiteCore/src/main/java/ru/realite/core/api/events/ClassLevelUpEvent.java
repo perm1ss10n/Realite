@@ -1,17 +1,14 @@
-package ru.realite.classes.event;
-
-import ru.realite.classes.model.ClassId;
-import ru.realite.core.api.events.CoreEvent;
+package ru.realite.core.api.events;
 
 import java.util.Objects;
 import java.util.UUID;
 
 public final class ClassLevelUpEvent implements CoreEvent {
     private final UUID playerUuid;
-    private final ClassId classId;
+    private final String classId;
     private final int newLevel;
 
-    public ClassLevelUpEvent(UUID playerUuid, ClassId classId, int newLevel) {
+    public ClassLevelUpEvent(UUID playerUuid, String classId, int newLevel) {
         this.playerUuid = Objects.requireNonNull(playerUuid, "playerUuid");
         this.classId = Objects.requireNonNull(classId, "classId");
         this.newLevel = newLevel;
@@ -21,7 +18,7 @@ public final class ClassLevelUpEvent implements CoreEvent {
         return playerUuid;
     }
 
-    public ClassId classId() {
+    public String classId() {
         return classId;
     }
 

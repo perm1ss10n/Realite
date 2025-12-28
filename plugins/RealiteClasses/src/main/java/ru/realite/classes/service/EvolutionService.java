@@ -3,12 +3,12 @@ package ru.realite.classes.service;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import ru.realite.classes.core.CoreAccess;
-import ru.realite.classes.event.EvolutionCompletedEvent;
 import ru.realite.classes.model.ClassId;
 import ru.realite.classes.model.EvolutionDef;
 import ru.realite.classes.model.ItemAmount;
 import ru.realite.classes.model.PlayerProfile;
 import ru.realite.classes.storage.ClassConfigRepository;
+import ru.realite.core.api.events.EvolutionCompletedEvent;
 
 import java.util.List;
 
@@ -50,7 +50,7 @@ public class EvolutionService {
         profile.setEvolutionRewardTaken(false);
 
         CoreAccess.core().events().publish(
-                new EvolutionCompletedEvent(player.getUniqueId(), profile.getClassId(), next.id));
+                new EvolutionCompletedEvent(player.getUniqueId(), profile.getClassId().name(), next.id));
 
         // если это последняя эволюция — помечаем класс как пройденный до конца
         // (mastered)
