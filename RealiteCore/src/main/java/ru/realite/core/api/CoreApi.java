@@ -10,5 +10,7 @@ public interface CoreApi {
 
     Services services();
 
+    EventBus events();
+
     Path dataDirectory();
 }
