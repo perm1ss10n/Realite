@@ -65,9 +65,10 @@ public final class RealiteCorePlugin extends JavaPlugin {
         // Пока регистрация ручная (чтобы не усложнять).
         // Позже сделаем автопоиск через ServiceLoader.
         registerBuiltinModules();
-
-        // 5) Enable all modules
-        modules.enableAll();
+        getServer().getPluginManager().registerEvents(
+                new ServerLoadModuleEnableListener(modules, core.platform()),
+                this
+        );
     }
 
     @Override
