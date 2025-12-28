@@ -3,8 +3,10 @@ package ru.realite.core.impl;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.core.api.CoreApi;
+import ru.realite.core.api.EventBus;
 import ru.realite.core.api.ModuleManager;
 import ru.realite.core.api.Platform;
+import ru.realite.core.api.Scheduler;
 import ru.realite.core.api.Services;
 
 /**
@@ -28,7 +30,9 @@ public final class RealiteCorePlugin extends JavaPlugin {
     public void onEnable() {
         // 1) Platform
         Platform platform = new PaperPlatform(this);
-        this.services = new ServicesImpl();
+        Scheduler scheduler = new BukkitSchedulerFacade(this);
+        this.services = new ServicesImpl(scheduler);
+        EventBus eventBus = new SimpleEventBus(platform);
 
         // 2) Data folder
         saveDefaultConfig(); // если нет config.yml, не упадёт, просто создаст папку
@@ -39,7 +43,7 @@ public final class RealiteCorePlugin extends JavaPlugin {
         }
 
         // 3) Context + Services
-        this.core = new CoreContext(this, platform, services);
+        this.core = new CoreContext(this, platform, services, eventBus);
 
         // Если используете Services как глобальный реестр — можно зарегистрировать базовые вещи:
         // (Если у тебя Services как я предлагал — с запретом перезаписи — это безопасно)

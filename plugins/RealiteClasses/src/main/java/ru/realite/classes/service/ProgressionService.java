@@ -1,6 +1,9 @@
 package ru.realite.classes.service;
 
 import org.bukkit.entity.Player;
+import ru.realite.classes.core.CoreAccess;
+import ru.realite.classes.event.ClassLevelUpEvent;
+import ru.realite.classes.event.EvolutionUnlockedEvent;
 import ru.realite.classes.model.PlayerProfile;
 import ru.realite.classes.storage.ClassConfigRepository;
 import ru.realite.classes.util.Messages;
@@ -54,6 +57,8 @@ public class ProgressionService {
 
         if (newLevel != oldLevel) {
             p.setClassLevel(newLevel);
+            CoreAccess.core().events().publish(
+                    new ClassLevelUpEvent(player.getUniqueId(), p.getClassId(), newLevel));
 
             // перманентный прогресс по уровню (на будущее)
             int prevMax = p.getMaxLevelByClass().getOrDefault(p.getClassId().name(), 0);
@@ -67,6 +72,8 @@ public class ProgressionService {
         if (next != null && !p.isEvolutionNotified()) {
 
             if (oldLevel < next.requiredLevel && newLevel >= next.requiredLevel) {
+                CoreAccess.core().events().publish(
+                        new EvolutionUnlockedEvent(player.getUniqueId(), p.getClassId(), next.id));
 
                 String moneyText = (next.costMoney > 0) ? ("$" + (long) next.costMoney) : "0$";
 

@@ -4,6 +4,8 @@ package ru.realite.core.api;
  * Контракт реестра сервисов.
  */
 public interface Services {
+    Scheduler scheduler();
+
     <T> void register(Class<T> type, T impl);
 
     <T> boolean registerIfAbsent(Class<T> type, T impl);
