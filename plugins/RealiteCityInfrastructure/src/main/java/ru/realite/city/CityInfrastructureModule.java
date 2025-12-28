@@ -1,5 +1,13 @@
 package ru.realite.city;
 
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.Plugin;
+import ru.realite.city.command.CityCommand;
+import ru.realite.city.listener.CityAreaSelectionListener;
+import ru.realite.city.listener.CityProtectionListener;
+import ru.realite.city.service.CityAreaSelectionService;
+import ru.realite.city.service.CityProtectionService;
+import ru.realite.city.storage.SqliteCityAreaRepository;
 import ru.realite.core.api.Config;
 import ru.realite.core.api.Module;
 import ru.realite.core.api.ModuleContext;
@@ -23,6 +31,9 @@ public final class CityInfrastructureModule implements Module {
     private Storage storage;
     private CityConfig config;
     private CityDatabase database;
+    private SqliteCityAreaRepository cityAreaRepository;
+    private CityAreaSelectionService selectionService;
+    private CityProtectionService protectionService;
 
     @Override
     public ModuleMetadata metadata() {
@@ -55,7 +66,41 @@ public final class CityInfrastructureModule implements Module {
 
     @Override
     public void onEnable(ModuleContext ctx) {
+        cityAreaRepository = new SqliteCityAreaRepository(storage);
+        int loaded = 0;
+        try {
+            loaded = cityAreaRepository.loadAll();
+        } catch (Exception e) {
+            ctx.logger().error("[CityInfrastructure] Failed to load city areas", e);
+        }
+
+        selectionService = new CityAreaSelectionService();
+        protectionService = new CityProtectionService(config, cityAreaRepository);
+
+        Plugin plugin = Bukkit.getPluginManager().getPlugin("RealiteCityInfrastructure");
+        if (plugin == null) {
+            ctx.logger().warn("[CityInfrastructure] Plugin RealiteCityInfrastructure not found; "
+                    + "commands and listeners were not registered.");
+        } else {
+            Bukkit.getPluginManager().registerEvents(
+                    new CityAreaSelectionListener(selectionService),
+                    plugin
+            );
+            Bukkit.getPluginManager().registerEvents(
+                    new CityProtectionListener(protectionService),
+                    plugin
+            );
+            if (plugin.getCommand("city") != null) {
+                plugin.getCommand("city").setExecutor(
+                        new CityCommand(cityAreaRepository, selectionService)
+                );
+            } else {
+                ctx.logger().warn("[CityInfrastructure] Command 'city' is not defined in plugin.yml");
+            }
+        }
+
         ctx.logger().info("[CityInfrastructure] CityInfrastructure enabled");
+        ctx.logger().info("[CityInfrastructure] Loaded " + loaded + " city areas");
     }
 
     @Override

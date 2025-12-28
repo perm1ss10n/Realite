@@ -12,6 +12,7 @@ logging:
 # Future city area behavior
 cityArea:
   defaultDeny: true
+  bypassPermission: "realite.city.bypass"
 
 plots:
   types:

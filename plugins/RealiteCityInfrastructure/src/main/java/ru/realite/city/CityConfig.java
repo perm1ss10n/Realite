@@ -7,6 +7,7 @@ public record CityConfig(
         String sqliteFile,
         boolean debug,
         boolean cityAreaDefaultDeny,
+        String cityAreaBypassPermission,
         boolean homePlotsEnabled,
         boolean shopPlotsEnabled
 ) {
@@ -15,6 +16,10 @@ public record CityConfig(
         String sqliteFile = config.getString("storage.sqliteFile", "city.sqlite");
         boolean debug = config.getBoolean("logging.debug", false);
         boolean cityAreaDefaultDeny = config.getBoolean("cityArea.defaultDeny", true);
+        String cityAreaBypassPermission = config.getString(
+                "cityArea.bypassPermission",
+                "realite.city.bypass"
+        );
         boolean homePlotsEnabled = config.getBoolean("plots.types.home.enabled", true);
         boolean shopPlotsEnabled = config.getBoolean("plots.types.shop.enabled", true);
         return new CityConfig(
@@ -22,6 +27,7 @@ public record CityConfig(
                 sqliteFile,
                 debug,
                 cityAreaDefaultDeny,
+                cityAreaBypassPermission,
                 homePlotsEnabled,
                 shopPlotsEnabled
         );
