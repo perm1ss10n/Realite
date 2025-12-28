@@ -97,6 +97,11 @@ public final class RealiteCorePlugin extends JavaPlugin {
                 "RealiteClasses",
                 java.util.List.of()
         ));
+        modules.register(new BukkitPluginModuleAdapter(
+                "quests",
+                "RealiteQuests",
+                java.util.List.of("classes")
+        ));
     }
 
     public CoreApi core() {

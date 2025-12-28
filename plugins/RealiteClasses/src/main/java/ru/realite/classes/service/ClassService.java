@@ -2,10 +2,10 @@ package ru.realite.classes.service;
 
 import org.bukkit.entity.Player;
 import ru.realite.classes.core.CoreAccess;
-import ru.realite.classes.event.ClassSelectedEvent;
 import ru.realite.classes.model.ClassId;
 import ru.realite.classes.model.PlayerProfile;
 import ru.realite.classes.storage.YamlProfileRepository;
+import ru.realite.core.api.events.ClassSelectedEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -78,6 +78,6 @@ public class ClassService {
 
         save(p);
 
-        CoreAccess.core().events().publish(new ClassSelectedEvent(player.getUniqueId(), newClass));
+        CoreAccess.core().events().publish(new ClassSelectedEvent(player.getUniqueId(), newClass.name()));
     }
 }

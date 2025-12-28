@@ -1,17 +1,14 @@
-package ru.realite.classes.event;
-
-import ru.realite.classes.model.ClassId;
-import ru.realite.core.api.events.CoreEvent;
+package ru.realite.core.api.events;
 
 import java.util.Objects;
 import java.util.UUID;
 
 public final class EvolutionCompletedEvent implements CoreEvent {
     private final UUID playerUuid;
-    private final ClassId classId;
+    private final String classId;
     private final String evolutionId;
 
-    public EvolutionCompletedEvent(UUID playerUuid, ClassId classId, String evolutionId) {
+    public EvolutionCompletedEvent(UUID playerUuid, String classId, String evolutionId) {
         this.playerUuid = Objects.requireNonNull(playerUuid, "playerUuid");
         this.classId = Objects.requireNonNull(classId, "classId");
         this.evolutionId = Objects.requireNonNull(evolutionId, "evolutionId");
@@ -21,7 +18,7 @@ public final class EvolutionCompletedEvent implements CoreEvent {
         return playerUuid;
     }
 
-    public ClassId classId() {
+    public String classId() {
         return classId;
     }
 
