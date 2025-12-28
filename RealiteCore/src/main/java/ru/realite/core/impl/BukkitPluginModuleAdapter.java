@@ -58,8 +58,10 @@ public final class BukkitPluginModuleAdapter implements Module {
         }
 
         if (!plugin.isEnabled()) {
-            log.info("Enabling Bukkit plugin '" + pluginName + "' for module '" + moduleId + "'");
-            pluginManager.enablePlugin(plugin);
+            throw new IllegalStateException(
+                    "Plugin '" + pluginName + "' is not enabled for module '" + moduleId + "'. " +
+                            "Enable the plugin before activating this module."
+            );
         }
 
         if (!(plugin instanceof CoreModuleEntrypoint entrypoint)) {

@@ -56,14 +56,16 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
     private boolean initialized;
     private boolean shuttingDown;
 
-    @Override
-    public void onEnable() {
-        try {
-            initialize(ru.realite.classes.core.CoreAccess.core());
-        } catch (Exception e) {
-            getLogger().warning("CoreApi not available yet. Waiting for module enable.");
-        }
+@Override
+public void onEnable() {
+    getLogger().info("RealiteClasses loaded. Waiting for module enable.");
+
+    try {
+        initialize(ru.realite.classes.core.CoreAccess.core());
+    } catch (Exception e) {
+        getLogger().warning("CoreApi not available yet. Waiting for module enable.");
     }
+}
 
     @Override
     public void onDisable() {
