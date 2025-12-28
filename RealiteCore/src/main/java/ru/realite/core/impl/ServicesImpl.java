@@ -1,5 +1,6 @@
 package ru.realite.core.impl;
 
+import ru.realite.core.api.Scheduler;
 import ru.realite.core.api.Services;
 
 import java.util.Map;
@@ -18,6 +19,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class ServicesImpl implements Services {
 
     private final Map<Class<?>, Object> registry = new ConcurrentHashMap<>();
+    private final Scheduler scheduler;
+
+    public ServicesImpl(Scheduler scheduler) {
+        this.scheduler = Objects.requireNonNull(scheduler, "scheduler");
+    }
+
+    @Override
+    public Scheduler scheduler() {
+        return scheduler;
+    }
 
     /**
      * Регистрирует сервис. Перезапись запрещена (бросает исключение).

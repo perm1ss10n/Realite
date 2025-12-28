@@ -2,6 +2,8 @@ package ru.realite.classes.service;
 
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import ru.realite.classes.core.CoreAccess;
+import ru.realite.classes.event.EvolutionCompletedEvent;
 import ru.realite.classes.model.ClassId;
 import ru.realite.classes.model.EvolutionDef;
 import ru.realite.classes.model.ItemAmount;
@@ -46,6 +48,9 @@ public class EvolutionService {
         // ап эволюции
         profile.setEvolution(next.id); // должен сбросить evolutionNotified внутри setEvolution, если ты так сделал
         profile.setEvolutionRewardTaken(false);
+
+        CoreAccess.core().events().publish(
+                new EvolutionCompletedEvent(player.getUniqueId(), profile.getClassId(), next.id));
 
         // если это последняя эволюция — помечаем класс как пройденный до конца
         // (mastered)
