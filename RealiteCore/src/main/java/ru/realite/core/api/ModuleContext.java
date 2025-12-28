@@ -17,4 +17,8 @@ public interface ModuleContext {
     Platform logger();
 
     Path dataFolder();
+
+    ConfigService configs();
+
+    StorageService storage();
 }

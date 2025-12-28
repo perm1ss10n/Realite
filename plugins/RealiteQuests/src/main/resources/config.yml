@@ -1,0 +1,8 @@
+quests:
+  title: "Realite Quests"
+  enabled: true
+  daily:
+    limit: 5
+  tags:
+    - "starter"
+    - "daily"

@@ -1,12 +1,14 @@
 package ru.realite.core.impl;
 
 import ru.realite.core.api.CoreApi;
+import ru.realite.core.api.ConfigService;
 import ru.realite.core.api.EventBus;
 import ru.realite.core.api.ModuleContext;
 import ru.realite.core.api.ModuleMetadata;
 import ru.realite.core.api.Platform;
 import ru.realite.core.api.Scheduler;
 import ru.realite.core.api.Services;
+import ru.realite.core.api.StorageService;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -58,6 +60,16 @@ final class ModuleContextImpl implements ModuleContext {
     @Override
     public Path dataFolder() {
         return dataFolder;
+    }
+
+    @Override
+    public ConfigService configs() {
+        return core.services().require(ConfigService.class);
+    }
+
+    @Override
+    public StorageService storage() {
+        return core.services().require(StorageService.class);
     }
 
     ModuleMetadata metadata() {

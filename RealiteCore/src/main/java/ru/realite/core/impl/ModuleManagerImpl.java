@@ -8,6 +8,7 @@ import ru.realite.core.api.ModuleManager;
 import ru.realite.core.api.ModuleMetadata;
 import ru.realite.core.api.ModuleState;
 import ru.realite.core.api.Platform;
+import ru.realite.core.api.StorageService;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -41,6 +42,13 @@ public final class ModuleManagerImpl implements ModuleManager {
     public ModuleManagerImpl(CoreApi core) {
         this.core = Objects.requireNonNull(core, "core");
         this.log = core.platform();
+    }
+
+    void registerFailed(ModuleMetadata metadata, String reason, Exception e) {
+        Objects.requireNonNull(metadata, "metadata");
+        ModuleId id = Objects.requireNonNull(metadata.id(), "metadata.id()");
+        modulesById.putIfAbsent(id, new FailedModule(metadata));
+        markFailed(id, reason, e);
     }
 
     @Override
@@ -153,6 +161,10 @@ public final class ModuleManagerImpl implements ModuleManager {
             disableModule(id);
         }
         enabledOrder.clear();
+        StorageService storageService = core.services().get(StorageService.class);
+        if (storageService != null) {
+            storageService.shutdown();
+        }
     }
 
     @Override
@@ -278,5 +290,33 @@ public final class ModuleManagerImpl implements ModuleManager {
     private void markFailed(ModuleId id, String reason, Exception e) {
         log.error("Module failed: " + id + ". " + reason, e);
         states.put(id, ModuleState.FAILED);
+    }
+
+    private static final class FailedModule implements Module {
+        private final ModuleMetadata metadata;
+
+        private FailedModule(ModuleMetadata metadata) {
+            this.metadata = metadata;
+        }
+
+        @Override
+        public ModuleMetadata metadata() {
+            return metadata;
+        }
+
+        @Override
+        public void onLoad(ModuleContext ctx) {
+            // no-op
+        }
+
+        @Override
+        public void onEnable(ModuleContext ctx) {
+            // no-op
+        }
+
+        @Override
+        public void onDisable(ModuleContext ctx) {
+            // no-op
+        }
     }
 }
