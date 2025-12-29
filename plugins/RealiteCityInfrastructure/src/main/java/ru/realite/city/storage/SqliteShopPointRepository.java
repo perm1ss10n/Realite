@@ -28,7 +28,7 @@ public final class SqliteShopPointRepository implements ShopPointRepository {
         cache.clear();
         Connection connection = storage.connection();
         try (PreparedStatement statement = connection.prepareStatement(
-                "SELECT id, plot_id, world, x, y, z, owner_uuid, created_at, enabled FROM shop_points"
+                "SELECT id, plot_id, world, x, y, z, owner_uuid, marker_uuid, marker_uuid_line2, created_at, enabled FROM shop_points"
         )) {
             try (ResultSet rs = statement.executeQuery()) {
                 int count = 0;
@@ -38,6 +38,16 @@ public final class SqliteShopPointRepository implements ShopPointRepository {
                     if (ownerRaw != null && !ownerRaw.isBlank()) {
                         ownerUuid = UUID.fromString(ownerRaw);
                     }
+                    UUID markerUuid = null;
+                    String markerRaw = rs.getString("marker_uuid");
+                    if (markerRaw != null && !markerRaw.isBlank()) {
+                        markerUuid = UUID.fromString(markerRaw);
+                    }
+                    UUID markerLine2Uuid = null;
+                    String markerLine2Raw = rs.getString("marker_uuid_line2");
+                    if (markerLine2Raw != null && !markerLine2Raw.isBlank()) {
+                        markerLine2Uuid = UUID.fromString(markerLine2Raw);
+                    }
                     ShopPoint point = new ShopPoint(
                             rs.getString("id"),
                             rs.getString("plot_id"),
@@ -46,6 +56,8 @@ public final class SqliteShopPointRepository implements ShopPointRepository {
                             rs.getInt("y"),
                             rs.getInt("z"),
                             ownerUuid,
+                            markerUuid,
+                            markerLine2Uuid,
                             rs.getLong("created_at"),
                             rs.getInt("enabled") != 0
                     );
@@ -62,8 +74,8 @@ public final class SqliteShopPointRepository implements ShopPointRepository {
         try {
             Connection connection = storage.connection();
             try (PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO shop_points(id, plot_id, world, x, y, z, owner_uuid, created_at, enabled) "
-                            + "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    "INSERT INTO shop_points(id, plot_id, world, x, y, z, owner_uuid, marker_uuid, marker_uuid_line2, created_at, enabled) "
+                            + "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                             + "ON CONFLICT(id) DO UPDATE SET "
                             + "plot_id = excluded.plot_id, "
                             + "world = excluded.world, "
@@ -71,6 +83,8 @@ public final class SqliteShopPointRepository implements ShopPointRepository {
                             + "y = excluded.y, "
                             + "z = excluded.z, "
                             + "owner_uuid = excluded.owner_uuid, "
+                            + "marker_uuid = excluded.marker_uuid, "
+                            + "marker_uuid_line2 = excluded.marker_uuid_line2, "
                             + "created_at = excluded.created_at, "
                             + "enabled = excluded.enabled"
             )) {
@@ -81,8 +95,10 @@ public final class SqliteShopPointRepository implements ShopPointRepository {
                 statement.setInt(5, point.y());
                 statement.setInt(6, point.z());
                 statement.setString(7, point.ownerUuid() != null ? point.ownerUuid().toString() : null);
-                statement.setLong(8, point.createdAt());
-                statement.setInt(9, point.enabled() ? 1 : 0);
+                statement.setString(8, point.markerUuid() != null ? point.markerUuid().toString() : null);
+                statement.setString(9, point.markerLine2Uuid() != null ? point.markerLine2Uuid().toString() : null);
+                statement.setLong(10, point.createdAt());
+                statement.setInt(11, point.enabled() ? 1 : 0);
                 statement.executeUpdate();
             }
             cache.put(point.id(), point);

@@ -28,6 +28,8 @@ public final class ShopPointService {
                 location.getBlockY(),
                 location.getBlockZ(),
                 ownerUuid,
+                null,
+                null,
                 System.currentTimeMillis(),
                 true
         );
@@ -96,8 +98,30 @@ public final class ShopPointService {
                 point.y(),
                 point.z(),
                 point.ownerUuid(),
+                point.markerUuid(),
+                point.markerLine2Uuid(),
                 point.createdAt(),
                 enabled
+        );
+        repository.upsert(updated);
+    }
+
+    public void updateMarkers(ShopPoint point, UUID markerUuid, UUID markerLine2Uuid) {
+        if (point == null) {
+            return;
+        }
+        ShopPoint updated = new ShopPoint(
+                point.id(),
+                point.plotId(),
+                point.world(),
+                point.x(),
+                point.y(),
+                point.z(),
+                point.ownerUuid(),
+                markerUuid,
+                markerLine2Uuid,
+                point.createdAt(),
+                point.enabled()
         );
         repository.upsert(updated);
     }

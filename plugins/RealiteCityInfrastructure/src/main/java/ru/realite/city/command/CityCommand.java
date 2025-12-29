@@ -14,12 +14,16 @@ import ru.realite.city.model.CityArea;
 import ru.realite.city.model.Plot;
 import ru.realite.city.model.PlotMemberRole;
 import ru.realite.city.model.PlotType;
+import ru.realite.city.model.ShopListing;
 import ru.realite.city.model.ShopPoint;
 import ru.realite.city.service.CityAreaSelectionService;
 import ru.realite.city.service.CityAreaSelectionService.Selection;
 import ru.realite.city.service.EconomyService;
+import ru.realite.city.service.MarketService;
 import ru.realite.city.service.PlotCleanupService;
 import ru.realite.city.service.PlotService;
+import ru.realite.city.service.ShopDirectoryService;
+import ru.realite.city.service.ShopMarkerService;
 import ru.realite.city.service.ShopPointService;
 import ru.realite.city.service.ShopRentService;
 import ru.realite.city.storage.CityAreaRepository;
@@ -50,6 +54,9 @@ public final class CityCommand implements CommandExecutor {
     private final EconomyService economyService;
     private final ShopPointService shopPointService;
     private final ShopRentService shopRentService;
+    private final ShopDirectoryService shopDirectoryService;
+    private final ShopMarkerService shopMarkerService;
+    private final MarketService marketService;
 
     public CityCommand(
             CityAreaRepository cityAreaRepository,
@@ -62,7 +69,10 @@ public final class CityCommand implements CommandExecutor {
             CityConfig config,
             EconomyService economyService,
             ShopPointService shopPointService,
-            ShopRentService shopRentService) {
+            ShopRentService shopRentService,
+            ShopDirectoryService shopDirectoryService,
+            ShopMarkerService shopMarkerService,
+            MarketService marketService) {
         this.cityAreaRepository = cityAreaRepository;
         this.plotRepository = plotRepository;
         this.plotMemberRepository = plotMemberRepository;
@@ -74,6 +84,9 @@ public final class CityCommand implements CommandExecutor {
         this.economyService = economyService;
         this.shopPointService = shopPointService;
         this.shopRentService = shopRentService;
+        this.shopDirectoryService = shopDirectoryService;
+        this.shopMarkerService = shopMarkerService;
+        this.marketService = marketService;
     }
 
     @Override
@@ -87,6 +100,7 @@ public final class CityCommand implements CommandExecutor {
             case "area" -> handleArea(sender, args);
             case "plot" -> handlePlot(sender, args);
             case "shop" -> handleShop(sender, args);
+            case "market" -> handleMarket(sender, args);
             default -> sendUsage(sender);
         }
         return true;
@@ -152,12 +166,32 @@ public final class CityCommand implements CommandExecutor {
         }
         String action = args[1].toLowerCase();
         switch (action) {
-            case "set" -> handleShopSet(sender);
+            case "set" -> handleShopSet(sender, args);
+            case "setup" -> handleShopSetup(sender);
+            case "open" -> handleShopOpenClose(sender, true);
+            case "close" -> handleShopOpenClose(sender, false);
             case "remove" -> handleShopRemove(sender, args);
             case "list" -> handleShopList(sender, args);
             case "info" -> handleShopInfo(sender);
             case "rent" -> handleShopRent(sender, args);
             default -> sendUsage(sender);
+        }
+    }
+
+    private void handleMarket(CommandSender sender, String[] args) {
+        if (args.length == 1) {
+            handleMarketList(sender, null, null);
+            return;
+        }
+        String action = args[1].toLowerCase();
+        switch (action) {
+            case "category" -> handleMarketCategory(sender, args);
+            case "search" -> handleMarketSearch(sender, args);
+            case "near" -> handleMarketNear(sender, args);
+            case "info" -> handleMarketInfo(sender, args);
+            case "goto" -> handleMarketGoto(sender, args);
+            case "hub" -> handleMarketHub(sender);
+            default -> handleMarketList(sender, null, null);
         }
     }
 
@@ -896,7 +930,54 @@ public final class CityCommand implements CommandExecutor {
                         Map.entry("world", world.getName())));
     }
 
-    private void handleShopSet(CommandSender sender) {
+    private void handleShopSet(CommandSender sender, String[] args) {
+        if (args.length <= 2) {
+            handleShopPointCreate(sender);
+            return;
+        }
+        Player player = requirePlayer(sender);
+        if (player == null) {
+            return;
+        }
+        String field = args[2].toLowerCase();
+        String value = args.length > 3 ? String.join(" ", List.of(args).subList(3, args.length)) : "";
+        if (value.isBlank()) {
+            messages.send(player, "city.shop.listing.set.usage", "");
+            return;
+        }
+        ShopContext context = resolveShopContext(player, "city.shop.listing.no-point");
+        if (context == null) {
+            return;
+        }
+        Plot plot = context.plot();
+        if (!isOwnerTrustedOrAdmin(player, plot)) {
+            messages.send(player, "city.no-permission", "");
+            return;
+        }
+        if (shopRentService != null && shopRentService.isRentEnabled()
+                && shopRentService.isCommerceBlocked(plot, System.currentTimeMillis())) {
+            messages.send(player, "city.shop.rent.blocked", "", Map.of("id", plot.id()));
+            return;
+        }
+        ShopPoint point = context.point();
+        ShopDirectoryService.ListingUpdate update;
+        switch (field) {
+            case "title" -> update = new ShopDirectoryService.ListingUpdate(value, null, null, null);
+            case "category" -> update = new ShopDirectoryService.ListingUpdate(null, value, null, null);
+            case "desc", "description" -> update = new ShopDirectoryService.ListingUpdate(null, null, value, null);
+            default -> {
+                messages.send(player, "city.shop.listing.set.usage", "");
+                return;
+            }
+        }
+        ShopListing listing = shopDirectoryService.updateListing(point, update);
+        messages.send(player, "city.shop.listing.updated", "",
+                Map.ofEntries(
+                        Map.entry("field", field),
+                        Map.entry("value", resolveListingField(listing, field))));
+    }
+
+    private void handleShopPointCreate(CommandSender sender) {
         Player player = requirePlayer(sender);
         if (player == null) {
             return;
@@ -947,10 +1028,65 @@ public final class CityCommand implements CommandExecutor {
             return;
         }
         ShopPoint point = shopPointService.create(plot, targetLocation, plot.ownerUuid());
+        shopDirectoryService.ensureListing(point);
         messages.send(player, "city.shop.set.success", "",
                 Map.ofEntries(
                         Map.entry("id", point.id()),
                         Map.entry("plot", plot.id())));
+    }
+
+    private void handleShopSetup(CommandSender sender) {
+        Player player = requirePlayer(sender);
+        if (player == null) {
+            return;
+        }
+        ShopContext context = resolveShopContext(player, "city.shop.listing.no-point");
+        if (context == null) {
+            return;
+        }
+        Plot plot = context.plot();
+        if (!isOwnerTrustedOrAdmin(player, plot)) {
+            messages.send(player, "city.no-permission", "");
+            return;
+        }
+        ShopListing listing = shopDirectoryService.ensureListing(context.point());
+        messages.send(player, "city.shop.listing.info", "",
+                Map.ofEntries(
+                        Map.entry("id", listing.shopPointId()),
+                        Map.entry("title", listing.title()),
+                        Map.entry("category", listing.category()),
+                        Map.entry("description", listing.description()),
+                        Map.entry("open", String.valueOf(listing.open()))));
+        messages.send(player, "city.shop.listing.setup.hint", "");
+    }
+
+    private void handleShopOpenClose(CommandSender sender, boolean open) {
+        Player player = requirePlayer(sender);
+        if (player == null) {
+            return;
+        }
+        ShopContext context = resolveShopContext(player, "city.shop.listing.no-point");
+        if (context == null) {
+            return;
+        }
+        Plot plot = context.plot();
+        if (!isOwnerTrustedOrAdmin(player, plot)) {
+            messages.send(player, "city.no-permission", "");
+            return;
+        }
+        if (shopRentService != null && shopRentService.isRentEnabled()
+                && shopRentService.isCommerceBlocked(plot, System.currentTimeMillis())) {
+            messages.send(player, "city.shop.rent.blocked", "", Map.of("id", plot.id()));
+            return;
+        }
+        ShopListing listing = shopDirectoryService.updateListing(
+                context.point(),
+                new ShopDirectoryService.ListingUpdate(null, null, null, open)
+        );
+        messages.send(player,
+                open ? "city.shop.listing.opened" : "city.shop.listing.closed",
+                "",
+                Map.of("title", listing.title()));
     }
 
     private void handleShopRemove(CommandSender sender, String[] args) {
@@ -980,6 +1116,7 @@ public final class CityCommand implements CommandExecutor {
                 messages.send(player, "city.no-permission", "");
                 return;
             }
+            cleanupShopPoint(point);
             shopPointService.remove(point.id());
             messages.send(player, "city.shop.remove.success", "", Map.of("id", point.id()));
             return;
@@ -1004,6 +1141,7 @@ public final class CityCommand implements CommandExecutor {
             messages.send(player, "city.no-permission", "");
             return;
         }
+        cleanupShopPoint(point);
         shopPointService.remove(point.id());
         messages.send(player, "city.shop.remove.success", "", Map.of("id", point.id()));
     }
@@ -1072,6 +1210,191 @@ public final class CityCommand implements CommandExecutor {
                         Map.entry("plot", plotId),
                         Map.entry("owner", owner),
                         Map.entry("enabled", String.valueOf(point.enabled()))));
+    }
+
+    private void handleMarketList(CommandSender sender, String category, String search) {
+        List<ShopListing> listings = shopDirectoryService.listAll(true, category, search);
+        if (listings.isEmpty()) {
+            messages.send(sender, "city.market.list.empty", "");
+            return;
+        }
+        listings.sort(Comparator.comparingLong(ShopListing::updatedAt).reversed());
+        messages.send(sender, "city.market.list.header", "");
+        int limit = Math.min(10, listings.size());
+        for (int i = 0; i < limit; i++) {
+            ShopListing listing = listings.get(i);
+            Optional<ShopPoint> pointOptional = shopPointService.findById(listing.shopPointId());
+            if (pointOptional.isEmpty()) {
+                continue;
+            }
+            ShopPoint point = pointOptional.get();
+            if (!point.enabled()) {
+                continue;
+            }
+            messages.send(sender, "city.market.list.line", "",
+                    Map.ofEntries(
+                            Map.entry("id", listing.shopPointId()),
+                            Map.entry("title", listing.title()),
+                            Map.entry("category", listing.category()),
+                            Map.entry("open", String.valueOf(listing.open())),
+                            Map.entry("plot", listing.plotId()),
+                            Map.entry("owner", formatOwner(listing.ownerUuid())),
+                            Map.entry("point", point.id())));
+        }
+    }
+
+    private void handleMarketCategory(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            messages.send(sender, "city.market.category.usage", "");
+            return;
+        }
+        String category = args[2];
+        handleMarketList(sender, category, null);
+    }
+
+    private void handleMarketSearch(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            messages.send(sender, "city.market.search.usage", "");
+            return;
+        }
+        String query = String.join(" ", List.of(args).subList(2, args.length));
+        handleMarketList(sender, null, query);
+    }
+
+    private void handleMarketNear(CommandSender sender, String[] args) {
+        Player player = requirePlayer(sender);
+        if (player == null) {
+            return;
+        }
+        int radius = config.marketNearbyDefaultRadius();
+        if (args.length >= 3) {
+            try {
+                radius = Integer.parseInt(args[2]);
+            } catch (NumberFormatException e) {
+                messages.send(player, "city.market.near.usage", "");
+                return;
+            }
+        }
+        Location location = player.getLocation();
+        if (location.getWorld() == null) {
+            messages.send(player, "city.market.near.empty", "");
+            return;
+        }
+        double maxDistance = radius * radius;
+        List<ShopListingDistance> nearby = shopDirectoryService.listAll(true, null, null).stream()
+                .map(listing -> shopPointService.findById(listing.shopPointId())
+                        .map(point -> new ShopListingDistance(listing, point, point.distanceSquared(location))))
+                .flatMap(Optional::stream)
+                .filter(distance -> distance.point().enabled())
+                .filter(distance -> distance.distanceSquared() <= maxDistance)
+                .sorted(Comparator.comparingDouble(ShopListingDistance::distanceSquared))
+                .limit(10)
+                .toList();
+        if (nearby.isEmpty()) {
+            messages.send(player, "city.market.near.empty", "");
+            return;
+        }
+        messages.send(player, "city.market.near.header", "");
+        for (ShopListingDistance distance : nearby) {
+            ShopListing listing = distance.listing();
+            double dist = Math.sqrt(distance.distanceSquared());
+            messages.send(player, "city.market.near.line", "",
+                    Map.ofEntries(
+                            Map.entry("id", listing.shopPointId()),
+                            Map.entry("title", listing.title()),
+                            Map.entry("category", listing.category()),
+                            Map.entry("dist", String.format("%.1f", dist))));
+        }
+    }
+
+    private void handleMarketInfo(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            messages.send(sender, "city.market.info.usage", "");
+            return;
+        }
+        String reference = args[2];
+        Optional<ShopListing> listingOptional = resolveListing(reference);
+        if (listingOptional.isEmpty()) {
+            messages.send(sender, "city.market.info.not-found", "", Map.of("id", reference));
+            return;
+        }
+        ShopListing listing = listingOptional.get();
+        Optional<ShopPoint> pointOptional = shopPointService.findById(listing.shopPointId());
+        if (pointOptional.isEmpty()) {
+            messages.send(sender, "city.market.info.not-found", "", Map.of("id", reference));
+            return;
+        }
+        ShopPoint point = pointOptional.get();
+        messages.send(sender, "city.market.info.line", "",
+                Map.ofEntries(
+                        Map.entry("id", listing.shopPointId()),
+                        Map.entry("title", listing.title()),
+                        Map.entry("category", listing.category()),
+                        Map.entry("description", listing.description()),
+                        Map.entry("open", String.valueOf(listing.open())),
+                        Map.entry("plot", listing.plotId()),
+                        Map.entry("owner", formatOwner(listing.ownerUuid())),
+                        Map.entry("world", point.world()),
+                        Map.entry("x", String.valueOf(point.x())),
+                        Map.entry("y", String.valueOf(point.y())),
+                        Map.entry("z", String.valueOf(point.z()))));
+    }
+
+    private void handleMarketGoto(CommandSender sender, String[] args) {
+        Player player = requirePlayer(sender);
+        if (player == null) {
+            return;
+        }
+        if (args.length < 3) {
+            messages.send(player, "city.market.goto.usage", "");
+            return;
+        }
+        String reference = args[2];
+        Optional<ShopListing> listingOptional = resolveListing(reference);
+        if (listingOptional.isEmpty()) {
+            messages.send(player, "city.market.goto.not-found", "", Map.of("id", reference));
+            return;
+        }
+        ShopListing listing = listingOptional.get();
+        Optional<ShopPoint> pointOptional = shopPointService.findById(listing.shopPointId());
+        if (pointOptional.isEmpty()) {
+            messages.send(player, "city.market.goto.not-found", "", Map.of("id", reference));
+            return;
+        }
+        ShopPoint point = pointOptional.get();
+        World world = Bukkit.getWorld(point.world());
+        if (world == null) {
+            messages.send(player, "city.market.goto.invalid-world", "", Map.of("world", point.world()));
+            return;
+        }
+        Location target = new Location(world, point.x() + 0.5, point.y() + 1.0, point.z() + 0.5);
+        MarketService.TeleportResult result = marketService.teleport(player, target);
+        handleMarketTeleportResult(player, result, listing.title());
+    }
+
+    private void handleMarketHub(CommandSender sender) {
+        Player player = requirePlayer(sender);
+        if (player == null) {
+            return;
+        }
+        String worldName = config.marketHubWorld();
+        if (worldName == null || worldName.isBlank()) {
+            messages.send(player, "city.market.hub.not-configured", "");
+            return;
+        }
+        World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            messages.send(player, "city.market.goto.invalid-world", "", Map.of("world", worldName));
+            return;
+        }
+        Location target = new Location(
+                world,
+                config.marketHubX(),
+                config.marketHubY(),
+                config.marketHubZ()
+        );
+        MarketService.TeleportResult result = marketService.teleport(player, target);
+        handleMarketTeleportResult(player, result, messages.getRaw("city.market.hub.title", "рынок"));
     }
 
     private void handleShopRent(CommandSender sender, String[] args) {
@@ -1177,6 +1500,81 @@ public final class CityCommand implements CommandExecutor {
                         Map.entry("id", plot.id()),
                         Map.entry("paidUntil", formatTimestamp(updated.rentPaidUntil())),
                         Map.entry("price", String.valueOf(price))));
+    }
+
+    private void handleMarketTeleportResult(Player player, MarketService.TeleportResult result, String title) {
+        switch (result.status()) {
+            case SUCCESS -> messages.send(player, "city.market.goto.success", "",
+                    Map.of("title", title));
+            case DISABLED -> messages.send(player, "city.market.goto.disabled", "");
+            case NO_PERMISSION -> messages.send(player, "city.market.goto.no-permission", "");
+            case COOLDOWN -> messages.send(player, "city.market.goto.cooldown", "",
+                    Map.of("seconds", String.valueOf(result.cooldownSeconds())));
+            case NO_ECONOMY -> messages.send(player, "city.market.goto.no-economy", "");
+            case NOT_ENOUGH_MONEY -> messages.send(player, "city.market.goto.not-enough-money", "",
+                    Map.of("cost", String.format("%.2f", result.cost())));
+            case INVALID_TARGET -> messages.send(player, "city.market.goto.invalid-target", "");
+        }
+    }
+
+    private Optional<ShopListing> resolveListing(String reference) {
+        Optional<ShopListing> listingOptional = shopDirectoryService.getListing(reference);
+        if (listingOptional.isPresent()) {
+            return listingOptional;
+        }
+        Optional<Plot> plotOptional = resolvePlotReference(reference);
+        if (plotOptional.isPresent()) {
+            Plot plot = plotOptional.get();
+            Optional<ShopPoint> pointOptional = shopPointService.listByPlot(plot.id()).stream().findFirst();
+            if (pointOptional.isPresent()) {
+                return shopDirectoryService.getListing(pointOptional.get().id());
+            }
+        }
+        return Optional.empty();
+    }
+
+    private ShopContext resolveShopContext(Player player, String noPointMessage) {
+        Optional<ShopPoint> pointOptional = shopPointService.findNearest(player.getLocation(), 2.0);
+        if (pointOptional.isEmpty()) {
+            messages.send(player, noPointMessage, "");
+            return null;
+        }
+        ShopPoint point = pointOptional.get();
+        Optional<Plot> plotOptional = plotRepository.findById(point.plotId());
+        if (plotOptional.isEmpty()) {
+            messages.send(player, noPointMessage, "");
+            return null;
+        }
+        Plot plot = plotOptional.get();
+        if (plot.type() != PlotType.SHOP) {
+            messages.send(player, "city.shop.set.not-shop-plot", "");
+            return null;
+        }
+        return new ShopContext(point, plot);
+    }
+
+    private String resolveListingField(ShopListing listing, String field) {
+        return switch (field) {
+            case "title" -> listing.title();
+            case "category" -> listing.category();
+            case "desc", "description" -> listing.description();
+            default -> "";
+        };
+    }
+
+    private void cleanupShopPoint(ShopPoint point) {
+        if (shopMarkerService != null) {
+            shopMarkerService.removeMarkers(point);
+        }
+        if (shopDirectoryService != null) {
+            shopDirectoryService.deleteListing(point.id());
+        }
+    }
+
+    private record ShopContext(ShopPoint point, Plot plot) {
+    }
+
+    private record ShopListingDistance(ShopListing listing, ShopPoint point, double distanceSquared) {
     }
 
     private Optional<Plot> resolvePlotReference(String reference) {

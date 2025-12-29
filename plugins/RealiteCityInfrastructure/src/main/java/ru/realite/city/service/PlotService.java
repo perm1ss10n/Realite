@@ -40,6 +40,7 @@ public final class PlotService {
     private final PlotRepository plotRepository;
     private final PlotMemberRepository plotMemberRepository;
     private final EconomyService economyService;
+    private final CityHooks hooks;
     private final Map<String, PendingTransfer> pendingTransfers = new ConcurrentHashMap<>();
     private final Map<String, PendingSell> pendingSells = new ConcurrentHashMap<>();
 
@@ -48,13 +49,15 @@ public final class PlotService {
             CityAreaRepository cityAreaRepository,
             PlotRepository plotRepository,
             PlotMemberRepository plotMemberRepository,
-            EconomyService economyService
+            EconomyService economyService,
+            CityHooks hooks
     ) {
         this.config = config;
         this.cityAreaRepository = cityAreaRepository;
         this.plotRepository = plotRepository;
         this.plotMemberRepository = plotMemberRepository;
         this.economyService = economyService;
+        this.hooks = hooks;
     }
 
     public Optional<Plot> findContaining(Location location) {
@@ -203,8 +206,12 @@ public final class PlotService {
         if (player == null || player.hasPermission(LIMITS_BYPASS_PERMISSION)) {
             return false;
         }
+        int limit = hooks == null ? config.limitFor(type) : hooks.maxPlots(player, type);
+        if (limit <= 0) {
+            return false;
+        }
         long owned = plotRepository.countOwned(player.getUniqueId(), type);
-        return owned >= config.limitFor(type);
+        return owned >= limit;
     }
 
     public void createTransferOffer(String plotId, UUID targetUuid, long expiresAt) {

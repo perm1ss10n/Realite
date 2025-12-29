@@ -9,7 +9,7 @@ depend:
 commands:
   city:
     description: City tools
-    usage: /city <area|plot> <...>
+    usage: /city <area|plot|shop|market> <...>
 
 permissions:
   realite.city.admin:
@@ -21,3 +21,6 @@ permissions:
   realite.city.bypass.limits:
     description: Bypass plot limits
     default: op
+  realite.city.market.tp:
+    description: Allow market teleports
+    default: true
