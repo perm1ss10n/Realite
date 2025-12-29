@@ -16,6 +16,9 @@ import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.Material;
+import org.bukkit.Tag;
 import ru.realite.city.i18n.CityMessages;
 import ru.realite.city.service.PlotService;
 
@@ -55,7 +58,11 @@ public final class CityProtectionListener implements Listener {
         if (event.getClickedBlock() == null) {
             return;
         }
-        if (!plotService.canModify(event.getPlayer(), event.getClickedBlock().getLocation())) {
+        Block block = event.getClickedBlock();
+        if (!isProtectedInteract(block)) {
+            return;
+        }
+        if (!plotService.canInteract(event.getPlayer(), block.getLocation())) {
             deny(event.getPlayer(), event);
         }
     }
@@ -108,12 +115,12 @@ public final class CityProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent event) {
-        event.blockList().removeIf(block -> plotService.isInCityArea(block.getLocation()));
+        event.blockList().removeIf(block -> plotService.isProtectedFromExplosions(block.getLocation()));
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockExplode(BlockExplodeEvent event) {
-        event.blockList().removeIf(block -> plotService.isInCityArea(block.getLocation()));
+        event.blockList().removeIf(block -> plotService.isProtectedFromExplosions(block.getLocation()));
     }
 
     private void deny(Player player, org.bukkit.event.Cancellable event) {
@@ -129,5 +136,22 @@ public final class CityProtectionListener implements Listener {
         }
         lastMessageAt.put(player.getUniqueId(), now);
         messages.send(player, "city.no-permission", "");
+    }
+
+    private boolean isProtectedInteract(Block block) {
+        if (block == null) {
+            return false;
+        }
+        Material type = block.getType();
+        if (block.getState() instanceof InventoryHolder) {
+            return true;
+        }
+        if (type == Material.LEVER) {
+            return true;
+        }
+        if (Tag.DOORS.isTagged(type) || Tag.TRAPDOORS.isTagged(type)) {
+            return true;
+        }
+        return Tag.BUTTONS.isTagged(type);
     }
 }

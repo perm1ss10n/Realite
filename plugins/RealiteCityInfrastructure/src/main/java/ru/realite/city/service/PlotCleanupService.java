@@ -19,11 +19,15 @@ public final class PlotCleanupService {
     private final JavaPlugin plugin;
     private final CityConfig config;
     private final CityMessages messages;
+    private final Material fillMaterial;
+    private final int clearAboveY;
 
     public PlotCleanupService(JavaPlugin plugin, CityConfig config, CityMessages messages) {
         this.plugin = plugin;
         this.config = config;
         this.messages = messages;
+        this.fillMaterial = resolveFillMaterial(config.plotCleanupFillBlock());
+        this.clearAboveY = config.plotCleanupClearAboveY();
     }
 
     public boolean cleanupPlot(Plot plot, UUID notifier) {
@@ -82,7 +86,8 @@ public final class PlotCleanupService {
             this.minZ = Math.min(plot.z1(), plot.z2());
             this.maxZ = Math.max(plot.z1(), plot.z2());
             int baseCandidate = Math.max(minY, world.getMinHeight());
-            this.baseY = Math.min(baseCandidate, maxY);
+            int configuredBase = clearAboveY >= baseCandidate ? clearAboveY : baseCandidate;
+            this.baseY = Math.min(configuredBase, maxY);
             this.blocksPerTick = blocksPerTick;
             this.mode = mode == null ? PlotCleanupMode.AIR_ONLY : mode;
             this.notifier = notifier;
@@ -99,8 +104,15 @@ public final class PlotCleanupService {
                     finish();
                     return;
                 }
-                Material material = materialFor(currentY);
-                world.getBlockAt(currentX, currentY, currentZ).setType(material, false);
+                if (currentY >= baseY) {
+                    Material material = materialFor(currentY);
+                    if (material != null) {
+                        var block = world.getBlockAt(currentX, currentY, currentZ);
+                        if (block.getType() != Material.BEDROCK) {
+                            block.setType(material, false);
+                        }
+                    }
+                }
                 advance();
                 processed++;
             }
@@ -109,10 +121,7 @@ public final class PlotCleanupService {
         private Material materialFor(int y) {
             if (mode == PlotCleanupMode.FLAT) {
                 if (y == baseY) {
-                    return Material.GRASS_BLOCK;
-                }
-                if (y == baseY - 1 && y >= minY) {
-                    return Material.DIRT;
+                    return fillMaterial;
                 }
             }
             return Material.AIR;
@@ -143,5 +152,13 @@ public final class PlotCleanupService {
                         Map.of("id", plotId));
             }
         }
+    }
+
+    private Material resolveFillMaterial(String token) {
+        if (token == null || token.isBlank()) {
+            return Material.GRASS_BLOCK;
+        }
+        Material material = Material.matchMaterial(token.toUpperCase());
+        return material == null ? Material.GRASS_BLOCK : material;
     }
 }

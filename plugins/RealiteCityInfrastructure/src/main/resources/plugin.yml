@@ -18,3 +18,6 @@ permissions:
   realite.city.bypass:
     description: Bypass city area protection
     default: op
+  realite.city.bypass.limits:
+    description: Bypass plot limits
+    default: op

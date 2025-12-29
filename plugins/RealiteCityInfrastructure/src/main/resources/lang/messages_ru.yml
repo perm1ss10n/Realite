@@ -24,6 +24,7 @@ city:
     already-owned: "&cУчасток {id} уже занят."
     bought: "&aУчасток {id} куплен."
     limit-reached: "&cДостигнут лимит участков ({limit})."
+    not-enough-money: "&cНедостаточно денег."
     type-disabled: "&cТип участка {type} отключён."
     no-economy: "&cЭкономика не настроена."
     created: "&aУчасток #{number} ({id}) создан."
@@ -58,7 +59,7 @@ city:
       self: "&cНельзя передать участок самому себе."
     release:
       success: "&aУчасток #{number} ({id}) сдан городу."
-      usage: "&eИспользование: /city plot release <id>"
+      usage: "&eИспользование: /city plot release [id|#number]"
     cleanup:
       started: "&eОчистка участка {id} началась."
       done: "&aОчистка участка {id} завершена."

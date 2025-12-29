@@ -8,6 +8,7 @@ import ru.realite.city.i18n.CityMessages;
 import ru.realite.city.listener.CityAreaSelectionListener;
 import ru.realite.city.listener.CityProtectionListener;
 import ru.realite.city.service.CityAreaSelectionService;
+import ru.realite.city.service.EconomyService;
 import ru.realite.city.service.PlotCleanupService;
 import ru.realite.city.service.PlotService;
 import ru.realite.city.storage.SqliteCityAreaRepository;
@@ -45,6 +46,7 @@ public final class CityInfrastructureModule implements Module {
     private SqlitePlotMemberRepository plotMemberRepository;
     private PlotService plotService;
     private PlotCleanupService plotCleanupService;
+    private EconomyService economyService;
 
     @Override
     public ModuleMetadata metadata() {
@@ -116,9 +118,15 @@ public final class CityInfrastructureModule implements Module {
         }
 
         plotCleanupService = new PlotCleanupService(javaPlugin, config, messages);
+        economyService = new EconomyService(javaPlugin);
 
         // Domain service
-        plotService = new PlotService(config, cityAreaRepository, plotRepository, plotMemberRepository);
+        plotService = new PlotService(
+                config,
+                cityAreaRepository,
+                plotRepository,
+                plotMemberRepository,
+                economyService);
 
         // Listeners
         Bukkit.getPluginManager().registerEvents(
@@ -139,7 +147,8 @@ public final class CityInfrastructureModule implements Module {
                     plotCleanupService,
                     selectionService,
                     messages,
-                    config));
+                    config,
+                    economyService));
         } else {
             ctx.logger().warn("[CityInfrastructure] Command /city not found in plugin.yml; executor not registered.");
         }

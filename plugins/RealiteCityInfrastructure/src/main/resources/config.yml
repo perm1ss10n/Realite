@@ -1,6 +1,9 @@
 # Default limits for city plots
 limits:
   defaultPlotsPerPlayer: 3
+  perType:
+    home: 3
+    shop: 1
 
 lang: "ru"  # Supported languages: "en", "ru"
 
@@ -24,7 +27,11 @@ plots:
       enabled: true
     shop:
       enabled: true
+  protection:
+    allowInteractOutsideMembers: false
   cleanup:
     enabled: true
     blocksPerTick: 2000
-    mode: "AIR_ONLY"
+    mode: "FLAT"
+    fillBlock: "GRASS_BLOCK"
+    clearAboveY: -1
