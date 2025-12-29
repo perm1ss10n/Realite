@@ -1,0 +1,9 @@
+name: RealiteCore
+version: 1.0.0
+main: ru.realite.core.impl.RealiteCorePlugin
+api-version: "1.21"
+
+author: Realite
+description: Core module for Realite plugins
+
+load: STARTUP

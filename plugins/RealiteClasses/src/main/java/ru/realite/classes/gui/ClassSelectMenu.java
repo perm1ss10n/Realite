@@ -12,6 +12,7 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.classes.model.ClassId;
 import ru.realite.classes.storage.ClassConfigRepository;
+
 import java.util.List;
 
 public class ClassSelectMenu implements InventoryHolder {
@@ -30,40 +31,8 @@ public class ClassSelectMenu implements InventoryHolder {
                 this,
                 SIZE,
                 Component.text("Выбор класса"));
-
-        fill();
-
-    }
-/* 
-Понадобится потом, а может и не понадобится, а может пошел ты
-    private boolean isUnlocked(ru.realite.classes.model.PlayerProfile p,
-            ru.realite.classes.storage.ClassConfigRepository.ClassDef def) {
-        if (!def.hidden)
-            return true;
-
-        for (var req : def.requiresMastered) {
-            if (!p.hasMastered(req))
-                return false;
-        }
-        return true;
     }
 
-    private String requirementsText(ru.realite.classes.storage.ClassConfigRepository.ClassDef def) {
-        if (def.requiresMastered == null || def.requiresMastered.isEmpty())
-            return "-";
-
-        // Показываем внутренние ID (WARRIOR, ALCHEMIST) 
-        StringBuilder sb = new StringBuilder();
-        boolean first = true;
-        for (var c : def.requiresMastered) {
-            if (!first)
-                sb.append(", ");
-            first = false;
-            sb.append(c.name());
-        }
-        return sb.toString();
-    }
-*/
     private void fill() {
         inventory.clear();
 
@@ -106,7 +75,7 @@ public class ClassSelectMenu implements InventoryHolder {
 
                     meta.getPersistentDataContainer().set(
                             classIdKey,
-                            org.bukkit.persistence.PersistentDataType.STRING,
+                            PersistentDataType.STRING,
                             def.id.name());
 
                     item.setItemMeta(meta);
@@ -118,6 +87,8 @@ public class ClassSelectMenu implements InventoryHolder {
     }
 
     public Inventory create() {
+        // ✅ ВАЖНО: обновляем содержимое каждый раз, чтобы /class reload сразу отражался в GUI
+        fill();
         return inventory;
     }
 

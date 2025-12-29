@@ -1,0 +1,3 @@
+# RealiteCore config
+modules:
+  autoEnable: true
