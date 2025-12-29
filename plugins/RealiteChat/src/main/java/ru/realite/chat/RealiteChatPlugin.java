@@ -4,6 +4,7 @@ import io.papermc.paper.event.player.AsyncChatEvent;
 import java.util.Optional;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.luckperms.api.LuckPerms;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -35,6 +36,7 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener, Com
     private boolean classHoverEnabled = true;
     private boolean classRomanEnabled = true;
     private boolean guildHoverEnabled = true;
+    private boolean luckPermsMissingLogged = false;
 
     @Override
     public void onEnable() {
@@ -77,11 +79,13 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener, Com
         RegisteredServiceProvider<LuckPerms> provider = getServer().getServicesManager()
                 .getRegistration(LuckPerms.class);
         if (provider == null) {
-            if (messages != null) {
+            if (messages != null && !luckPermsMissingLogged) {
                 getLogger().warning(ChatColor.stripColor(messages.get("chat.dependency.luckperms-missing")));
+                luckPermsMissingLogged = true;
             }
             return player -> Optional.empty();
         }
+        luckPermsMissingLogged = false;
         return new LuckPermsPrefixProvider(provider.getProvider());
     }
 
@@ -111,10 +115,12 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener, Com
             String stage = classRomanEnabled
                     ? RomanNumerals.toRoman(tag.evolutionStage())
                     : String.valueOf(tag.evolutionStage());
-            Component base = Component.text("[" + tag.displayName() + "-" + stage + "]");
+            Component base = Component.text("[")
+                    .append(parseLegacy(tag.displayName()))
+                    .append(Component.text("-" + stage + "]"));
             if (classHoverEnabled) {
                 Component hover = Component.text("Класс: ")
-                        .append(Component.text(tag.displayName()))
+                        .append(parseLegacy(tag.displayName()))
                         .append(Component.newline())
                         .append(Component.text("Этап: " + stage));
                 return base.hoverEvent(HoverEvent.showText(hover));
@@ -122,7 +128,7 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener, Com
             return base;
         }
         String classTag = getConfig().getString("chat.class-tag", "[Бродяга-I]");
-        return Component.text(classTag);
+        return parseLegacy(classTag);
     }
 
     private Component buildGuildTagComponent(Player player) {
@@ -165,6 +171,7 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener, Com
         String language = resolveLanguage();
         tagsJoiner = getConfig().getString("chat.tags.joiner", "");
         spaceBeforeName = getConfig().getBoolean("chat.spaceBeforeName", true);
+        prefixProvider = resolvePrefixProvider();
         prefixEnabled = getConfig().getBoolean("prefix.enabled", true);
         classEnabled = getConfig().getBoolean("class.enabled", true);
         guildEnabled = getConfig().getBoolean("guild.enabled", true);
@@ -199,5 +206,12 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener, Com
         if (!new java.io.File(getDataFolder(), resourcePath).exists()) {
             saveResource(resourcePath, false);
         }
+    }
+
+    private Component parseLegacy(String text) {
+        if (text == null || text.isEmpty()) {
+            return Component.empty();
+        }
+        return LegacyComponentSerializer.legacyAmpersand().deserialize(text.replace('§', '&'));
     }
 }

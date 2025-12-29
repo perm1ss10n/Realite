@@ -101,6 +101,39 @@ class:
 
 guild:
   enabled: true
+  hover:
+    enabled: true
+```
+
+Примеры формата:
+
+- `{prefix}{class}{guild}{name}: {message}` — формат по умолчанию.
+- `{prefix}{class}[{guild}]{name}: {message}` — скобки вокруг гильдии только при наличии тега.
+- `{prefix}{class}{guild} {name}: {message}` — пробел между тегами и именем (если `spaceBeforeName: false`).
+
+Подсказки:
+
+- `chat.tags.joiner` вставляется **между непустыми тегами** (например `" "` или `" | "`).
+- Цвета можно задавать через `&`-коды в префиксах, `class-tag` и т.п.
+
+Пример LuckPerms-команд для префиксов:
+
+```
+lp group default meta addprefix 100 "&7[Новичок]"
+lp group vip meta addprefix 200 "&6[VIP]"
+lp user Notch meta addprefix 300 "&b[LEGEND]"
+```
+
+Как включить/выключить hover:
+
+```yaml
+class:
+  hover:
+    enabled: true # выключить/включить hover для классов
+
+guild:
+  hover:
+    enabled: false # выключить/включить hover для гильдий
 ```
 
 ---
