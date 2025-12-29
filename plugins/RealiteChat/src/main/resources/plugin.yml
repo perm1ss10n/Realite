@@ -1,0 +1,4 @@
+name: RealiteChat
+version: 1.0.0
+main: ru.realite.chat.RealiteChatPlugin
+api-version: "1.21"
