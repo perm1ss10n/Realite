@@ -1,5 +1,5 @@
 name: RealiteClasses
-version: 1.3.0
+version: 1.3.0 
 main: ru.realite.classes.RealiteClassesPlugin
 api-version: "1.21"
 

@@ -1081,8 +1081,7 @@ public final class CityCommand implements CommandExecutor {
         }
         ShopListing listing = shopDirectoryService.updateListing(
                 context.point(),
-                new ShopDirectoryService.ListingUpdate(null, null, null, open)
-        );
+                new ShopDirectoryService.ListingUpdate(null, null, null, open));
         messages.send(player,
                 open ? "city.shop.listing.opened" : "city.shop.listing.closed",
                 "",
@@ -1391,8 +1390,7 @@ public final class CityCommand implements CommandExecutor {
                 world,
                 config.marketHubX(),
                 config.marketHubY(),
-                config.marketHubZ()
-        );
+                config.marketHubZ());
         MarketService.TeleportResult result = marketService.teleport(player, target);
         handleMarketTeleportResult(player, result, messages.getRaw("city.market.hub.title", "рынок"));
     }
@@ -1584,7 +1582,7 @@ public final class CityCommand implements CommandExecutor {
         String trimmed = reference.trim();
         if (trimmed.startsWith("#")) {
             return parsePlotNumber(trimmed.substring(1))
-                    .flatMap(plotRepository::findByNumber);
+                    .flatMap(n -> plotRepository.findByNumber(n.intValue()));
         }
         if (isNumber(trimmed)) {
             int number = Integer.parseInt(trimmed);

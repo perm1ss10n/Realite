@@ -118,7 +118,7 @@ public final class ShopMarkerService {
     }
 
     private void applyStand(ArmorStand stand, Component name) {
-        stand.setCustomName(LEGACY.serialize(name));
+        stand.customName(name);
         stand.setCustomNameVisible(true);
         stand.setInvisible(true);
         stand.setGravity(false);
