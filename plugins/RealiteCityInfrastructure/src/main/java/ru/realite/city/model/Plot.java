@@ -6,6 +6,7 @@ import java.util.UUID;
 
 public record Plot(
         String id,
+        int number,
         PlotType type,
         String world,
         int x1,

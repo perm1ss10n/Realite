@@ -25,6 +25,12 @@ public final class CityMessages {
         return LEGACY.deserialize(raw);
     }
 
+    /** Получить сообщение как строку */
+    public String getRaw(String key, String def) {
+        String raw = config.getString(key, def);
+        return raw == null ? "" : raw;
+    }
+
     /** Отправить сообщение без плейсхолдеров */
     public void send(CommandSender sender, String key, String def) {
         sender.sendMessage(get(key, def));

@@ -139,7 +139,7 @@ public final class PlotCleanupService {
             }
             Player player = Bukkit.getPlayer(notifier);
             if (player != null) {
-                messages.send(player, "city.plot.cleanup.done", "&aPlot {id} cleanup done.",
+                messages.send(player, "city.plot.cleanup.done", "",
                         Map.of("id", plotId));
             }
         }

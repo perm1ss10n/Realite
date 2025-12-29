@@ -29,7 +29,7 @@ public final class SqlitePlotRepository implements PlotRepository {
         cache.clear();
         Connection connection = storage.connection();
         try (PreparedStatement statement = connection.prepareStatement(
-                "SELECT id, type, world, x1, y1, z1, x2, y2, z2, price, owner_uuid, created_at FROM plots"
+                "SELECT id, number, type, world, x1, y1, z1, x2, y2, z2, price, owner_uuid, created_at FROM plots"
         )) {
             try (ResultSet rs = statement.executeQuery()) {
                 int count = 0;
@@ -41,6 +41,7 @@ public final class SqlitePlotRepository implements PlotRepository {
                     }
                     Plot plot = new Plot(
                             rs.getString("id"),
+                            rs.getInt("number"),
                             PlotType.valueOf(rs.getString("type")),
                             rs.getString("world"),
                             rs.getInt("x1"),
@@ -66,9 +67,10 @@ public final class SqlitePlotRepository implements PlotRepository {
         try {
             Connection connection = storage.connection();
             try (PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO plots(id, type, world, x1, y1, z1, x2, y2, z2, price, owner_uuid, created_at) "
-                            + "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    "INSERT INTO plots(id, number, type, world, x1, y1, z1, x2, y2, z2, price, owner_uuid, created_at) "
+                            + "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                             + "ON CONFLICT(id) DO UPDATE SET "
+                            + "number = excluded.number, "
                             + "type = excluded.type, "
                             + "world = excluded.world, "
                             + "x1 = excluded.x1, "
@@ -82,17 +84,18 @@ public final class SqlitePlotRepository implements PlotRepository {
                             + "created_at = excluded.created_at"
             )) {
                 statement.setString(1, plot.id());
-                statement.setString(2, plot.type().name());
-                statement.setString(3, plot.world());
-                statement.setInt(4, plot.x1());
-                statement.setInt(5, plot.y1());
-                statement.setInt(6, plot.z1());
-                statement.setInt(7, plot.x2());
-                statement.setInt(8, plot.y2());
-                statement.setInt(9, plot.z2());
-                statement.setInt(10, plot.price());
-                statement.setString(11, plot.ownerUuid() != null ? plot.ownerUuid().toString() : null);
-                statement.setLong(12, plot.createdAt());
+                statement.setInt(2, plot.number());
+                statement.setString(3, plot.type().name());
+                statement.setString(4, plot.world());
+                statement.setInt(5, plot.x1());
+                statement.setInt(6, plot.y1());
+                statement.setInt(7, plot.z1());
+                statement.setInt(8, plot.x2());
+                statement.setInt(9, plot.y2());
+                statement.setInt(10, plot.z2());
+                statement.setInt(11, plot.price());
+                statement.setString(12, plot.ownerUuid() != null ? plot.ownerUuid().toString() : null);
+                statement.setLong(13, plot.createdAt());
                 statement.executeUpdate();
             }
             cache.put(plot.id(), plot);
@@ -127,6 +130,19 @@ public final class SqlitePlotRepository implements PlotRepository {
             return Optional.empty();
         }
         return Optional.ofNullable(cache.get(id));
+    }
+
+    @Override
+    public Optional<Plot> findByNumber(int number) {
+        if (number <= 0) {
+            return Optional.empty();
+        }
+        for (Plot plot : cache.values()) {
+            if (plot.number() == number) {
+                return Optional.of(plot);
+            }
+        }
+        return Optional.empty();
     }
 
     @Override
@@ -177,5 +193,16 @@ public final class SqlitePlotRepository implements PlotRepository {
             }
         }
         return Optional.empty();
+    }
+
+    @Override
+    public int nextNumber() {
+        int max = 0;
+        for (Plot plot : cache.values()) {
+            if (plot.number() > max) {
+                max = plot.number();
+            }
+        }
+        return max + 1;
     }
 }

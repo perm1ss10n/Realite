@@ -81,7 +81,7 @@ public final class CityCommand implements CommandExecutor {
             return;
         }
         if (!player.hasPermission(ADMIN_PERMISSION)) {
-            messages.send(sender, "city.no-permission", "&cYou do not have permission.");
+            messages.send(sender, "city.no-permission", "");
             return;
         }
         if (args.length < 2) {
@@ -92,7 +92,7 @@ public final class CityCommand implements CommandExecutor {
         switch (action) {
             case "wand" -> {
                 selectionService.enableWand(player.getUniqueId());
-                messages.send(player, "city.area.wand-enabled", "&aCity area wand enabled.");
+                messages.send(player, "city.area.wand-enabled", "");
             }
             case "create" -> handleCreateArea(player, args);
             case "delete" -> handleDeleteArea(sender, args);
@@ -123,34 +123,35 @@ public final class CityCommand implements CommandExecutor {
             case "sell" -> handlePlotSell(sender, args);
             case "accept" -> handlePlotAccept(sender, args);
             case "release" -> handlePlotRelease(sender, args);
+            case "goto" -> handlePlotGoto(sender, args);
             default -> sendUsage(sender);
         }
     }
 
     private void handleCreateArea(Player player, String[] args) {
         if (args.length < 3) {
-            messages.send(player, "city.area.create.usage", "&eUsage: /city area create <id>");
+            messages.send(player, "city.area.create.usage", "");
             return;
         }
         String id = args[2];
         Optional<CityArea> existing = cityAreaRepository.findById(id);
         if (existing.isPresent()) {
-            messages.send(player, "city.area.exists", "&cCity area {id} already exists.", Map.of("id", id));
+            messages.send(player, "city.area.exists", "", Map.of("id", id));
             return;
         }
         Optional<Selection> selection = selectionService.getSelection(player.getUniqueId());
         if (selection.isEmpty() || selection.get().pos1() == null || selection.get().pos2() == null) {
-            messages.send(player, "city.area.selection-missing", "&cBoth pos1 and pos2 must be set.");
+            messages.send(player, "city.area.selection-missing", "");
             return;
         }
         Location pos1 = selection.get().pos1();
         Location pos2 = selection.get().pos2();
         if (pos1.getWorld() == null || pos2.getWorld() == null) {
-            messages.send(player, "city.area.invalid-world", "&cInvalid selection world.");
+            messages.send(player, "city.area.invalid-world", "");
             return;
         }
         if (!pos1.getWorld().equals(pos2.getWorld())) {
-            messages.send(player, "city.area.mismatched-world", "&cpos1 and pos2 must be in the same world.");
+            messages.send(player, "city.area.mismatched-world", "");
             return;
         }
         int minX = Math.min(pos1.getBlockX(), pos2.getBlockX());
@@ -170,33 +171,32 @@ public final class CityCommand implements CommandExecutor {
                 maxZ,
                 System.currentTimeMillis());
         cityAreaRepository.upsert(area);
-        messages.send(player, "city.area.created", "&aCity area {id} created.", Map.of("id", id));
+        messages.send(player, "city.area.created", "", Map.of("id", id));
     }
 
     private void handleDeleteArea(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            messages.send(sender, "city.area.delete.usage", "&eUsage: /city area delete <id>");
+            messages.send(sender, "city.area.delete.usage", "");
             return;
         }
         String id = args[2];
         if (cityAreaRepository.delete(id)) {
-            messages.send(sender, "city.area.deleted", "&aCity area {id} deleted.", Map.of("id", id));
+            messages.send(sender, "city.area.deleted", "", Map.of("id", id));
         } else {
-            messages.send(sender, "city.area.not-found", "&cCity area {id} not found.", Map.of("id", id));
+            messages.send(sender, "city.area.not-found", "", Map.of("id", id));
         }
     }
 
     private void handleListAreas(CommandSender sender) {
         List<CityArea> areas = cityAreaRepository.findAll();
         if (areas.isEmpty()) {
-            messages.send(sender, "city.area.none", "&eNo city areas defined.");
+            messages.send(sender, "city.area.none", "");
             return;
         }
         areas.sort(Comparator.comparing(CityArea::id));
-        messages.send(sender, "city.area.list.header", "&eCity areas:");
+        messages.send(sender, "city.area.list.header", "");
         for (CityArea area : areas) {
-            messages.send(sender, "city.area.list.line",
-                    "- {id} ({world}) [{minX},{minY},{minZ}] -> [{maxX},{maxY},{maxZ}]",
+            messages.send(sender, "city.area.list.line", "",
                     Map.ofEntries(
                             Map.entry("id", area.id()),
                             Map.entry("world", area.world()),
@@ -212,31 +212,38 @@ public final class CityCommand implements CommandExecutor {
     private void handleListPlots(CommandSender sender) {
         List<Plot> plots = plotRepository.findAll();
         if (plots.isEmpty()) {
-            messages.send(sender, "city.plot.list.none", "&eNo plots defined.");
+            messages.send(sender, "city.plot.list.none", "");
             return;
         }
-        plots.sort(Comparator.comparing(Plot::id));
-        messages.send(sender, "city.plot.list.header", "Plots:");
+        plots.sort(Comparator.comparingInt(Plot::number));
+        messages.send(sender, "city.plot.list.header", "");
         for (Plot plot : plots) {
-            messages.send(sender, "city.plot.list.line", "{line}", Map.of("line", formatPlotLine(plot)));
+            messages.send(sender, "city.plot.list.line", "",
+                    Map.ofEntries(
+                            Map.entry("number", String.valueOf(plot.number())),
+                            Map.entry("id", plot.id()),
+                            Map.entry("type", plot.type().displayName()),
+                            Map.entry("price", String.valueOf(plot.price())),
+                            Map.entry("owner", formatOwner(plot.ownerUuid()))));
         }
     }
 
     private void handlePlotInfo(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            messages.send(sender, "city.plot.info.usage", "&eUsage: /city plot info <id>");
+            messages.send(sender, "city.plot.info.usage", "");
             return;
         }
-        String id = args[2];
-        Optional<Plot> plotOptional = plotRepository.findById(id);
+        String reference = args[2];
+        Optional<Plot> plotOptional = resolvePlotReference(reference);
         if (plotOptional.isEmpty()) {
-            messages.send(sender, "city.plot.not-found", "&cPlot {id} not found.", Map.of("id", id));
+            messages.send(sender, "city.plot.not-found", "", Map.of("id", reference));
             return;
         }
         Plot plot = plotOptional.get();
-        messages.send(sender, "city.plot.info", "&ePlot {id}: &7type={type} price={price} owner={owner}",
+        messages.send(sender, "city.plot.info", "",
                 Map.ofEntries(
                         Map.entry("id", plot.id()),
+                        Map.entry("number", String.valueOf(plot.number())),
                         Map.entry("type", plot.type().displayName()),
                         Map.entry("price", String.valueOf(plot.price())),
                         Map.entry("owner", formatOwner(plot.ownerUuid())),
@@ -255,30 +262,42 @@ public final class CityCommand implements CommandExecutor {
         if (player == null) {
             return;
         }
-        String id;
+        Plot plot;
         if (args.length < 3) {
             Optional<Plot> plotOptional = plotService.findContaining(player.getLocation());
             if (plotOptional.isEmpty()) {
-                messages.send(player, "city.plot.buy.not-in-plot",
-                        "&cYou are not inside a plot. Use /city plot nearby or /city plot buy <id>.");
+                messages.send(player, "city.plot.buy.not-in-plot", "");
                 return;
             }
-            id = plotOptional.get().id();
+            plot = plotOptional.get();
         } else {
-            id = args[2];
+            String reference = args[2];
+            Optional<Plot> plotOptional = resolvePlotReference(reference);
+            if (plotOptional.isEmpty()) {
+                messages.send(player, "city.plot.not-found", "", Map.of("id", reference));
+                return;
+            }
+            plot = plotOptional.get();
         }
+        String id = plot.id();
         PlotService.BuyResult result = plotService.buyPlot(player, id);
         switch (result) {
-            case SUCCESS -> messages.send(player, "city.plot.buy.success", "&aPlot {id} bought.", Map.of("id", id));
-            case NOT_FOUND -> messages.send(player, "city.plot.not-found", "&cPlot {id} not found.", Map.of("id", id));
-            case ALREADY_OWNED -> messages.send(player, "city.plot.buy.already-owned", "&cPlot {id} is already owned.",
-                    Map.of("id", id));
-            case TYPE_DISABLED -> messages.send(player, "city.plot.type-disabled", "&cPlot type {type} is disabled.",
+            case SUCCESS -> messages.send(player, "city.plot.buy.success", "",
+                    Map.ofEntries(
+                            Map.entry("id", id),
+                            Map.entry("number", String.valueOf(plot.number()))));
+            case NOT_FOUND -> messages.send(player, "city.plot.not-found", "", Map.of("id", id));
+            case ALREADY_OWNED -> messages.send(player, "city.plot.buy.already-owned", "",
+                    Map.ofEntries(
+                            Map.entry("id", id),
+                            Map.entry("number", String.valueOf(plot.number()))));
+            case TYPE_DISABLED -> messages.send(player, "city.plot.type-disabled", "",
                     Map.of("type",
-                            plotRepository.findById(id).map(plot -> plot.type().displayName()).orElse("unknown")));
-            case LIMIT_REACHED -> messages.send(player, "city.plot.limit-reached", "&cPlot limit reached.",
+                            plotRepository.findById(id).map(existing -> existing.type().displayName())
+                                    .orElse(messages.getRaw("city.plot.type.unknown", ""))));
+            case LIMIT_REACHED -> messages.send(player, "city.plot.limit-reached", "",
                     Map.of("limit", String.valueOf(config.defaultPlotsPerPlayer())));
-            case NO_ECONOMY -> messages.send(player, "city.plot.no-economy", "&cEconomy not configured.");
+            case NO_ECONOMY -> messages.send(player, "city.plot.no-economy", "");
         }
     }
 
@@ -287,12 +306,12 @@ public final class CityCommand implements CommandExecutor {
         if (player == null) {
             return;
         }
-        int radius = 100;
+        int radius = config.plotNearbyDefaultRadius();
         if (args.length >= 3) {
             try {
                 radius = Integer.parseInt(args[2]);
             } catch (NumberFormatException e) {
-                messages.send(player, "city.plot.nearby.usage", "&eUsage: /city plot nearby [radius]");
+                messages.send(player, "city.plot.nearby.usage", "");
                 return;
             }
         }
@@ -301,7 +320,7 @@ public final class CityCommand implements CommandExecutor {
 
         Location location = player.getLocation();
         if (location.getWorld() == null) {
-            messages.send(player, "city.plot.nearby.none", "&eNo free plots nearby.");
+            messages.send(player, "city.plot.nearby.none", "");
             return;
         }
         List<PlotDistance> nearby = plotRepository.findAll().stream()
@@ -313,19 +332,22 @@ public final class CityCommand implements CommandExecutor {
                 .limit(10)
                 .toList();
         if (nearby.isEmpty()) {
-            messages.send(player, "city.plot.nearby.none", "&eNo free plots nearby.");
+            messages.send(player, "city.plot.nearby.none", "");
             return;
         }
-        messages.send(player, "city.plot.nearby.header", "&eNearby free plots:");
+        messages.send(player, "city.plot.nearby.header", "");
         for (PlotDistance distance : nearby) {
             Plot plot = distance.plot();
-            messages.send(player, "city.plot.nearby.line", "{id} ({type}) price={price} dist={dist}",
+            messages.send(player, "city.plot.nearby.line", "",
                     Map.ofEntries(
+                            Map.entry("number", String.valueOf(plot.number())),
                             Map.entry("id", plot.id()),
                             Map.entry("type", plot.type().displayName()),
                             Map.entry("price", String.valueOf(plot.price())),
                             Map.entry("dist", String.valueOf(Math.round(distance.distance())))));
         }
+        messages.send(player, "city.plot.nearby.hint.buy", "");
+        messages.send(player, "city.plot.nearby.hint.info", "");
     }
 
     private void handlePlotCreate(CommandSender sender, String[] args) {
@@ -334,43 +356,43 @@ public final class CityCommand implements CommandExecutor {
             return;
         }
         if (!player.hasPermission(ADMIN_PERMISSION)) {
-            messages.send(sender, "city.no-permission", "&cYou do not have permission.");
+            messages.send(sender, "city.no-permission", "");
             return;
         }
         if (args.length < 5) {
-            messages.send(player, "city.plot.create.usage", "&eUsage: /city plot create <id> <home|shop> <price>");
+            messages.send(player, "city.plot.create.usage", "");
             return;
         }
         String id = args[2];
         PlotType type = PlotType.fromToken(args[3]);
         if (type == null) {
-            messages.send(player, "city.plot.create.unknown-type", "&cUnknown plot type.");
+            messages.send(player, "city.plot.create.unknown-type", "");
             return;
         }
         int price;
         try {
             price = Integer.parseInt(args[4]);
         } catch (NumberFormatException e) {
-            messages.send(player, "city.plot.create.invalid-price", "&cInvalid price.");
+            messages.send(player, "city.plot.create.invalid-price", "");
             return;
         }
         if (plotRepository.findById(id).isPresent()) {
-            messages.send(player, "city.plot.create.exists", "&cPlot {id} already exists.", Map.of("id", id));
+            messages.send(player, "city.plot.create.exists", "", Map.of("id", id));
             return;
         }
         Optional<Selection> selection = selectionService.getSelection(player.getUniqueId());
         if (selection.isEmpty() || selection.get().pos1() == null || selection.get().pos2() == null) {
-            messages.send(player, "city.area.selection-missing", "&cBoth pos1 and pos2 must be set.");
+            messages.send(player, "city.area.selection-missing", "");
             return;
         }
         Location pos1 = selection.get().pos1();
         Location pos2 = selection.get().pos2();
         if (pos1.getWorld() == null || pos2.getWorld() == null) {
-            messages.send(player, "city.area.invalid-world", "&cInvalid selection world.");
+            messages.send(player, "city.area.invalid-world", "");
             return;
         }
         if (!pos1.getWorld().equals(pos2.getWorld())) {
-            messages.send(player, "city.area.mismatched-world", "&cpos1 and pos2 must be in the same world.");
+            messages.send(player, "city.area.mismatched-world", "");
             return;
         }
         World world = pos1.getWorld();
@@ -378,8 +400,10 @@ public final class CityCommand implements CommandExecutor {
         int minZ = Math.min(pos1.getBlockZ(), pos2.getBlockZ());
         int maxX = Math.max(pos1.getBlockX(), pos2.getBlockX());
         int maxZ = Math.max(pos1.getBlockZ(), pos2.getBlockZ());
+        int number = plotRepository.nextNumber();
         Plot plot = new Plot(
                 id,
+                number,
                 type,
                 world.getName(),
                 minX,
@@ -392,23 +416,26 @@ public final class CityCommand implements CommandExecutor {
                 null,
                 System.currentTimeMillis());
         plotRepository.upsert(plot);
-        messages.send(player, "city.plot.created", "&aPlot {id} created.", Map.of("id", id));
+        messages.send(player, "city.plot.created", "",
+                Map.ofEntries(
+                        Map.entry("id", id),
+                        Map.entry("number", String.valueOf(number))));
     }
 
     private void handlePlotDelete(CommandSender sender, String[] args) {
         if (!sender.hasPermission(ADMIN_PERMISSION)) {
-            messages.send(sender, "city.no-permission", "&cYou do not have permission.");
+            messages.send(sender, "city.no-permission", "");
             return;
         }
         if (args.length < 3) {
-            messages.send(sender, "city.plot.delete.usage", "&eUsage: /city plot delete <id>");
+            messages.send(sender, "city.plot.delete.usage", "");
             return;
         }
         String id = args[2];
         if (plotRepository.delete(id)) {
-            messages.send(sender, "city.plot.deleted", "&aPlot {id} deleted.", Map.of("id", id));
+            messages.send(sender, "city.plot.deleted", "", Map.of("id", id));
         } else {
-            messages.send(sender, "city.plot.not-found", "&cPlot {id} not found.", Map.of("id", id));
+            messages.send(sender, "city.plot.not-found", "", Map.of("id", id));
         }
     }
 
@@ -418,32 +445,32 @@ public final class CityCommand implements CommandExecutor {
             return;
         }
         if (args.length < 4) {
-            messages.send(player, "city.plot.member.add.usage", "&eUsage: /city plot addmember <id> <player>");
+            messages.send(player, "city.plot.member.add.usage", "");
             return;
         }
         String id = args[2];
         Optional<Plot> plotOptional = plotRepository.findById(id);
         if (plotOptional.isEmpty()) {
-            messages.send(player, "city.plot.not-found", "&cPlot {id} not found.", Map.of("id", id));
+            messages.send(player, "city.plot.not-found", "", Map.of("id", id));
             return;
         }
         Plot plot = plotOptional.get();
         if (plot.ownerUuid() == null) {
-            messages.send(player, "city.plot.not-owned", "&cPlot {id} is not owned.", Map.of("id", id));
+            messages.send(player, "city.plot.not-owned", "", Map.of("id", id));
             return;
         }
         if (!isOwnerOrAdmin(player, plot)) {
-            messages.send(player, "city.plot.not-owner", "&cYou are not the owner of this plot.");
+            messages.send(player, "city.plot.not-owner", "");
             return;
         }
         OfflinePlayer target = Bukkit.getOfflinePlayer(args[3]);
         UUID targetId = target.getUniqueId();
         if (player.getUniqueId().equals(targetId)) {
-            messages.send(player, "city.plot.member.self", "&cYou cannot add yourself.");
+            messages.send(player, "city.plot.member.self", "");
             return;
         }
         plotMemberRepository.upsert(id, targetId, PlotMemberRole.MEMBER);
-        messages.send(player, "city.plot.member.added", "&aAdded {player} to plot {id}.",
+        messages.send(player, "city.plot.member.added", "",
                 Map.of("player", target.getName() == null ? targetId.toString() : target.getName(), "id", id));
     }
 
@@ -453,31 +480,31 @@ public final class CityCommand implements CommandExecutor {
             return;
         }
         if (args.length < 4) {
-            messages.send(player, "city.plot.member.remove.usage", "&eUsage: /city plot removemember <id> <player>");
+            messages.send(player, "city.plot.member.remove.usage", "");
             return;
         }
         String id = args[2];
         Optional<Plot> plotOptional = plotRepository.findById(id);
         if (plotOptional.isEmpty()) {
-            messages.send(player, "city.plot.not-found", "&cPlot {id} not found.", Map.of("id", id));
+            messages.send(player, "city.plot.not-found", "", Map.of("id", id));
             return;
         }
         Plot plot = plotOptional.get();
         if (plot.ownerUuid() == null) {
-            messages.send(player, "city.plot.not-owned", "&cPlot {id} is not owned.", Map.of("id", id));
+            messages.send(player, "city.plot.not-owned", "", Map.of("id", id));
             return;
         }
         if (!isOwnerOrAdmin(player, plot)) {
-            messages.send(player, "city.plot.not-owner", "&cYou are not the owner of this plot.");
+            messages.send(player, "city.plot.not-owner", "");
             return;
         }
         OfflinePlayer target = Bukkit.getOfflinePlayer(args[3]);
         UUID targetId = target.getUniqueId();
         if (plotMemberRepository.remove(id, targetId)) {
-            messages.send(player, "city.plot.member.removed", "&aRemoved {player} from plot {id}.",
+            messages.send(player, "city.plot.member.removed", "",
                     Map.of("player", target.getName() == null ? targetId.toString() : target.getName(), "id", id));
         } else {
-            messages.send(player, "city.plot.member.not-found", "&cPlayer is not a plot member.");
+            messages.send(player, "city.plot.member.not-found", "");
         }
     }
 
@@ -487,34 +514,34 @@ public final class CityCommand implements CommandExecutor {
             return;
         }
         if (args.length < 3) {
-            messages.send(player, "city.plot.members.usage", "&eUsage: /city plot members <id>");
+            messages.send(player, "city.plot.members.usage", "");
             return;
         }
         String id = args[2];
         Optional<Plot> plotOptional = plotRepository.findById(id);
         if (plotOptional.isEmpty()) {
-            messages.send(player, "city.plot.not-found", "&cPlot {id} not found.", Map.of("id", id));
+            messages.send(player, "city.plot.not-found", "", Map.of("id", id));
             return;
         }
         Plot plot = plotOptional.get();
         if (plot.ownerUuid() == null) {
-            messages.send(player, "city.plot.not-owned", "&cPlot {id} is not owned.", Map.of("id", id));
+            messages.send(player, "city.plot.not-owned", "", Map.of("id", id));
             return;
         }
         if (!isOwnerOrAdmin(player, plot)) {
-            messages.send(player, "city.plot.not-owner", "&cYou are not the owner of this plot.");
+            messages.send(player, "city.plot.not-owner", "");
             return;
         }
         Map<UUID, PlotMemberRole> members = plotMemberRepository.findMembers(id);
-        messages.send(player, "city.plot.members.header", "&ePlot {id} members:", Map.of("id", id));
+        messages.send(player, "city.plot.members.header", "", Map.of("id", id));
         if (members.isEmpty()) {
-            messages.send(player, "city.plot.members.empty", "&7(no members)");
+            messages.send(player, "city.plot.members.empty", "");
             return;
         }
         for (Map.Entry<UUID, PlotMemberRole> entry : members.entrySet()) {
             OfflinePlayer member = Bukkit.getOfflinePlayer(entry.getKey());
             String name = member.getName() == null ? entry.getKey().toString() : member.getName();
-            messages.send(player, "city.plot.members.line", "- {player} ({role})",
+            messages.send(player, "city.plot.members.line", "",
                     Map.ofEntries(
                             Map.entry("player", name),
                             Map.entry("role", entry.getValue().name())));
@@ -527,41 +554,40 @@ public final class CityCommand implements CommandExecutor {
             return;
         }
         if (args.length < 4) {
-            messages.send(player, "city.plot.transfer.usage", "&eUsage: /city plot transfer <id> <player>");
+            messages.send(player, "city.plot.transfer.usage", "");
             return;
         }
         String id = args[2];
         Optional<Plot> plotOptional = plotRepository.findById(id);
         if (plotOptional.isEmpty()) {
-            messages.send(player, "city.plot.not-found", "&cPlot {id} not found.", Map.of("id", id));
+            messages.send(player, "city.plot.not-found", "", Map.of("id", id));
             return;
         }
         Plot plot = plotOptional.get();
         if (plot.ownerUuid() == null) {
-            messages.send(player, "city.plot.not-owned", "&cPlot {id} is not owned.", Map.of("id", id));
+            messages.send(player, "city.plot.not-owned", "", Map.of("id", id));
             return;
         }
         if (!isOwnerOrAdmin(player, plot)) {
-            messages.send(player, "city.plot.not-owner", "&cYou are not the owner of this plot.");
+            messages.send(player, "city.plot.not-owner", "");
             return;
         }
         OfflinePlayer target = Bukkit.getOfflinePlayer(args[3]);
         UUID targetId = target.getUniqueId();
         if (player.getUniqueId().equals(targetId)) {
-            messages.send(player, "city.plot.transfer.self", "&cYou cannot transfer to yourself.");
+            messages.send(player, "city.plot.transfer.self", "");
             return;
         }
         long expiresAt = System.currentTimeMillis() + 120_000L;
         plotService.createTransferOffer(id, targetId, expiresAt);
-        messages.send(player, "city.plot.transfer.sent", "&aTransfer offer sent to {player} for plot {id}.",
+        messages.send(player, "city.plot.transfer.sent", "",
                 Map.ofEntries(
                         Map.entry("player", target.getName() == null ? targetId.toString() : target.getName()),
                         Map.entry("id", id)));
         if (target.isOnline()) {
             Player online = target.getPlayer();
             if (online != null) {
-                messages.send(online, "city.plot.transfer.sent",
-                        "&eTransfer offer for plot {id} from {player}.",
+                messages.send(online, "city.plot.transfer.sent", "",
                         Map.ofEntries(
                                 Map.entry("player", player.getName()),
                                 Map.entry("id", id)));
@@ -575,41 +601,40 @@ public final class CityCommand implements CommandExecutor {
             return;
         }
         if (args.length < 5) {
-            messages.send(player, "city.plot.sell.usage", "&eUsage: /city plot sell <id> <player> <price>");
+            messages.send(player, "city.plot.sell.usage", "");
             return;
         }
         String id = args[2];
         Optional<Plot> plotOptional = plotRepository.findById(id);
         if (plotOptional.isEmpty()) {
-            messages.send(player, "city.plot.not-found", "&cPlot {id} not found.", Map.of("id", id));
+            messages.send(player, "city.plot.not-found", "", Map.of("id", id));
             return;
         }
         Plot plot = plotOptional.get();
         if (plot.ownerUuid() == null) {
-            messages.send(player, "city.plot.not-owned", "&cPlot {id} is not owned.", Map.of("id", id));
+            messages.send(player, "city.plot.not-owned", "", Map.of("id", id));
             return;
         }
         if (!isOwnerOrAdmin(player, plot)) {
-            messages.send(player, "city.plot.not-owner", "&cYou are not the owner of this plot.");
+            messages.send(player, "city.plot.not-owner", "");
             return;
         }
         int price;
         try {
             price = Integer.parseInt(args[4]);
         } catch (NumberFormatException e) {
-            messages.send(player, "city.plot.sell.invalid-price", "&cInvalid price.");
+            messages.send(player, "city.plot.sell.invalid-price", "");
             return;
         }
         OfflinePlayer target = Bukkit.getOfflinePlayer(args[3]);
         UUID targetId = target.getUniqueId();
         if (player.getUniqueId().equals(targetId)) {
-            messages.send(player, "city.plot.sell.self", "&cYou cannot sell to yourself.");
+            messages.send(player, "city.plot.sell.self", "");
             return;
         }
         long expiresAt = System.currentTimeMillis() + 120_000L;
         plotService.createSellOffer(id, targetId, expiresAt, price);
-        messages.send(player, "city.plot.sell.sent",
-                "&aSell offer sent to {player} for plot {id} (price {price}).",
+        messages.send(player, "city.plot.sell.sent", "",
                 Map.ofEntries(
                         Map.entry("player", target.getName() == null ? targetId.toString() : target.getName()),
                         Map.entry("id", id),
@@ -617,8 +642,7 @@ public final class CityCommand implements CommandExecutor {
         if (target.isOnline()) {
             Player online = target.getPlayer();
             if (online != null) {
-                messages.send(online, "city.plot.sell.sent",
-                        "&eSell offer for plot {id} from {player} (price {price}).",
+                messages.send(online, "city.plot.sell.sent", "",
                         Map.ofEntries(
                                 Map.entry("player", player.getName()),
                                 Map.entry("id", id),
@@ -633,13 +657,13 @@ public final class CityCommand implements CommandExecutor {
             return;
         }
         if (args.length < 3) {
-            messages.send(player, "city.plot.accept.usage", "&eUsage: /city plot accept <id>");
+            messages.send(player, "city.plot.accept.usage", "");
             return;
         }
         String id = args[2];
         Optional<Plot> plotOptional = plotRepository.findById(id);
         if (plotOptional.isEmpty()) {
-            messages.send(player, "city.plot.not-found", "&cPlot {id} not found.", Map.of("id", id));
+            messages.send(player, "city.plot.not-found", "", Map.of("id", id));
             return;
         }
         Plot plot = plotOptional.get();
@@ -653,23 +677,24 @@ public final class CityCommand implements CommandExecutor {
             handleTransferAccept(player, plot, pendingTransfer.get());
             return;
         }
-        messages.send(player, "city.plot.transfer.expired", "&cTransfer offer expired for plot {id}.",
+        messages.send(player, "city.plot.transfer.expired", "",
                 Map.of("id", id));
     }
 
     private void handleTransferAccept(Player player, Plot plot, PlotService.PendingTransfer pending) {
         if (!player.getUniqueId().equals(pending.targetUuid())) {
-            messages.send(player, "city.no-permission", "&cYou do not have permission.");
+            messages.send(player, "city.no-permission", "");
             return;
         }
         if (plotRepository.countOwned(player.getUniqueId(), null) >= config.defaultPlotsPerPlayer()) {
-            messages.send(player, "city.plot.transfer.limit-reached", "&cPlot limit reached.",
+            messages.send(player, "city.plot.transfer.limit-reached", "",
                     Map.of("limit", String.valueOf(config.defaultPlotsPerPlayer())));
             return;
         }
         plotService.clearPendingOffers(plot.id());
         Plot updated = new Plot(
                 plot.id(),
+                plot.number(),
                 plot.type(),
                 plot.world(),
                 plot.x1(),
@@ -683,27 +708,30 @@ public final class CityCommand implements CommandExecutor {
                 plot.createdAt());
         plotRepository.upsert(updated);
         plotMemberRepository.removeAll(plot.id());
-        messages.send(player, "city.plot.transfer.accepted", "&aPlot {id} transferred to you.",
-                Map.of("id", plot.id()));
+        messages.send(player, "city.plot.transfer.accepted", "",
+                Map.ofEntries(
+                        Map.entry("id", plot.id()),
+                        Map.entry("number", String.valueOf(plot.number()))));
     }
 
     private void handleSellAccept(Player player, Plot plot, PlotService.PendingSell pending) {
         if (!player.getUniqueId().equals(pending.targetUuid())) {
-            messages.send(player, "city.no-permission", "&cYou do not have permission.");
+            messages.send(player, "city.no-permission", "");
             return;
         }
         if (pending.price() > 0) {
-            messages.send(player, "city.plot.sell.no-economy", "&cEconomy not configured.");
+            messages.send(player, "city.plot.sell.no-economy", "");
             return;
         }
         if (plotRepository.countOwned(player.getUniqueId(), null) >= config.defaultPlotsPerPlayer()) {
-            messages.send(player, "city.plot.transfer.limit-reached", "&cPlot limit reached.",
+            messages.send(player, "city.plot.transfer.limit-reached", "",
                     Map.of("limit", String.valueOf(config.defaultPlotsPerPlayer())));
             return;
         }
         plotService.clearPendingOffers(plot.id());
         Plot updated = new Plot(
                 plot.id(),
+                plot.number(),
                 plot.type(),
                 plot.world(),
                 plot.x1(),
@@ -717,8 +745,10 @@ public final class CityCommand implements CommandExecutor {
                 plot.createdAt());
         plotRepository.upsert(updated);
         plotMemberRepository.removeAll(plot.id());
-        messages.send(player, "city.plot.transfer.accepted", "&aPlot {id} transferred to you.",
-                Map.of("id", plot.id()));
+        messages.send(player, "city.plot.transfer.accepted", "",
+                Map.ofEntries(
+                        Map.entry("id", plot.id()),
+                        Map.entry("number", String.valueOf(plot.number()))));
     }
 
     private void handlePlotRelease(CommandSender sender, String[] args) {
@@ -727,26 +757,27 @@ public final class CityCommand implements CommandExecutor {
             return;
         }
         if (args.length < 3) {
-            messages.send(player, "city.plot.release.usage", "&eUsage: /city plot release <id>");
+            messages.send(player, "city.plot.release.usage", "");
             return;
         }
         String id = args[2];
         Optional<Plot> plotOptional = plotRepository.findById(id);
         if (plotOptional.isEmpty()) {
-            messages.send(player, "city.plot.not-found", "&cPlot {id} not found.", Map.of("id", id));
+            messages.send(player, "city.plot.not-found", "", Map.of("id", id));
             return;
         }
         Plot plot = plotOptional.get();
         if (plot.ownerUuid() == null) {
-            messages.send(player, "city.plot.not-owned", "&cPlot {id} is not owned.", Map.of("id", id));
+            messages.send(player, "city.plot.not-owned", "", Map.of("id", id));
             return;
         }
         if (!isOwnerOrAdmin(player, plot)) {
-            messages.send(player, "city.plot.not-owner", "&cYou are not the owner of this plot.");
+            messages.send(player, "city.plot.not-owner", "");
             return;
         }
         Plot updated = new Plot(
                 plot.id(),
+                plot.number(),
                 plot.type(),
                 plot.world(),
                 plot.x1(),
@@ -761,18 +792,92 @@ public final class CityCommand implements CommandExecutor {
         plotRepository.upsert(updated);
         plotMemberRepository.removeAll(plot.id());
         plotService.clearPendingOffers(plot.id());
-        messages.send(player, "city.plot.release.success", "&aPlot {id} released.", Map.of("id", plot.id()));
+        messages.send(player, "city.plot.release.success", "",
+                Map.ofEntries(
+                        Map.entry("id", plot.id()),
+                        Map.entry("number", String.valueOf(plot.number()))));
         if (plotCleanupService.cleanupPlot(plot, player.getUniqueId())) {
-            messages.send(player, "city.plot.cleanup.started", "&ePlot cleanup started.",
+            messages.send(player, "city.plot.cleanup.started", "",
                     Map.of("id", plot.id()));
         }
+    }
+
+    private void handlePlotGoto(CommandSender sender, String[] args) {
+        Player player = requirePlayer(sender);
+        if (player == null) {
+            return;
+        }
+        if (!player.hasPermission(ADMIN_PERMISSION)) {
+            messages.send(player, "city.no-permission", "");
+            return;
+        }
+        if (args.length < 3) {
+            messages.send(player, "city.plot.goto.usage", "");
+            return;
+        }
+        String reference = args[2];
+        Optional<Plot> plotOptional = resolvePlotReference(reference);
+        if (plotOptional.isEmpty()) {
+            messages.send(player, "city.plot.not-found", "", Map.of("id", reference));
+            return;
+        }
+        Plot plot = plotOptional.get();
+        World world = Bukkit.getWorld(plot.world());
+        if (world == null) {
+            messages.send(player, "city.plot.goto.invalid-world", "", Map.of("world", plot.world()));
+            return;
+        }
+        int centerX = (plot.x1() + plot.x2()) / 2;
+        int centerZ = (plot.z1() + plot.z2()) / 2;
+        int y = world.getHighestBlockYAt(centerX, centerZ) + 1;
+        Location target = new Location(world, centerX + 0.5, y, centerZ + 0.5);
+        player.teleport(target);
+        messages.send(player, "city.plot.goto.success", "",
+                Map.ofEntries(
+                        Map.entry("id", plot.id()),
+                        Map.entry("number", String.valueOf(plot.number())),
+                        Map.entry("world", world.getName())));
+    }
+
+    private Optional<Plot> resolvePlotReference(String reference) {
+        if (reference == null || reference.isBlank()) {
+            return Optional.empty();
+        }
+        String trimmed = reference.trim();
+        if (trimmed.startsWith("#")) {
+            return parsePlotNumber(trimmed.substring(1))
+                    .flatMap(plotRepository::findByNumber);
+        }
+        if (isNumber(trimmed)) {
+            int number = Integer.parseInt(trimmed);
+            Optional<Plot> byNumber = plotRepository.findByNumber(number);
+            if (byNumber.isPresent()) {
+                return byNumber;
+            }
+        }
+        return plotRepository.findById(trimmed);
+    }
+
+    private Optional<Integer> parsePlotNumber(String raw) {
+        if (raw == null || raw.isBlank() || !isNumber(raw)) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(Integer.parseInt(raw));
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
+    }
+
+    private boolean isNumber(String raw) {
+        return raw != null && raw.matches("\\d+");
     }
 
     private Player requirePlayer(CommandSender sender) {
         if (sender instanceof Player player) {
             return player;
         }
-        messages.send(sender, "city.only-players", "&cOnly players can use this command.");
+        messages.send(sender, "city.only-players", "");
         return null;
     }
 
@@ -782,20 +887,13 @@ public final class CityCommand implements CommandExecutor {
 
     private String formatOwner(UUID ownerUuid) {
         if (ownerUuid == null) {
-            return "none";
+            return messages.getRaw("city.plot.owner.none", "");
         }
         OfflinePlayer offline = Bukkit.getOfflinePlayer(ownerUuid);
         if (offline.getName() != null) {
             return offline.getName();
         }
         return ownerUuid.toString();
-    }
-
-    private String formatPlotLine(Plot plot) {
-        return plot.id()
-                + " (" + plot.type().displayName() + ") "
-                + "price=" + plot.price()
-                + " owner=" + formatOwner(plot.ownerUuid());
     }
 
     private double distanceToPlot(Location location, Plot plot) {
@@ -807,7 +905,7 @@ public final class CityCommand implements CommandExecutor {
     }
 
     private void sendUsage(CommandSender sender) {
-        messages.send(sender, "city.usage", "&eUsage: /city <area|plot> <...>");
+        messages.send(sender, "city.usage", "");
     }
 
     private record PlotDistance(Plot plot, double distance) {

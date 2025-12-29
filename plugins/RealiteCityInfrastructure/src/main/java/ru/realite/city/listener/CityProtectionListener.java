@@ -128,6 +128,6 @@ public final class CityProtectionListener implements Listener {
             return;
         }
         lastMessageAt.put(player.getUniqueId(), now);
-        messages.send(player, "city.no-permission", "&cYou do not have permission.");
+        messages.send(player, "city.no-permission", "");
     }
 }

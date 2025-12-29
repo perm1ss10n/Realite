@@ -2,7 +2,7 @@
 limits:
   defaultPlotsPerPlayer: 3
 
-language: "ru"  # Supported languages: "en", "ru"
+lang: "ru"  # Supported languages: "en", "ru"
 
 # Storage settings
 storage:
@@ -17,6 +17,8 @@ cityArea:
   bypassPermission: "realite.city.bypass"
 
 plots:
+  nearby:
+    defaultRadius: 150
   types:
     home:
       enabled: true

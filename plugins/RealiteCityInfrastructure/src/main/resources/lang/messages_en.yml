@@ -5,26 +5,33 @@ city:
   protected: "&cThis territory is protected."
   plot:
     buy:
-      not-in-plot: "&cYou are not inside a plot. Use /city plot nearby or /city plot buy <id>."
-      success: "&aPlot {id} bought."
-      already-owned: "&cPlot {id} is already owned."
+      not-in-plot: "&cYou are not inside a plot. Use /city plot nearby or /city plot info #<number> (/city plot info <id>)."
+      success: "&aPlot #{number} ({id}) bought."
+      already-owned: "&cPlot #{number} ({id}) is already owned."
     nearby:
       header: "&eNearby free plots:"
       none: "&eNo free plots nearby."
-      line: "{id} ({type}) price={price} dist={dist}"
+      line: "# {number} {id} {type} price={price} dist={dist}"
+      hint:
+        buy: "&7Buy: /city plot buy #<number>"
+        info: "&7Info: /city plot info #<number>"
       usage: "&eUsage: /city plot nearby [radius]"
     not-found: "&cPlot {id} not found."
+    owner:
+      none: "none"
+    type:
+      unknown: "unknown"
     already-owned: "&cPlot {id} is already owned."
     bought: "&aYou bought plot {id}."
     limit-reached: "&cPlot limit reached ({limit})."
     type-disabled: "&cPlot type {type} is disabled."
     no-economy: "&cEconomy not configured."
-    created: "&aPlot {id} created."
+    created: "&aPlot #{number} ({id}) created."
     deleted: "&aPlot {id} deleted."
-    info: "&ePlot {id}: &7type={type} price={price} owner={owner} world={world} [{x1},{y1},{z1}] -> [{x2},{y2},{z2}]"
+    info: "&ePlot #{number} ({id}): &7type={type} price={price} owner={owner} world={world} [{x1},{y1},{z1}] -> [{x2},{y2},{z2}]"
     list:
       header: "&ePlots:"
-      line: "- {line}"
+      line: "- #{number} {id} ({type}) price={price} owner={owner}"
       none: "&eNo plots defined."
     not-owned: "&cPlot {id} is not owned."
     not-owner: "&cYou are not the owner of this plot."
@@ -44,13 +51,13 @@ city:
       usage: "&eUsage: /city plot members <id>"
     transfer:
       sent: "&aTransfer offer sent to {player} for plot {id}."
-      accepted: "&aPlot {id} transferred to you."
+      accepted: "&aPlot #{number} ({id}) transferred to you."
       expired: "&cTransfer offer expired for plot {id}."
       limit-reached: "&cPlot limit reached ({limit})."
       usage: "&eUsage: /city plot transfer <id> <player>"
       self: "&cYou cannot transfer to yourself."
     release:
-      success: "&aPlot {id} released."
+      success: "&aPlot #{number} ({id}) released."
       usage: "&eUsage: /city plot release <id>"
     cleanup:
       started: "&ePlot {id} cleanup started."
@@ -71,7 +78,11 @@ city:
     delete:
       usage: "&eUsage: /city plot delete <id>"
     info:
-      usage: "&eUsage: /city plot info <id>"
+      usage: "&eUsage: /city plot info <id|#number>"
+    goto:
+      usage: "&eUsage: /city plot goto <id|#number>"
+      success: "&aTeleported to plot #{number} ({id})."
+      invalid-world: "&cWorld {world} is not available."
 area:
   pos1-set: "&apos1 set: &7{loc}"
   pos2-set: "&apos2 set: &7{loc}"

@@ -38,11 +38,11 @@ public final class CityAreaSelectionListener implements Listener {
         Location location = block.getLocation();
         if (action == Action.LEFT_CLICK_BLOCK) {
             selectionService.setPos1(player.getUniqueId(), location);
-            messages.send(player, "area.pos1-set", "&apos1 set: &7{loc}",
+            messages.send(player, "area.pos1-set", "",
                     java.util.Map.of("loc", formatLocation(location)));
         } else {
             selectionService.setPos2(player.getUniqueId(), location);
-            messages.send(player, "area.pos2-set", "&apos2 set: &7{loc}",
+            messages.send(player, "area.pos2-set", "",
                     java.util.Map.of("loc", formatLocation(location)));
         }
         event.setCancelled(true);
