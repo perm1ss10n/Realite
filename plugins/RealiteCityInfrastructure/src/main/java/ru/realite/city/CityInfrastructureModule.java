@@ -4,10 +4,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
 import ru.realite.city.listener.CityAreaSelectionListener;
+import ru.realite.city.command.CityCommand;
 import ru.realite.city.listener.CityProtectionListener;
 import ru.realite.city.service.CityAreaSelectionService;
-import ru.realite.city.service.CityProtectionService;
+import ru.realite.city.service.PlotService;
 import ru.realite.city.storage.SqliteCityAreaRepository;
+import ru.realite.city.storage.SqlitePlotMemberRepository;
+import ru.realite.city.storage.SqlitePlotRepository;
 import ru.realite.core.api.Config;
 import ru.realite.core.api.Module;
 import ru.realite.core.api.ModuleContext;
@@ -33,8 +36,10 @@ public final class CityInfrastructureModule implements Module {
     private CityDatabase database;
     private CityMessages messages;
     private CityAreaSelectionService selectionService;
-    private CityProtectionService protectionService;
     private SqliteCityAreaRepository cityAreaRepository;
+    private SqlitePlotRepository plotRepository;
+    private SqlitePlotMemberRepository plotMemberRepository;
+    private PlotService plotService;
 
     @Override
     public ModuleMetadata metadata() {
@@ -82,14 +87,18 @@ public final class CityInfrastructureModule implements Module {
         selectionService = new CityAreaSelectionService();
 
         cityAreaRepository = new SqliteCityAreaRepository(storage);
+        plotRepository = new SqlitePlotRepository(storage);
+        plotMemberRepository = new SqlitePlotMemberRepository(storage);
 
         try {
             cityAreaRepository.loadAll();
+            plotRepository.loadAll();
+            plotMemberRepository.loadAll();
         } catch (Exception e) {
-            ctx.logger().error("[CityInfrastructure] Failed to load city areas", e);
+            ctx.logger().error("[CityInfrastructure] Failed to load city data", e);
         }
 
-        protectionService = new CityProtectionService(config, cityAreaRepository);
+        plotService = new PlotService(config, cityAreaRepository, plotRepository, plotMemberRepository);
 
         // Bukkit plugin instance (должно совпадать с name в plugin.yml)
         Plugin plugin = Bukkit.getPluginManager().getPlugin("RealiteCityInfrastructure");
@@ -103,8 +112,22 @@ public final class CityInfrastructureModule implements Module {
         Bukkit.getPluginManager().registerEvents(
                 new CityAreaSelectionListener(selectionService, messages),
                 plugin);
+        if (plugin.getCommand("city") != null) {
+            plugin.getCommand("city").setExecutor(
+                    new CityCommand(
+                            cityAreaRepository,
+                            plotRepository,
+                            plotMemberRepository,
+                            plotService,
+                            selectionService,
+                            messages,
+                            config));
+        } else {
+            ctx.logger().warn("[CityInfrastructure] Command /city not found; executor not registered.");
+        }
+
         Bukkit.getPluginManager().registerEvents(
-                new CityProtectionListener(protectionService, messages),
+                new CityProtectionListener(plotService, messages),
                 plugin);
 
         ctx.logger().info("[CityInfrastructure] CityInfrastructure enabled");
