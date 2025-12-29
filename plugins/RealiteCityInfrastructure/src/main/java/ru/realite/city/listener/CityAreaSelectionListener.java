@@ -9,13 +9,16 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import ru.realite.city.service.CityAreaSelectionService;
+import ru.realite.city.i18n.CityMessages;
 
 public final class CityAreaSelectionListener implements Listener {
 
     private final CityAreaSelectionService selectionService;
+    private final CityMessages messages;
 
-    public CityAreaSelectionListener(CityAreaSelectionService selectionService) {
+    public CityAreaSelectionListener(CityAreaSelectionService selectionService, CityMessages messages) {
         this.selectionService = selectionService;
+        this.messages = messages;
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)

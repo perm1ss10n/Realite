@@ -11,12 +11,13 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.event.hanging.HangingBreakEvent;
+import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import ru.realite.city.service.CityProtectionService;
+import ru.realite.city.i18n.CityMessages;
 
 import java.util.Map;
 import java.util.UUID;
@@ -27,10 +28,12 @@ public final class CityProtectionListener implements Listener {
     private static final long MESSAGE_COOLDOWN_MS = 1500L;
 
     private final CityProtectionService protectionService;
+    private final CityMessages messages;
     private final Map<UUID, Long> lastMessageAt = new ConcurrentHashMap<>();
 
-    public CityProtectionListener(CityProtectionService protectionService) {
+    public CityProtectionListener(CityProtectionService protectionService, CityMessages messages) {
         this.protectionService = protectionService;
+        this.messages = messages;
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -69,7 +72,7 @@ public final class CityProtectionListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onHangingBreak(HangingBreakEvent event) {
+    public void onHangingBreak(HangingBreakByEntityEvent event) {
         Location location = event.getEntity().getLocation();
         Entity remover = event.getRemover();
         if (remover instanceof Player player) {
@@ -125,6 +128,6 @@ public final class CityProtectionListener implements Listener {
             return;
         }
         lastMessageAt.put(player.getUniqueId(), now);
-        player.sendMessage("This area is protected.");
+        player.sendMessage(messages.get("city.protected", "&cThis area is protected."));
     }
 }
