@@ -1,0 +1,21 @@
+name: RealiteCityInfrastructure
+version: 0.1.0
+main: ru.realite.city.RealiteCityInfrastructurePlugin
+api-version: "1.21"
+
+depend:
+  - RealiteCore
+
+commands:
+  city:
+    description: City admin tools
+    permission: realite.city.admin
+    usage: /city area <wand|create|delete|list>
+
+permissions:
+  realite.city.admin:
+    description: Access to city administration commands
+    default: op
+  realite.city.bypass:
+    description: Bypass city area protection
+    default: op

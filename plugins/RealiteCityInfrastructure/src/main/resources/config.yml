@@ -2,6 +2,8 @@
 limits:
   defaultPlotsPerPlayer: 3
 
+language: "ru"  # Supported languages: "en", "ru"
+
 # Storage settings
 storage:
   sqliteFile: "city.sqlite"
@@ -12,6 +14,7 @@ logging:
 # Future city area behavior
 cityArea:
   defaultDeny: true
+  bupass.permissions: "realite.city.bypass"
 
 plots:
   types:

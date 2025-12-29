@@ -1,0 +1,5 @@
+city:
+  protected: "&cThis territory is protected."
+area:
+  pos1-set: "&apos1 set: &7{loc}"
+  pos2-set: "&apos2 set: &7{loc}"

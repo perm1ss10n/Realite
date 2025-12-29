@@ -1,0 +1,5 @@
+city:
+  protected: "&cЭта территория защищена."
+area:
+  pos1-set: "&apos1 установлена: &7{loc}"
+  pos2-set: "&apos2 установлена: &7{loc}"
