@@ -28,8 +28,8 @@ public class ClassConfigRepository {
         public final List<EvolutionDef> evolutions;
 
         public ClassDef(ClassId id, Material icon, String name, List<String> lore, List<String> effects,
-                int xpPerLevel, double xpPerMoney, List<EvolutionDef> evolutions,
-                boolean hidden, java.util.Set<ClassId> requiresMastered) {
+                        int xpPerLevel, double xpPerMoney, List<EvolutionDef> evolutions,
+                        boolean hidden, java.util.Set<ClassId> requiresMastered) {
             this.id = id;
             this.icon = icon;
             this.name = name;
@@ -92,6 +92,8 @@ public class ClassConfigRepository {
 
     public ClassConfigRepository(File dataFolder) {
         this.dataFolder = dataFolder;
+        // ✅ ВАЖНО: сразу грузим данные, иначе map всегда пустая
+        reload();
     }
 
     public void reload() {
@@ -138,7 +140,6 @@ public class ClassConfigRepository {
             }
 
             map.put(id, new ClassDef(id, icon, name, lore, effects, xpPerLevel, xpPerMoney, evolutions, hidden, req));
-
         }
     }
 
