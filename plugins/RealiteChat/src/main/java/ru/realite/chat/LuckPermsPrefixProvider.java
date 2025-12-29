@@ -2,6 +2,7 @@ package ru.realite.chat;
 
 import java.util.Optional;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.model.user.User;
 import org.bukkit.entity.Player;
@@ -27,6 +28,10 @@ public final class LuckPermsPrefixProvider implements PrefixProvider {
         if (trimmedPrefix.isBlank()) {
             return Optional.empty();
         }
-        return Optional.of(Component.text("[" + trimmedPrefix + "]"));
+        Component prefixComponent = LegacyComponentSerializer.legacyAmpersand()
+                .deserialize(trimmedPrefix.replace('§', '&'));
+        return Optional.of(Component.text("[")
+                .append(prefixComponent)
+                .append(Component.text("]")));
     }
 }

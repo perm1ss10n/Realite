@@ -14,39 +14,68 @@ final class ChatFormat {
     Component render(Context context) {
         Component result = Component.empty();
         boolean lastTagRendered = false;
+        boolean lastTokenWasTag = false;
+        boolean lastAppendedSpace = false;
         for (Token token : tokens) {
             if (token instanceof TagToken tagToken) {
                 Component rendered = tagToken.render(context);
                 if (!isEmpty(rendered)) {
                     if (lastTagRendered && !context.joiner().isEmpty()) {
-                        result = result.append(Component.text(context.joiner()));
+                        AppendResult appended = appendText(result, context.joiner(), lastAppendedSpace);
+                        result = appended.component();
+                        lastAppendedSpace = appended.lastSpace();
                     }
                     result = result.append(rendered);
                     lastTagRendered = true;
+                    lastAppendedSpace = false;
                 }
+                lastTokenWasTag = true;
                 continue;
             }
             if (token instanceof OptionalGuildToken optionalGuildToken) {
                 Component rendered = optionalGuildToken.render(context);
                 if (!isEmpty(rendered)) {
                     if (lastTagRendered && !context.joiner().isEmpty()) {
-                        result = result.append(Component.text(context.joiner()));
+                        AppendResult appended = appendText(result, context.joiner(), lastAppendedSpace);
+                        result = appended.component();
+                        lastAppendedSpace = appended.lastSpace();
                     }
                     result = result.append(rendered);
                     lastTagRendered = true;
+                    lastAppendedSpace = false;
                 }
+                lastTokenWasTag = true;
                 continue;
             }
             if (token instanceof NameToken nameToken) {
                 if (context.spaceBeforeName() && lastTagRendered) {
-                    result = result.append(Component.text(" "));
+                    AppendResult appended = appendText(result, " ", lastAppendedSpace);
+                    result = appended.component();
+                    lastAppendedSpace = appended.lastSpace();
                 }
                 result = result.append(nameToken.render(context));
                 lastTagRendered = false;
+                lastTokenWasTag = false;
+                lastAppendedSpace = false;
+                continue;
+            }
+            if (token instanceof LiteralToken literalToken) {
+                String value = literalToken.value();
+                if (value.isBlank() && lastTokenWasTag && !lastTagRendered) {
+                    lastTokenWasTag = false;
+                    continue;
+                }
+                AppendResult appended = appendText(result, value, lastAppendedSpace);
+                result = appended.component();
+                lastAppendedSpace = appended.lastSpace();
+                lastTagRendered = false;
+                lastTokenWasTag = false;
                 continue;
             }
             result = result.append(token.render(context));
             lastTagRendered = false;
+            lastTokenWasTag = false;
+            lastAppendedSpace = false;
         }
         return result;
     }
@@ -217,4 +246,27 @@ final class ChatFormat {
     private boolean isEmpty(Component component) {
         return component.equals(Component.empty());
     }
+
+    private static AppendResult appendText(Component base, String text, boolean lastSpace) {
+        if (text == null || text.isEmpty()) {
+            return new AppendResult(base, lastSpace);
+        }
+        String normalized = lastSpace ? trimLeadingSpaces(text) : text;
+        if (normalized.isEmpty()) {
+            return new AppendResult(base, lastSpace);
+        }
+        Component next = base.append(Component.text(normalized));
+        boolean endsWithSpace = normalized.endsWith(" ");
+        return new AppendResult(next, endsWithSpace);
+    }
+
+    private static String trimLeadingSpaces(String text) {
+        int index = 0;
+        while (index < text.length() && text.charAt(index) == ' ') {
+            index++;
+        }
+        return text.substring(index);
+    }
+
+    private record AppendResult(Component component, boolean lastSpace) {}
 }
