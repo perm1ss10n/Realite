@@ -104,4 +104,35 @@ public final class SqlitePlotMemberRepository implements PlotMemberRepository {
     public boolean isMember(String plotId, UUID memberUuid) {
         return findRole(plotId, memberUuid).isPresent();
     }
+
+    @Override
+    public Map<UUID, PlotMemberRole> findMembers(String plotId) {
+        if (plotId == null) {
+            return Map.of();
+        }
+        Map<UUID, PlotMemberRole> members = cache.get(plotId);
+        if (members == null) {
+            return Map.of();
+        }
+        return Map.copyOf(members);
+    }
+
+    @Override
+    public void removeAll(String plotId) {
+        if (plotId == null) {
+            return;
+        }
+        try {
+            Connection connection = storage.connection();
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "DELETE FROM plot_members WHERE plot_id = ?"
+            )) {
+                statement.setString(1, plotId);
+                statement.executeUpdate();
+            }
+            cache.remove(plotId);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to remove plot members: " + plotId, e);
+        }
+    }
 }

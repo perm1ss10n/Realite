@@ -13,4 +13,8 @@ public interface PlotMemberRepository {
     Optional<PlotMemberRole> findRole(String plotId, UUID memberUuid);
 
     boolean isMember(String plotId, UUID memberUuid);
+
+    java.util.Map<UUID, PlotMemberRole> findMembers(String plotId);
+
+    void removeAll(String plotId);
 }

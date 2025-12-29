@@ -1,6 +1,18 @@
 city:
+  no-permission: "&cУ вас нет прав."
+  only-players: "&cКоманду могут использовать только игроки."
+  usage: "&eИспользование: /city <area|plot> <...>"
   protected: "&cЭта территория защищена."
   plot:
+    buy:
+      not-in-plot: "&cВы не находитесь на участке. Используйте /city plot nearby или /city plot buy <id>."
+      success: "&aУчасток {id} куплен."
+      already-owned: "&cУчасток {id} уже занят."
+    nearby:
+      header: "&eБлижайшие свободные участки:"
+      none: "&eСвободных участков поблизости нет."
+      line: "{id} ({type}) price={price} dist={dist}"
+      usage: "&eИспользование: /city plot nearby [radius]"
     not-found: "&cУчасток {id} не найден."
     already-owned: "&cУчасток {id} уже занят."
     bought: "&aУчасток {id} куплен."
@@ -12,10 +24,70 @@ city:
     info: "&eУчасток {id}: &7тип={type} цена={price} владелец={owner} мир={world} [{x1},{y1},{z1}] -> [{x2},{y2},{z2}]"
     list:
       header: "&eУчастки:"
+      line: "- {line}"
+      none: "&eУчастков не найдено."
     not-owned: "&cУчасток {id} не имеет владельца."
     not-owner: "&cВы не владелец этого участка."
-    member-added: "&aИгрок {player} добавлен в участок {id}."
-    member-removed: "&aИгрок {player} удалён из участка {id}."
+    member:
+      added: "&aИгрок {player} добавлен в участок {id}."
+      removed: "&aИгрок {player} удалён из участка {id}."
+      self: "&cНельзя добавить себя."
+      not-found: "&cИгрок не является участником участка."
+      add:
+        usage: "&eИспользование: /city plot addmember <id> <player>"
+      remove:
+        usage: "&eИспользование: /city plot removemember <id> <player>"
+    members:
+      header: "&eУчастники участка {id}:"
+      empty: "&7(нет участников)"
+      line: "- {player} ({role})"
+      usage: "&eИспользование: /city plot members <id>"
+    transfer:
+      sent: "&aЗапрос на передачу участка {id} отправлен игроку {player}."
+      accepted: "&aУчасток {id} передан вам."
+      expired: "&cЗапрос на передачу участка {id} истёк."
+      limit-reached: "&cДостигнут лимит участков ({limit})."
+      usage: "&eИспользование: /city plot transfer <id> <player>"
+      self: "&cНельзя передать участок самому себе."
+    release:
+      success: "&aУчасток {id} сдан городу."
+      usage: "&eИспользование: /city plot release <id>"
+    cleanup:
+      started: "&eОчистка участка {id} началась."
+      done: "&aОчистка участка {id} завершена."
+    sell:
+      sent: "&aПредложение продажи участка {id} отправлено игроку {player} (цена {price})."
+      no-economy: "&cЭкономика не настроена."
+      usage: "&eИспользование: /city plot sell <id> <player> <price>"
+      invalid-price: "&cНекорректная цена."
+      self: "&cНельзя продать участок самому себе."
+    accept:
+      usage: "&eИспользование: /city plot accept <id>"
+    create:
+      usage: "&eИспользование: /city plot create <id> <home|shop> <price>"
+      unknown-type: "&cНеизвестный тип участка."
+      invalid-price: "&cНекорректная цена."
+      exists: "&cУчасток {id} уже существует."
+    delete:
+      usage: "&eИспользование: /city plot delete <id>"
+    info:
+      usage: "&eИспользование: /city plot info <id>"
 area:
   pos1-set: "&apos1 установлена: &7{loc}"
   pos2-set: "&apos2 установлена: &7{loc}"
+  wand-enabled: "&aВолшебная палочка зон включена."
+  create:
+    usage: "&eИспользование: /city area create <id>"
+  delete:
+    usage: "&eИспользование: /city area delete <id>"
+  exists: "&cГородская зона {id} уже существует."
+  selection-missing: "&cНеобходимо установить pos1 и pos2."
+  invalid-world: "&cНеверный мир выделения."
+  mismatched-world: "&cpos1 и pos2 должны быть в одном мире."
+  created: "&aГородская зона {id} создана."
+  deleted: "&aГородская зона {id} удалена."
+  not-found: "&cГородская зона {id} не найдена."
+  none: "&eГородские зоны не заданы."
+  list:
+    header: "&eГородские зоны:"
+    line: "- {id} ({world}) [{minX},{minY},{minZ}] -> [{maxX},{maxY},{maxZ}]"

@@ -10,6 +10,9 @@ public record CityConfig(
                 String cityAreaBypassPermission,
                 boolean homePlotsEnabled,
                 boolean shopPlotsEnabled,
+                boolean plotCleanupEnabled,
+                int plotCleanupBlocksPerTick,
+                PlotCleanupMode plotCleanupMode,
                 String language) {
         public static CityConfig from(Config config) {
                 int defaultPlotsPerPlayer = config.getInt("limits.defaultPlotsPerPlayer", 3);
@@ -21,6 +24,10 @@ public record CityConfig(
                                 "realite.city.bypass");
                 boolean homePlotsEnabled = config.getBoolean("plots.types.home.enabled", true);
                 boolean shopPlotsEnabled = config.getBoolean("plots.types.shop.enabled", true);
+                boolean plotCleanupEnabled = config.getBoolean("plots.cleanup.enabled", true);
+                int plotCleanupBlocksPerTick = config.getInt("plots.cleanup.blocksPerTick", 2000);
+                String cleanupModeRaw = config.getString("plots.cleanup.mode", "AIR_ONLY");
+                PlotCleanupMode plotCleanupMode = PlotCleanupMode.fromToken(cleanupModeRaw);
                 String language = config.getString("language", "ru");
 
                 return new CityConfig(
@@ -31,6 +38,9 @@ public record CityConfig(
                                 cityAreaBypassPermission,
                                 homePlotsEnabled,
                                 shopPlotsEnabled,
+                                plotCleanupEnabled,
+                                plotCleanupBlocksPerTick,
+                                plotCleanupMode,
                                 language);
         }
 }
