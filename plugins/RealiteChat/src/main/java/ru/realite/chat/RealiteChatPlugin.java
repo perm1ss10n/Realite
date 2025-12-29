@@ -18,11 +18,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.classes.ClassTag;
 import ru.realite.core.api.classes.ClassTagProvider;
+import ru.realite.core.api.guilds.GuildTagProvider;
 
 public final class RealiteChatPlugin extends JavaPlugin implements Listener, CommandExecutor {
     private static final String DEFAULT_FORMAT = "{prefix}{class}{guild}{name}: {message}";
     private PrefixProvider prefixProvider = player -> Optional.empty();
     private ClassTagProvider classTagProvider;
+    private GuildTagProvider guildTagProvider;
     private ChatMessages messages;
     private ChatFormat chatFormat;
     private String tagsJoiner = "";
@@ -32,6 +34,7 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener, Com
     private boolean guildEnabled = true;
     private boolean classHoverEnabled = true;
     private boolean classRomanEnabled = true;
+    private boolean guildHoverEnabled = true;
 
     @Override
     public void onEnable() {
@@ -91,6 +94,15 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener, Com
         return core.services().get(ClassTagProvider.class);
     }
 
+    private GuildTagProvider resolveGuildTagProvider() {
+        RegisteredServiceProvider<CoreApi> provider = Bukkit.getServicesManager().getRegistration(CoreApi.class);
+        if (provider == null) {
+            return null;
+        }
+        CoreApi core = provider.getProvider();
+        return core.services().get(GuildTagProvider.class);
+    }
+
     private Component buildClassTagComponent(Player player) {
         ClassTagProvider provider = classTagProvider != null ? classTagProvider : resolveClassTagProvider();
         if (provider != null) {
@@ -114,6 +126,22 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener, Com
     }
 
     private Component buildGuildTagComponent(Player player) {
+        GuildTagProvider provider = guildTagProvider != null ? guildTagProvider : resolveGuildTagProvider();
+        if (provider != null) {
+            guildTagProvider = provider;
+            Optional<Component> tag = provider.getTag(player);
+            if (tag.isEmpty()) {
+                return Component.empty();
+            }
+            Component base = tag.get();
+            if (guildHoverEnabled) {
+                Optional<Component> hover = provider.getHover(player);
+                if (hover.isPresent()) {
+                    base = base.hoverEvent(HoverEvent.showText(hover.get()));
+                }
+            }
+            return base;
+        }
         return Component.empty();
     }
 
@@ -140,6 +168,7 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener, Com
         prefixEnabled = getConfig().getBoolean("prefix.enabled", true);
         classEnabled = getConfig().getBoolean("class.enabled", true);
         guildEnabled = getConfig().getBoolean("guild.enabled", true);
+        guildHoverEnabled = getConfig().getBoolean("guild.hover.enabled", true);
         classHoverEnabled = getConfig().getBoolean("class.hover.enabled", true);
         classRomanEnabled = getConfig().getBoolean("class.roman.enabled", true);
         String template = getConfig().getString("chat.format", DEFAULT_FORMAT);
