@@ -3,3 +3,15 @@ version: 1.0.0
 main: ru.realite.chat.RealiteChatPlugin
 api-version: "1.21"
 softdepend: [RealiteCore, RealiteClasses]
+commands:
+  realitechat:
+    description: Reload RealiteChat configuration
+    usage: /realitechat reload
+    permission: realite.chat.reload
+permissions:
+  realite.chat.admin:
+    description: Allows full RealiteChat administration
+    default: op
+  realite.chat.reload:
+    description: Allows reloading RealiteChat configuration
+    default: op
