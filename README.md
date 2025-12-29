@@ -21,6 +21,7 @@ Realite/
 ├── RealiteCore/        # Ядро платформы (API/сервисы/интеграции)
 ├── plugins/            # Все игровые модули (плагины)
 │   ├── RealiteClasses/             # RPG-классы и прогрессия
+│   ├── RealiteChat/                # Форматирование чата и теги
 │   ├── RealiteCityInfrastructure/  # Городская инфраструктура (участки/магазины/рынок)
 │   └── RealiteQuests/              # Квесты и лор (WIP)
 ├── build.gradle
@@ -70,6 +71,37 @@ Realite/
 
 - `classes.yml`
 - `xp.yml`
+
+---
+
+### 💬 plugins/RealiteChat
+
+Форматирование игрового чата, префиксы (LuckPerms) и классовые теги.
+
+Пример конфигурации:
+
+```yaml
+language: "ru" # ru / en
+chat:
+  format: "{prefix}{class}{guild}{name}: {message}"
+  tags:
+    joiner: ""
+  spaceBeforeName: true
+  class-tag: "[Бродяга-I]"
+
+prefix:
+  enabled: true
+
+class:
+  enabled: true
+  hover:
+    enabled: true
+  roman:
+    enabled: true
+
+guild:
+  enabled: true
+```
 
 ---
 

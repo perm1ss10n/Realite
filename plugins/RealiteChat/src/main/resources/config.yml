@@ -1,3 +1,4 @@
+language: "ru"
 chat:
   format: "{prefix}{class}{guild}{name}: {message}"
   tags:

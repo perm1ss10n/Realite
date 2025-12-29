@@ -1,5 +1,9 @@
-command:
+chat:
   reload:
     usage: "&eUsage: /realitechat reload"
     no-permission: "&cYou don't have permission."
     success: "&aRealiteChat config reloaded."
+  dependency:
+    luckperms-missing: "&cLuckPerms not found. Prefixes are disabled."
+  error:
+    generic: "&cSomething went wrong. Please try again later."

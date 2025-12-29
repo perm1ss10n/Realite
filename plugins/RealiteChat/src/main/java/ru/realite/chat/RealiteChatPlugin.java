@@ -6,6 +6,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.luckperms.api.LuckPerms;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -37,9 +38,11 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener, Com
         saveDefaultConfig();
         saveIfNotExists("lang/messages_ru.yml");
         saveIfNotExists("lang/messages_en.yml");
+        reloadConfig();
+        String language = resolveLanguage();
+        messages = new ChatMessages(this, language);
         prefixProvider = resolvePrefixProvider();
         classTagProvider = resolveClassTagProvider();
-        messages = new ChatMessages(this, "ru");
         reloadAll();
         getServer().getPluginManager().registerEvents(this, this);
         if (getCommand("realitechat") != null) {
@@ -71,6 +74,9 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener, Com
         RegisteredServiceProvider<LuckPerms> provider = getServer().getServicesManager()
                 .getRegistration(LuckPerms.class);
         if (provider == null) {
+            if (messages != null) {
+                getLogger().warning(ChatColor.stripColor(messages.get("chat.dependency.luckperms-missing")));
+            }
             return player -> Optional.empty();
         }
         return new LuckPermsPrefixProvider(provider.getProvider());
@@ -115,19 +121,20 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener, Com
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
             if (!hasReloadPermission(sender)) {
-                sender.sendMessage(messages.get("command.reload.no-permission"));
+                sender.sendMessage(messages.get("chat.reload.no-permission"));
                 return true;
             }
             reloadAll();
-            sender.sendMessage(messages.get("command.reload.success"));
+            sender.sendMessage(messages.get("chat.reload.success"));
             return true;
         }
-        sender.sendMessage(messages.get("command.reload.usage"));
+        sender.sendMessage(messages.get("chat.reload.usage"));
         return true;
     }
 
     public void reloadAll() {
         reloadConfig();
+        String language = resolveLanguage();
         tagsJoiner = getConfig().getString("chat.tags.joiner", "");
         spaceBeforeName = getConfig().getBoolean("chat.spaceBeforeName", true);
         prefixEnabled = getConfig().getBoolean("prefix.enabled", true);
@@ -137,7 +144,15 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener, Com
         classRomanEnabled = getConfig().getBoolean("class.roman.enabled", true);
         String template = getConfig().getString("chat.format", DEFAULT_FORMAT);
         chatFormat = new ChatFormat(template);
-        messages.reload("ru");
+        messages.reload(language);
+    }
+
+    private String resolveLanguage() {
+        String language = getConfig().getString("language");
+        if (language == null || language.isBlank()) {
+            language = getConfig().getString("lang", "ru");
+        }
+        return language;
     }
 
     private boolean hasReloadPermission(CommandSender sender) {
