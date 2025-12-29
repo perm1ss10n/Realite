@@ -9,8 +9,10 @@ import ru.realite.city.storage.CityAreaRepository;
 import ru.realite.city.storage.PlotMemberRepository;
 import ru.realite.city.storage.PlotRepository;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class PlotService {
 
@@ -25,10 +27,18 @@ public final class PlotService {
         NO_ECONOMY
     }
 
+    public record PendingTransfer(UUID targetUuid, long expiresAt) {
+    }
+
+    public record PendingSell(UUID targetUuid, long expiresAt, int price) {
+    }
+
     private final CityConfig config;
     private final CityAreaRepository cityAreaRepository;
     private final PlotRepository plotRepository;
     private final PlotMemberRepository plotMemberRepository;
+    private final Map<String, PendingTransfer> pendingTransfers = new ConcurrentHashMap<>();
+    private final Map<String, PendingSell> pendingSells = new ConcurrentHashMap<>();
 
     public PlotService(
             CityConfig config,
@@ -119,6 +129,54 @@ public final class PlotService {
             return true;
         }
         return plotMemberRepository.isMember(plot.id(), playerId);
+    }
+
+    public void createTransferOffer(String plotId, UUID targetUuid, long expiresAt) {
+        if (plotId == null || targetUuid == null) {
+            return;
+        }
+        pendingSells.remove(plotId);
+        pendingTransfers.put(plotId, new PendingTransfer(targetUuid, expiresAt));
+    }
+
+    public void createSellOffer(String plotId, UUID targetUuid, long expiresAt, int price) {
+        if (plotId == null || targetUuid == null) {
+            return;
+        }
+        pendingTransfers.remove(plotId);
+        pendingSells.put(plotId, new PendingSell(targetUuid, expiresAt, price));
+    }
+
+    public Optional<PendingTransfer> getPendingTransfer(String plotId) {
+        PendingTransfer pending = pendingTransfers.get(plotId);
+        if (pending == null) {
+            return Optional.empty();
+        }
+        if (pending.expiresAt() < System.currentTimeMillis()) {
+            pendingTransfers.remove(plotId);
+            return Optional.empty();
+        }
+        return Optional.of(pending);
+    }
+
+    public Optional<PendingSell> getPendingSell(String plotId) {
+        PendingSell pending = pendingSells.get(plotId);
+        if (pending == null) {
+            return Optional.empty();
+        }
+        if (pending.expiresAt() < System.currentTimeMillis()) {
+            pendingSells.remove(plotId);
+            return Optional.empty();
+        }
+        return Optional.of(pending);
+    }
+
+    public void clearPendingOffers(String plotId) {
+        if (plotId == null) {
+            return;
+        }
+        pendingTransfers.remove(plotId);
+        pendingSells.remove(plotId);
     }
 
     private boolean isTypeEnabled(PlotType type) {

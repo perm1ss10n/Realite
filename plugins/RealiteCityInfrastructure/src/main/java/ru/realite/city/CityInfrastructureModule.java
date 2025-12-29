@@ -8,6 +8,7 @@ import ru.realite.city.i18n.CityMessages;
 import ru.realite.city.listener.CityAreaSelectionListener;
 import ru.realite.city.listener.CityProtectionListener;
 import ru.realite.city.service.CityAreaSelectionService;
+import ru.realite.city.service.PlotCleanupService;
 import ru.realite.city.service.PlotService;
 import ru.realite.city.storage.SqliteCityAreaRepository;
 import ru.realite.city.storage.SqlitePlotMemberRepository;
@@ -43,6 +44,7 @@ public final class CityInfrastructureModule implements Module {
     private SqlitePlotRepository plotRepository;
     private SqlitePlotMemberRepository plotMemberRepository;
     private PlotService plotService;
+    private PlotCleanupService plotCleanupService;
 
     @Override
     public ModuleMetadata metadata() {
@@ -105,9 +107,6 @@ public final class CityInfrastructureModule implements Module {
             ctx.logger().error("[CityInfrastructure] Failed to load city data", e);
         }
 
-        // Domain service
-        plotService = new PlotService(config, cityAreaRepository, plotRepository, plotMemberRepository);
-
         // Bukkit plugin instance (must match name in plugin.yml)
         Plugin p = Bukkit.getPluginManager().getPlugin("RealiteCityInfrastructure");
         if (!(p instanceof JavaPlugin javaPlugin)) {
@@ -115,6 +114,11 @@ public final class CityInfrastructureModule implements Module {
                     + "commands/listeners were not registered.");
             return;
         }
+
+        plotCleanupService = new PlotCleanupService(javaPlugin, config, messages);
+
+        // Domain service
+        plotService = new PlotService(config, cityAreaRepository, plotRepository, plotMemberRepository);
 
         // Listeners
         Bukkit.getPluginManager().registerEvents(
@@ -132,6 +136,7 @@ public final class CityInfrastructureModule implements Module {
                     plotRepository,
                     plotMemberRepository,
                     plotService,
+                    plotCleanupService,
                     selectionService,
                     messages,
                     config));

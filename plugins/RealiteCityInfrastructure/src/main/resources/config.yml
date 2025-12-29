@@ -22,3 +22,7 @@ plots:
       enabled: true
     shop:
       enabled: true
+  cleanup:
+    enabled: true
+    blocksPerTick: 2000
+    mode: "AIR_ONLY"
