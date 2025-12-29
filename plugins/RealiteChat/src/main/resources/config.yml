@@ -18,3 +18,5 @@ class:
 
 guild:
   enabled: true
+  hover:
+    enabled: true

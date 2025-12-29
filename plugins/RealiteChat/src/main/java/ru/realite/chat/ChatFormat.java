@@ -26,6 +26,17 @@ final class ChatFormat {
                 }
                 continue;
             }
+            if (token instanceof OptionalGuildToken optionalGuildToken) {
+                Component rendered = optionalGuildToken.render(context);
+                if (!isEmpty(rendered)) {
+                    if (lastTagRendered && !context.joiner().isEmpty()) {
+                        result = result.append(Component.text(context.joiner()));
+                    }
+                    result = result.append(rendered);
+                    lastTagRendered = true;
+                }
+                continue;
+            }
             if (token instanceof NameToken nameToken) {
                 if (context.spaceBeforeName() && lastTagRendered) {
                     result = result.append(Component.text(" "));
@@ -46,6 +57,24 @@ final class ChatFormat {
         int i = 0;
         while (i < template.length()) {
             char ch = template.charAt(i);
+            if (ch == '[') {
+                int blockEnd = template.indexOf(']', i + 1);
+                if (blockEnd != -1) {
+                    String block = template.substring(i + 1, blockEnd).trim();
+                    if (block.startsWith("{") && block.endsWith("}")) {
+                        String placeholder = block.substring(1, block.length() - 1).trim();
+                        if ("guild".equals(placeholder)) {
+                            if (!literal.isEmpty()) {
+                                parsed.add(new LiteralToken(literal.toString()));
+                                literal.setLength(0);
+                            }
+                            parsed.add(new OptionalGuildToken());
+                            i = blockEnd + 1;
+                            continue;
+                        }
+                    }
+                }
+            }
             if (ch == '{') {
                 int end = template.indexOf('}', i + 1);
                 if (end == -1) {
@@ -104,6 +133,19 @@ final class ChatFormat {
         @Override
         public Component render(Context context) {
             return resolver.resolve(context);
+        }
+    }
+
+    private record OptionalGuildToken() implements Token {
+        @Override
+        public Component render(Context context) {
+            Component guild = context.guild();
+            if (guild.equals(Component.empty())) {
+                return Component.empty();
+            }
+            return Component.text("[")
+                    .append(guild)
+                    .append(Component.text("]"));
         }
     }
 
