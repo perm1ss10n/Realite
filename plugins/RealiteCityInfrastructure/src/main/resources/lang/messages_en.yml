@@ -1,8 +1,56 @@
 city:
   no-permission: "&cYou do not have permission."
   only-players: "&cOnly players can use this command."
-  usage: "&eUsage: /city <area|plot> <...>"
+  usage: "&eUsage: /city <area|plot|shop> <...>"
   protected: "&cThis territory is protected."
+  shop:
+    set:
+      no-target: "&cNo block targeted."
+      not-in-plot: "&cThe block is not inside a plot."
+      not-shop-plot: "&cThis plot is not a shop plot."
+      not-owned: "&cPlot {id} has no owner."
+      limit-reached: "&cShop point limit reached ({limit})."
+      already-exists: "&cA shop point already exists on this block."
+      success: "&aShop point {id} created (plot {plot})."
+    remove:
+      not-found: "&cShop point {id} not found."
+      nearby-none: "&cNo shop point nearby."
+      success: "&aShop point {id} removed."
+    list:
+      usage: "&eUsage: /city shop list <id|#number>"
+      header: "&eShop points for plot {id}:"
+      line: "- {id} {world} {x},{y},{z} enabled={enabled}"
+      empty: "&eNo shop points in plot {id}."
+    info:
+      none: "&cNo shop point nearby."
+      line: "&eShop point {id}: plot={plot} owner={owner} enabled={enabled}"
+    point:
+      customer: "&eThis is a shop. Purchases are TBD."
+      disabled: "&cThis shop point is disabled."
+      enabled: "&aShop point enabled."
+      disabled-by-owner: "&eShop point disabled."
+      menu:
+        title: "&eShop point settings"
+        toggle:
+          enabled: "&aDisable point"
+          disabled: "&cEnable point"
+    rent:
+      usage: "&eUsage: /city shop rent <status|pay> <id|#number> [periods]"
+      disabled: "&cShop rent is disabled."
+      no-economy: "&cEconomy not configured."
+      not-shop: "&cThis is not a shop plot."
+      not-owned: "&cPlot {id} has no owner."
+      not-enough-money: "&cNot enough money to pay rent."
+      overdue: "&cShop plot {id} rent is overdue."
+      blocked: "&cCommerce for plot {id} is temporarily blocked due to overdue rent."
+      never: "never"
+      status:
+        usage: "&eUsage: /city shop rent status <id|#number>"
+        line: "&eRent for plot {id}: paid until {paidUntil} (overdue={overdue}, blocked={blocked})"
+      pay:
+        usage: "&eUsage: /city shop rent pay <id|#number> [periods]"
+        invalid-periods: "&cInvalid period amount."
+        success: "&aRent for plot {id} paid until {paidUntil} (cost {price})."
   plot:
     buy:
       not-in-plot: "&cYou are not inside a plot. Use /city plot nearby or /city plot info #<number> (/city plot info <id>)."

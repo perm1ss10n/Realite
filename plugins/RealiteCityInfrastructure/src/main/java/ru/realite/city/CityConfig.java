@@ -19,6 +19,12 @@ public record CityConfig(
                 int plotCleanupClearAboveY,
                 int plotNearbyDefaultRadius,
                 boolean allowInteractOutsideMembers,
+                int shopPointsPerPlot,
+                boolean shopRentEnabled,
+                int shopRentPeriodHours,
+                int shopRentPricePerPeriod,
+                int shopRentGraceHours,
+                int shopRentCheckMinutes,
                 String language) {
         public static CityConfig from(Config config) {
                 int defaultPlotsPerPlayer = config.getInt("limits.defaultPlotsPerPlayer", 3);
@@ -41,6 +47,12 @@ public record CityConfig(
                 int plotNearbyDefaultRadius = config.getInt("plots.nearby.defaultRadius", 150);
                 boolean allowInteractOutsideMembers =
                                 config.getBoolean("plots.protection.allowInteractOutsideMembers", false);
+                int shopPointsPerPlot = config.getInt("shops.pointsPerPlot", 3);
+                boolean shopRentEnabled = config.getBoolean("shops.rent.enabled", false);
+                int shopRentPeriodHours = config.getInt("shops.rent.periodHours", 24);
+                int shopRentPricePerPeriod = config.getInt("shops.rent.pricePerPeriod", 100);
+                int shopRentGraceHours = config.getInt("shops.rent.graceHours", 48);
+                int shopRentCheckMinutes = config.getInt("shops.rent.checkMinutes", 10);
                 String language = config.getString("lang", config.getString("language", "ru"));
 
                 return new CityConfig(
@@ -60,6 +72,12 @@ public record CityConfig(
                                 plotCleanupClearAboveY,
                                 plotNearbyDefaultRadius,
                                 allowInteractOutsideMembers,
+                                shopPointsPerPlot,
+                                shopRentEnabled,
+                                shopRentPeriodHours,
+                                shopRentPricePerPeriod,
+                                shopRentGraceHours,
+                                shopRentCheckMinutes,
                                 language);
         }
 

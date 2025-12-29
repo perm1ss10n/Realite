@@ -1,8 +1,56 @@
 city:
   no-permission: "&cУ вас нет прав."
   only-players: "&cКоманду могут использовать только игроки."
-  usage: "&eИспользование: /city <area|plot> <...>"
+  usage: "&eИспользование: /city <area|plot|shop> <...>"
   protected: "&cЭта территория защищена."
+  shop:
+    set:
+      no-target: "&cНе удалось найти блок перед вами."
+      not-in-plot: "&cБлок не находится в участке."
+      not-shop-plot: "&cЭтот участок не является магазином."
+      not-owned: "&cУчасток {id} не имеет владельца."
+      limit-reached: "&cДостигнут лимит точек магазина ({limit})."
+      already-exists: "&cТочка магазина уже существует на этом блоке."
+      success: "&aТочка магазина {id} создана (участок {plot})."
+    remove:
+      not-found: "&cТочка магазина {id} не найдена."
+      nearby-none: "&cПоблизости нет точек магазина."
+      success: "&aТочка магазина {id} удалена."
+    list:
+      usage: "&eИспользование: /city shop list <id|#number>"
+      header: "&eТочки магазина участка {id}:"
+      line: "- {id} {world} {x},{y},{z} enabled={enabled}"
+      empty: "&eВ участке {id} нет точек магазина."
+    info:
+      none: "&cПоблизости нет точки магазина."
+      line: "&eТочка {id}: участок={plot} владелец={owner} enabled={enabled}"
+    point:
+      customer: "&eЭто магазин. Покупка пока TBD."
+      disabled: "&cЭта точка магазина выключена."
+      enabled: "&aТочка магазина включена."
+      disabled-by-owner: "&eТочка магазина выключена."
+      menu:
+        title: "&eНастройка магазина"
+        toggle:
+          enabled: "&aВыключить точку"
+          disabled: "&cВключить точку"
+    rent:
+      usage: "&eИспользование: /city shop rent <status|pay> <id|#number> [periods]"
+      disabled: "&cАренда магазинов отключена."
+      no-economy: "&cЭкономика не настроена."
+      not-shop: "&cЭто не магазинный участок."
+      not-owned: "&cУчасток {id} не имеет владельца."
+      not-enough-money: "&cНедостаточно денег для оплаты аренды."
+      overdue: "&cАренда участка {id} просрочена."
+      blocked: "&cКоммерция на участке {id} временно отключена из-за просрочки аренды."
+      never: "никогда"
+      status:
+        usage: "&eИспользование: /city shop rent status <id|#number>"
+        line: "&eАренда участка {id}: оплачено до {paidUntil} (просрочено={overdue}, блокировка={blocked})"
+      pay:
+        usage: "&eИспользование: /city shop rent pay <id|#number> [periods]"
+        invalid-periods: "&cНекорректное количество периодов."
+        success: "&aАренда участка {id} оплачена до {paidUntil} (стоимость {price})."
   plot:
     buy:
       not-in-plot: "&cВы не находитесь на участке. Используйте /city plot nearby или /city plot info #<number> (/city plot info <id>)."
