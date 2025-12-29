@@ -94,6 +94,12 @@ public final class PlotService {
                 return BuyResult.NOT_ENOUGH_MONEY;
             }
         }
+        long rentPaidUntil = plot.rentPaidUntil();
+        if (plot.type() == PlotType.SHOP && config.shopRentEnabled()) {
+            long now = System.currentTimeMillis();
+            long periodMillis = config.shopRentPeriodHours() * 3600_000L;
+            rentPaidUntil = Math.max(rentPaidUntil, now + periodMillis);
+        }
         Plot updated = new Plot(
                 plot.id(),
                 plot.number(),
@@ -107,7 +113,8 @@ public final class PlotService {
                 plot.z2(),
                 plot.price(),
                 player.getUniqueId(),
-                plot.createdAt()
+                plot.createdAt(),
+                rentPaidUntil
         );
         plotRepository.upsert(updated);
         return BuyResult.SUCCESS;
@@ -169,6 +176,9 @@ public final class PlotService {
             }
             if (plotMemberRepository.isMember(plot.id(), playerId)) {
                 return true;
+            }
+            if (plot.type() == PlotType.SHOP) {
+                return false;
             }
             return config.allowInteractOutsideMembers();
         }

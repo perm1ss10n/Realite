@@ -7,13 +7,17 @@ import ru.realite.city.command.CityCommand;
 import ru.realite.city.i18n.CityMessages;
 import ru.realite.city.listener.CityAreaSelectionListener;
 import ru.realite.city.listener.CityProtectionListener;
+import ru.realite.city.listener.ShopPointListener;
 import ru.realite.city.service.CityAreaSelectionService;
 import ru.realite.city.service.EconomyService;
 import ru.realite.city.service.PlotCleanupService;
 import ru.realite.city.service.PlotService;
+import ru.realite.city.service.ShopPointService;
+import ru.realite.city.service.ShopRentService;
 import ru.realite.city.storage.SqliteCityAreaRepository;
 import ru.realite.city.storage.SqlitePlotMemberRepository;
 import ru.realite.city.storage.SqlitePlotRepository;
+import ru.realite.city.storage.SqliteShopPointRepository;
 import ru.realite.core.api.Config;
 import ru.realite.core.api.Module;
 import ru.realite.core.api.ModuleContext;
@@ -44,9 +48,12 @@ public final class CityInfrastructureModule implements Module {
 
     private SqlitePlotRepository plotRepository;
     private SqlitePlotMemberRepository plotMemberRepository;
+    private SqliteShopPointRepository shopPointRepository;
     private PlotService plotService;
     private PlotCleanupService plotCleanupService;
     private EconomyService economyService;
+    private ShopPointService shopPointService;
+    private ShopRentService shopRentService;
 
     @Override
     public ModuleMetadata metadata() {
@@ -99,12 +106,14 @@ public final class CityInfrastructureModule implements Module {
         cityAreaRepository = new SqliteCityAreaRepository(storage);
         plotRepository = new SqlitePlotRepository(storage);
         plotMemberRepository = new SqlitePlotMemberRepository(storage);
+        shopPointRepository = new SqliteShopPointRepository(storage);
 
         // Optional warm-up / cache load (if your repos implement it)
         try {
             cityAreaRepository.loadAll();
             plotRepository.loadAll();
             plotMemberRepository.loadAll();
+            shopPointRepository.loadAll();
         } catch (Exception e) {
             ctx.logger().error("[CityInfrastructure] Failed to load city data", e);
         }
@@ -119,6 +128,15 @@ public final class CityInfrastructureModule implements Module {
 
         plotCleanupService = new PlotCleanupService(javaPlugin, config, messages);
         economyService = new EconomyService(javaPlugin);
+        shopPointService = new ShopPointService(shopPointRepository);
+        shopRentService = new ShopRentService(
+                javaPlugin,
+                config,
+                messages,
+                plotRepository,
+                shopPointService,
+                economyService);
+        shopRentService.start();
 
         // Domain service
         plotService = new PlotService(
@@ -133,7 +151,10 @@ public final class CityInfrastructureModule implements Module {
                 new CityAreaSelectionListener(selectionService, messages),
                 javaPlugin);
         Bukkit.getPluginManager().registerEvents(
-                new CityProtectionListener(plotService, messages),
+                new CityProtectionListener(plotService, messages, shopPointService),
+                javaPlugin);
+        Bukkit.getPluginManager().registerEvents(
+                new ShopPointListener(shopPointService, plotRepository, plotMemberRepository, messages, shopRentService),
                 javaPlugin);
 
         // Command
@@ -148,7 +169,9 @@ public final class CityInfrastructureModule implements Module {
                     selectionService,
                     messages,
                     config,
-                    economyService));
+                    economyService,
+                    shopPointService,
+                    shopRentService));
         } else {
             ctx.logger().warn("[CityInfrastructure] Command /city not found in plugin.yml; executor not registered.");
         }

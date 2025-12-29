@@ -14,11 +14,14 @@ import ru.realite.city.model.CityArea;
 import ru.realite.city.model.Plot;
 import ru.realite.city.model.PlotMemberRole;
 import ru.realite.city.model.PlotType;
+import ru.realite.city.model.ShopPoint;
 import ru.realite.city.service.CityAreaSelectionService;
 import ru.realite.city.service.CityAreaSelectionService.Selection;
 import ru.realite.city.service.EconomyService;
 import ru.realite.city.service.PlotCleanupService;
 import ru.realite.city.service.PlotService;
+import ru.realite.city.service.ShopPointService;
+import ru.realite.city.service.ShopRentService;
 import ru.realite.city.storage.CityAreaRepository;
 import ru.realite.city.storage.PlotMemberRepository;
 import ru.realite.city.storage.PlotRepository;
@@ -28,6 +31,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 public final class CityCommand implements CommandExecutor {
 
@@ -42,6 +48,8 @@ public final class CityCommand implements CommandExecutor {
     private final CityMessages messages;
     private final CityConfig config;
     private final EconomyService economyService;
+    private final ShopPointService shopPointService;
+    private final ShopRentService shopRentService;
 
     public CityCommand(
             CityAreaRepository cityAreaRepository,
@@ -52,7 +60,9 @@ public final class CityCommand implements CommandExecutor {
             CityAreaSelectionService selectionService,
             CityMessages messages,
             CityConfig config,
-            EconomyService economyService) {
+            EconomyService economyService,
+            ShopPointService shopPointService,
+            ShopRentService shopRentService) {
         this.cityAreaRepository = cityAreaRepository;
         this.plotRepository = plotRepository;
         this.plotMemberRepository = plotMemberRepository;
@@ -62,6 +72,8 @@ public final class CityCommand implements CommandExecutor {
         this.messages = messages;
         this.config = config;
         this.economyService = economyService;
+        this.shopPointService = shopPointService;
+        this.shopRentService = shopRentService;
     }
 
     @Override
@@ -74,6 +86,7 @@ public final class CityCommand implements CommandExecutor {
         switch (root) {
             case "area" -> handleArea(sender, args);
             case "plot" -> handlePlot(sender, args);
+            case "shop" -> handleShop(sender, args);
             default -> sendUsage(sender);
         }
         return true;
@@ -128,6 +141,22 @@ public final class CityCommand implements CommandExecutor {
             case "accept" -> handlePlotAccept(sender, args);
             case "release" -> handlePlotRelease(sender, args);
             case "goto" -> handlePlotGoto(sender, args);
+            default -> sendUsage(sender);
+        }
+    }
+
+    private void handleShop(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sendUsage(sender);
+            return;
+        }
+        String action = args[1].toLowerCase();
+        switch (action) {
+            case "set" -> handleShopSet(sender);
+            case "remove" -> handleShopRemove(sender, args);
+            case "list" -> handleShopList(sender, args);
+            case "info" -> handleShopInfo(sender);
+            case "rent" -> handleShopRent(sender, args);
             default -> sendUsage(sender);
         }
     }
@@ -419,7 +448,8 @@ public final class CityCommand implements CommandExecutor {
                 maxZ,
                 price,
                 null,
-                System.currentTimeMillis());
+                System.currentTimeMillis(),
+                0L);
         plotRepository.upsert(plot);
         messages.send(player, "city.plot.created", "",
                 Map.ofEntries(
@@ -710,7 +740,8 @@ public final class CityCommand implements CommandExecutor {
                 plot.z2(),
                 plot.price(),
                 player.getUniqueId(),
-                plot.createdAt());
+                plot.createdAt(),
+                plot.rentPaidUntil());
         plotRepository.upsert(updated);
         plotMemberRepository.removeAll(plot.id());
         messages.send(player, "city.plot.transfer.accepted", "",
@@ -760,7 +791,8 @@ public final class CityCommand implements CommandExecutor {
                 plot.z2(),
                 plot.price(),
                 player.getUniqueId(),
-                plot.createdAt());
+                plot.createdAt(),
+                plot.rentPaidUntil());
         plotRepository.upsert(updated);
         plotMemberRepository.removeAll(plot.id());
         messages.send(player, "city.plot.transfer.accepted", "",
@@ -812,7 +844,8 @@ public final class CityCommand implements CommandExecutor {
                 plot.z2(),
                 plot.price(),
                 null,
-                plot.createdAt());
+                plot.createdAt(),
+                0L);
         plotRepository.upsert(updated);
         plotMemberRepository.removeAll(plot.id());
         plotService.clearPendingOffers(plot.id());
@@ -863,6 +896,289 @@ public final class CityCommand implements CommandExecutor {
                         Map.entry("world", world.getName())));
     }
 
+    private void handleShopSet(CommandSender sender) {
+        Player player = requirePlayer(sender);
+        if (player == null) {
+            return;
+        }
+        if (!config.shopPlotsEnabled()) {
+            messages.send(player, "city.plot.type-disabled", "",
+                    Map.of("type", PlotType.SHOP.displayName()));
+            return;
+        }
+        var result = player.rayTraceBlocks(6.0);
+        if (result == null || result.getHitBlock() == null) {
+            messages.send(player, "city.shop.set.no-target", "");
+            return;
+        }
+        Location targetLocation = result.getHitBlock().getLocation();
+        Optional<Plot> plotOptional = plotService.findContaining(targetLocation);
+        if (plotOptional.isEmpty()) {
+            messages.send(player, "city.shop.set.not-in-plot", "");
+            return;
+        }
+        Plot plot = plotOptional.get();
+        if (plot.type() != PlotType.SHOP) {
+            messages.send(player, "city.shop.set.not-shop-plot", "");
+            return;
+        }
+        if (plot.ownerUuid() == null) {
+            messages.send(player, "city.shop.set.not-owned", "", Map.of("id", plot.id()));
+            return;
+        }
+        if (!isOwnerTrustedOrAdmin(player, plot)) {
+            messages.send(player, "city.no-permission", "");
+            return;
+        }
+        if (shopRentService != null && shopRentService.isRentEnabled()
+                && shopRentService.isCommerceBlocked(plot, System.currentTimeMillis())) {
+            messages.send(player, "city.shop.rent.blocked", "", Map.of("id", plot.id()));
+            return;
+        }
+        if (shopPointService.isShopPoint(targetLocation)) {
+            messages.send(player, "city.shop.set.already-exists", "");
+            return;
+        }
+        int limit = Math.max(1, config.shopPointsPerPlot());
+        int current = shopPointService.countByPlot(plot.id());
+        if (current >= limit) {
+            messages.send(player, "city.shop.set.limit-reached", "",
+                    Map.of("limit", String.valueOf(limit)));
+            return;
+        }
+        ShopPoint point = shopPointService.create(plot, targetLocation, plot.ownerUuid());
+        messages.send(player, "city.shop.set.success", "",
+                Map.ofEntries(
+                        Map.entry("id", point.id()),
+                        Map.entry("plot", plot.id())));
+    }
+
+    private void handleShopRemove(CommandSender sender, String[] args) {
+        Player player = requirePlayer(sender);
+        if (player == null) {
+            return;
+        }
+        if (args.length >= 3) {
+            String id = args[2];
+            Optional<ShopPoint> pointOptional = shopPointService.findById(id);
+            if (pointOptional.isEmpty()) {
+                messages.send(player, "city.shop.remove.not-found", "", Map.of("id", id));
+                return;
+            }
+            ShopPoint point = pointOptional.get();
+            Optional<Plot> plotOptional = plotRepository.findById(point.plotId());
+            if (plotOptional.isEmpty()) {
+                messages.send(player, "city.shop.remove.not-found", "", Map.of("id", id));
+                return;
+            }
+            Plot plot = plotOptional.get();
+            if (plot.type() != PlotType.SHOP) {
+                messages.send(player, "city.shop.set.not-shop-plot", "");
+                return;
+            }
+            if (!isOwnerTrustedOrAdmin(player, plot)) {
+                messages.send(player, "city.no-permission", "");
+                return;
+            }
+            shopPointService.remove(point.id());
+            messages.send(player, "city.shop.remove.success", "", Map.of("id", point.id()));
+            return;
+        }
+        Optional<ShopPoint> pointOptional = shopPointService.findNearest(player.getLocation(), 2.0);
+        if (pointOptional.isEmpty()) {
+            messages.send(player, "city.shop.remove.nearby-none", "");
+            return;
+        }
+        ShopPoint point = pointOptional.get();
+        Optional<Plot> plotOptional = plotRepository.findById(point.plotId());
+        if (plotOptional.isEmpty()) {
+            messages.send(player, "city.shop.remove.nearby-none", "");
+            return;
+        }
+        Plot plot = plotOptional.get();
+        if (plot.type() != PlotType.SHOP) {
+            messages.send(player, "city.shop.set.not-shop-plot", "");
+            return;
+        }
+        if (!isOwnerTrustedOrAdmin(player, plot)) {
+            messages.send(player, "city.no-permission", "");
+            return;
+        }
+        shopPointService.remove(point.id());
+        messages.send(player, "city.shop.remove.success", "", Map.of("id", point.id()));
+    }
+
+    private void handleShopList(CommandSender sender, String[] args) {
+        Player player = requirePlayer(sender);
+        if (player == null) {
+            return;
+        }
+        if (args.length < 3) {
+            messages.send(player, "city.shop.list.usage", "");
+            return;
+        }
+        String reference = args[2];
+        Optional<Plot> plotOptional = resolvePlotReference(reference);
+        if (plotOptional.isEmpty()) {
+            messages.send(player, "city.plot.not-found", "", Map.of("id", reference));
+            return;
+        }
+        Plot plot = plotOptional.get();
+        if (plot.type() != PlotType.SHOP) {
+            messages.send(player, "city.shop.set.not-shop-plot", "");
+            return;
+        }
+        if (!isOwnerTrustedOrAdmin(player, plot)) {
+            messages.send(player, "city.no-permission", "");
+            return;
+        }
+        List<ShopPoint> points = shopPointService.listByPlot(plot.id());
+        if (points.isEmpty()) {
+            messages.send(player, "city.shop.list.empty", "", Map.of("id", plot.id()));
+            return;
+        }
+        messages.send(player, "city.shop.list.header", "", Map.of("id", plot.id()));
+        for (ShopPoint point : points) {
+            messages.send(player, "city.shop.list.line", "",
+                    Map.ofEntries(
+                            Map.entry("id", point.id()),
+                            Map.entry("world", point.world()),
+                            Map.entry("x", String.valueOf(point.x())),
+                            Map.entry("y", String.valueOf(point.y())),
+                            Map.entry("z", String.valueOf(point.z())),
+                            Map.entry("enabled", String.valueOf(point.enabled()))));
+        }
+    }
+
+    private void handleShopInfo(CommandSender sender) {
+        Player player = requirePlayer(sender);
+        if (player == null) {
+            return;
+        }
+        Optional<ShopPoint> pointOptional = shopPointService.findNearest(player.getLocation(), 2.0);
+        if (pointOptional.isEmpty()) {
+            messages.send(player, "city.shop.info.none", "");
+            return;
+        }
+        ShopPoint point = pointOptional.get();
+        Optional<Plot> plotOptional = plotRepository.findById(point.plotId());
+        String plotId = plotOptional.map(Plot::id).orElse(point.plotId());
+        String owner = plotOptional.map(Plot::ownerUuid)
+                .map(this::formatOwner)
+                .orElse(messages.getRaw("city.plot.owner.none", ""));
+        messages.send(player, "city.shop.info.line", "",
+                Map.ofEntries(
+                        Map.entry("id", point.id()),
+                        Map.entry("plot", plotId),
+                        Map.entry("owner", owner),
+                        Map.entry("enabled", String.valueOf(point.enabled()))));
+    }
+
+    private void handleShopRent(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            messages.send(sender, "city.shop.rent.usage", "");
+            return;
+        }
+        if (shopRentService == null || !shopRentService.isRentEnabled()) {
+            messages.send(sender, "city.shop.rent.disabled", "");
+            return;
+        }
+        String action = args[2].toLowerCase();
+        switch (action) {
+            case "status" -> handleShopRentStatus(sender, args);
+            case "pay" -> handleShopRentPay(sender, args);
+            default -> messages.send(sender, "city.shop.rent.usage", "");
+        }
+    }
+
+    private void handleShopRentStatus(CommandSender sender, String[] args) {
+        if (args.length < 4) {
+            messages.send(sender, "city.shop.rent.status.usage", "");
+            return;
+        }
+        String reference = args[3];
+        Optional<Plot> plotOptional = resolvePlotReference(reference);
+        if (plotOptional.isEmpty()) {
+            messages.send(sender, "city.plot.not-found", "", Map.of("id", reference));
+            return;
+        }
+        Plot plot = plotOptional.get();
+        if (plot.type() != PlotType.SHOP) {
+            messages.send(sender, "city.shop.rent.not-shop", "");
+            return;
+        }
+        long now = System.currentTimeMillis();
+        boolean overdue = shopRentService.isRentOverdue(plot, now);
+        boolean blocked = shopRentService.isCommerceBlocked(plot, now);
+        String paidUntil = formatTimestamp(plot.rentPaidUntil());
+        messages.send(sender, "city.shop.rent.status.line", "",
+                Map.ofEntries(
+                        Map.entry("id", plot.id()),
+                        Map.entry("paidUntil", paidUntil),
+                        Map.entry("overdue", String.valueOf(overdue)),
+                        Map.entry("blocked", String.valueOf(blocked))));
+    }
+
+    private void handleShopRentPay(CommandSender sender, String[] args) {
+        Player player = requirePlayer(sender);
+        if (player == null) {
+            return;
+        }
+        if (args.length < 4) {
+            messages.send(player, "city.shop.rent.pay.usage", "");
+            return;
+        }
+        if (!shopRentService.isEconomyAvailable()) {
+            messages.send(player, "city.shop.rent.no-economy", "");
+            return;
+        }
+        String reference = args[3];
+        Optional<Plot> plotOptional = resolvePlotReference(reference);
+        if (plotOptional.isEmpty()) {
+            messages.send(player, "city.plot.not-found", "", Map.of("id", reference));
+            return;
+        }
+        Plot plot = plotOptional.get();
+        if (plot.type() != PlotType.SHOP) {
+            messages.send(player, "city.shop.rent.not-shop", "");
+            return;
+        }
+        if (plot.ownerUuid() == null) {
+            messages.send(player, "city.shop.rent.not-owned", "", Map.of("id", plot.id()));
+            return;
+        }
+        if (!isOwnerTrustedOrAdmin(player, plot)) {
+            messages.send(player, "city.no-permission", "");
+            return;
+        }
+        int periods = 1;
+        if (args.length >= 5) {
+            try {
+                periods = Math.max(1, Integer.parseInt(args[4]));
+            } catch (NumberFormatException e) {
+                messages.send(player, "city.shop.rent.pay.invalid-periods", "");
+                return;
+            }
+        }
+        int price = config.shopRentPricePerPeriod() * periods;
+        if (!economyService.has(player, price)) {
+            messages.send(player, "city.shop.rent.not-enough-money", "");
+            return;
+        }
+        if (!economyService.withdraw(player, price)) {
+            messages.send(player, "city.shop.rent.not-enough-money", "");
+            return;
+        }
+        Plot updated = shopRentService.applyPayment(plot, periods);
+        plotRepository.upsert(updated);
+        shopRentService.onPaymentApplied(plot.id());
+        messages.send(player, "city.shop.rent.pay.success", "",
+                Map.ofEntries(
+                        Map.entry("id", plot.id()),
+                        Map.entry("paidUntil", formatTimestamp(updated.rentPaidUntil())),
+                        Map.entry("price", String.valueOf(price))));
+    }
+
     private Optional<Plot> resolvePlotReference(String reference) {
         if (reference == null || reference.isBlank()) {
             return Optional.empty();
@@ -907,6 +1223,32 @@ public final class CityCommand implements CommandExecutor {
 
     private boolean isOwnerOrAdmin(Player player, Plot plot) {
         return player.hasPermission(ADMIN_PERMISSION) || player.getUniqueId().equals(plot.ownerUuid());
+    }
+
+    private boolean isOwnerTrustedOrAdmin(Player player, Plot plot) {
+        if (player == null || plot == null) {
+            return false;
+        }
+        if (player.hasPermission(ADMIN_PERMISSION)) {
+            return true;
+        }
+        if (plot.ownerUuid() != null && plot.ownerUuid().equals(player.getUniqueId())) {
+            return true;
+        }
+        return plotMemberRepository
+                .findRole(plot.id(), player.getUniqueId())
+                .map(role -> role == PlotMemberRole.TRUSTED)
+                .orElse(false);
+    }
+
+    private String formatTimestamp(long epochMillis) {
+        if (epochMillis <= 0) {
+            return messages.getRaw("city.shop.rent.never", "");
+        }
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        return Instant.ofEpochMilli(epochMillis)
+                .atZone(ZoneId.systemDefault())
+                .format(formatter);
     }
 
     private String formatOwner(UUID ownerUuid) {

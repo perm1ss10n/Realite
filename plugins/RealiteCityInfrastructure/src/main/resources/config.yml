@@ -35,3 +35,12 @@ plots:
     mode: "FLAT"
     fillBlock: "GRASS_BLOCK"
     clearAboveY: -1
+
+shops:
+  pointsPerPlot: 3
+  rent:
+    enabled: false
+    periodHours: 24
+    pricePerPeriod: 100
+    graceHours: 48
+    checkMinutes: 10

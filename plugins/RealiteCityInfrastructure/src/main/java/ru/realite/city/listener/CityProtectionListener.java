@@ -21,6 +21,7 @@ import org.bukkit.Material;
 import org.bukkit.Tag;
 import ru.realite.city.i18n.CityMessages;
 import ru.realite.city.service.PlotService;
+import ru.realite.city.service.ShopPointService;
 
 import java.util.Map;
 import java.util.UUID;
@@ -32,11 +33,13 @@ public final class CityProtectionListener implements Listener {
 
     private final PlotService plotService;
     private final CityMessages messages;
+    private final ShopPointService shopPointService;
     private final Map<UUID, Long> lastMessageAt = new ConcurrentHashMap<>();
 
-    public CityProtectionListener(PlotService plotService, CityMessages messages) {
+    public CityProtectionListener(PlotService plotService, CityMessages messages, ShopPointService shopPointService) {
         this.plotService = plotService;
         this.messages = messages;
+        this.shopPointService = shopPointService;
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -59,6 +62,9 @@ public final class CityProtectionListener implements Listener {
             return;
         }
         Block block = event.getClickedBlock();
+        if (shopPointService != null && shopPointService.isShopPoint(block.getLocation())) {
+            return;
+        }
         if (!isProtectedInteract(block)) {
             return;
         }

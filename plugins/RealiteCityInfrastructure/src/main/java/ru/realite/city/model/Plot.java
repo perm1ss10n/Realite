@@ -17,7 +17,8 @@ public record Plot(
         int z2,
         int price,
         UUID ownerUuid,
-        long createdAt
+        long createdAt,
+        long rentPaidUntil
 ) {
     public boolean contains(Location location) {
         if (location == null || location.getWorld() == null) {

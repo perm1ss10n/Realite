@@ -28,12 +28,13 @@ public final class SqlitePlotRepository implements PlotRepository {
     public int loadAll() throws SQLException {
         cache.clear();
         Connection connection = storage.connection();
-        try (PreparedStatement statement = connection.prepareStatement(
-                "SELECT id, number, type, world, x1, y1, z1, x2, y2, z2, price, owner_uuid, created_at FROM plots"
-        )) {
-            try (ResultSet rs = statement.executeQuery()) {
-                int count = 0;
-                while (rs.next()) {
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "SELECT id, number, type, world, x1, y1, z1, x2, y2, z2, price, owner_uuid, created_at, rent_paid_until "
+                            + "FROM plots"
+            )) {
+                try (ResultSet rs = statement.executeQuery()) {
+                    int count = 0;
+                    while (rs.next()) {
                     UUID ownerUuid = null;
                     String ownerRaw = rs.getString("owner_uuid");
                     if (ownerRaw != null && !ownerRaw.isBlank()) {
@@ -52,7 +53,8 @@ public final class SqlitePlotRepository implements PlotRepository {
                             rs.getInt("z2"),
                             rs.getInt("price"),
                             ownerUuid,
-                            rs.getLong("created_at")
+                            rs.getLong("created_at"),
+                            rs.getLong("rent_paid_until")
                     );
                     cache.put(plot.id(), plot);
                     count++;
@@ -67,8 +69,8 @@ public final class SqlitePlotRepository implements PlotRepository {
         try {
             Connection connection = storage.connection();
             try (PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO plots(id, number, type, world, x1, y1, z1, x2, y2, z2, price, owner_uuid, created_at) "
-                            + "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    "INSERT INTO plots(id, number, type, world, x1, y1, z1, x2, y2, z2, price, owner_uuid, created_at, rent_paid_until) "
+                            + "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                             + "ON CONFLICT(id) DO UPDATE SET "
                             + "number = excluded.number, "
                             + "type = excluded.type, "
@@ -81,7 +83,8 @@ public final class SqlitePlotRepository implements PlotRepository {
                             + "z2 = excluded.z2, "
                             + "price = excluded.price, "
                             + "owner_uuid = excluded.owner_uuid, "
-                            + "created_at = excluded.created_at"
+                            + "created_at = excluded.created_at, "
+                            + "rent_paid_until = excluded.rent_paid_until"
             )) {
                 statement.setString(1, plot.id());
                 statement.setInt(2, plot.number());
@@ -96,6 +99,7 @@ public final class SqlitePlotRepository implements PlotRepository {
                 statement.setInt(11, plot.price());
                 statement.setString(12, plot.ownerUuid() != null ? plot.ownerUuid().toString() : null);
                 statement.setLong(13, plot.createdAt());
+                statement.setLong(14, plot.rentPaidUntil());
                 statement.executeUpdate();
             }
             cache.put(plot.id(), plot);
