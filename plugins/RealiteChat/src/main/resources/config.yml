@@ -1,0 +1,22 @@
+language: "ru"
+chat:
+  format: "{prefix}{class}{guild}{name}: {message}"
+  tags:
+    joiner: ""
+  spaceBeforeName: true
+  class-tag: "[Бродяга-I]"
+
+prefix:
+  enabled: true
+
+class:
+  enabled: true
+  hover:
+    enabled: true
+  roman:
+    enabled: true
+
+guild:
+  enabled: true
+  hover:
+    enabled: true
