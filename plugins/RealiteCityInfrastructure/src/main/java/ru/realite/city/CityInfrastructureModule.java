@@ -2,19 +2,22 @@ package ru.realite.city;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
-
+import org.bukkit.plugin.java.JavaPlugin;
+import ru.realite.city.command.CityCommand;
+import ru.realite.city.i18n.CityMessages;
 import ru.realite.city.listener.CityAreaSelectionListener;
 import ru.realite.city.listener.CityProtectionListener;
 import ru.realite.city.service.CityAreaSelectionService;
-import ru.realite.city.service.CityProtectionService;
+import ru.realite.city.service.PlotService;
 import ru.realite.city.storage.SqliteCityAreaRepository;
+import ru.realite.city.storage.SqlitePlotMemberRepository;
+import ru.realite.city.storage.SqlitePlotRepository;
 import ru.realite.core.api.Config;
 import ru.realite.core.api.Module;
 import ru.realite.core.api.ModuleContext;
 import ru.realite.core.api.ModuleId;
 import ru.realite.core.api.ModuleMetadata;
 import ru.realite.core.api.Storage;
-import ru.realite.city.i18n.CityMessages;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,10 +34,15 @@ public final class CityInfrastructureModule implements Module {
     private Storage storage;
     private CityConfig config;
     private CityDatabase database;
+
     private CityMessages messages;
+
     private CityAreaSelectionService selectionService;
-    private CityProtectionService protectionService;
     private SqliteCityAreaRepository cityAreaRepository;
+
+    private SqlitePlotRepository plotRepository;
+    private SqlitePlotMemberRepository plotMemberRepository;
+    private PlotService plotService;
 
     @Override
     public ModuleMetadata metadata() {
@@ -53,12 +61,14 @@ public final class CityInfrastructureModule implements Module {
         config = CityConfig.from(cfg);
 
         // Load localized messages (resources/lang/messages_*.yml)
-        String lang = config.language(); // уже добавил поле language в CityConfig
-        String fileName = (lang != null && lang.equalsIgnoreCase("en")) ? "messages_en.yml" : "messages_ru.yml";
+        String lang = config.language();
+        String fileName = (lang != null && lang.equalsIgnoreCase("en"))
+                ? "messages_en.yml"
+                : "messages_ru.yml";
 
         Config msgCfg = ctx.configs().loadOrCreateDefault(
-                dataFolder.resolve(fileName), // на диске: рядом в папке плагина
-                "lang/" + fileName, // в jar: resources/lang/...
+                dataFolder.resolve(fileName), // disk: plugins/RealiteCityInfrastructure/...
+                "lang/" + fileName, // jar: resources/lang/...
                 getClass().getClassLoader());
 
         messages = new CityMessages(msgCfg);
@@ -78,37 +88,58 @@ public final class CityInfrastructureModule implements Module {
 
     @Override
     public void onEnable(ModuleContext ctx) {
-        // сервисы
+        // Services
         selectionService = new CityAreaSelectionService();
 
+        // Repositories
         cityAreaRepository = new SqliteCityAreaRepository(storage);
+        plotRepository = new SqlitePlotRepository(storage);
+        plotMemberRepository = new SqlitePlotMemberRepository(storage);
 
+        // Optional warm-up / cache load (if your repos implement it)
         try {
             cityAreaRepository.loadAll();
+            plotRepository.loadAll();
+            plotMemberRepository.loadAll();
         } catch (Exception e) {
-            ctx.logger().error("[CityInfrastructure] Failed to load city areas", e);
+            ctx.logger().error("[CityInfrastructure] Failed to load city data", e);
         }
 
-        protectionService = new CityProtectionService(config, cityAreaRepository);
+        // Domain service
+        plotService = new PlotService(config, cityAreaRepository, plotRepository, plotMemberRepository);
 
-        // Bukkit plugin instance (должно совпадать с name в plugin.yml)
-        Plugin plugin = Bukkit.getPluginManager().getPlugin("RealiteCityInfrastructure");
-        if (plugin == null) {
-            ctx.logger()
-                    .warn("[CityInfrastructure] Plugin RealiteCityInfrastructure not found; listeners not registered.");
+        // Bukkit plugin instance (must match name in plugin.yml)
+        Plugin p = Bukkit.getPluginManager().getPlugin("RealiteCityInfrastructure");
+        if (!(p instanceof JavaPlugin javaPlugin)) {
+            ctx.logger().warn("[CityInfrastructure] Plugin RealiteCityInfrastructure not found or not JavaPlugin; "
+                    + "commands/listeners were not registered.");
             return;
         }
 
-        // ✅ ВОТ ТУТ И ЕСТЬ РЕГИСТРАЦИЯ LISTENER'ОВ
+        // Listeners
         Bukkit.getPluginManager().registerEvents(
                 new CityAreaSelectionListener(selectionService, messages),
-                plugin);
+                javaPlugin);
         Bukkit.getPluginManager().registerEvents(
-                new CityProtectionListener(protectionService, messages),
-                plugin);
+                new CityProtectionListener(plotService, messages),
+                javaPlugin);
+
+        // Command
+        var cmd = javaPlugin.getCommand("city");
+        if (cmd != null) {
+            cmd.setExecutor(new CityCommand(
+                    cityAreaRepository,
+                    plotRepository,
+                    plotMemberRepository,
+                    plotService,
+                    selectionService,
+                    messages,
+                    config));
+        } else {
+            ctx.logger().warn("[CityInfrastructure] Command /city not found in plugin.yml; executor not registered.");
+        }
 
         ctx.logger().info("[CityInfrastructure] CityInfrastructure enabled");
-       // До лучших времён ctx.logger().info("[CityInfrastructure] Loaded " + loaded + " city areas");
     }
 
     @Override

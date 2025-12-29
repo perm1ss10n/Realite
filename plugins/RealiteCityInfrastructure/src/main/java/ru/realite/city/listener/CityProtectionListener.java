@@ -16,8 +16,8 @@ import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import ru.realite.city.service.CityProtectionService;
 import ru.realite.city.i18n.CityMessages;
+import ru.realite.city.service.PlotService;
 
 import java.util.Map;
 import java.util.UUID;
@@ -27,25 +27,25 @@ public final class CityProtectionListener implements Listener {
 
     private static final long MESSAGE_COOLDOWN_MS = 1500L;
 
-    private final CityProtectionService protectionService;
+    private final PlotService plotService;
     private final CityMessages messages;
     private final Map<UUID, Long> lastMessageAt = new ConcurrentHashMap<>();
 
-    public CityProtectionListener(CityProtectionService protectionService, CityMessages messages) {
-        this.protectionService = protectionService;
+    public CityProtectionListener(PlotService plotService, CityMessages messages) {
+        this.plotService = plotService;
         this.messages = messages;
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
-        if (!protectionService.canModify(event.getPlayer(), event.getBlock().getLocation())) {
+        if (!plotService.canModify(event.getPlayer(), event.getBlock().getLocation())) {
             deny(event.getPlayer(), event);
         }
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
-        if (!protectionService.canModify(event.getPlayer(), event.getBlock().getLocation())) {
+        if (!plotService.canModify(event.getPlayer(), event.getBlock().getLocation())) {
             deny(event.getPlayer(), event);
         }
     }
@@ -55,7 +55,7 @@ public final class CityProtectionListener implements Listener {
         if (event.getClickedBlock() == null) {
             return;
         }
-        if (!protectionService.canModify(event.getPlayer(), event.getClickedBlock().getLocation())) {
+        if (!plotService.canModify(event.getPlayer(), event.getClickedBlock().getLocation())) {
             deny(event.getPlayer(), event);
         }
     }
@@ -66,7 +66,7 @@ public final class CityProtectionListener implements Listener {
         if (player == null) {
             return;
         }
-        if (!protectionService.canModify(player, event.getEntity().getLocation())) {
+        if (!plotService.canModify(player, event.getEntity().getLocation())) {
             deny(player, event);
         }
     }
@@ -76,12 +76,12 @@ public final class CityProtectionListener implements Listener {
         Location location = event.getEntity().getLocation();
         Entity remover = event.getRemover();
         if (remover instanceof Player player) {
-            if (!protectionService.canModify(player, location)) {
+            if (!plotService.canModify(player, location)) {
                 deny(player, event);
             }
             return;
         }
-        if (protectionService.isInCityArea(location)) {
+        if (plotService.isInCityArea(location)) {
             event.setCancelled(true);
         }
     }
@@ -92,7 +92,7 @@ public final class CityProtectionListener implements Listener {
         Location location = clicked != null
                 ? clicked.getRelative(event.getBlockFace()).getLocation()
                 : event.getPlayer().getLocation();
-        if (!protectionService.canModify(event.getPlayer(), location)) {
+        if (!plotService.canModify(event.getPlayer(), location)) {
             deny(event.getPlayer(), event);
         }
     }
@@ -101,19 +101,19 @@ public final class CityProtectionListener implements Listener {
     public void onBucketFill(PlayerBucketFillEvent event) {
         Block clicked = event.getBlockClicked();
         Location location = clicked != null ? clicked.getLocation() : event.getPlayer().getLocation();
-        if (!protectionService.canModify(event.getPlayer(), location)) {
+        if (!plotService.canModify(event.getPlayer(), location)) {
             deny(event.getPlayer(), event);
         }
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent event) {
-        event.blockList().removeIf(block -> protectionService.isInCityArea(block.getLocation()));
+        event.blockList().removeIf(block -> plotService.isInCityArea(block.getLocation()));
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockExplode(BlockExplodeEvent event) {
-        event.blockList().removeIf(block -> protectionService.isInCityArea(block.getLocation()));
+        event.blockList().removeIf(block -> plotService.isInCityArea(block.getLocation()));
     }
 
     private void deny(Player player, org.bukkit.event.Cancellable event) {

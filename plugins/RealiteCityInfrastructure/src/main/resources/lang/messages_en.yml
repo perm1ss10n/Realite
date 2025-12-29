@@ -1,5 +1,21 @@
 city:
   protected: "&cThis territory is protected."
+  plot:
+    not-found: "&cPlot {id} not found."
+    already-owned: "&cPlot {id} is already owned."
+    bought: "&aYou bought plot {id}."
+    limit-reached: "&cPlot limit reached ({limit})."
+    type-disabled: "&cPlot type {type} is disabled."
+    no-economy: "&cEconomy not configured."
+    created: "&aPlot {id} created."
+    deleted: "&aPlot {id} deleted."
+    info: "&ePlot {id}: &7type={type} price={price} owner={owner} world={world} [{x1},{y1},{z1}] -> [{x2},{y2},{z2}]"
+    list:
+      header: "&ePlots:"
+    not-owned: "&cPlot {id} is not owned."
+    not-owner: "&cYou are not the owner of this plot."
+    member-added: "&aAdded {player} to plot {id}."
+    member-removed: "&aRemoved {player} from plot {id}."
 area:
   pos1-set: "&apos1 set: &7{loc}"
   pos2-set: "&apos2 set: &7{loc}"

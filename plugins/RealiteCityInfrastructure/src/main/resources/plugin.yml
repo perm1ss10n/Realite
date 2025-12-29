@@ -8,9 +8,8 @@ depend:
 
 commands:
   city:
-    description: City admin tools
-    permission: realite.city.admin
-    usage: /city area <wand|create|delete|list>
+    description: City tools
+    usage: /city <area|plot> <...>
 
 permissions:
   realite.city.admin:

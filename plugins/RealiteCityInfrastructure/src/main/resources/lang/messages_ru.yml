@@ -1,5 +1,21 @@
 city:
   protected: "&cЭта территория защищена."
+  plot:
+    not-found: "&cУчасток {id} не найден."
+    already-owned: "&cУчасток {id} уже занят."
+    bought: "&aУчасток {id} куплен."
+    limit-reached: "&cДостигнут лимит участков ({limit})."
+    type-disabled: "&cТип участка {type} отключён."
+    no-economy: "&cЭкономика не настроена."
+    created: "&aУчасток {id} создан."
+    deleted: "&aУчасток {id} удалён."
+    info: "&eУчасток {id}: &7тип={type} цена={price} владелец={owner} мир={world} [{x1},{y1},{z1}] -> [{x2},{y2},{z2}]"
+    list:
+      header: "&eУчастки:"
+    not-owned: "&cУчасток {id} не имеет владельца."
+    not-owner: "&cВы не владелец этого участка."
+    member-added: "&aИгрок {player} добавлен в участок {id}."
+    member-removed: "&aИгрок {player} удалён из участка {id}."
 area:
   pos1-set: "&apos1 установлена: &7{loc}"
   pos2-set: "&apos2 установлена: &7{loc}"
