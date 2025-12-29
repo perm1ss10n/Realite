@@ -84,6 +84,7 @@ public final class PlotService {
         }
         Plot updated = new Plot(
                 plot.id(),
+                plot.number(),
                 plot.type(),
                 plot.world(),
                 plot.x1(),

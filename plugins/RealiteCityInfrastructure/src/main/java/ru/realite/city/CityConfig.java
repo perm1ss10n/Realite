@@ -13,6 +13,7 @@ public record CityConfig(
                 boolean plotCleanupEnabled,
                 int plotCleanupBlocksPerTick,
                 PlotCleanupMode plotCleanupMode,
+                int plotNearbyDefaultRadius,
                 String language) {
         public static CityConfig from(Config config) {
                 int defaultPlotsPerPlayer = config.getInt("limits.defaultPlotsPerPlayer", 3);
@@ -28,7 +29,8 @@ public record CityConfig(
                 int plotCleanupBlocksPerTick = config.getInt("plots.cleanup.blocksPerTick", 2000);
                 String cleanupModeRaw = config.getString("plots.cleanup.mode", "AIR_ONLY");
                 PlotCleanupMode plotCleanupMode = PlotCleanupMode.fromToken(cleanupModeRaw);
-                String language = config.getString("language", "ru");
+                int plotNearbyDefaultRadius = config.getInt("plots.nearby.defaultRadius", 150);
+                String language = config.getString("lang", config.getString("language", "ru"));
 
                 return new CityConfig(
                                 defaultPlotsPerPlayer,
@@ -41,6 +43,7 @@ public record CityConfig(
                                 plotCleanupEnabled,
                                 plotCleanupBlocksPerTick,
                                 plotCleanupMode,
+                                plotNearbyDefaultRadius,
                                 language);
         }
 }

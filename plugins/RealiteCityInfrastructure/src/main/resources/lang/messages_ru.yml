@@ -5,26 +5,33 @@ city:
   protected: "&cЭта территория защищена."
   plot:
     buy:
-      not-in-plot: "&cВы не находитесь на участке. Используйте /city plot nearby или /city plot buy <id>."
-      success: "&aУчасток {id} куплен."
-      already-owned: "&cУчасток {id} уже занят."
+      not-in-plot: "&cВы не находитесь на участке. Используйте /city plot nearby или /city plot info #<number> (/city plot info <id>)."
+      success: "&aУчасток #{number} ({id}) куплен."
+      already-owned: "&cУчасток #{number} ({id}) уже занят."
     nearby:
       header: "&eБлижайшие свободные участки:"
       none: "&eСвободных участков поблизости нет."
-      line: "{id} ({type}) price={price} dist={dist}"
+      line: "# {number} {id} {type} цена={price} dist={dist}"
+      hint:
+        buy: "&7Покупка: /city plot buy #<number>"
+        info: "&7Инфо: /city plot info #<number>"
       usage: "&eИспользование: /city plot nearby [radius]"
     not-found: "&cУчасток {id} не найден."
+    owner:
+      none: "нет"
+    type:
+      unknown: "неизвестный"
     already-owned: "&cУчасток {id} уже занят."
     bought: "&aУчасток {id} куплен."
     limit-reached: "&cДостигнут лимит участков ({limit})."
     type-disabled: "&cТип участка {type} отключён."
     no-economy: "&cЭкономика не настроена."
-    created: "&aУчасток {id} создан."
+    created: "&aУчасток #{number} ({id}) создан."
     deleted: "&aУчасток {id} удалён."
-    info: "&eУчасток {id}: &7тип={type} цена={price} владелец={owner} мир={world} [{x1},{y1},{z1}] -> [{x2},{y2},{z2}]"
+    info: "&eУчасток #{number} ({id}): &7тип={type} цена={price} владелец={owner} мир={world} [{x1},{y1},{z1}] -> [{x2},{y2},{z2}]"
     list:
       header: "&eУчастки:"
-      line: "- {line}"
+      line: "- #{number} {id} ({type}) цена={price} владелец={owner}"
       none: "&eУчастков не найдено."
     not-owned: "&cУчасток {id} не имеет владельца."
     not-owner: "&cВы не владелец этого участка."
@@ -44,13 +51,13 @@ city:
       usage: "&eИспользование: /city plot members <id>"
     transfer:
       sent: "&aЗапрос на передачу участка {id} отправлен игроку {player}."
-      accepted: "&aУчасток {id} передан вам."
+      accepted: "&aУчасток #{number} ({id}) передан вам."
       expired: "&cЗапрос на передачу участка {id} истёк."
       limit-reached: "&cДостигнут лимит участков ({limit})."
       usage: "&eИспользование: /city plot transfer <id> <player>"
       self: "&cНельзя передать участок самому себе."
     release:
-      success: "&aУчасток {id} сдан городу."
+      success: "&aУчасток #{number} ({id}) сдан городу."
       usage: "&eИспользование: /city plot release <id>"
     cleanup:
       started: "&eОчистка участка {id} началась."
@@ -71,7 +78,11 @@ city:
     delete:
       usage: "&eИспользование: /city plot delete <id>"
     info:
-      usage: "&eИспользование: /city plot info <id>"
+      usage: "&eИспользование: /city plot info <id|#number>"
+    goto:
+      usage: "&eИспользование: /city plot goto <id|#number>"
+      success: "&aТелепортация на участок #{number} ({id})."
+      invalid-world: "&cМир {world} недоступен."
 area:
   pos1-set: "&apos1 установлена: &7{loc}"
   pos2-set: "&apos2 установлена: &7{loc}"

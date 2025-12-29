@@ -15,6 +15,8 @@ public interface PlotRepository {
 
     Optional<Plot> findById(String id);
 
+    Optional<Plot> findByNumber(int number);
+
     List<Plot> findAll();
 
     List<Plot> findByOwner(UUID owner);
@@ -22,4 +24,6 @@ public interface PlotRepository {
     long countOwned(UUID owner, PlotType type);
 
     Optional<Plot> findContaining(Location location);
+
+    int nextNumber();
 }

@@ -31,6 +31,7 @@ public final class CityDatabase {
 
             statement.execute("CREATE TABLE IF NOT EXISTS plots ("
                     + "id TEXT PRIMARY KEY,"
+                    + "number INTEGER NOT NULL DEFAULT 0,"
                     + "type TEXT NOT NULL,"
                     + "world TEXT NOT NULL,"
                     + "x1 INTEGER NOT NULL,"
@@ -43,6 +44,8 @@ public final class CityDatabase {
                     + "owner_uuid TEXT,"
                     + "created_at INTEGER NOT NULL"
                     + ")");
+
+            ensurePlotNumberColumn(statement);
 
             statement.execute("CREATE INDEX IF NOT EXISTS idx_plots_owner "
                     + "ON plots(owner_uuid)");
@@ -57,5 +60,17 @@ public final class CityDatabase {
                     + "FOREIGN KEY(plot_id) REFERENCES plots(id) ON DELETE CASCADE"
                     + ")");
         }
+    }
+
+    private void ensurePlotNumberColumn(Statement statement) throws SQLException {
+        try {
+            statement.execute("ALTER TABLE plots ADD COLUMN number INTEGER NOT NULL DEFAULT 0");
+        } catch (SQLException e) {
+            String message = e.getMessage();
+            if (message == null || !message.toLowerCase().contains("duplicate column name")) {
+                throw e;
+            }
+        }
+        statement.execute("UPDATE plots SET number = rowid WHERE number IS NULL OR number = 0");
     }
 }
