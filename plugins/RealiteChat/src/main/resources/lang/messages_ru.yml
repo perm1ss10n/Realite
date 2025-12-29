@@ -1,5 +1,9 @@
-command:
+chat:
   reload:
     usage: "&eИспользование: /realitechat reload"
     no-permission: "&cНет прав."
     success: "&aКонфиг RealiteChat перезагружен."
+  dependency:
+    luckperms-missing: "&cLuckPerms не найден. Префиксы отключены."
+  error:
+    generic: "&cПроизошла ошибка. Попробуйте позже."
