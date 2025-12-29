@@ -24,6 +24,7 @@ city:
     already-owned: "&cPlot {id} is already owned."
     bought: "&aYou bought plot {id}."
     limit-reached: "&cPlot limit reached ({limit})."
+    not-enough-money: "&cNot enough money."
     type-disabled: "&cPlot type {type} is disabled."
     no-economy: "&cEconomy not configured."
     created: "&aPlot #{number} ({id}) created."
@@ -58,7 +59,7 @@ city:
       self: "&cYou cannot transfer to yourself."
     release:
       success: "&aPlot #{number} ({id}) released."
-      usage: "&eUsage: /city plot release <id>"
+      usage: "&eUsage: /city plot release [id|#number]"
     cleanup:
       started: "&ePlot {id} cleanup started."
       done: "&aPlot {id} cleanup done."

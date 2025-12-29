@@ -4,6 +4,8 @@ import ru.realite.core.api.Config;
 
 public record CityConfig(
                 int defaultPlotsPerPlayer,
+                int homePlotsPerPlayer,
+                int shopPlotsPerPlayer,
                 String sqliteFile,
                 boolean debug,
                 boolean cityAreaDefaultDeny,
@@ -13,10 +15,15 @@ public record CityConfig(
                 boolean plotCleanupEnabled,
                 int plotCleanupBlocksPerTick,
                 PlotCleanupMode plotCleanupMode,
+                String plotCleanupFillBlock,
+                int plotCleanupClearAboveY,
                 int plotNearbyDefaultRadius,
+                boolean allowInteractOutsideMembers,
                 String language) {
         public static CityConfig from(Config config) {
                 int defaultPlotsPerPlayer = config.getInt("limits.defaultPlotsPerPlayer", 3);
+                int homePlotsPerPlayer = config.getInt("limits.perType.home", defaultPlotsPerPlayer);
+                int shopPlotsPerPlayer = config.getInt("limits.perType.shop", defaultPlotsPerPlayer);
                 String sqliteFile = config.getString("storage.sqliteFile", "city.sqlite");
                 boolean debug = config.getBoolean("logging.debug", false);
                 boolean cityAreaDefaultDeny = config.getBoolean("cityArea.defaultDeny", true);
@@ -29,11 +36,17 @@ public record CityConfig(
                 int plotCleanupBlocksPerTick = config.getInt("plots.cleanup.blocksPerTick", 2000);
                 String cleanupModeRaw = config.getString("plots.cleanup.mode", "AIR_ONLY");
                 PlotCleanupMode plotCleanupMode = PlotCleanupMode.fromToken(cleanupModeRaw);
+                String plotCleanupFillBlock = config.getString("plots.cleanup.fillBlock", "GRASS_BLOCK");
+                int plotCleanupClearAboveY = config.getInt("plots.cleanup.clearAboveY", -1);
                 int plotNearbyDefaultRadius = config.getInt("plots.nearby.defaultRadius", 150);
+                boolean allowInteractOutsideMembers =
+                                config.getBoolean("plots.protection.allowInteractOutsideMembers", false);
                 String language = config.getString("lang", config.getString("language", "ru"));
 
                 return new CityConfig(
                                 defaultPlotsPerPlayer,
+                                homePlotsPerPlayer,
+                                shopPlotsPerPlayer,
                                 sqliteFile,
                                 debug,
                                 cityAreaDefaultDeny,
@@ -43,7 +56,20 @@ public record CityConfig(
                                 plotCleanupEnabled,
                                 plotCleanupBlocksPerTick,
                                 plotCleanupMode,
+                                plotCleanupFillBlock,
+                                plotCleanupClearAboveY,
                                 plotNearbyDefaultRadius,
+                                allowInteractOutsideMembers,
                                 language);
+        }
+
+        public int limitFor(ru.realite.city.model.PlotType type) {
+                if (type == null) {
+                        return defaultPlotsPerPlayer;
+                }
+                return switch (type) {
+                        case HOME -> homePlotsPerPlayer;
+                        case SHOP -> shopPlotsPerPlayer;
+                };
         }
 }

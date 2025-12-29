@@ -16,6 +16,7 @@ import ru.realite.city.model.PlotMemberRole;
 import ru.realite.city.model.PlotType;
 import ru.realite.city.service.CityAreaSelectionService;
 import ru.realite.city.service.CityAreaSelectionService.Selection;
+import ru.realite.city.service.EconomyService;
 import ru.realite.city.service.PlotCleanupService;
 import ru.realite.city.service.PlotService;
 import ru.realite.city.storage.CityAreaRepository;
@@ -40,6 +41,7 @@ public final class CityCommand implements CommandExecutor {
     private final CityAreaSelectionService selectionService;
     private final CityMessages messages;
     private final CityConfig config;
+    private final EconomyService economyService;
 
     public CityCommand(
             CityAreaRepository cityAreaRepository,
@@ -49,7 +51,8 @@ public final class CityCommand implements CommandExecutor {
             PlotCleanupService plotCleanupService,
             CityAreaSelectionService selectionService,
             CityMessages messages,
-            CityConfig config) {
+            CityConfig config,
+            EconomyService economyService) {
         this.cityAreaRepository = cityAreaRepository;
         this.plotRepository = plotRepository;
         this.plotMemberRepository = plotMemberRepository;
@@ -58,6 +61,7 @@ public final class CityCommand implements CommandExecutor {
         this.selectionService = selectionService;
         this.messages = messages;
         this.config = config;
+        this.economyService = economyService;
     }
 
     @Override
@@ -114,8 +118,8 @@ public final class CityCommand implements CommandExecutor {
             case "nearby" -> handlePlotNearby(sender, args);
             case "create" -> handlePlotCreate(sender, args);
             case "delete" -> handlePlotDelete(sender, args);
-            case "addmember" -> handlePlotAddMember(sender, args);
-            case "trust" -> handlePlotAddMember(sender, args);
+            case "addmember" -> handlePlotAddMember(sender, args, PlotMemberRole.MEMBER);
+            case "trust" -> handlePlotAddMember(sender, args, PlotMemberRole.TRUSTED);
             case "removemember" -> handlePlotRemoveMember(sender, args);
             case "untrust" -> handlePlotRemoveMember(sender, args);
             case "members" -> handlePlotMembers(sender, args);
@@ -296,7 +300,8 @@ public final class CityCommand implements CommandExecutor {
                             plotRepository.findById(id).map(existing -> existing.type().displayName())
                                     .orElse(messages.getRaw("city.plot.type.unknown", ""))));
             case LIMIT_REACHED -> messages.send(player, "city.plot.limit-reached", "",
-                    Map.of("limit", String.valueOf(config.defaultPlotsPerPlayer())));
+                    Map.of("limit", String.valueOf(config.limitFor(plot.type()))));
+            case NOT_ENOUGH_MONEY -> messages.send(player, "city.plot.not-enough-money", "");
             case NO_ECONOMY -> messages.send(player, "city.plot.no-economy", "");
         }
     }
@@ -439,7 +444,7 @@ public final class CityCommand implements CommandExecutor {
         }
     }
 
-    private void handlePlotAddMember(CommandSender sender, String[] args) {
+    private void handlePlotAddMember(CommandSender sender, String[] args, PlotMemberRole role) {
         Player player = requirePlayer(sender);
         if (player == null) {
             return;
@@ -469,7 +474,7 @@ public final class CityCommand implements CommandExecutor {
             messages.send(player, "city.plot.member.self", "");
             return;
         }
-        plotMemberRepository.upsert(id, targetId, PlotMemberRole.MEMBER);
+        plotMemberRepository.upsert(id, targetId, role);
         messages.send(player, "city.plot.member.added", "",
                 Map.of("player", target.getName() == null ? targetId.toString() : target.getName(), "id", id));
     }
@@ -686,9 +691,9 @@ public final class CityCommand implements CommandExecutor {
             messages.send(player, "city.no-permission", "");
             return;
         }
-        if (plotRepository.countOwned(player.getUniqueId(), null) >= config.defaultPlotsPerPlayer()) {
+        if (plotService.isLimitReached(player, plot.type())) {
             messages.send(player, "city.plot.transfer.limit-reached", "",
-                    Map.of("limit", String.valueOf(config.defaultPlotsPerPlayer())));
+                    Map.of("limit", String.valueOf(config.limitFor(plot.type()))));
             return;
         }
         plotService.clearPendingOffers(plot.id());
@@ -719,14 +724,27 @@ public final class CityCommand implements CommandExecutor {
             messages.send(player, "city.no-permission", "");
             return;
         }
-        if (pending.price() > 0) {
-            messages.send(player, "city.plot.sell.no-economy", "");
+        if (plotService.isLimitReached(player, plot.type())) {
+            messages.send(player, "city.plot.transfer.limit-reached", "",
+                    Map.of("limit", String.valueOf(config.limitFor(plot.type()))));
             return;
         }
-        if (plotRepository.countOwned(player.getUniqueId(), null) >= config.defaultPlotsPerPlayer()) {
-            messages.send(player, "city.plot.transfer.limit-reached", "",
-                    Map.of("limit", String.valueOf(config.defaultPlotsPerPlayer())));
-            return;
+        if (pending.price() > 0) {
+            if (economyService == null || !economyService.isAvailable()) {
+                messages.send(player, "city.plot.sell.no-economy", "");
+                return;
+            }
+            if (!economyService.has(player, pending.price())) {
+                messages.send(player, "city.plot.not-enough-money", "");
+                return;
+            }
+            if (!economyService.withdraw(player, pending.price())) {
+                messages.send(player, "city.plot.not-enough-money", "");
+                return;
+            }
+            if (plot.ownerUuid() != null) {
+                economyService.deposit(Bukkit.getOfflinePlayer(plot.ownerUuid()), pending.price());
+            }
         }
         plotService.clearPendingOffers(plot.id());
         Plot updated = new Plot(
@@ -756,19 +774,25 @@ public final class CityCommand implements CommandExecutor {
         if (player == null) {
             return;
         }
+        Plot plot;
         if (args.length < 3) {
-            messages.send(player, "city.plot.release.usage", "");
-            return;
+            Optional<Plot> plotOptional = plotService.findContaining(player.getLocation());
+            if (plotOptional.isEmpty()) {
+                messages.send(player, "city.plot.buy.not-in-plot", "");
+                return;
+            }
+            plot = plotOptional.get();
+        } else {
+            String reference = args[2];
+            Optional<Plot> plotOptional = resolvePlotReference(reference);
+            if (plotOptional.isEmpty()) {
+                messages.send(player, "city.plot.not-found", "", Map.of("id", reference));
+                return;
+            }
+            plot = plotOptional.get();
         }
-        String id = args[2];
-        Optional<Plot> plotOptional = plotRepository.findById(id);
-        if (plotOptional.isEmpty()) {
-            messages.send(player, "city.plot.not-found", "", Map.of("id", id));
-            return;
-        }
-        Plot plot = plotOptional.get();
         if (plot.ownerUuid() == null) {
-            messages.send(player, "city.plot.not-owned", "", Map.of("id", id));
+            messages.send(player, "city.plot.not-owned", "", Map.of("id", plot.id()));
             return;
         }
         if (!isOwnerOrAdmin(player, plot)) {
