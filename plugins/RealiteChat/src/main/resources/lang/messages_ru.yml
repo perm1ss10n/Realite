@@ -1,0 +1,5 @@
+command:
+  reload:
+    usage: "&eИспользование: /realitechat reload"
+    no-permission: "&cНет прав."
+    success: "&aКонфиг RealiteChat перезагружен."

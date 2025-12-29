@@ -6,6 +6,9 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.luckperms.api.LuckPerms;
 import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -15,30 +18,53 @@ import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.classes.ClassTag;
 import ru.realite.core.api.classes.ClassTagProvider;
 
-public final class RealiteChatPlugin extends JavaPlugin implements Listener {
+public final class RealiteChatPlugin extends JavaPlugin implements Listener, CommandExecutor {
+    private static final String DEFAULT_FORMAT = "{prefix}{class}{guild}{name}: {message}";
     private PrefixProvider prefixProvider = player -> Optional.empty();
     private ClassTagProvider classTagProvider;
+    private ChatMessages messages;
+    private ChatFormat chatFormat;
+    private String tagsJoiner = "";
+    private boolean spaceBeforeName = true;
+    private boolean prefixEnabled = true;
+    private boolean classEnabled = true;
+    private boolean guildEnabled = true;
+    private boolean classHoverEnabled = true;
+    private boolean classRomanEnabled = true;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        saveIfNotExists("lang/messages_ru.yml");
+        saveIfNotExists("lang/messages_en.yml");
         prefixProvider = resolvePrefixProvider();
         classTagProvider = resolveClassTagProvider();
+        messages = new ChatMessages(this, "ru");
+        reloadAll();
         getServer().getPluginManager().registerEvents(this, this);
+        if (getCommand("realitechat") != null) {
+            getCommand("realitechat").setExecutor(this);
+        }
     }
 
     @EventHandler
     public void onAsyncChat(AsyncChatEvent event) {
-        String playerName = event.getPlayer().getName();
-        Component classTagComponent = buildClassTagComponent(event.getPlayer());
-        Component luckPermsPrefix = prefixProvider.getPrefix(event.getPlayer()).orElse(Component.empty());
-        Component guildTag = Component.empty();
-        Component tags = luckPermsPrefix.append(classTagComponent).append(guildTag);
-        Component prefix = tags.append(Component.text(" "))
-                .append(Component.text(playerName))
-                .append(Component.text(": "));
-
-        event.renderer((source, sourceDisplayName, message, viewer) -> prefix.append(message));
+        event.renderer((source, sourceDisplayName, message, viewer) -> {
+            Component luckPermsPrefix = prefixEnabled
+                    ? prefixProvider.getPrefix(source).orElse(Component.empty())
+                    : Component.empty();
+            Component classTagComponent = classEnabled ? buildClassTagComponent(source) : Component.empty();
+            Component guildTag = guildEnabled ? buildGuildTagComponent(source) : Component.empty();
+            return chatFormat.render(new ChatFormat.Context(
+                    luckPermsPrefix,
+                    classTagComponent,
+                    guildTag,
+                    sourceDisplayName,
+                    message,
+                    tagsJoiner,
+                    spaceBeforeName
+            ));
+        });
     }
 
     private PrefixProvider resolvePrefixProvider() {
@@ -64,15 +90,70 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
         if (provider != null) {
             classTagProvider = provider;
             ClassTag tag = provider.getTag(player);
-            String romanStage = RomanNumerals.toRoman(tag.evolutionStage());
-            Component hover = Component.text("Класс: ")
-                    .append(Component.text(tag.displayName()))
-                    .append(Component.newline())
-                    .append(Component.text("Этап: " + romanStage));
-            return Component.text("[" + tag.displayName() + "-" + romanStage + "]")
-                    .hoverEvent(HoverEvent.showText(hover));
+            String stage = classRomanEnabled
+                    ? RomanNumerals.toRoman(tag.evolutionStage())
+                    : String.valueOf(tag.evolutionStage());
+            Component base = Component.text("[" + tag.displayName() + "-" + stage + "]");
+            if (classHoverEnabled) {
+                Component hover = Component.text("Класс: ")
+                        .append(Component.text(tag.displayName()))
+                        .append(Component.newline())
+                        .append(Component.text("Этап: " + stage));
+                return base.hoverEvent(HoverEvent.showText(hover));
+            }
+            return base;
         }
         String classTag = getConfig().getString("chat.class-tag", "[Бродяга-I]");
         return Component.text(classTag);
+    }
+
+    private Component buildGuildTagComponent(Player player) {
+        return Component.empty();
+    }
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
+            if (!hasReloadPermission(sender)) {
+                sender.sendMessage(messages.get("command.reload.no-permission"));
+                return true;
+            }
+            reloadAll();
+            sender.sendMessage(messages.get("command.reload.success"));
+            return true;
+        }
+        sender.sendMessage(messages.get("command.reload.usage"));
+        return true;
+    }
+
+    public void reloadAll() {
+        reloadConfig();
+        tagsJoiner = getConfig().getString("chat.tags.joiner", "");
+        spaceBeforeName = getConfig().getBoolean("chat.spaceBeforeName", true);
+        prefixEnabled = getConfig().getBoolean("prefix.enabled", true);
+        classEnabled = getConfig().getBoolean("class.enabled", true);
+        guildEnabled = getConfig().getBoolean("guild.enabled", true);
+        classHoverEnabled = getConfig().getBoolean("class.hover.enabled", true);
+        classRomanEnabled = getConfig().getBoolean("class.roman.enabled", true);
+        String template = getConfig().getString("chat.format", DEFAULT_FORMAT);
+        chatFormat = new ChatFormat(template);
+        messages.reload("ru");
+    }
+
+    private boolean hasReloadPermission(CommandSender sender) {
+        return sender.hasPermission("realite.chat.admin") || sender.hasPermission("realite.chat.reload");
+    }
+
+    private void saveIfNotExists(String resourcePath) {
+        if (!getDataFolder().exists() && !getDataFolder().mkdirs()) {
+            getLogger().warning("Failed to create plugin data folder: " + getDataFolder());
+            return;
+        }
+        if (getResource(resourcePath) == null) {
+            return;
+        }
+        if (!new java.io.File(getDataFolder(), resourcePath).exists()) {
+            saveResource(resourcePath, false);
+        }
     }
 }

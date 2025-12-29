@@ -1,0 +1,5 @@
+command:
+  reload:
+    usage: "&eUsage: /realitechat reload"
+    no-permission: "&cYou don't have permission."
+    success: "&aRealiteChat config reloaded."
