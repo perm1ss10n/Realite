@@ -12,6 +12,7 @@ import ru.realite.classes.listener.PlayerQuitListener;
 
 import ru.realite.classes.service.ClassHudService;
 import ru.realite.classes.service.ClassService;
+import ru.realite.classes.service.ClassTagProviderImpl;
 import ru.realite.classes.service.EconomyService;
 import ru.realite.classes.service.EffectService;
 import ru.realite.classes.service.EvolutionService;
@@ -26,6 +27,7 @@ import ru.realite.classes.util.Messages;
 import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.CoreModuleEntrypoint;
 import ru.realite.core.api.Platform;
+import ru.realite.core.api.classes.ClassTagProvider;
 
 import java.io.File;
 import java.io.InputStream;
@@ -49,6 +51,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
     private ProgressionService progressionService;
     private EffectService effectService;
     private ClassHudService hudService;
+    private ClassTagProvider classTagProvider;
 
     // ===== gui =====
     private ClassSelectMenu menu;
@@ -124,6 +127,7 @@ public void onEnable() {
         if (classService != null) {
             classService.saveAll();
         }
+        unregisterClassTagProvider();
         if (platform != null) {
             platform.info("[Classes] Disabled");
         }
@@ -174,6 +178,8 @@ public void onEnable() {
 
         // --- menu ---
         this.menu = new ClassSelectMenu(this, classConfig);
+
+        registerClassTagProvider();
 
         platform.info("[Classes] reloadAll completed");
     }
@@ -245,5 +251,24 @@ public void onEnable() {
         } catch (Exception e) {
             getLogger().warning("Failed to save resource: " + resourcePath + " (" + e.getMessage() + ")");
         }
+    }
+
+    private void registerClassTagProvider() {
+        if (core == null || classService == null || evolutionService == null || classConfig == null) {
+            return;
+        }
+        classTagProvider = new ClassTagProviderImpl(classService, evolutionService, classConfig);
+        core.services().replace(ClassTagProvider.class, classTagProvider);
+    }
+
+    private void unregisterClassTagProvider() {
+        if (core == null || classTagProvider == null) {
+            return;
+        }
+        ClassTagProvider registered = core.services().get(ClassTagProvider.class);
+        if (registered == classTagProvider) {
+            core.services().unregister(ClassTagProvider.class);
+        }
+        classTagProvider = null;
     }
 }
