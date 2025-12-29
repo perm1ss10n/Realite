@@ -18,9 +18,8 @@ public final class ClassesModule implements Module {
         this.metadata = new ModuleMetadata(
                 new ModuleId("realite-classes"),
                 "RealiteClasses",
-                plugin.getDescription().getVersion(),
-                Set.of()
-        );
+                plugin.getPluginMeta().getVersion(),
+                Set.of());
     }
 
     @Override

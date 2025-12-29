@@ -1,0 +1,195 @@
+city:
+  no-permission: "&cYou do not have permission."
+  only-players: "&cOnly players can use this command."
+  usage: "&eUsage: /city <area|plot|shop|market> <...>"
+  protected: "&cThis territory is protected."
+  shop:
+    set:
+      no-target: "&cNo block targeted."
+      not-in-plot: "&cThe block is not inside a plot."
+      not-shop-plot: "&cThis plot is not a shop plot."
+      not-owned: "&cPlot {id} has no owner."
+      limit-reached: "&cShop point limit reached ({limit})."
+      already-exists: "&cA shop point already exists on this block."
+      success: "&aShop point {id} created (plot {plot})."
+    remove:
+      not-found: "&cShop point {id} not found."
+      nearby-none: "&cNo shop point nearby."
+      success: "&aShop point {id} removed."
+    list:
+      usage: "&eUsage: /city shop list <id|#number>"
+      header: "&eShop points for plot {id}:"
+      line: "- {id} {world} {x},{y},{z} enabled={enabled}"
+      empty: "&eNo shop points in plot {id}."
+    info:
+      none: "&cNo shop point nearby."
+      line: "&eShop point {id}: plot={plot} owner={owner} enabled={enabled}"
+    point:
+      customer: "&eThis is a shop. Purchases are TBD."
+      disabled: "&cThis shop point is disabled."
+      enabled: "&aShop point enabled."
+      disabled-by-owner: "&eShop point disabled."
+      menu:
+        title: "&eShop point settings"
+        toggle:
+          enabled: "&aDisable point"
+          disabled: "&cEnable point"
+    rent:
+      usage: "&eUsage: /city shop rent <status|pay> <id|#number> [periods]"
+      disabled: "&cShop rent is disabled."
+      no-economy: "&cEconomy not configured."
+      not-shop: "&cThis is not a shop plot."
+      not-owned: "&cPlot {id} has no owner."
+      not-enough-money: "&cNot enough money to pay rent."
+      overdue: "&cShop plot {id} rent is overdue."
+      blocked: "&cCommerce for plot {id} is temporarily blocked due to overdue rent."
+      never: "never"
+      status:
+        usage: "&eUsage: /city shop rent status <id|#number>"
+        line: "&eRent for plot {id}: paid until {paidUntil} (overdue={overdue}, blocked={blocked})"
+      pay:
+        usage: "&eUsage: /city shop rent pay <id|#number> [periods]"
+        invalid-periods: "&cInvalid period amount."
+        success: "&aRent for plot {id} paid until {paidUntil} (cost {price})."
+    listing:
+      no-point: "&cNo shop point nearby."
+      set:
+        usage: "&eUsage: /city shop set <title|category|desc> <text...>"
+      updated: "&aField {field} updated: {value}"
+      info: "&eShop listing {id}: title={title} category={category} desc={description} open={open}"
+      setup:
+        hint: "&7Example: /city shop set title <...>, /city shop open"
+      opened: "&aShop opened: {title}"
+      closed: "&eShop closed: {title}"
+  market:
+    list:
+      header: "&eOpen shops:"
+      line: "- {title} &7({category}) &7id={id} plot={plot} owner={owner}"
+      empty: "&eNo open shops."
+    category:
+      usage: "&eUsage: /city market category <name>"
+    search:
+      usage: "&eUsage: /city market search <text>"
+    near:
+      usage: "&eUsage: /city market near [radius]"
+      header: "&eNearby shops:"
+      line: "- {title} &7({category}) &7id={id} dist={dist}"
+      empty: "&eNo open shops nearby."
+    info:
+      usage: "&eUsage: /city market info <shopId|#plot|pointId>"
+      not-found: "&cShop {id} not found."
+      line: "&eShop {title}: category={category} desc={description} open={open} owner={owner} point={id} {world} {x},{y},{z}"
+    goto:
+      usage: "&eUsage: /city market goto <shopId|pointId>"
+      not-found: "&cShop {id} not found."
+      success: "&aTeleported to shop {title}."
+      disabled: "&cMarket teleport is disabled."
+      no-permission: "&cYou don't have permission to teleport to market."
+      cooldown: "&cPlease wait {seconds} seconds before the next teleport."
+      no-economy: "&cEconomy is not configured."
+      not-enough-money: "&cNot enough money (cost {cost})."
+      invalid-world: "&cWorld {world} is unavailable."
+      invalid-target: "&cTeleport target is unavailable."
+    hub:
+      title: "market"
+      not-configured: "&cMarket hub is not configured."
+  plot:
+    buy:
+      not-in-plot: "&cYou are not inside a plot. Use /city plot nearby or /city plot info #<number> (/city plot info <id>)."
+      success: "&aPlot #{number} ({id}) bought."
+      already-owned: "&cPlot #{number} ({id}) is already owned."
+    nearby:
+      header: "&eNearby free plots:"
+      none: "&eNo free plots nearby."
+      line: "# {number} {id} {type} price={price} dist={dist}"
+      hint:
+        buy: "&7Buy: /city plot buy #<number>"
+        info: "&7Info: /city plot info #<number>"
+      usage: "&eUsage: /city plot nearby [radius]"
+    not-found: "&cPlot {id} not found."
+    owner:
+      none: "none"
+    type:
+      unknown: "unknown"
+    already-owned: "&cPlot {id} is already owned."
+    bought: "&aYou bought plot {id}."
+    limit-reached: "&cPlot limit reached ({limit})."
+    not-enough-money: "&cNot enough money."
+    type-disabled: "&cPlot type {type} is disabled."
+    no-economy: "&cEconomy not configured."
+    created: "&aPlot #{number} ({id}) created."
+    deleted: "&aPlot {id} deleted."
+    info: "&ePlot #{number} ({id}): &7type={type} price={price} owner={owner} world={world} [{x1},{y1},{z1}] -> [{x2},{y2},{z2}]"
+    list:
+      header: "&ePlots:"
+      line: "- #{number} {id} ({type}) price={price} owner={owner}"
+      none: "&eNo plots defined."
+    not-owned: "&cPlot {id} is not owned."
+    not-owner: "&cYou are not the owner of this plot."
+    member:
+      added: "&aAdded {player} to plot {id}."
+      removed: "&aRemoved {player} from plot {id}."
+      self: "&cYou cannot add yourself."
+      not-found: "&cPlayer is not a plot member."
+      add:
+        usage: "&eUsage: /city plot addmember <id> <player>"
+      remove:
+        usage: "&eUsage: /city plot removemember <id> <player>"
+    members:
+      header: "&ePlot {id} members:"
+      empty: "&7(no members)"
+      line: "- {player} ({role})"
+      usage: "&eUsage: /city plot members <id>"
+    transfer:
+      sent: "&aTransfer offer sent to {player} for plot {id}."
+      accepted: "&aPlot #{number} ({id}) transferred to you."
+      expired: "&cTransfer offer expired for plot {id}."
+      limit-reached: "&cPlot limit reached ({limit})."
+      usage: "&eUsage: /city plot transfer <id> <player>"
+      self: "&cYou cannot transfer to yourself."
+    release:
+      success: "&aPlot #{number} ({id}) released."
+      usage: "&eUsage: /city plot release [id|#number]"
+    cleanup:
+      started: "&ePlot {id} cleanup started."
+      done: "&aPlot {id} cleanup done."
+    sell:
+      sent: "&aSell offer sent to {player} for plot {id} (price {price})."
+      no-economy: "&cEconomy not configured."
+      usage: "&eUsage: /city plot sell <id> <player> <price>"
+      invalid-price: "&cInvalid price."
+      self: "&cYou cannot sell to yourself."
+    accept:
+      usage: "&eUsage: /city plot accept <id>"
+    create:
+      usage: "&eUsage: /city plot create <id> <home|shop> <price>"
+      unknown-type: "&cUnknown plot type."
+      invalid-price: "&cInvalid price."
+      exists: "&cPlot {id} already exists."
+    delete:
+      usage: "&eUsage: /city plot delete <id>"
+    info:
+      usage: "&eUsage: /city plot info <id|#number>"
+    goto:
+      usage: "&eUsage: /city plot goto <id|#number>"
+      success: "&aTeleported to plot #{number} ({id})."
+      invalid-world: "&cWorld {world} is not available."
+area:
+  pos1-set: "&apos1 set: &7{loc}"
+  pos2-set: "&apos2 set: &7{loc}"
+  wand-enabled: "&aCity area wand enabled."
+  create:
+    usage: "&eUsage: /city area create <id>"
+  delete:
+    usage: "&eUsage: /city area delete <id>"
+  exists: "&cCity area {id} already exists."
+  selection-missing: "&cBoth pos1 and pos2 must be set."
+  invalid-world: "&cInvalid selection world."
+  mismatched-world: "&cpos1 and pos2 must be in the same world."
+  created: "&aCity area {id} created."
+  deleted: "&aCity area {id} deleted."
+  not-found: "&cCity area {id} not found."
+  none: "&eNo city areas defined."
+  list:
+    header: "&eCity areas:"
+    line: "- {id} ({world}) [{minX},{minY},{minZ}] -> [{maxX},{maxY},{maxZ}]"

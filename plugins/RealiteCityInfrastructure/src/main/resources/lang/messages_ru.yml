@@ -1,0 +1,195 @@
+city:
+  no-permission: "&cУ вас нет прав."
+  only-players: "&cКоманду могут использовать только игроки."
+  usage: "&eИспользование: /city <area|plot|shop|market> <...>"
+  protected: "&cЭта территория защищена."
+  shop:
+    set:
+      no-target: "&cНе удалось найти блок перед вами."
+      not-in-plot: "&cБлок не находится в участке."
+      not-shop-plot: "&cЭтот участок не является магазином."
+      not-owned: "&cУчасток {id} не имеет владельца."
+      limit-reached: "&cДостигнут лимит точек магазина ({limit})."
+      already-exists: "&cТочка магазина уже существует на этом блоке."
+      success: "&aТочка магазина {id} создана (участок {plot})."
+    remove:
+      not-found: "&cТочка магазина {id} не найдена."
+      nearby-none: "&cПоблизости нет точек магазина."
+      success: "&aТочка магазина {id} удалена."
+    list:
+      usage: "&eИспользование: /city shop list <id|#number>"
+      header: "&eТочки магазина участка {id}:"
+      line: "- {id} {world} {x},{y},{z} enabled={enabled}"
+      empty: "&eВ участке {id} нет точек магазина."
+    info:
+      none: "&cПоблизости нет точки магазина."
+      line: "&eТочка {id}: участок={plot} владелец={owner} enabled={enabled}"
+    point:
+      customer: "&eЭто магазин. Покупка пока TBD."
+      disabled: "&cЭта точка магазина выключена."
+      enabled: "&aТочка магазина включена."
+      disabled-by-owner: "&eТочка магазина выключена."
+      menu:
+        title: "&eНастройка магазина"
+        toggle:
+          enabled: "&aВыключить точку"
+          disabled: "&cВключить точку"
+    rent:
+      usage: "&eИспользование: /city shop rent <status|pay> <id|#number> [periods]"
+      disabled: "&cАренда магазинов отключена."
+      no-economy: "&cЭкономика не настроена."
+      not-shop: "&cЭто не магазинный участок."
+      not-owned: "&cУчасток {id} не имеет владельца."
+      not-enough-money: "&cНедостаточно денег для оплаты аренды."
+      overdue: "&cАренда участка {id} просрочена."
+      blocked: "&cКоммерция на участке {id} временно отключена из-за просрочки аренды."
+      never: "никогда"
+      status:
+        usage: "&eИспользование: /city shop rent status <id|#number>"
+        line: "&eАренда участка {id}: оплачено до {paidUntil} (просрочено={overdue}, блокировка={blocked})"
+      pay:
+        usage: "&eИспользование: /city shop rent pay <id|#number> [periods]"
+        invalid-periods: "&cНекорректное количество периодов."
+        success: "&aАренда участка {id} оплачена до {paidUntil} (стоимость {price})."
+    listing:
+      no-point: "&cПоблизости нет точки магазина."
+      set:
+        usage: "&eИспользование: /city shop set <title|category|desc> <text...>"
+      updated: "&aПоле {field} обновлено: {value}"
+      info: "&eНастройки магазина {id}: title={title} category={category} desc={description} open={open}"
+      setup:
+        hint: "&7Пример: /city shop set title <...>, /city shop open"
+      opened: "&aМагазин открыт: {title}"
+      closed: "&eМагазин закрыт: {title}"
+  market:
+    list:
+      header: "&eОткрытые магазины:"
+      line: "- {title} &7({category}) &7id={id} plot={plot} owner={owner}"
+      empty: "&eОткрытых магазинов нет."
+    category:
+      usage: "&eИспользование: /city market category <name>"
+    search:
+      usage: "&eИспользование: /city market search <text>"
+    near:
+      usage: "&eИспользование: /city market near [radius]"
+      header: "&eМагазины поблизости:"
+      line: "- {title} &7({category}) &7id={id} dist={dist}"
+      empty: "&eПоблизости нет открытых магазинов."
+    info:
+      usage: "&eИспользование: /city market info <shopId|#plot|pointId>"
+      not-found: "&cМагазин {id} не найден."
+      line: "&eМагазин {title}: категория={category} описание={description} open={open} владелец={owner} точка={id} {world} {x},{y},{z}"
+    goto:
+      usage: "&eИспользование: /city market goto <shopId|pointId>"
+      not-found: "&cМагазин {id} не найден."
+      success: "&aТелепортация в магазин {title}."
+      disabled: "&cТелепортация на рынок отключена."
+      no-permission: "&cУ вас нет прав на телепорт на рынок."
+      cooldown: "&cПодождите {seconds} сек. перед следующим телепортом."
+      no-economy: "&cЭкономика не настроена."
+      not-enough-money: "&cНедостаточно денег (стоимость {cost})."
+      invalid-world: "&cМир {world} недоступен."
+      invalid-target: "&cЦель телепорта недоступна."
+    hub:
+      title: "рынок"
+      not-configured: "&cТочка рынка не настроена."
+  plot:
+    buy:
+      not-in-plot: "&cВы не находитесь на участке. Используйте /city plot nearby или /city plot info #<number> (/city plot info <id>)."
+      success: "&aУчасток #{number} ({id}) куплен."
+      already-owned: "&cУчасток #{number} ({id}) уже занят."
+    nearby:
+      header: "&eБлижайшие свободные участки:"
+      none: "&eСвободных участков поблизости нет."
+      line: "# {number} {id} {type} цена={price} dist={dist}"
+      hint:
+        buy: "&7Покупка: /city plot buy #<number>"
+        info: "&7Инфо: /city plot info #<number>"
+      usage: "&eИспользование: /city plot nearby [radius]"
+    not-found: "&cУчасток {id} не найден."
+    owner:
+      none: "нет"
+    type:
+      unknown: "неизвестный"
+    already-owned: "&cУчасток {id} уже занят."
+    bought: "&aУчасток {id} куплен."
+    limit-reached: "&cДостигнут лимит участков ({limit})."
+    not-enough-money: "&cНедостаточно денег."
+    type-disabled: "&cТип участка {type} отключён."
+    no-economy: "&cЭкономика не настроена."
+    created: "&aУчасток #{number} ({id}) создан."
+    deleted: "&aУчасток {id} удалён."
+    info: "&eУчасток #{number} ({id}): &7тип={type} цена={price} владелец={owner} мир={world} [{x1},{y1},{z1}] -> [{x2},{y2},{z2}]"
+    list:
+      header: "&eУчастки:"
+      line: "- #{number} {id} ({type}) цена={price} владелец={owner}"
+      none: "&eУчастков не найдено."
+    not-owned: "&cУчасток {id} не имеет владельца."
+    not-owner: "&cВы не владелец этого участка."
+    member:
+      added: "&aИгрок {player} добавлен в участок {id}."
+      removed: "&aИгрок {player} удалён из участка {id}."
+      self: "&cНельзя добавить себя."
+      not-found: "&cИгрок не является участником участка."
+      add:
+        usage: "&eИспользование: /city plot addmember <id> <player>"
+      remove:
+        usage: "&eИспользование: /city plot removemember <id> <player>"
+    members:
+      header: "&eУчастники участка {id}:"
+      empty: "&7(нет участников)"
+      line: "- {player} ({role})"
+      usage: "&eИспользование: /city plot members <id>"
+    transfer:
+      sent: "&aЗапрос на передачу участка {id} отправлен игроку {player}."
+      accepted: "&aУчасток #{number} ({id}) передан вам."
+      expired: "&cЗапрос на передачу участка {id} истёк."
+      limit-reached: "&cДостигнут лимит участков ({limit})."
+      usage: "&eИспользование: /city plot transfer <id> <player>"
+      self: "&cНельзя передать участок самому себе."
+    release:
+      success: "&aУчасток #{number} ({id}) сдан городу."
+      usage: "&eИспользование: /city plot release [id|#number]"
+    cleanup:
+      started: "&eОчистка участка {id} началась."
+      done: "&aОчистка участка {id} завершена."
+    sell:
+      sent: "&aПредложение продажи участка {id} отправлено игроку {player} (цена {price})."
+      no-economy: "&cЭкономика не настроена."
+      usage: "&eИспользование: /city plot sell <id> <player> <price>"
+      invalid-price: "&cНекорректная цена."
+      self: "&cНельзя продать участок самому себе."
+    accept:
+      usage: "&eИспользование: /city plot accept <id>"
+    create:
+      usage: "&eИспользование: /city plot create <id> <home|shop> <price>"
+      unknown-type: "&cНеизвестный тип участка."
+      invalid-price: "&cНекорректная цена."
+      exists: "&cУчасток {id} уже существует."
+    delete:
+      usage: "&eИспользование: /city plot delete <id>"
+    info:
+      usage: "&eИспользование: /city plot info <id|#number>"
+    goto:
+      usage: "&eИспользование: /city plot goto <id|#number>"
+      success: "&aТелепортация на участок #{number} ({id})."
+      invalid-world: "&cМир {world} недоступен."
+area:
+  pos1-set: "&apos1 установлена: &7{loc}"
+  pos2-set: "&apos2 установлена: &7{loc}"
+  wand-enabled: "&aВолшебная палочка зон включена."
+  create:
+    usage: "&eИспользование: /city area create <id>"
+  delete:
+    usage: "&eИспользование: /city area delete <id>"
+  exists: "&cГородская зона {id} уже существует."
+  selection-missing: "&cНеобходимо установить pos1 и pos2."
+  invalid-world: "&cНеверный мир выделения."
+  mismatched-world: "&cpos1 и pos2 должны быть в одном мире."
+  created: "&aГородская зона {id} создана."
+  deleted: "&aГородская зона {id} удалена."
+  not-found: "&cГородская зона {id} не найдена."
+  none: "&eГородские зоны не заданы."
+  list:
+    header: "&eГородские зоны:"
+    line: "- {id} ({world}) [{minX},{minY},{minZ}] -> [{maxX},{maxY},{maxZ}]"

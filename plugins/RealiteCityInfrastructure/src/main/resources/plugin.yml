@@ -1,0 +1,26 @@
+name: RealiteCityInfrastructure
+version: 0.1.0
+main: ru.realite.city.RealiteCityInfrastructurePlugin
+api-version: "1.21"
+
+depend:
+  - RealiteCore
+
+commands:
+  city:
+    description: City tools
+    usage: /city <area|plot|shop|market> <...>
+
+permissions:
+  realite.city.admin:
+    description: Access to city administration commands
+    default: op
+  realite.city.bypass:
+    description: Bypass city area protection
+    default: op
+  realite.city.bypass.limits:
+    description: Bypass plot limits
+    default: op
+  realite.city.market.tp:
+    description: Allow market teleports
+    default: true

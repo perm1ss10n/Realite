@@ -1,6 +1,11 @@
 # Default limits for city plots
 limits:
   defaultPlotsPerPlayer: 3
+  perType:
+    home: 3
+    shop: 1
+
+lang: "ru"  # Supported languages: "en", "ru"
 
 # Storage settings
 storage:
@@ -12,10 +17,49 @@ logging:
 # Future city area behavior
 cityArea:
   defaultDeny: true
+  bypassPermission: "realite.city.bypass"
 
 plots:
+  nearby:
+    defaultRadius: 150
   types:
     home:
       enabled: true
     shop:
       enabled: true
+  protection:
+    allowInteractOutsideMembers: false
+  cleanup:
+    enabled: true
+    blocksPerTick: 2000
+    mode: "FLAT"
+    fillBlock: "GRASS_BLOCK"
+    clearAboveY: -1
+
+shops:
+  pointsPerPlot: 3
+  rent:
+    enabled: false
+    periodHours: 24
+    pricePerPeriod: 100
+    graceHours: 48
+    checkMinutes: 10
+  marker:
+    enabled: true
+    formatLine1: "&e{title} &7({category})"
+    formatLine2: "{status}"
+    updateOnChange: true
+
+market:
+  nearby:
+    defaultRadius: 150
+  teleport:
+    enabled: true
+    permission: "realite.city.market.tp"
+    cooldownSeconds: 30
+    cost: 0
+  hub:
+    world: ""
+    x: 0
+    y: 0
+    z: 0
