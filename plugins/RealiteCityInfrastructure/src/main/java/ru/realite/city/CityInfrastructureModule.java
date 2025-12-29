@@ -9,14 +9,20 @@ import ru.realite.city.listener.CityAreaSelectionListener;
 import ru.realite.city.listener.CityProtectionListener;
 import ru.realite.city.listener.ShopPointListener;
 import ru.realite.city.service.CityAreaSelectionService;
+import ru.realite.city.service.CityHooks;
+import ru.realite.city.service.DefaultCityHooks;
 import ru.realite.city.service.EconomyService;
+import ru.realite.city.service.MarketService;
 import ru.realite.city.service.PlotCleanupService;
 import ru.realite.city.service.PlotService;
+import ru.realite.city.service.ShopDirectoryService;
+import ru.realite.city.service.ShopMarkerService;
 import ru.realite.city.service.ShopPointService;
 import ru.realite.city.service.ShopRentService;
 import ru.realite.city.storage.SqliteCityAreaRepository;
 import ru.realite.city.storage.SqlitePlotMemberRepository;
 import ru.realite.city.storage.SqlitePlotRepository;
+import ru.realite.city.storage.SqliteShopListingRepository;
 import ru.realite.city.storage.SqliteShopPointRepository;
 import ru.realite.core.api.Config;
 import ru.realite.core.api.Module;
@@ -49,11 +55,16 @@ public final class CityInfrastructureModule implements Module {
     private SqlitePlotRepository plotRepository;
     private SqlitePlotMemberRepository plotMemberRepository;
     private SqliteShopPointRepository shopPointRepository;
+    private SqliteShopListingRepository shopListingRepository;
     private PlotService plotService;
     private PlotCleanupService plotCleanupService;
     private EconomyService economyService;
     private ShopPointService shopPointService;
     private ShopRentService shopRentService;
+    private ShopMarkerService shopMarkerService;
+    private ShopDirectoryService shopDirectoryService;
+    private MarketService marketService;
+    private CityHooks cityHooks;
 
     @Override
     public ModuleMetadata metadata() {
@@ -107,6 +118,7 @@ public final class CityInfrastructureModule implements Module {
         plotRepository = new SqlitePlotRepository(storage);
         plotMemberRepository = new SqlitePlotMemberRepository(storage);
         shopPointRepository = new SqliteShopPointRepository(storage);
+        shopListingRepository = new SqliteShopListingRepository(storage);
 
         // Optional warm-up / cache load (if your repos implement it)
         try {
@@ -114,6 +126,7 @@ public final class CityInfrastructureModule implements Module {
             plotRepository.loadAll();
             plotMemberRepository.loadAll();
             shopPointRepository.loadAll();
+            shopListingRepository.loadAll();
         } catch (Exception e) {
             ctx.logger().error("[CityInfrastructure] Failed to load city data", e);
         }
@@ -128,7 +141,10 @@ public final class CityInfrastructureModule implements Module {
 
         plotCleanupService = new PlotCleanupService(javaPlugin, config, messages);
         economyService = new EconomyService(javaPlugin);
+        cityHooks = new DefaultCityHooks(config);
         shopPointService = new ShopPointService(shopPointRepository);
+        shopMarkerService = new ShopMarkerService(config, shopPointService);
+        shopDirectoryService = new ShopDirectoryService(shopListingRepository, shopMarkerService);
         shopRentService = new ShopRentService(
                 javaPlugin,
                 config,
@@ -144,7 +160,9 @@ public final class CityInfrastructureModule implements Module {
                 cityAreaRepository,
                 plotRepository,
                 plotMemberRepository,
-                economyService);
+                economyService,
+                cityHooks);
+        marketService = new MarketService(config, economyService, cityHooks);
 
         // Listeners
         Bukkit.getPluginManager().registerEvents(
@@ -171,7 +189,10 @@ public final class CityInfrastructureModule implements Module {
                     config,
                     economyService,
                     shopPointService,
-                    shopRentService));
+                    shopRentService,
+                    shopDirectoryService,
+                    shopMarkerService,
+                    marketService));
         } else {
             ctx.logger().warn("[CityInfrastructure] Command /city not found in plugin.yml; executor not registered.");
         }

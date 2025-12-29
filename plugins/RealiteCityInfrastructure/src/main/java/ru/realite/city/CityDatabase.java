@@ -70,6 +70,8 @@ public final class CityDatabase {
                     + "y INTEGER NOT NULL,"
                     + "z INTEGER NOT NULL,"
                     + "owner_uuid TEXT,"
+                    + "marker_uuid TEXT,"
+                    + "marker_uuid_line2 TEXT,"
                     + "created_at INTEGER NOT NULL,"
                     + "enabled INTEGER NOT NULL DEFAULT 1,"
                     + "FOREIGN KEY(plot_id) REFERENCES plots(id) ON DELETE CASCADE"
@@ -77,6 +79,26 @@ public final class CityDatabase {
 
             statement.execute("CREATE INDEX IF NOT EXISTS idx_shop_points_plot "
                     + "ON shop_points(plot_id)");
+
+            ensureShopPointMarkerColumns(statement);
+
+            statement.execute("CREATE TABLE IF NOT EXISTS shop_listings ("
+                    + "shop_point_id TEXT PRIMARY KEY,"
+                    + "plot_id TEXT NOT NULL,"
+                    + "owner_uuid TEXT,"
+                    + "title TEXT NOT NULL,"
+                    + "category TEXT NOT NULL,"
+                    + "description TEXT NOT NULL,"
+                    + "open INTEGER NOT NULL DEFAULT 0,"
+                    + "created_at INTEGER NOT NULL,"
+                    + "updated_at INTEGER NOT NULL,"
+                    + "FOREIGN KEY(shop_point_id) REFERENCES shop_points(id) ON DELETE CASCADE"
+                    + ")");
+
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_shop_listings_owner "
+                    + "ON shop_listings(owner_uuid)");
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_shop_listings_category "
+                    + "ON shop_listings(category)");
         }
     }
 
@@ -102,5 +124,24 @@ public final class CityDatabase {
             }
         }
         statement.execute("UPDATE plots SET rent_paid_until = 0 WHERE rent_paid_until IS NULL");
+    }
+
+    private void ensureShopPointMarkerColumns(Statement statement) throws SQLException {
+        try {
+            statement.execute("ALTER TABLE shop_points ADD COLUMN marker_uuid TEXT");
+        } catch (SQLException e) {
+            String message = e.getMessage();
+            if (message == null || !message.toLowerCase().contains("duplicate column name")) {
+                throw e;
+            }
+        }
+        try {
+            statement.execute("ALTER TABLE shop_points ADD COLUMN marker_uuid_line2 TEXT");
+        } catch (SQLException e) {
+            String message = e.getMessage();
+            if (message == null || !message.toLowerCase().contains("duplicate column name")) {
+                throw e;
+            }
+        }
     }
 }

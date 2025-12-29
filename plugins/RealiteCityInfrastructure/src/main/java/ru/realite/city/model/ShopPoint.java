@@ -12,6 +12,8 @@ public record ShopPoint(
         int y,
         int z,
         UUID ownerUuid,
+        UUID markerUuid,
+        UUID markerLine2Uuid,
         long createdAt,
         boolean enabled
 ) {

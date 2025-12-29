@@ -1,7 +1,7 @@
 city:
   no-permission: "&cYou do not have permission."
   only-players: "&cOnly players can use this command."
-  usage: "&eUsage: /city <area|plot|shop> <...>"
+  usage: "&eUsage: /city <area|plot|shop|market> <...>"
   protected: "&cThis territory is protected."
   shop:
     set:
@@ -51,6 +51,48 @@ city:
         usage: "&eUsage: /city shop rent pay <id|#number> [periods]"
         invalid-periods: "&cInvalid period amount."
         success: "&aRent for plot {id} paid until {paidUntil} (cost {price})."
+    listing:
+      no-point: "&cNo shop point nearby."
+      set:
+        usage: "&eUsage: /city shop set <title|category|desc> <text...>"
+      updated: "&aField {field} updated: {value}"
+      info: "&eShop listing {id}: title={title} category={category} desc={description} open={open}"
+      setup:
+        hint: "&7Example: /city shop set title <...>, /city shop open"
+      opened: "&aShop opened: {title}"
+      closed: "&eShop closed: {title}"
+  market:
+    list:
+      header: "&eOpen shops:"
+      line: "- {title} &7({category}) &7id={id} plot={plot} owner={owner}"
+      empty: "&eNo open shops."
+    category:
+      usage: "&eUsage: /city market category <name>"
+    search:
+      usage: "&eUsage: /city market search <text>"
+    near:
+      usage: "&eUsage: /city market near [radius]"
+      header: "&eNearby shops:"
+      line: "- {title} &7({category}) &7id={id} dist={dist}"
+      empty: "&eNo open shops nearby."
+    info:
+      usage: "&eUsage: /city market info <shopId|#plot|pointId>"
+      not-found: "&cShop {id} not found."
+      line: "&eShop {title}: category={category} desc={description} open={open} owner={owner} point={id} {world} {x},{y},{z}"
+    goto:
+      usage: "&eUsage: /city market goto <shopId|pointId>"
+      not-found: "&cShop {id} not found."
+      success: "&aTeleported to shop {title}."
+      disabled: "&cMarket teleport is disabled."
+      no-permission: "&cYou don't have permission to teleport to market."
+      cooldown: "&cPlease wait {seconds} seconds before the next teleport."
+      no-economy: "&cEconomy is not configured."
+      not-enough-money: "&cNot enough money (cost {cost})."
+      invalid-world: "&cWorld {world} is unavailable."
+      invalid-target: "&cTeleport target is unavailable."
+    hub:
+      title: "market"
+      not-configured: "&cMarket hub is not configured."
   plot:
     buy:
       not-in-plot: "&cYou are not inside a plot. Use /city plot nearby or /city plot info #<number> (/city plot info <id>)."

@@ -1,7 +1,7 @@
 city:
   no-permission: "&cУ вас нет прав."
   only-players: "&cКоманду могут использовать только игроки."
-  usage: "&eИспользование: /city <area|plot|shop> <...>"
+  usage: "&eИспользование: /city <area|plot|shop|market> <...>"
   protected: "&cЭта территория защищена."
   shop:
     set:
@@ -51,6 +51,48 @@ city:
         usage: "&eИспользование: /city shop rent pay <id|#number> [periods]"
         invalid-periods: "&cНекорректное количество периодов."
         success: "&aАренда участка {id} оплачена до {paidUntil} (стоимость {price})."
+    listing:
+      no-point: "&cПоблизости нет точки магазина."
+      set:
+        usage: "&eИспользование: /city shop set <title|category|desc> <text...>"
+      updated: "&aПоле {field} обновлено: {value}"
+      info: "&eНастройки магазина {id}: title={title} category={category} desc={description} open={open}"
+      setup:
+        hint: "&7Пример: /city shop set title <...>, /city shop open"
+      opened: "&aМагазин открыт: {title}"
+      closed: "&eМагазин закрыт: {title}"
+  market:
+    list:
+      header: "&eОткрытые магазины:"
+      line: "- {title} &7({category}) &7id={id} plot={plot} owner={owner}"
+      empty: "&eОткрытых магазинов нет."
+    category:
+      usage: "&eИспользование: /city market category <name>"
+    search:
+      usage: "&eИспользование: /city market search <text>"
+    near:
+      usage: "&eИспользование: /city market near [radius]"
+      header: "&eМагазины поблизости:"
+      line: "- {title} &7({category}) &7id={id} dist={dist}"
+      empty: "&eПоблизости нет открытых магазинов."
+    info:
+      usage: "&eИспользование: /city market info <shopId|#plot|pointId>"
+      not-found: "&cМагазин {id} не найден."
+      line: "&eМагазин {title}: категория={category} описание={description} open={open} владелец={owner} точка={id} {world} {x},{y},{z}"
+    goto:
+      usage: "&eИспользование: /city market goto <shopId|pointId>"
+      not-found: "&cМагазин {id} не найден."
+      success: "&aТелепортация в магазин {title}."
+      disabled: "&cТелепортация на рынок отключена."
+      no-permission: "&cУ вас нет прав на телепорт на рынок."
+      cooldown: "&cПодождите {seconds} сек. перед следующим телепортом."
+      no-economy: "&cЭкономика не настроена."
+      not-enough-money: "&cНедостаточно денег (стоимость {cost})."
+      invalid-world: "&cМир {world} недоступен."
+      invalid-target: "&cЦель телепорта недоступна."
+    hub:
+      title: "рынок"
+      not-configured: "&cТочка рынка не настроена."
   plot:
     buy:
       not-in-plot: "&cВы не находитесь на участке. Используйте /city plot nearby или /city plot info #<number> (/city plot info <id>)."

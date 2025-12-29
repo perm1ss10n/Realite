@@ -25,6 +25,19 @@ public record CityConfig(
                 int shopRentPricePerPeriod,
                 int shopRentGraceHours,
                 int shopRentCheckMinutes,
+                boolean shopMarkerEnabled,
+                String shopMarkerFormatLine1,
+                String shopMarkerFormatLine2,
+                boolean shopMarkerUpdateOnChange,
+                boolean marketTeleportEnabled,
+                String marketTeleportPermission,
+                int marketTeleportCooldownSeconds,
+                double marketTeleportCost,
+                int marketNearbyDefaultRadius,
+                String marketHubWorld,
+                double marketHubX,
+                double marketHubY,
+                double marketHubZ,
                 String language) {
         public static CityConfig from(Config config) {
                 int defaultPlotsPerPlayer = config.getInt("limits.defaultPlotsPerPlayer", 3);
@@ -53,6 +66,21 @@ public record CityConfig(
                 int shopRentPricePerPeriod = config.getInt("shops.rent.pricePerPeriod", 100);
                 int shopRentGraceHours = config.getInt("shops.rent.graceHours", 48);
                 int shopRentCheckMinutes = config.getInt("shops.rent.checkMinutes", 10);
+                boolean shopMarkerEnabled = config.getBoolean("shops.marker.enabled", true);
+                String shopMarkerFormatLine1 = config.getString("shops.marker.formatLine1", "&e{title} &7({category})");
+                String shopMarkerFormatLine2 = config.getString("shops.marker.formatLine2", "{status}");
+                boolean shopMarkerUpdateOnChange = config.getBoolean("shops.marker.updateOnChange", true);
+                boolean marketTeleportEnabled = config.getBoolean("market.teleport.enabled", true);
+                String marketTeleportPermission = config.getString(
+                                "market.teleport.permission",
+                                "realite.city.market.tp");
+                int marketTeleportCooldownSeconds = config.getInt("market.teleport.cooldownSeconds", 30);
+                double marketTeleportCost = config.getDouble("market.teleport.cost", 0);
+                int marketNearbyDefaultRadius = config.getInt("market.nearby.defaultRadius", 150);
+                String marketHubWorld = config.getString("market.hub.world", "");
+                double marketHubX = config.getDouble("market.hub.x", 0);
+                double marketHubY = config.getDouble("market.hub.y", 0);
+                double marketHubZ = config.getDouble("market.hub.z", 0);
                 String language = config.getString("lang", config.getString("language", "ru"));
 
                 return new CityConfig(
@@ -78,6 +106,19 @@ public record CityConfig(
                                 shopRentPricePerPeriod,
                                 shopRentGraceHours,
                                 shopRentCheckMinutes,
+                                shopMarkerEnabled,
+                                shopMarkerFormatLine1,
+                                shopMarkerFormatLine2,
+                                shopMarkerUpdateOnChange,
+                                marketTeleportEnabled,
+                                marketTeleportPermission,
+                                marketTeleportCooldownSeconds,
+                                marketTeleportCost,
+                                marketNearbyDefaultRadius,
+                                marketHubWorld,
+                                marketHubX,
+                                marketHubY,
+                                marketHubZ,
                                 language);
         }
 
