@@ -296,6 +296,9 @@ public final class CityCommand implements CommandExecutor {
                 return;
             }
         }
+
+        final int r = radius;
+
         Location location = player.getLocation();
         if (location.getWorld() == null) {
             messages.send(player, "city.plot.nearby.none", "&eNo free plots nearby.");
@@ -305,7 +308,7 @@ public final class CityCommand implements CommandExecutor {
                 .filter(plot -> plot.ownerUuid() == null)
                 .filter(plot -> plot.world().equals(location.getWorld().getName()))
                 .map(plot -> new PlotDistance(plot, distanceToPlot(location, plot)))
-                .filter(distance -> distance.distance() <= radius)
+                .filter(distance -> distance.distance() <= r)
                 .sorted(Comparator.comparingDouble(PlotDistance::distance))
                 .limit(10)
                 .toList();
