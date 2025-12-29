@@ -46,8 +46,7 @@ public final class CityCommand implements CommandExecutor {
             PlotService plotService,
             CityAreaSelectionService selectionService,
             CityMessages messages,
-            CityConfig config
-    ) {
+            CityConfig config) {
         this.cityAreaRepository = cityAreaRepository;
         this.plotRepository = plotRepository;
         this.plotMemberRepository = plotMemberRepository;
@@ -157,8 +156,7 @@ public final class CityCommand implements CommandExecutor {
                 maxX,
                 maxY,
                 maxZ,
-                System.currentTimeMillis()
-        );
+                System.currentTimeMillis());
         cityAreaRepository.upsert(area);
         player.sendMessage("CityArea " + id + " created.");
     }
@@ -218,19 +216,19 @@ public final class CityCommand implements CommandExecutor {
         }
         Plot plot = plotOptional.get();
         messages.send(sender, "city.plot.info", "&ePlot {id}: &7type={type} price={price} owner={owner}",
-                Map.of(
-                        "id", plot.id(),
-                        "type", plot.type().displayName(),
-                        "price", String.valueOf(plot.price()),
-                        "owner", formatOwner(plot.ownerUuid()),
-                        "world", plot.world(),
-                        "x1", String.valueOf(plot.x1()),
-                        "y1", String.valueOf(plot.y1()),
-                        "z1", String.valueOf(plot.z1()),
-                        "x2", String.valueOf(plot.x2()),
-                        "y2", String.valueOf(plot.y2()),
-                        "z2", String.valueOf(plot.z2())
-                ));
+                Map.ofEntries(
+                        Map.entry("id", plot.id()),
+                        Map.entry("type", plot.type().displayName()),
+                        Map.entry("price", String.valueOf(plot.price())),
+                        Map.entry("owner", formatOwner(plot.ownerUuid())),
+                        Map.entry("world", plot.world()),
+                        Map.entry("x1", String.valueOf(plot.x1())),
+                        Map.entry("y1", String.valueOf(plot.y1())),
+                        Map.entry("z1", String.valueOf(plot.z1())),
+                        Map.entry("x2", String.valueOf(plot.x2())),
+                        Map.entry("y2", String.valueOf(plot.y2())),
+                        Map.entry("z2", String.valueOf(plot.z2()))));
+
     }
 
     private void handlePlotBuy(CommandSender sender, String[] args) {
@@ -250,7 +248,8 @@ public final class CityCommand implements CommandExecutor {
             case ALREADY_OWNED -> messages.send(player, "city.plot.already-owned", "&cPlot {id} is already owned.",
                     Map.of("id", id));
             case TYPE_DISABLED -> messages.send(player, "city.plot.type-disabled", "&cPlot type {type} is disabled.",
-                    Map.of("type", plotRepository.findById(id).map(plot -> plot.type().displayName()).orElse("unknown")));
+                    Map.of("type",
+                            plotRepository.findById(id).map(plot -> plot.type().displayName()).orElse("unknown")));
             case LIMIT_REACHED -> messages.send(player, "city.plot.limit-reached", "&cPlot limit reached.",
                     Map.of("limit", String.valueOf(config.defaultPlotsPerPlayer())));
             case NO_ECONOMY -> messages.send(player, "city.plot.no-economy", "&cEconomy not configured.");
@@ -319,8 +318,7 @@ public final class CityCommand implements CommandExecutor {
                 maxZ,
                 price,
                 null,
-                System.currentTimeMillis()
-        );
+                System.currentTimeMillis());
         plotRepository.upsert(plot);
         messages.send(player, "city.plot.created", "&aPlot {id} created.", Map.of("id", id));
     }
