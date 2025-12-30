@@ -56,11 +56,16 @@ public final class GuildAccessProtectionListener implements Listener {
             return;
         }
         Player player = event.getPlayer();
-        if (config.getBoolean("integrations.city.enabled", true)
-                && !cityAccessHook.canInteract(player, block.getLocation())) {
-            event.setCancelled(true);
-            sendDenied(player, "access.city.denied");
-            return;
+        if (config.getBoolean("integrations.city.enabled", true)) {
+            if (config.getBoolean("integrations.city.overrideGuildClaimInsideCityPlots", true)
+                    && cityAccessHook.isInCityPlot(block.getLocation())) {
+                return;
+            }
+            if (!cityAccessHook.canInteract(player, block.getLocation())) {
+                event.setCancelled(true);
+                sendDenied(player, "access.city.denied");
+                return;
+            }
         }
         Guild guild = service.findGuildByClaim(block.getLocation());
         if (guild == null) {
