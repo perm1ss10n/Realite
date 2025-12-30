@@ -9,5 +9,5 @@ depend:
 commands:
   g:
     description: Guild commands
-    usage: /g <create|info|invite|join|leave|disband>
+    usage: /g <create|info|invite|join|leave|disband|ranks|setrank>
     aliases: [guild]

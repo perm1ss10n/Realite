@@ -12,6 +12,11 @@ features:
   # Роспуск гильдии
   disband: true
 
+# Настройки рангов
+ranks:
+  # Разрешать больше одного лидера
+  allowMultipleLeaders: false
+
 # Настройки гильдий
 guild:
   # Параметры тега гильдии

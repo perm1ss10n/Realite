@@ -21,6 +21,8 @@ usage:
   invite: "{prefix}&eUsage: /g invite <player>"
   join: "{prefix}&eUsage: /g join <tag>"
   leave: "{prefix}&eUsage: /g leave"
+  ranks: "{prefix}&eUsage: /g ranks"
+  setrank: "{prefix}&eUsage: /g setrank <player> <rankId>"
 
 success:
   create: "{prefix}&aGuild &f[{tag}] {name}&a created!"
@@ -52,3 +54,17 @@ leave:
   denied:
     leader: "{prefix}&cThe leader cannot leave the guild."
     cooldown: "{prefix}&cYou can leave the guild in {seconds} sec."
+
+rank:
+  list:
+    header: "{prefix}&eGuild ranks:\n{list}"
+  set:
+    success: "{prefix}&aRank for &f{player}&a set to &f{rank}&a."
+    denied:
+      higher_or_equal: "{prefix}&cYou cannot set a rank equal to or higher than yours."
+      no_permission_flag: "{prefix}&cYou don't have permission to set ranks."
+  not_found: "{prefix}&cRank not found."
+  name:
+    leader: "Leader"
+    officer: "Officer"
+    member: "Member"
