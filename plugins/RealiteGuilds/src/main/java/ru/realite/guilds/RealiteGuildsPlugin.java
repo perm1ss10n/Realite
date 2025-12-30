@@ -16,6 +16,7 @@ import ru.realite.guilds.listener.GuildSalaryJoinListener;
 import ru.realite.guilds.service.EconomyService;
 import ru.realite.guilds.service.GuildChatService;
 import ru.realite.guilds.service.GuildChatTagProvider;
+import ru.realite.guilds.service.GuildProgressionService;
 import ru.realite.guilds.service.GuildRankService;
 import ru.realite.guilds.service.GuildSalaryService;
 import ru.realite.guilds.service.GuildService;
@@ -29,6 +30,7 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
     private GuildRankService rankService;
     private GuildSalaryService salaryService;
     private GuildChatService chatService;
+    private GuildProgressionService progressionService;
 
     @Override
     public void onEnable() {
@@ -44,10 +46,11 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
         service = new GuildService(this, getConfig(), repository, messages, rankService);
         salaryService = new GuildSalaryService(this, getConfig(), repository, messages, rankService, economyService);
         chatService = new GuildChatService(this, getConfig(), repository, messages, rankService);
+        progressionService = new GuildProgressionService(this, getConfig(), repository, messages);
 
         PluginCommand command = getCommand("g");
         if (command != null) {
-            command.setExecutor(new GuildCommand(service, messages, salaryService, chatService));
+            command.setExecutor(new GuildCommand(service, messages, salaryService, chatService, progressionService));
         } else {
             getLogger().severe("Command 'g' not found in plugin.yml");
         }

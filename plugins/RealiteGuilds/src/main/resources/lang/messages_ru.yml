@@ -27,6 +27,10 @@ usage:
   claim: "{prefix}&eИспользование: /g claim <pos1|pos2|apply|clear>"
   chat: "{prefix}&eИспользование: /g chat toggle или /gc <message>"
 
+admin:
+  addxp:
+    usage: "{prefix}&eИспользование: /g admin addxp <tag> <amount> [reason]"
+
 success:
   create: "{prefix}&aГильдия &f[{tag}] {name}&a успешно создана!"
   disband: "{prefix}&aГильдия &f[{tag}]&a распущена."
@@ -122,3 +126,7 @@ chat:
   toggle:
     on: "{prefix}&aЧат гильдии включен."
     off: "{prefix}&eЧат гильдии выключен."
+
+xp:
+  added: "{prefix}&aГильдия &f[{tag}]&a получила &f{amount}&a XP. Всего: &f{total}&a, уровень: &f{level}&a. Причина: &f{reason}&a."
+  levelup: "{prefix}&aГильдия &f[{tag}]&a достигла уровня &f{level}&a!"

@@ -31,6 +31,16 @@ ranks:
   # Разрешать больше одного лидера
   allowMultipleLeaders: false
 
+# Настройки прогрессии гильдий
+progression:
+  levels:
+    - level: 1
+      xp: 0
+    - level: 2
+      xp: 1000
+    - level: 3
+      xp: 2500
+
 # Настройки гильдий
 guild:
   # Параметры тега гильдии
