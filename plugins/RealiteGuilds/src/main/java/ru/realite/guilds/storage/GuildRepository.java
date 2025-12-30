@@ -105,6 +105,23 @@ public final class GuildRepository {
         saveMembers();
     }
 
+    public void removeMember(UUID uuid) {
+        if (members.remove(uuid) != null) {
+            saveMembers();
+        }
+    }
+
+    public int countMembersByTag(String tag) {
+        String normalized = normalizeTag(tag);
+        int count = 0;
+        for (GuildMember member : members.values()) {
+            if (normalized.equals(member.tag())) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     private void saveGuilds() {
         YamlConfiguration config = new YamlConfiguration();
         ConfigurationSection section = config.createSection("guilds");

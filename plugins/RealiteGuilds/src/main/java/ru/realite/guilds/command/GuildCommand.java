@@ -22,7 +22,7 @@ public final class GuildCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messages.msg("error.player-only"));
+            sender.sendMessage(messages.msg("error.player_only"));
             return true;
         }
         if (args.length == 0) {
@@ -34,6 +34,9 @@ public final class GuildCommand implements CommandExecutor {
             case "create" -> handleCreate(player, args);
             case "info" -> handleInfo(player, args);
             case "disband" -> service.disband(player);
+            case "invite" -> handleInvite(player, args);
+            case "join" -> handleJoin(player, args);
+            case "leave" -> service.leave(player);
             default -> messages.send(player, "usage.create");
         }
         return true;
@@ -56,5 +59,21 @@ public final class GuildCommand implements CommandExecutor {
         }
         String tag = args.length == 2 ? args[1] : null;
         service.info(player, tag);
+    }
+
+    private void handleInvite(Player player, String[] args) {
+        if (args.length != 2) {
+            messages.send(player, "usage.invite");
+            return;
+        }
+        service.invite(player, args[1]);
+    }
+
+    private void handleJoin(Player player, String[] args) {
+        if (args.length != 2) {
+            messages.send(player, "usage.join");
+            return;
+        }
+        service.join(player, args[1]);
     }
 }
