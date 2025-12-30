@@ -23,6 +23,7 @@ usage:
   leave: "{prefix}&eИспользование: /g leave"
   ranks: "{prefix}&eИспользование: /g ranks"
   setrank: "{prefix}&eИспользование: /g setrank <player> <rankId>"
+  tp: "{prefix}&eИспользование: /g tp <player>"
   claim: "{prefix}&eИспользование: /g claim <pos1|pos2|apply|clear>"
   chat: "{prefix}&eИспользование: /g chat toggle или /gc <message>"
 
@@ -79,6 +80,17 @@ home:
     cancelled: "{prefix}&cТелепортация отменена."
     success: "{prefix}&aТелепортация выполнена."
   denied: "{prefix}&cНедостаточно прав для дома."
+
+tp:
+  start: "{prefix}&eТелепортация через {seconds} сек."
+  cancelled: "{prefix}&cТелепортация отменена."
+  success: "{prefix}&aТелепортация выполнена."
+  denied: "{prefix}&cНедостаточно прав для телепортации."
+  cooldown: "{prefix}&cВы сможете телепортироваться через {seconds} сек."
+  target:
+    not_found: "{prefix}&cИгрок не найден."
+    not_in_guild: "{prefix}&cИгрок не состоит в вашей гильдии."
+    offline: "{prefix}&cИгрок сейчас не в сети."
 
 claim:
   pos1: "{prefix}&aТочка 1 установлена: &f{loc}"

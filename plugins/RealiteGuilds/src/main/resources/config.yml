@@ -69,6 +69,17 @@ home:
   cancelOnMove: true
   cancelOnDamage: true
 
+# Настройки телепортации к согильдийцу
+tp:
+  enabled: true
+  warmupSeconds: 5
+  cooldownSeconds: 600
+  cancelOnMove: true
+  cancelOnDamage: true
+  allowDifferentWorlds: false
+  blockedWorlds:
+    - "arena"
+
 # Настройки территорий гильдий
 claim:
   enabled: true

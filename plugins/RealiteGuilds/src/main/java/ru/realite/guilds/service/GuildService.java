@@ -31,6 +31,7 @@ public final class GuildService {
     private final Map<UUID, Long> leaveCooldowns = new HashMap<>();
     private final Map<UUID, ClaimSelection> claimSelections = new HashMap<>();
     private final Map<UUID, PendingTeleport> pendingTeleports = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> tpCooldowns = new HashMap<>();
 
     public GuildService(JavaPlugin plugin, FileConfiguration config, GuildRepository repository, GuildMessages messages,
                         GuildRankService rankService) {
@@ -135,7 +136,56 @@ public final class GuildService {
             return;
         }
         Location target = new Location(world, home.x(), home.y(), home.z(), home.yaw(), home.pitch());
-        startTeleport(player, target);
+        startTeleport(player, target, TeleportType.HOME);
+    }
+
+    public void teleportToMember(Player player, String targetName) {
+        if (!config.getBoolean("tp.enabled", true)) {
+            messages.send(player, "tp.denied");
+            return;
+        }
+        GuildMember member = repository.getMember(player.getUniqueId());
+        if (member == null) {
+            messages.send(player, "error.guild.no_member");
+            return;
+        }
+        if (!rankService.hasPermission(member.role(), GuildRankPermission.TP)) {
+            messages.send(player, "tp.denied");
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(targetName);
+        if (target == null) {
+            OfflinePlayer offline = Bukkit.getOfflinePlayer(targetName);
+            if (offline == null || (!offline.hasPlayedBefore() && !offline.isOnline())) {
+                messages.send(player, "tp.target.not_found");
+            } else {
+                messages.send(player, "tp.target.offline");
+            }
+            return;
+        }
+        GuildMember targetMember = repository.getMember(target.getUniqueId());
+        if (targetMember == null || !targetMember.tag().equalsIgnoreCase(member.tag())) {
+            messages.send(player, "tp.target.not_in_guild");
+            return;
+        }
+        if (!isTeleportWorldAllowed(player.getWorld(), target.getWorld())) {
+            messages.send(player, "tp.denied");
+            return;
+        }
+        int cooldownSeconds = config.getInt("tp.cooldownSeconds", 600);
+        if (cooldownSeconds > 0) {
+            Long lastUse = tpCooldowns.get(player.getUniqueId());
+            if (lastUse != null) {
+                long elapsed = System.currentTimeMillis() - lastUse;
+                long cooldownMs = cooldownSeconds * 1000L;
+                if (elapsed < cooldownMs) {
+                    long remaining = (cooldownMs - elapsed + 999) / 1000;
+                    messages.send(player, "tp.cooldown", "seconds", String.valueOf(remaining));
+                    return;
+                }
+            }
+        }
+        startTeleport(player, target.getLocation(), TeleportType.MEMBER);
     }
 
     public void setClaimPos(Player player, boolean first) {
@@ -249,14 +299,14 @@ public final class GuildService {
     }
 
     public boolean handleTeleportMove(Player player, Location from, Location to) {
-        if (!config.getBoolean("home.cancelOnMove", true)) {
-            return false;
-        }
         if (to == null || from == null) {
             return false;
         }
         PendingTeleport pending = pendingTeleports.get(player.getUniqueId());
         if (pending == null) {
+            return false;
+        }
+        if (!config.getBoolean(pending.type().configRoot() + ".cancelOnMove", true)) {
             return false;
         }
         if (from.getBlockX() != to.getBlockX()
@@ -269,11 +319,11 @@ public final class GuildService {
     }
 
     public boolean handleTeleportDamage(Player player) {
-        if (!config.getBoolean("home.cancelOnDamage", true)) {
-            return false;
-        }
         PendingTeleport pending = pendingTeleports.get(player.getUniqueId());
         if (pending == null) {
+            return false;
+        }
+        if (!config.getBoolean(pending.type().configRoot() + ".cancelOnDamage", true)) {
             return false;
         }
         cancelTeleport(player, pending);
@@ -586,7 +636,29 @@ public final class GuildService {
     private record GuildInvite(String tag, UUID inviter, long expiresAt) {
     }
 
-    private record PendingTeleport(Location origin, Location target, int taskId) {
+    private record PendingTeleport(Location origin, Location target, int taskId, TeleportType type) {
+    }
+
+    private enum TeleportType {
+        HOME("home", "home.tp"),
+        MEMBER("tp", "tp");
+
+        private final String configRoot;
+        private final String messageRoot;
+
+        TeleportType(String configRoot, String messageRoot) {
+            this.configRoot = configRoot;
+            this.messageRoot = messageRoot;
+        }
+
+        public String configRoot() {
+            return configRoot;
+        }
+
+        public String messageRoot() {
+            return messageRoot;
+        }
+    }
     }
 
     private static final class ClaimSelection {
@@ -638,18 +710,26 @@ public final class GuildService {
         return allowed.stream().anyMatch(name -> name.equalsIgnoreCase(worldName));
     }
 
-    private void startTeleport(Player player, Location target) {
-        int warmupSeconds = config.getInt("home.teleportWarmupSeconds", 3);
+    private void startTeleport(Player player, Location target, TeleportType type) {
+        int warmupSeconds;
+        if (type == TeleportType.HOME) {
+            warmupSeconds = config.getInt("home.teleportWarmupSeconds", 3);
+        } else {
+            warmupSeconds = config.getInt(type.configRoot() + ".warmupSeconds", 5);
+        }
         if (warmupSeconds <= 0) {
             player.teleport(target);
-            messages.send(player, "home.tp.success");
+            messages.send(player, type.messageRoot() + ".success");
+            if (type == TeleportType.MEMBER) {
+                tpCooldowns.put(player.getUniqueId(), System.currentTimeMillis());
+            }
             return;
         }
         PendingTeleport existing = pendingTeleports.remove(player.getUniqueId());
         if (existing != null) {
             plugin.getServer().getScheduler().cancelTask(existing.taskId());
         }
-        messages.send(player, "home.tp.start", "seconds", String.valueOf(warmupSeconds));
+        messages.send(player, type.messageRoot() + ".start", "seconds", String.valueOf(warmupSeconds));
         Location origin = player.getLocation().clone();
         int taskId = plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
             PendingTeleport current = pendingTeleports.remove(player.getUniqueId());
@@ -657,15 +737,35 @@ public final class GuildService {
                 return;
             }
             player.teleport(target);
-            messages.send(player, "home.tp.success");
+            messages.send(player, type.messageRoot() + ".success");
+            if (type == TeleportType.MEMBER) {
+                tpCooldowns.put(player.getUniqueId(), System.currentTimeMillis());
+            }
         }, warmupSeconds * 20L).getTaskId();
-        pendingTeleports.put(player.getUniqueId(), new PendingTeleport(origin, target, taskId));
+        pendingTeleports.put(player.getUniqueId(), new PendingTeleport(origin, target, taskId, type));
     }
 
     private void cancelTeleport(Player player, PendingTeleport pending) {
         plugin.getServer().getScheduler().cancelTask(pending.taskId());
         pendingTeleports.remove(player.getUniqueId());
-        messages.send(player, "home.tp.cancelled");
+        messages.send(player, pending.type().messageRoot() + ".cancelled");
+    }
+
+    private boolean isTeleportWorldAllowed(World sourceWorld, World targetWorld) {
+        if (sourceWorld == null || targetWorld == null) {
+            return false;
+        }
+        if (!config.getBoolean("tp.allowDifferentWorlds", false)
+                && !sourceWorld.getName().equalsIgnoreCase(targetWorld.getName())) {
+            return false;
+        }
+        for (String blocked : config.getStringList("tp.blockedWorlds")) {
+            if (blocked.equalsIgnoreCase(targetWorld.getName())
+                    || blocked.equalsIgnoreCase(sourceWorld.getName())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private String formatLocation(Location location) {
