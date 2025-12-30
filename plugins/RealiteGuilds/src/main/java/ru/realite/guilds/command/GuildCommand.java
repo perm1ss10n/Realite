@@ -7,6 +7,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import ru.realite.guilds.i18n.GuildMessages;
+import ru.realite.guilds.service.GuildChatService;
 import ru.realite.guilds.service.GuildSalaryService;
 import ru.realite.guilds.service.GuildService;
 
@@ -15,11 +16,14 @@ public final class GuildCommand implements CommandExecutor {
     private final GuildService service;
     private final GuildMessages messages;
     private final GuildSalaryService salaryService;
+    private final GuildChatService chatService;
 
-    public GuildCommand(GuildService service, GuildMessages messages, GuildSalaryService salaryService) {
+    public GuildCommand(GuildService service, GuildMessages messages, GuildSalaryService salaryService,
+                        GuildChatService chatService) {
         this.service = service;
         this.messages = messages;
         this.salaryService = salaryService;
+        this.chatService = chatService;
     }
 
     @Override
@@ -54,6 +58,7 @@ public final class GuildCommand implements CommandExecutor {
             case "home" -> service.teleportHome(player);
             case "claim" -> handleClaim(player, args);
             case "salary" -> handleSalary(player, args);
+            case "chat" -> handleChat(player, args);
             default -> messages.send(player, "usage.create");
         }
         return true;
@@ -131,6 +136,14 @@ public final class GuildCommand implements CommandExecutor {
             return;
         }
         salaryService.handleSalaryInfo(player);
+    }
+
+    private void handleChat(Player player, String[] args) {
+        if (args.length != 2 || !"toggle".equalsIgnoreCase(args[1])) {
+            messages.send(player, "usage.chat");
+            return;
+        }
+        chatService.toggle(player);
     }
 
     private void handleAdmin(CommandSender sender, String[] args) {

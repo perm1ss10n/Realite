@@ -24,6 +24,7 @@ usage:
   ranks: "{prefix}&eИспользование: /g ranks"
   setrank: "{prefix}&eИспользование: /g setrank <player> <rankId>"
   claim: "{prefix}&eИспользование: /g claim <pos1|pos2|apply|clear>"
+  chat: "{prefix}&eИспользование: /g chat toggle или /gc <message>"
 
 success:
   create: "{prefix}&aГильдия &f[{tag}] {name}&a успешно создана!"
@@ -99,3 +100,13 @@ salary:
     run:
       start: "{prefix}&eЗапуск начисления зарплаты..."
       done: "{prefix}&aЗарплата начислена {count} игрок(ам) на сумму {total}."
+
+chat:
+  guild:
+    format: "&7[&aG&7] &f{player}: &r{message}"
+  public:
+    prefix: "&7[{tag}] "
+  hover: "&aГильдия: &f[{tag}] {guild}\n&7Ранг: &f{rank}\n&7Участников: &f{members}\n&8Подсказки:\n&f{hintToggle}\n&f{hintChat}"
+  toggle:
+    on: "{prefix}&aЧат гильдии включен."
+    off: "{prefix}&eЧат гильдии выключен."

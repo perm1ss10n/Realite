@@ -1,6 +1,20 @@
 # Основной язык сообщений (ru/en)
 lang: "ru"
 
+# Настройки чата гильдий
+chat:
+  guild:
+    enabled: true
+    toggleCommand: true
+    spy:
+      enabled: true
+      permission: "realite.guilds.chat.spy"
+  prefix:
+    enabled: true
+    showRank: true
+    hover:
+      enabled: true
+
 # Включение функционала плагина
 features:
   # Приглашения в гильдии
