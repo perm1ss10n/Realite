@@ -659,7 +659,6 @@ public final class GuildService {
             return messageRoot;
         }
     }
-    }
 
     private static final class ClaimSelection {
         private Location pos1;
