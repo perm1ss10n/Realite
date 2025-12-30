@@ -4,6 +4,8 @@ import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.guilds.command.GuildCommand;
 import ru.realite.guilds.i18n.GuildMessages;
+import ru.realite.guilds.listener.GuildAccessProtectionListener;
+import ru.realite.guilds.listener.GuildHomeWarmupListener;
 import ru.realite.guilds.service.GuildRankService;
 import ru.realite.guilds.service.GuildService;
 import ru.realite.guilds.storage.GuildRepository;
@@ -25,7 +27,7 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
         messages = new GuildMessages(this);
         repository = new GuildRepository(this);
         rankService = new GuildRankService(this);
-        service = new GuildService(getConfig(), repository, messages, rankService);
+        service = new GuildService(this, getConfig(), repository, messages, rankService);
 
         PluginCommand command = getCommand("g");
         if (command != null) {
@@ -33,5 +35,10 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
         } else {
             getLogger().severe("Command 'g' not found in plugin.yml");
         }
+
+        getServer().getPluginManager().registerEvents(
+                new GuildHomeWarmupListener(service), this);
+        getServer().getPluginManager().registerEvents(
+                new GuildAccessProtectionListener(service, messages, getConfig()), this);
     }
 }

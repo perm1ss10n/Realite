@@ -46,3 +46,41 @@ leave:
   cooldownSeconds: 300
   # Запрещать выход владельцу гильдии
   denyIfLeader: true
+
+# Настройки гильдейского дома
+home:
+  enabled: true
+  requiresPermissionFlag: "HOME"
+  teleportWarmupSeconds: 3
+  cancelOnMove: true
+  cancelOnDamage: true
+
+# Настройки территорий гильдий
+claim:
+  enabled: true
+  maxSize:
+    x: 120
+    y: 80
+    z: 120
+  allowInWorlds:
+    - "world"
+  blockedWorlds: []
+
+# Настройки защиты доступа
+access:
+  protect:
+    enabled: true
+    requirePermissionFlag: true
+    blocks:
+      - "CHEST"
+      - "TRAPPED_CHEST"
+      - "BARREL"
+      - "SHULKER_BOX"
+      - "FURNACE"
+      - "BLAST_FURNACE"
+      - "SMOKER"
+      - "HOPPER"
+      - "DISPENSER"
+      - "DROPPER"
+      - "BREWING_STAND"
+    doors: true

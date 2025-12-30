@@ -8,6 +8,7 @@ public enum GuildRankPermission {
     KICK,
     PROMOTE,
     SETHOME,
+    HOME,
     CLAIM,
     ACCESS,
     CHAT,

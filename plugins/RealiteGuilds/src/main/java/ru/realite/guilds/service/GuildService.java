@@ -4,27 +4,37 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.guilds.i18n.GuildMessages;
 import ru.realite.guilds.model.Guild;
+import ru.realite.guilds.model.GuildClaim;
+import ru.realite.guilds.model.GuildHome;
 import ru.realite.guilds.model.GuildMember;
 import ru.realite.guilds.storage.GuildRepository;
 
 public final class GuildService {
 
+    private final JavaPlugin plugin;
     private final FileConfiguration config;
     private final GuildRepository repository;
     private final GuildMessages messages;
     private final GuildRankService rankService;
     private final Map<UUID, GuildInvite> invites = new HashMap<>();
     private final Map<UUID, Long> leaveCooldowns = new HashMap<>();
+    private final Map<UUID, ClaimSelection> claimSelections = new HashMap<>();
+    private final Map<UUID, PendingTeleport> pendingTeleports = new ConcurrentHashMap<>();
 
-    public GuildService(FileConfiguration config, GuildRepository repository, GuildMessages messages,
+    public GuildService(JavaPlugin plugin, FileConfiguration config, GuildRepository repository, GuildMessages messages,
                         GuildRankService rankService) {
+        this.plugin = plugin;
         this.config = config;
         this.repository = repository;
         this.messages = messages;
@@ -65,10 +75,249 @@ public final class GuildService {
             return;
         }
         UUID ownerId = player.getUniqueId();
-        Guild guild = new Guild(tag, name, ownerId);
+        Guild guild = new Guild(tag, name, ownerId, null, null);
         repository.saveGuild(guild);
         repository.saveMember(new GuildMember(ownerId, tag, rankService.getLeaderId()));
         messages.send(player, "guild.created", "tag", tag, "name", name);
+    }
+
+    public void setHome(Player player) {
+        if (!config.getBoolean("home.enabled", true)) {
+            messages.send(player, "home.denied");
+            return;
+        }
+        GuildMember member = repository.getMember(player.getUniqueId());
+        if (member == null) {
+            messages.send(player, "error.guild.no_member");
+            return;
+        }
+        if (!rankService.hasPermission(member.role(), GuildRankPermission.SETHOME)) {
+            messages.send(player, "home.denied");
+            return;
+        }
+        Guild guild = repository.getGuild(member.tag());
+        if (guild == null) {
+            messages.send(player, "guild.not_found");
+            return;
+        }
+        GuildHome home = GuildHome.fromLocation(player.getLocation());
+        repository.saveGuild(new Guild(guild.tag(), guild.name(), guild.owner(), home, guild.claim()));
+        messages.send(player, "home.set");
+    }
+
+    public void teleportHome(Player player) {
+        if (!config.getBoolean("home.enabled", true)) {
+            messages.send(player, "home.denied");
+            return;
+        }
+        GuildMember member = repository.getMember(player.getUniqueId());
+        if (member == null) {
+            messages.send(player, "error.guild.no_member");
+            return;
+        }
+        if (!hasHomePermission(member)) {
+            messages.send(player, "home.denied");
+            return;
+        }
+        Guild guild = repository.getGuild(member.tag());
+        if (guild == null) {
+            messages.send(player, "guild.not_found");
+            return;
+        }
+        GuildHome home = guild.home();
+        if (home == null) {
+            messages.send(player, "home.not_set");
+            return;
+        }
+        World world = Bukkit.getWorld(home.world());
+        if (world == null) {
+            messages.send(player, "home.not_set");
+            return;
+        }
+        Location target = new Location(world, home.x(), home.y(), home.z(), home.yaw(), home.pitch());
+        startTeleport(player, target);
+    }
+
+    public void setClaimPos(Player player, boolean first) {
+        if (!config.getBoolean("claim.enabled", true)) {
+            messages.send(player, "error.no_permission");
+            return;
+        }
+        GuildMember member = repository.getMember(player.getUniqueId());
+        if (member == null) {
+            messages.send(player, "error.guild.no_member");
+            return;
+        }
+        if (!rankService.hasPermission(member.role(), GuildRankPermission.CLAIM)) {
+            messages.send(player, "error.no_permission");
+            return;
+        }
+        ClaimSelection selection = claimSelections.computeIfAbsent(player.getUniqueId(), key -> new ClaimSelection());
+        if (first) {
+            selection.pos1 = player.getLocation();
+            messages.send(player, "claim.pos1", "loc", formatLocation(selection.pos1));
+        } else {
+            selection.pos2 = player.getLocation();
+            messages.send(player, "claim.pos2", "loc", formatLocation(selection.pos2));
+        }
+    }
+
+    public void applyClaim(Player player) {
+        if (!config.getBoolean("claim.enabled", true)) {
+            messages.send(player, "error.no_permission");
+            return;
+        }
+        GuildMember member = repository.getMember(player.getUniqueId());
+        if (member == null) {
+            messages.send(player, "error.guild.no_member");
+            return;
+        }
+        if (!rankService.hasPermission(member.role(), GuildRankPermission.CLAIM)) {
+            messages.send(player, "error.no_permission");
+            return;
+        }
+        Guild guild = repository.getGuild(member.tag());
+        if (guild == null) {
+            messages.send(player, "guild.not_found");
+            return;
+        }
+        ClaimSelection selection = claimSelections.get(player.getUniqueId());
+        if (selection == null || selection.pos1 == null || selection.pos2 == null) {
+            messages.send(player, "claim.apply.denied.size");
+            return;
+        }
+        Location pos1 = selection.pos1;
+        Location pos2 = selection.pos2;
+        if (pos1.getWorld() == null || pos2.getWorld() == null) {
+            messages.send(player, "claim.apply.denied.size");
+            return;
+        }
+        if (!pos1.getWorld().getName().equalsIgnoreCase(pos2.getWorld().getName())) {
+            messages.send(player, "claim.apply.denied.size");
+            return;
+        }
+        if (!isWorldAllowed(pos1.getWorld().getName())) {
+            messages.send(player, "claim.apply.denied.size");
+            return;
+        }
+        int sizeX = Math.abs(pos1.getBlockX() - pos2.getBlockX()) + 1;
+        int sizeY = Math.abs(pos1.getBlockY() - pos2.getBlockY()) + 1;
+        int sizeZ = Math.abs(pos1.getBlockZ() - pos2.getBlockZ()) + 1;
+        int maxX = config.getInt("claim.maxSize.x", 120);
+        int maxY = config.getInt("claim.maxSize.y", 80);
+        int maxZ = config.getInt("claim.maxSize.z", 120);
+        if (sizeX > maxX || sizeY > maxY || sizeZ > maxZ) {
+            messages.send(player, "claim.apply.denied.size",
+                    "x", String.valueOf(sizeX),
+                    "y", String.valueOf(sizeY),
+                    "z", String.valueOf(sizeZ));
+            return;
+        }
+        GuildClaim claim = new GuildClaim(
+                pos1.getWorld().getName(),
+                pos1.getBlockX(),
+                pos1.getBlockY(),
+                pos1.getBlockZ(),
+                pos2.getBlockX(),
+                pos2.getBlockY(),
+                pos2.getBlockZ());
+        repository.saveGuild(new Guild(guild.tag(), guild.name(), guild.owner(), guild.home(), claim));
+        messages.send(player, "claim.apply.success");
+    }
+
+    public void clearClaim(Player player) {
+        if (!config.getBoolean("claim.enabled", true)) {
+            messages.send(player, "error.no_permission");
+            return;
+        }
+        GuildMember member = repository.getMember(player.getUniqueId());
+        if (member == null) {
+            messages.send(player, "error.guild.no_member");
+            return;
+        }
+        if (!rankService.hasPermission(member.role(), GuildRankPermission.CLAIM)) {
+            messages.send(player, "error.no_permission");
+            return;
+        }
+        Guild guild = repository.getGuild(member.tag());
+        if (guild == null) {
+            messages.send(player, "guild.not_found");
+            return;
+        }
+        repository.saveGuild(new Guild(guild.tag(), guild.name(), guild.owner(), guild.home(), null));
+        messages.send(player, "claim.clear");
+    }
+
+    public boolean handleTeleportMove(Player player, Location from, Location to) {
+        if (!config.getBoolean("home.cancelOnMove", true)) {
+            return false;
+        }
+        if (to == null || from == null) {
+            return false;
+        }
+        PendingTeleport pending = pendingTeleports.get(player.getUniqueId());
+        if (pending == null) {
+            return false;
+        }
+        if (from.getBlockX() != to.getBlockX()
+                || from.getBlockY() != to.getBlockY()
+                || from.getBlockZ() != to.getBlockZ()) {
+            cancelTeleport(player, pending);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean handleTeleportDamage(Player player) {
+        if (!config.getBoolean("home.cancelOnDamage", true)) {
+            return false;
+        }
+        PendingTeleport pending = pendingTeleports.get(player.getUniqueId());
+        if (pending == null) {
+            return false;
+        }
+        cancelTeleport(player, pending);
+        return true;
+    }
+
+    public GuildClaim findClaim(Location location) {
+        if (location == null) {
+            return null;
+        }
+        for (Guild guild : repository.getGuilds()) {
+            GuildClaim claim = guild.claim();
+            if (claim != null && claim.contains(location)) {
+                return claim;
+            }
+        }
+        return null;
+    }
+
+    public Guild findGuildByClaim(Location location) {
+        if (location == null) {
+            return null;
+        }
+        for (Guild guild : repository.getGuilds()) {
+            GuildClaim claim = guild.claim();
+            if (claim != null && claim.contains(location)) {
+                return guild;
+            }
+        }
+        return null;
+    }
+
+    public boolean canAccessClaim(Player player, Guild guild) {
+        if (player == null || guild == null) {
+            return false;
+        }
+        GuildMember member = repository.getMember(player.getUniqueId());
+        if (member == null || !guild.tag().equalsIgnoreCase(member.tag())) {
+            return false;
+        }
+        if (!config.getBoolean("access.protect.requirePermissionFlag", true)) {
+            return true;
+        }
+        return rankService.hasPermission(member.role(), GuildRankPermission.ACCESS);
     }
 
     public void info(Player player, String tagRaw) {
@@ -336,6 +585,14 @@ public final class GuildService {
     private record GuildInvite(String tag, UUID inviter, long expiresAt) {
     }
 
+    private record PendingTeleport(Location origin, Location target, int taskId) {
+    }
+
+    private static final class ClaimSelection {
+        private Location pos1;
+        private Location pos2;
+    }
+
     private GuildRankService.GuildRank getRank(GuildMember member) {
         if (member == null) {
             return null;
@@ -353,5 +610,70 @@ public final class GuildService {
             return rank.id();
         }
         return name;
+    }
+
+    private boolean hasHomePermission(GuildMember member) {
+        String flag = config.getString("home.requiresPermissionFlag", "");
+        if (flag == null || flag.isBlank()) {
+            return true;
+        }
+        return GuildRankPermission.fromString(flag)
+                .map(permission -> rankService.hasPermission(member.role(), permission))
+                .orElse(true);
+    }
+
+    private boolean isWorldAllowed(String worldName) {
+        if (worldName == null || worldName.isBlank()) {
+            return false;
+        }
+        if (config.getStringList("claim.blockedWorlds").stream()
+                .anyMatch(name -> name.equalsIgnoreCase(worldName))) {
+            return false;
+        }
+        var allowed = config.getStringList("claim.allowInWorlds");
+        if (allowed == null || allowed.isEmpty()) {
+            return true;
+        }
+        return allowed.stream().anyMatch(name -> name.equalsIgnoreCase(worldName));
+    }
+
+    private void startTeleport(Player player, Location target) {
+        int warmupSeconds = config.getInt("home.teleportWarmupSeconds", 3);
+        if (warmupSeconds <= 0) {
+            player.teleport(target);
+            messages.send(player, "home.tp.success");
+            return;
+        }
+        PendingTeleport existing = pendingTeleports.remove(player.getUniqueId());
+        if (existing != null) {
+            plugin.getServer().getScheduler().cancelTask(existing.taskId());
+        }
+        messages.send(player, "home.tp.start", "seconds", String.valueOf(warmupSeconds));
+        Location origin = player.getLocation().clone();
+        int taskId = plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            PendingTeleport current = pendingTeleports.remove(player.getUniqueId());
+            if (current == null) {
+                return;
+            }
+            player.teleport(target);
+            messages.send(player, "home.tp.success");
+        }, warmupSeconds * 20L).getTaskId();
+        pendingTeleports.put(player.getUniqueId(), new PendingTeleport(origin, target, taskId));
+    }
+
+    private void cancelTeleport(Player player, PendingTeleport pending) {
+        plugin.getServer().getScheduler().cancelTask(pending.taskId());
+        pendingTeleports.remove(player.getUniqueId());
+        messages.send(player, "home.tp.cancelled");
+    }
+
+    private String formatLocation(Location location) {
+        if (location == null || location.getWorld() == null) {
+            return "";
+        }
+        return location.getWorld().getName()
+                + " [" + location.getBlockX()
+                + ", " + location.getBlockY()
+                + ", " + location.getBlockZ() + "]";
     }
 }

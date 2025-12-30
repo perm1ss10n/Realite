@@ -23,6 +23,7 @@ usage:
   leave: "{prefix}&eИспользование: /g leave"
   ranks: "{prefix}&eИспользование: /g ranks"
   setrank: "{prefix}&eИспользование: /g setrank <player> <rankId>"
+  claim: "{prefix}&eИспользование: /g claim <pos1|pos2|apply|clear>"
 
 success:
   create: "{prefix}&aГильдия &f[{tag}] {name}&a успешно создана!"
@@ -68,3 +69,24 @@ rank:
     leader: "Лидер"
     officer: "Офицер"
     member: "Участник"
+
+home:
+  set: "{prefix}&aГильдейский дом установлен."
+  not_set: "{prefix}&cГильдейский дом не установлен."
+  tp:
+    start: "{prefix}&eТелепортация через {seconds} сек."
+    cancelled: "{prefix}&cТелепортация отменена."
+    success: "{prefix}&aТелепортация выполнена."
+  denied: "{prefix}&cНедостаточно прав для дома."
+
+claim:
+  pos1: "{prefix}&aТочка 1 установлена: &f{loc}"
+  pos2: "{prefix}&aТочка 2 установлена: &f{loc}"
+  apply:
+    success: "{prefix}&aТерритория гильдии установлена."
+    denied:
+      size: "{prefix}&cРазмер территории превышает лимит."
+  clear: "{prefix}&aТерритория гильдии очищена."
+
+access:
+  denied: "{prefix}&cНет доступа к этому блоку."
