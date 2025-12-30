@@ -44,6 +44,8 @@ public record CityConfig(
                 double marketHubX,
                 double marketHubY,
                 double marketHubZ,
+                boolean guiEnabled,
+                boolean guiSoundsEnabled,
                 String language) {
         public static CityConfig from(Config config) {
                 int defaultPlotsPerPlayer = config.getInt("limits.defaultPlotsPerPlayer", 3);
@@ -96,6 +98,8 @@ public record CityConfig(
                 double marketHubX = config.getDouble("market.hub.x", 0);
                 double marketHubY = config.getDouble("market.hub.y", 0);
                 double marketHubZ = config.getDouble("market.hub.z", 0);
+                boolean guiEnabled = config.getBoolean("gui.enabled", true);
+                boolean guiSoundsEnabled = config.getBoolean("gui.sounds.enabled", true);
                 String language = config.getString("lang", config.getString("language", "ru"));
 
                 return new CityConfig(
@@ -140,6 +144,8 @@ public record CityConfig(
                                 marketHubX,
                                 marketHubY,
                                 marketHubZ,
+                                guiEnabled,
+                                guiSoundsEnabled,
                                 language);
         }
 

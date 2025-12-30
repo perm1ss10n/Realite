@@ -208,3 +208,26 @@ area:
   list:
     header: "&eCity areas:"
     line: "- {id} ({world}) [{minX},{minY},{minZ}] -> [{maxX},{maxY},{maxZ}]"
+gui:
+  title:
+    admin_main: "&eAdmin: city"
+    admin_selection: "&eAdmin: selection"
+    admin_plots: "&eAdmin: plots"
+    admin_plot_actions: "&eAdmin: plot"
+  btn:
+    regions: "&7Regions"
+    plots: "&ePlots"
+    selection: "&eSelection"
+    help: "&7Help"
+    back: "&cBack"
+  selection:
+    pos1:
+      set: "&aSet position 1"
+    pos2:
+      set: "&aSet position 2"
+    clear: "&cClear selection"
+    status: "&eSelection status"
+  error:
+    disabled: "&cGUI is disabled."
+    no_permission: "&cYou don't have permission."
+    action_failed: "&cAction failed: {reason}"

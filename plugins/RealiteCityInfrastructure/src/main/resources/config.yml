@@ -7,6 +7,11 @@ limits:
 
 lang: "ru"  # Supported languages: "en", "ru"
 
+gui:
+  enabled: true
+  sounds:
+    enabled: true
+
 # Storage settings
 storage:
   sqliteFile: "city.sqlite"
