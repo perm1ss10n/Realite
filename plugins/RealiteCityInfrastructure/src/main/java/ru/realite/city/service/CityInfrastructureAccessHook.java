@@ -17,6 +17,9 @@ public final class CityInfrastructureAccessHook implements CityAccessHook {
         if (plotService == null) {
             return true;
         }
-        return plotService.canInteract(player, location);
+        if (player == null) {
+            return plotService.checkAccess(null, location, Action.INTERACT).isAllowed();
+        }
+        return plotService.checkAccess(player.getUniqueId(), location, Action.INTERACT).isAllowed();
     }
 }

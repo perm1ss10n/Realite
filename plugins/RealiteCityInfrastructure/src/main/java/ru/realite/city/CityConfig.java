@@ -9,6 +9,7 @@ public record CityConfig(
                 String sqliteFile,
                 boolean debug,
                 boolean cityAreaDefaultDeny,
+                boolean accessDefaultOutsideCityAllow,
                 String cityAreaBypassPermission,
                 boolean homePlotsEnabled,
                 boolean shopPlotsEnabled,
@@ -19,6 +20,9 @@ public record CityConfig(
                 int plotCleanupClearAboveY,
                 int plotNearbyDefaultRadius,
                 boolean allowInteractOutsideMembers,
+                boolean plotsMustBeInsideCity,
+                boolean plotsAllowOverlap,
+                String plotsPriority,
                 int shopPointsPerPlot,
                 boolean shopRentEnabled,
                 int shopRentPeriodHours,
@@ -46,6 +50,8 @@ public record CityConfig(
                 String sqliteFile = config.getString("storage.sqliteFile", "city.sqlite");
                 boolean debug = config.getBoolean("logging.debug", false);
                 boolean cityAreaDefaultDeny = config.getBoolean("cityArea.defaultDeny", true);
+                String outsideToken = config.getString("access.defaultOutsideCity", "ALLOW");
+                boolean accessDefaultOutsideCityAllow = !"DENY".equalsIgnoreCase(outsideToken);
                 String cityAreaBypassPermission = config.getString(
                                 "cityArea.bypassPermission",
                                 "realite.city.bypass");
@@ -60,6 +66,9 @@ public record CityConfig(
                 int plotNearbyDefaultRadius = config.getInt("plots.nearby.defaultRadius", 150);
                 boolean allowInteractOutsideMembers =
                                 config.getBoolean("plots.protection.allowInteractOutsideMembers", false);
+                boolean plotsMustBeInsideCity = config.getBoolean("plots.mustBeInsideCity", true);
+                boolean plotsAllowOverlap = config.getBoolean("plots.allowOverlap", false);
+                String plotsPriority = config.getString("plots.priority", "PLOT_OVER_CITY");
                 int shopPointsPerPlot = config.getInt("shops.pointsPerPlot", 3);
                 boolean shopRentEnabled = config.getBoolean("shops.rent.enabled", false);
                 int shopRentPeriodHours = config.getInt("shops.rent.periodHours", 24);
@@ -90,6 +99,7 @@ public record CityConfig(
                                 sqliteFile,
                                 debug,
                                 cityAreaDefaultDeny,
+                                accessDefaultOutsideCityAllow,
                                 cityAreaBypassPermission,
                                 homePlotsEnabled,
                                 shopPlotsEnabled,
@@ -100,6 +110,9 @@ public record CityConfig(
                                 plotCleanupClearAboveY,
                                 plotNearbyDefaultRadius,
                                 allowInteractOutsideMembers,
+                                plotsMustBeInsideCity,
+                                plotsAllowOverlap,
+                                plotsPriority,
                                 shopPointsPerPlot,
                                 shopRentEnabled,
                                 shopRentPeriodHours,
