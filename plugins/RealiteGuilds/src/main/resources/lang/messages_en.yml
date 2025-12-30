@@ -90,3 +90,12 @@ claim:
 
 access:
   denied: "{prefix}&cYou don't have access to this block."
+
+salary:
+  info: "{prefix}&eSalary: &f{rate}&e, rank: &f{rank}&e, next: &f{next}&e."
+  paid: "{prefix}&aYou received &f{amount}&a."
+  disabled: "{prefix}&cSalary is disabled."
+  admin:
+    run:
+      start: "{prefix}&eStarting salary payout..."
+      done: "{prefix}&aSalary paid to {count} player(s) for total {total}."

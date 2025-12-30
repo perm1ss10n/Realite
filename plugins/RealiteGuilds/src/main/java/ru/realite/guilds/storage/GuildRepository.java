@@ -2,6 +2,7 @@ package ru.realite.guilds.storage;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Locale;
@@ -66,11 +67,12 @@ public final class GuildRepository {
                     }
                     String tag = memberSection.getString("tag", "");
                     String role = memberSection.getString("role", "member");
+                    LocalDate lastSalaryDate = readLastSalaryDate(memberSection);
                     if (tag == null || tag.isBlank()) {
                         continue;
                     }
                     UUID uuid = UUID.fromString(key);
-                    members.put(uuid, new GuildMember(uuid, normalizeTag(tag), role));
+                    members.put(uuid, new GuildMember(uuid, normalizeTag(tag), role, lastSalaryDate));
                 }
             }
         }
@@ -86,6 +88,10 @@ public final class GuildRepository {
 
     public Collection<Guild> getGuilds() {
         return guilds.values();
+    }
+
+    public Collection<GuildMember> getMembers() {
+        return members.values();
     }
 
     public void saveGuild(Guild guild) {
@@ -146,6 +152,7 @@ public final class GuildRepository {
             ConfigurationSection memberSection = section.createSection(member.uuid().toString());
             memberSection.set("tag", member.tag());
             memberSection.set("role", member.role());
+            writeLastSalaryDate(memberSection, member.lastSalaryDate());
         }
         save(config, membersFile, "members.yml");
     }
@@ -232,5 +239,28 @@ public final class GuildRepository {
         pos2.set("x", claim.x2());
         pos2.set("y", claim.y2());
         pos2.set("z", claim.z2());
+    }
+
+    private LocalDate readLastSalaryDate(ConfigurationSection memberSection) {
+        String raw = memberSection.getString("salary.lastPaid");
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(raw);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private void writeLastSalaryDate(ConfigurationSection memberSection, LocalDate date) {
+        if (date == null) {
+            return;
+        }
+        ConfigurationSection salarySection = memberSection.getConfigurationSection("salary");
+        if (salarySection == null) {
+            salarySection = memberSection.createSection("salary");
+        }
+        salarySection.set("lastPaid", date.toString());
     }
 }
