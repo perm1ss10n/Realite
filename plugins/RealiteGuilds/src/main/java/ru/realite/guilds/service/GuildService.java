@@ -1,6 +1,8 @@
 package ru.realite.guilds.service;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import org.bukkit.Bukkit;
@@ -17,6 +19,8 @@ public final class GuildService {
     private final FileConfiguration config;
     private final GuildRepository repository;
     private final GuildMessages messages;
+    private final Map<UUID, GuildInvite> invites = new HashMap<>();
+    private final Map<UUID, Long> leaveCooldowns = new HashMap<>();
 
     public GuildService(FileConfiguration config, GuildRepository repository, GuildMessages messages) {
         this.config = config;
@@ -44,7 +48,7 @@ public final class GuildService {
             return;
         }
         if (repository.getGuild(tag) != null) {
-            messages.send(player, "error.guild.tag-exists");
+            messages.send(player, "guild.exists");
             return;
         }
         String name = nameRaw == null ? "" : nameRaw.trim();
@@ -61,7 +65,7 @@ public final class GuildService {
         Guild guild = new Guild(tag, name, ownerId);
         repository.saveGuild(guild);
         repository.saveMember(new GuildMember(ownerId, tag, "owner"));
-        messages.send(player, "success.create", "tag", tag, "name", name);
+        messages.send(player, "guild.created", "tag", tag, "name", name);
     }
 
     public void info(Player player, String tagRaw) {
@@ -69,7 +73,7 @@ public final class GuildService {
         if (tagRaw == null || tagRaw.isBlank()) {
             GuildMember member = repository.getMember(player.getUniqueId());
             if (member == null) {
-                messages.send(player, "error.guild.no-member");
+                messages.send(player, "error.guild.no_member");
                 return;
             }
             guild = repository.getGuild(member.tag());
@@ -77,7 +81,7 @@ public final class GuildService {
             guild = repository.getGuild(tagRaw);
         }
         if (guild == null) {
-            messages.send(player, "error.guild.not-found");
+            messages.send(player, "guild.not_found");
             return;
         }
         OfflinePlayer owner = Bukkit.getOfflinePlayer(guild.owner());
@@ -89,18 +93,18 @@ public final class GuildService {
     }
 
     public void disband(Player player) {
-        if (!config.getBoolean("features.disband.enabled", false)) {
-            messages.send(player, "error.guild.disband-disabled");
+        if (!config.getBoolean("features.disband", true)) {
+            messages.send(player, "error.no_permission");
             return;
         }
         GuildMember member = repository.getMember(player.getUniqueId());
         if (member == null) {
-            messages.send(player, "error.guild.no-member");
+            messages.send(player, "error.guild.no_member");
             return;
         }
         Guild guild = repository.getGuild(member.tag());
         if (guild == null) {
-            messages.send(player, "error.guild.not-found");
+            messages.send(player, "guild.not_found");
             return;
         }
         if (!guild.owner().equals(player.getUniqueId())) {
@@ -114,5 +118,140 @@ public final class GuildService {
 
     public int getCreateCost() {
         return config.getInt("guild.create.cost", 0);
+    }
+
+    public void invite(Player player, String targetName) {
+        if (!config.getBoolean("features.invites", true)) {
+            messages.send(player, "error.no_permission");
+            return;
+        }
+        GuildMember member = repository.getMember(player.getUniqueId());
+        if (member == null) {
+            messages.send(player, "error.guild.no_member");
+            return;
+        }
+        Guild guild = repository.getGuild(member.tag());
+        if (guild == null) {
+            messages.send(player, "guild.not_found");
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(targetName);
+        if (target == null) {
+            messages.send(player, "error.player_not_found");
+            return;
+        }
+        if (repository.getMember(target.getUniqueId()) != null) {
+            messages.send(player, "join.already_in_guild");
+            return;
+        }
+        pruneExpiredInvites();
+        int maxActive = config.getInt("invites.maxActiveInvitesPerGuild", 10);
+        if (maxActive > 0 && countActiveInvites(guild.tag()) >= maxActive) {
+            messages.send(player, "error.no_permission");
+            return;
+        }
+        long expiresAt = System.currentTimeMillis()
+                + (long) config.getInt("invites.ttlSeconds", 600) * 1000L;
+        invites.put(target.getUniqueId(), new GuildInvite(guild.tag(), player.getUniqueId(), expiresAt));
+        messages.send(player, "invite.sent", "player", target.getName());
+        messages.send(target, "invite.received",
+                "tag", guild.tag(),
+                "name", guild.name(),
+                "player", player.getName());
+    }
+
+    public void join(Player player, String tagRaw) {
+        if (!config.getBoolean("features.join", true)) {
+            messages.send(player, "error.no_permission");
+            return;
+        }
+        if (repository.getMember(player.getUniqueId()) != null) {
+            messages.send(player, "join.already_in_guild");
+            return;
+        }
+        Guild guild = repository.getGuild(tagRaw);
+        if (guild == null) {
+            messages.send(player, "guild.not_found");
+            return;
+        }
+        int maxMembers = config.getInt("guild.members.max", 30);
+        if (maxMembers > 0 && repository.countMembersByTag(guild.tag()) >= maxMembers) {
+            messages.send(player, "join.denied.full");
+            return;
+        }
+        boolean requireInvite = config.getBoolean("invites.requireInviteToJoin", true);
+        if (requireInvite) {
+            GuildInvite invite = invites.get(player.getUniqueId());
+            if (invite == null) {
+                messages.send(player, "invite.none");
+                return;
+            }
+            if (invite.expiresAt() < System.currentTimeMillis()) {
+                invites.remove(player.getUniqueId());
+                messages.send(player, "invite.expired");
+                return;
+            }
+            if (!invite.tag().equalsIgnoreCase(guild.tag())) {
+                messages.send(player, "join.denied.no_invite");
+                return;
+            }
+        }
+        repository.saveMember(new GuildMember(player.getUniqueId(), guild.tag(), "member"));
+        invites.remove(player.getUniqueId());
+        messages.send(player, "join.success", "tag", guild.tag(), "name", guild.name());
+    }
+
+    public void leave(Player player) {
+        if (!config.getBoolean("features.leave", true)) {
+            messages.send(player, "error.no_permission");
+            return;
+        }
+        GuildMember member = repository.getMember(player.getUniqueId());
+        if (member == null) {
+            messages.send(player, "error.guild.no_member");
+            return;
+        }
+        Guild guild = repository.getGuild(member.tag());
+        if (guild == null) {
+            messages.send(player, "guild.not_found");
+            return;
+        }
+        if (config.getBoolean("leave.denyIfLeader", true) && guild.owner().equals(player.getUniqueId())) {
+            messages.send(player, "leave.denied.leader");
+            return;
+        }
+        int cooldownSeconds = config.getInt("leave.cooldownSeconds", 300);
+        long now = System.currentTimeMillis();
+        Long lastLeave = leaveCooldowns.get(player.getUniqueId());
+        if (cooldownSeconds > 0 && lastLeave != null) {
+            long elapsed = now - lastLeave;
+            long cooldownMs = cooldownSeconds * 1000L;
+            if (elapsed < cooldownMs) {
+                long remaining = (cooldownMs - elapsed + 999) / 1000;
+                messages.send(player, "leave.denied.cooldown", "seconds", String.valueOf(remaining));
+                return;
+            }
+        }
+        repository.removeMember(player.getUniqueId());
+        leaveCooldowns.put(player.getUniqueId(), now);
+        messages.send(player, "leave.success", "tag", guild.tag());
+    }
+
+    private void pruneExpiredInvites() {
+        long now = System.currentTimeMillis();
+        invites.entrySet().removeIf(entry -> entry.getValue().expiresAt() < now);
+    }
+
+    private int countActiveInvites(String tag) {
+        int count = 0;
+        for (GuildInvite invite : invites.values()) {
+            if (invite.tag().equalsIgnoreCase(tag) && invite.expiresAt() >= System.currentTimeMillis()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private record GuildInvite(String tag, UUID inviter, long expiresAt) {
     }
 }

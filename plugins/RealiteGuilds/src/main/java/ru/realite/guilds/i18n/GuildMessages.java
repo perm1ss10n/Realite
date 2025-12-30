@@ -25,7 +25,10 @@ public final class GuildMessages {
     }
 
     public void reload() {
-        String configured = plugin.getConfig().getString("language", "ru");
+        String configured = plugin.getConfig().getString("lang");
+        if (configured == null || configured.isBlank()) {
+            configured = plugin.getConfig().getString("language", "ru");
+        }
         String targetLang = configured == null || configured.isBlank() ? "ru" : configured.trim();
         lang = targetLang.toLowerCase(Locale.ROOT);
         File file = new File(plugin.getDataFolder(), "lang/messages_" + lang + ".yml");
@@ -41,7 +44,10 @@ public final class GuildMessages {
         if (raw == null) {
             raw = "";
         }
-        String prefix = messages.getString("prefix", "");
+        String prefix = messages.getString("format.prefix");
+        if (prefix == null) {
+            prefix = messages.getString("prefix", "");
+        }
         raw = raw.replace("{prefix}", prefix == null ? "" : prefix);
         for (var entry : placeholders.entrySet()) {
             raw = raw.replace("{" + entry.getKey() + "}", entry.getValue());
