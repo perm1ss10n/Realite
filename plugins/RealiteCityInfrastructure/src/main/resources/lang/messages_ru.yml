@@ -171,6 +171,12 @@ city:
 plot:
   access:
     denied: "&cУчасток не разрешает это действие."
+  # Управление владельцем участка
+  setowner:
+    success: "&aВладелец участка {id} установлен: {owner}."
+    guild:
+      not_found: "&cГильдия {tag} не найдена."
+    guilds_not_installed: "&cRealiteGuilds не установлен."
   create:
     denied:
       overlap: "&cНельзя создать участок: пересечение с другим участком."

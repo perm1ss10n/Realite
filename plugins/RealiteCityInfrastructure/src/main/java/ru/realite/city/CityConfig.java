@@ -20,6 +20,8 @@ public record CityConfig(
                 int plotCleanupClearAboveY,
                 int plotNearbyDefaultRadius,
                 boolean allowInteractOutsideMembers,
+                boolean guildAllowBuildForMembers,
+                boolean guildAllowInteractForMembers,
                 boolean plotsMustBeInsideCity,
                 boolean plotsAllowOverlap,
                 String plotsPriority,
@@ -66,6 +68,10 @@ public record CityConfig(
                 int plotNearbyDefaultRadius = config.getInt("plots.nearby.defaultRadius", 150);
                 boolean allowInteractOutsideMembers =
                                 config.getBoolean("plots.protection.allowInteractOutsideMembers", false);
+                boolean guildAllowBuildForMembers =
+                                config.getBoolean("plots.guild.allowBuildForMembers", true);
+                boolean guildAllowInteractForMembers =
+                                config.getBoolean("plots.guild.allowInteractForMembers", true);
                 boolean plotsMustBeInsideCity = config.getBoolean("plots.mustBeInsideCity", true);
                 boolean plotsAllowOverlap = config.getBoolean("plots.allowOverlap", false);
                 String plotsPriority = config.getString("plots.priority", "PLOT_OVER_CITY");
@@ -110,6 +116,8 @@ public record CityConfig(
                                 plotCleanupClearAboveY,
                                 plotNearbyDefaultRadius,
                                 allowInteractOutsideMembers,
+                                guildAllowBuildForMembers,
+                                guildAllowInteractForMembers,
                                 plotsMustBeInsideCity,
                                 plotsAllowOverlap,
                                 plotsPriority,

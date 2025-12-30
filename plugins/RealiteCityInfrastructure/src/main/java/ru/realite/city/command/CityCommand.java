@@ -13,13 +13,16 @@ import ru.realite.city.i18n.CityMessages;
 import ru.realite.city.model.CityArea;
 import ru.realite.city.model.Plot;
 import ru.realite.city.model.PlotMemberRole;
+import ru.realite.city.model.PlotOwnerType;
 import ru.realite.city.model.PlotType;
 import ru.realite.city.model.ShopListing;
 import ru.realite.city.model.ShopPoint;
 import ru.realite.city.service.CityAreaSelectionService;
 import ru.realite.city.service.CityAreaSelectionService.Selection;
 import ru.realite.city.service.EconomyService;
+import ru.realite.city.service.GuildsApi;
 import ru.realite.city.service.MarketService;
+import ru.realite.city.service.NoopGuildsApi;
 import ru.realite.city.service.PlotCleanupService;
 import ru.realite.city.service.PlotService;
 import ru.realite.city.service.ShopDirectoryService;
@@ -57,6 +60,7 @@ public final class CityCommand implements CommandExecutor {
     private final ShopDirectoryService shopDirectoryService;
     private final ShopMarkerService shopMarkerService;
     private final MarketService marketService;
+    private final GuildsApi guildsApi;
 
     public CityCommand(
             CityAreaRepository cityAreaRepository,
@@ -72,7 +76,8 @@ public final class CityCommand implements CommandExecutor {
             ShopRentService shopRentService,
             ShopDirectoryService shopDirectoryService,
             ShopMarkerService shopMarkerService,
-            MarketService marketService) {
+            MarketService marketService,
+            GuildsApi guildsApi) {
         this.cityAreaRepository = cityAreaRepository;
         this.plotRepository = plotRepository;
         this.plotMemberRepository = plotMemberRepository;
@@ -87,6 +92,7 @@ public final class CityCommand implements CommandExecutor {
         this.shopDirectoryService = shopDirectoryService;
         this.shopMarkerService = shopMarkerService;
         this.marketService = marketService;
+        this.guildsApi = guildsApi;
     }
 
     @Override
@@ -155,6 +161,7 @@ public final class CityCommand implements CommandExecutor {
             case "accept" -> handlePlotAccept(sender, args);
             case "release" -> handlePlotRelease(sender, args);
             case "goto" -> handlePlotGoto(sender, args);
+            case "setowner" -> handlePlotSetOwner(sender, args);
             default -> sendUsage(sender);
         }
     }
@@ -291,7 +298,7 @@ public final class CityCommand implements CommandExecutor {
                             Map.entry("id", plot.id()),
                             Map.entry("type", plot.type().displayName()),
                             Map.entry("price", String.valueOf(plot.price())),
-                            Map.entry("owner", formatOwner(plot.ownerUuid()))));
+                            Map.entry("owner", formatOwner(plot))));
         }
     }
 
@@ -313,7 +320,7 @@ public final class CityCommand implements CommandExecutor {
                         Map.entry("number", String.valueOf(plot.number())),
                         Map.entry("type", plot.type().displayName()),
                         Map.entry("price", String.valueOf(plot.price())),
-                        Map.entry("owner", formatOwner(plot.ownerUuid())),
+                        Map.entry("owner", formatOwner(plot)),
                         Map.entry("world", plot.world()),
                         Map.entry("x1", String.valueOf(plot.x1())),
                         Map.entry("y1", String.valueOf(plot.y1())),
@@ -392,7 +399,7 @@ public final class CityCommand implements CommandExecutor {
             return;
         }
         List<PlotDistance> nearby = plotRepository.findAll().stream()
-                .filter(plot -> plot.ownerUuid() == null)
+                .filter(plot -> plot.ownerId() == null)
                 .filter(plot -> plot.world().equals(location.getWorld().getName()))
                 .map(plot -> new PlotDistance(plot, distanceToPlot(location, plot)))
                 .filter(distance -> distance.distance() <= r)
@@ -492,6 +499,7 @@ public final class CityCommand implements CommandExecutor {
                 maxZ,
                 price,
                 null,
+                null,
                 System.currentTimeMillis(),
                 0L);
         plotRepository.upsert(plot);
@@ -577,8 +585,12 @@ public final class CityCommand implements CommandExecutor {
             return;
         }
         Plot plot = plotOptional.get();
-        if (plot.ownerUuid() == null) {
+        if (plot.ownerId() == null) {
             messages.send(player, "city.plot.not-owned", "", Map.of("id", id));
+            return;
+        }
+        if (plot.ownerType() != PlotOwnerType.PLAYER) {
+            messages.send(player, "city.plot.not-owner", "");
             return;
         }
         if (!isOwnerOrAdmin(player, plot)) {
@@ -612,8 +624,12 @@ public final class CityCommand implements CommandExecutor {
             return;
         }
         Plot plot = plotOptional.get();
-        if (plot.ownerUuid() == null) {
+        if (plot.ownerId() == null) {
             messages.send(player, "city.plot.not-owned", "", Map.of("id", id));
+            return;
+        }
+        if (plot.ownerType() != PlotOwnerType.PLAYER) {
+            messages.send(player, "city.plot.not-owner", "");
             return;
         }
         if (!isOwnerOrAdmin(player, plot)) {
@@ -646,8 +662,12 @@ public final class CityCommand implements CommandExecutor {
             return;
         }
         Plot plot = plotOptional.get();
-        if (plot.ownerUuid() == null) {
+        if (plot.ownerId() == null) {
             messages.send(player, "city.plot.not-owned", "", Map.of("id", id));
+            return;
+        }
+        if (plot.ownerType() != PlotOwnerType.PLAYER) {
+            messages.send(player, "city.plot.not-owner", "");
             return;
         }
         if (!isOwnerOrAdmin(player, plot)) {
@@ -686,8 +706,12 @@ public final class CityCommand implements CommandExecutor {
             return;
         }
         Plot plot = plotOptional.get();
-        if (plot.ownerUuid() == null) {
+        if (plot.ownerId() == null) {
             messages.send(player, "city.plot.not-owned", "", Map.of("id", id));
+            return;
+        }
+        if (plot.ownerType() != PlotOwnerType.PLAYER) {
+            messages.send(player, "city.plot.not-owner", "");
             return;
         }
         if (!isOwnerOrAdmin(player, plot)) {
@@ -733,8 +757,12 @@ public final class CityCommand implements CommandExecutor {
             return;
         }
         Plot plot = plotOptional.get();
-        if (plot.ownerUuid() == null) {
+        if (plot.ownerId() == null) {
             messages.send(player, "city.plot.not-owned", "", Map.of("id", id));
+            return;
+        }
+        if (plot.ownerType() != PlotOwnerType.PLAYER) {
+            messages.send(player, "city.plot.not-owner", "");
             return;
         }
         if (!isOwnerOrAdmin(player, plot)) {
@@ -826,6 +854,7 @@ public final class CityCommand implements CommandExecutor {
                 plot.y2(),
                 plot.z2(),
                 plot.price(),
+                PlotOwnerType.PLAYER,
                 player.getUniqueId(),
                 plot.createdAt(),
                 plot.rentPaidUntil());
@@ -860,8 +889,8 @@ public final class CityCommand implements CommandExecutor {
                 messages.send(player, "city.plot.not-enough-money", "");
                 return;
             }
-            if (plot.ownerUuid() != null) {
-                economyService.deposit(Bukkit.getOfflinePlayer(plot.ownerUuid()), pending.price());
+            if (plot.ownerType() == PlotOwnerType.PLAYER && plot.ownerId() != null) {
+                economyService.deposit(Bukkit.getOfflinePlayer(plot.ownerId()), pending.price());
             }
         }
         plotService.clearPendingOffers(plot.id());
@@ -877,6 +906,7 @@ public final class CityCommand implements CommandExecutor {
                 plot.y2(),
                 plot.z2(),
                 plot.price(),
+                PlotOwnerType.PLAYER,
                 player.getUniqueId(),
                 plot.createdAt(),
                 plot.rentPaidUntil());
@@ -910,7 +940,7 @@ public final class CityCommand implements CommandExecutor {
             }
             plot = plotOptional.get();
         }
-        if (plot.ownerUuid() == null) {
+        if (plot.ownerId() == null) {
             messages.send(player, "city.plot.not-owned", "", Map.of("id", plot.id()));
             return;
         }
@@ -931,6 +961,7 @@ public final class CityCommand implements CommandExecutor {
                 plot.z2(),
                 plot.price(),
                 null,
+                null,
                 plot.createdAt(),
                 0L);
         plotRepository.upsert(updated);
@@ -944,6 +975,87 @@ public final class CityCommand implements CommandExecutor {
             messages.send(player, "city.plot.cleanup.started", "",
                     Map.of("id", plot.id()));
         }
+    }
+
+    private void handlePlotSetOwner(CommandSender sender, String[] args) {
+        if (!sender.hasPermission(ADMIN_PERMISSION)) {
+            messages.send(sender, "city.no-permission", "");
+            return;
+        }
+        if (args.length < 4) {
+            sendUsage(sender);
+            return;
+        }
+        String ownerTypeRaw = args[2].toLowerCase();
+        String ownerRef = args[3];
+        String plotRef = args.length >= 5 ? args[4] : null;
+        Plot plot = null;
+        if (plotRef != null) {
+            plot = resolvePlotReference(plotRef).orElse(null);
+            if (plot == null) {
+                messages.send(sender, "city.plot.not-found", "", Map.of("id", plotRef));
+                return;
+            }
+        } else if (sender instanceof Player player) {
+            plot = plotService.findContaining(player.getLocation()).orElse(null);
+            if (plot == null) {
+                messages.send(player, "city.plot.buy.not-in-plot", "");
+                return;
+            }
+        } else {
+            sendUsage(sender);
+            return;
+        }
+
+        PlotOwnerType ownerType;
+        UUID ownerId;
+        String ownerDisplay;
+        if ("player".equals(ownerTypeRaw)) {
+            OfflinePlayer target = Bukkit.getOfflinePlayer(ownerRef);
+            ownerId = target.getUniqueId();
+            ownerType = PlotOwnerType.PLAYER;
+            ownerDisplay = target.getName() == null ? ownerId.toString() : target.getName();
+        } else if ("guild".equals(ownerTypeRaw)) {
+            if (guildsApi == null || guildsApi instanceof NoopGuildsApi) {
+                messages.send(sender, "plot.setowner.guilds_not_installed", "");
+                return;
+            }
+            ownerId = guildsApi.findGuildIdByTag(ownerRef).orElse(null);
+            if (ownerId == null) {
+                messages.send(sender, "plot.setowner.guild.not_found", "",
+                        Map.of("tag", ownerRef));
+                return;
+            }
+            ownerType = PlotOwnerType.GUILD;
+            ownerDisplay = ownerRef.toUpperCase();
+        } else {
+            sendUsage(sender);
+            return;
+        }
+
+        Plot updated = new Plot(
+                plot.id(),
+                plot.number(),
+                plot.type(),
+                plot.world(),
+                plot.x1(),
+                plot.y1(),
+                plot.z1(),
+                plot.x2(),
+                plot.y2(),
+                plot.z2(),
+                plot.price(),
+                ownerType,
+                ownerId,
+                plot.createdAt(),
+                plot.rentPaidUntil());
+        plotRepository.upsert(updated);
+        plotMemberRepository.removeAll(plot.id());
+        plotService.clearPendingOffers(plot.id());
+        messages.send(sender, "plot.setowner.success", "",
+                Map.ofEntries(
+                        Map.entry("id", plot.id()),
+                        Map.entry("owner", ownerDisplay)));
     }
 
     private void handlePlotGoto(CommandSender sender, String[] args) {
@@ -1056,7 +1168,7 @@ public final class CityCommand implements CommandExecutor {
             messages.send(player, "city.shop.set.not-shop-plot", "");
             return;
         }
-        if (plot.ownerUuid() == null) {
+        if (plot.ownerId() == null) {
             messages.send(player, "city.shop.set.not-owned", "", Map.of("id", plot.id()));
             return;
         }
@@ -1080,7 +1192,7 @@ public final class CityCommand implements CommandExecutor {
                     Map.of("limit", String.valueOf(limit)));
             return;
         }
-        ShopPoint point = shopPointService.create(plot, targetLocation, plot.ownerUuid());
+        ShopPoint point = shopPointService.create(plot, targetLocation, plot.ownerPlayerId());
         shopDirectoryService.ensureListing(point);
         messages.send(player, "city.shop.set.success", "",
                 Map.ofEntries(
@@ -1253,8 +1365,7 @@ public final class CityCommand implements CommandExecutor {
         ShopPoint point = pointOptional.get();
         Optional<Plot> plotOptional = plotRepository.findById(point.plotId());
         String plotId = plotOptional.map(Plot::id).orElse(point.plotId());
-        String owner = plotOptional.map(Plot::ownerUuid)
-                .map(this::formatOwner)
+        String owner = plotOptional.map(this::formatOwner)
                 .orElse(messages.getRaw("city.plot.owner.none", ""));
         messages.send(player, "city.shop.info.line", "",
                 Map.ofEntries(
@@ -1290,7 +1401,7 @@ public final class CityCommand implements CommandExecutor {
                             Map.entry("category", listing.category()),
                             Map.entry("open", String.valueOf(listing.open())),
                             Map.entry("plot", listing.plotId()),
-                            Map.entry("owner", formatOwner(listing.ownerUuid())),
+                            Map.entry("owner", formatPlayerOwner(listing.ownerUuid())),
                             Map.entry("point", point.id())));
         }
     }
@@ -1385,7 +1496,7 @@ public final class CityCommand implements CommandExecutor {
                         Map.entry("description", listing.description()),
                         Map.entry("open", String.valueOf(listing.open())),
                         Map.entry("plot", listing.plotId()),
-                        Map.entry("owner", formatOwner(listing.ownerUuid())),
+                        Map.entry("owner", formatPlayerOwner(listing.ownerUuid())),
                         Map.entry("world", point.world()),
                         Map.entry("x", String.valueOf(point.x())),
                         Map.entry("y", String.valueOf(point.y())),
@@ -1517,7 +1628,7 @@ public final class CityCommand implements CommandExecutor {
             messages.send(player, "city.shop.rent.not-shop", "");
             return;
         }
-        if (plot.ownerUuid() == null) {
+        if (plot.ownerId() == null) {
             messages.send(player, "city.shop.rent.not-owned", "", Map.of("id", plot.id()));
             return;
         }
@@ -1671,7 +1782,7 @@ public final class CityCommand implements CommandExecutor {
     }
 
     private boolean isOwnerOrAdmin(Player player, Plot plot) {
-        return player.hasPermission(ADMIN_PERMISSION) || player.getUniqueId().equals(plot.ownerUuid());
+        return player.hasPermission(ADMIN_PERMISSION) || plot.isOwnedByPlayer(player.getUniqueId());
     }
 
     private boolean isOwnerTrustedOrAdmin(Player player, Plot plot) {
@@ -1681,7 +1792,10 @@ public final class CityCommand implements CommandExecutor {
         if (player.hasPermission(ADMIN_PERMISSION)) {
             return true;
         }
-        if (plot.ownerUuid() != null && plot.ownerUuid().equals(player.getUniqueId())) {
+        if (plot.ownerType() != PlotOwnerType.PLAYER) {
+            return false;
+        }
+        if (plot.isOwnedByPlayer(player.getUniqueId())) {
             return true;
         }
         return plotMemberRepository
@@ -1700,7 +1814,17 @@ public final class CityCommand implements CommandExecutor {
                 .format(formatter);
     }
 
-    private String formatOwner(UUID ownerUuid) {
+    private String formatOwner(Plot plot) {
+        if (plot == null || plot.ownerId() == null) {
+            return messages.getRaw("city.plot.owner.none", "");
+        }
+        if (plot.ownerType() == PlotOwnerType.GUILD) {
+            return "GUILD:" + plot.ownerId();
+        }
+        return formatPlayerOwner(plot.ownerId());
+    }
+
+    private String formatPlayerOwner(UUID ownerUuid) {
         if (ownerUuid == null) {
             return messages.getRaw("city.plot.owner.none", "");
         }

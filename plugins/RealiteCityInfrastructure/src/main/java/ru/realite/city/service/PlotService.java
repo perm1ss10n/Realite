@@ -5,6 +5,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import ru.realite.city.CityConfig;
 import ru.realite.city.model.Plot;
+import ru.realite.city.model.PlotOwnerType;
 import ru.realite.city.model.PlotType;
 import ru.realite.city.storage.CityAreaRepository;
 import ru.realite.city.storage.PlotMemberRepository;
@@ -42,6 +43,7 @@ public final class PlotService {
     private final PlotMemberRepository plotMemberRepository;
     private final EconomyService economyService;
     private final CityHooks hooks;
+    private final GuildsApi guildsApi;
     private final Map<String, PendingTransfer> pendingTransfers = new ConcurrentHashMap<>();
     private final Map<String, PendingSell> pendingSells = new ConcurrentHashMap<>();
 
@@ -51,7 +53,8 @@ public final class PlotService {
             PlotRepository plotRepository,
             PlotMemberRepository plotMemberRepository,
             EconomyService economyService,
-            CityHooks hooks
+            CityHooks hooks,
+            GuildsApi guildsApi
     ) {
         this.config = config;
         this.cityAreaRepository = cityAreaRepository;
@@ -59,6 +62,7 @@ public final class PlotService {
         this.plotMemberRepository = plotMemberRepository;
         this.economyService = economyService;
         this.hooks = hooks;
+        this.guildsApi = guildsApi;
     }
 
     public Optional<Plot> findContaining(Location location) {
@@ -78,7 +82,7 @@ public final class PlotService {
             return BuyResult.NOT_FOUND;
         }
         Plot plot = plotOptional.get();
-        if (plot.ownerUuid() != null) {
+        if (plot.ownerId() != null) {
             return BuyResult.ALREADY_OWNED;
         }
         if (!isTypeEnabled(plot.type())) {
@@ -116,6 +120,7 @@ public final class PlotService {
                 plot.y2(),
                 plot.z2(),
                 plot.price(),
+                PlotOwnerType.PLAYER,
                 player.getUniqueId(),
                 plot.createdAt(),
                 rentPaidUntil
@@ -164,11 +169,30 @@ public final class PlotService {
         Optional<Plot> plotOptional = plotRepository.findContaining(location);
         if (plotOptional.isPresent()) {
             Plot plot = plotOptional.get();
-            if (plot.ownerUuid() == null) {
+            if (plot.ownerId() == null) {
                 return AccessResult.allow();
             }
+            if (plot.ownerType() == PlotOwnerType.GUILD) {
+                if (playerId == null || guildsApi == null) {
+                    return AccessResult.deny("plot.access.denied");
+                }
+                if (!guildsApi.isMember(plot.ownerId(), playerId)) {
+                    return AccessResult.deny("plot.access.denied");
+                }
+                if (action == Action.MODIFY) {
+                    return config.guildAllowBuildForMembers()
+                            ? AccessResult.allow()
+                            : AccessResult.deny("plot.access.denied");
+                }
+                if (action == Action.INTERACT) {
+                    return config.guildAllowInteractForMembers()
+                            ? AccessResult.allow()
+                            : AccessResult.deny("plot.access.denied");
+                }
+                return AccessResult.deny("plot.access.denied");
+            }
             if (playerId != null) {
-                if (playerId.equals(plot.ownerUuid())) {
+                if (plot.isOwnedByPlayer(playerId)) {
                     return AccessResult.allow();
                 }
                 if (plotMemberRepository.isMember(plot.id(), playerId)) {

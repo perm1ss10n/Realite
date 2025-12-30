@@ -14,7 +14,9 @@ import ru.realite.city.service.CityInfrastructureAccessHook;
 import ru.realite.city.service.CityHooks;
 import ru.realite.city.service.DefaultCityHooks;
 import ru.realite.city.service.EconomyService;
+import ru.realite.city.service.GuildsApi;
 import ru.realite.city.service.MarketService;
+import ru.realite.city.service.NoopGuildsApi;
 import ru.realite.city.service.PlotCleanupService;
 import ru.realite.city.service.PlotService;
 import ru.realite.city.service.ShopDirectoryService;
@@ -68,6 +70,7 @@ public final class CityInfrastructureModule implements Module {
     private ShopDirectoryService shopDirectoryService;
     private MarketService marketService;
     private CityHooks cityHooks;
+    private GuildsApi guildsApi;
 
     @Override
     public ModuleMetadata metadata() {
@@ -145,6 +148,7 @@ public final class CityInfrastructureModule implements Module {
         plotCleanupService = new PlotCleanupService(javaPlugin, config, messages);
         economyService = new EconomyService(javaPlugin);
         cityHooks = new DefaultCityHooks(config);
+        guildsApi = resolveGuildsApi(javaPlugin);
         shopPointService = new ShopPointService(shopPointRepository);
         shopMarkerService = new ShopMarkerService(config, shopPointService);
         shopDirectoryService = new ShopDirectoryService(shopListingRepository, shopMarkerService);
@@ -164,7 +168,8 @@ public final class CityInfrastructureModule implements Module {
                 plotRepository,
                 plotMemberRepository,
                 economyService,
-                cityHooks);
+                cityHooks,
+                guildsApi);
         marketService = new MarketService(config, economyService, cityHooks);
         javaPlugin.getServer().getServicesManager().register(
                 CityAccessHook.class,
@@ -200,12 +205,25 @@ public final class CityInfrastructureModule implements Module {
                     shopRentService,
                     shopDirectoryService,
                     shopMarkerService,
-                    marketService));
+                    marketService,
+                    guildsApi));
         } else {
             ctx.logger().warn("[CityInfrastructure] Command /city not found in plugin.yml; executor not registered.");
         }
 
         ctx.logger().info("[CityInfrastructure] CityInfrastructure enabled");
+    }
+
+    private GuildsApi resolveGuildsApi(JavaPlugin plugin) {
+        if (plugin == null) {
+            return new NoopGuildsApi();
+        }
+        var provider = plugin.getServer().getServicesManager().getRegistration(GuildsApi.class);
+        if (provider == null) {
+            return new NoopGuildsApi();
+        }
+        GuildsApi api = provider.getProvider();
+        return api == null ? new NoopGuildsApi() : api;
     }
 
     @Override

@@ -98,7 +98,8 @@ public final class ShopRentService {
                 plot.y2(),
                 plot.z2(),
                 plot.price(),
-                plot.ownerUuid(),
+                plot.ownerType(),
+                plot.ownerId(),
                 plot.createdAt(),
                 newPaidUntil
         );
@@ -114,7 +115,7 @@ public final class ShopRentService {
             if (plot.type() != PlotType.SHOP) {
                 continue;
             }
-            UUID ownerUuid = plot.ownerUuid();
+            UUID ownerUuid = plot.ownerPlayerId();
             if (ownerUuid == null) {
                 continue;
             }
