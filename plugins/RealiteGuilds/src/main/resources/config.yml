@@ -125,6 +125,8 @@ integrations:
   city:
     # Проверять доступ через RealiteCityInfrastructure до логики гильдий
     enabled: true
+    # Если true — в пределах city plot доступ определяет CityInfrastructure, а не гильдейский claim
+    overrideGuildClaimInsideCityPlots: true
 
 # Настройки ежедневной зарплаты
 salary:
