@@ -1,6 +1,7 @@
 package ru.realite.city.service;
 
 import org.bukkit.Location;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import ru.realite.city.CityConfig;
 import ru.realite.city.model.Plot;
@@ -127,79 +128,68 @@ public final class PlotService {
         if (player == null || location == null) {
             return true;
         }
-        if (player.hasPermission(ADMIN_PERMISSION)) {
-            return true;
-        }
-        String bypassPermission = config.cityAreaBypassPermission();
-        if (bypassPermission != null
-                && !bypassPermission.isBlank()
-                && player.hasPermission(bypassPermission)) {
-            return true;
-        }
-        Optional<Plot> plotOptional = plotRepository.findContaining(location);
-        if (plotOptional.isPresent()) {
-            Plot plot = plotOptional.get();
-            if (plot.ownerUuid() == null) {
-                return true;
-            }
-            UUID playerId = player.getUniqueId();
-            if (playerId.equals(plot.ownerUuid())) {
-                return true;
-            }
-            return plotMemberRepository.isMember(plot.id(), playerId);
-        }
-        if (!config.cityAreaDefaultDeny()) {
-            return true;
-        }
-        return !isInCityArea(location);
+        return checkAccess(player.getUniqueId(), location, Action.MODIFY).isAllowed();
     }
 
     public boolean canInteract(Player player, Location location) {
         if (player == null || location == null) {
             return true;
         }
-        if (player.hasPermission(ADMIN_PERMISSION)) {
-            return true;
-        }
-        String bypassPermission = config.cityAreaBypassPermission();
-        if (bypassPermission != null
-                && !bypassPermission.isBlank()
-                && player.hasPermission(bypassPermission)) {
-            return true;
-        }
-        Optional<Plot> plotOptional = plotRepository.findContaining(location);
-        if (plotOptional.isPresent()) {
-            Plot plot = plotOptional.get();
-            if (plot.ownerUuid() == null) {
-                return true;
-            }
-            UUID playerId = player.getUniqueId();
-            if (playerId.equals(plot.ownerUuid())) {
-                return true;
-            }
-            if (plotMemberRepository.isMember(plot.id(), playerId)) {
-                return true;
-            }
-            if (plot.type() == PlotType.SHOP) {
-                return false;
-            }
-            return config.allowInteractOutsideMembers();
-        }
-        if (!config.cityAreaDefaultDeny()) {
-            return true;
-        }
-        return !isInCityArea(location);
+        return checkAccess(player.getUniqueId(), location, Action.INTERACT).isAllowed();
     }
 
     public boolean isProtectedFromExplosions(Location location) {
         if (location == null) {
             return false;
         }
+        return !checkAccess(null, location, Action.EXPLOSION).isAllowed();
+    }
+
+    public AccessResult checkAccess(UUID playerId, Location location, Action action) {
+        if (location == null) {
+            return AccessResult.allow();
+        }
+        Player player = playerId == null ? null : Bukkit.getPlayer(playerId);
+        if (player != null) {
+            if (player.hasPermission(ADMIN_PERMISSION)) {
+                return AccessResult.allow();
+            }
+            String bypassPermission = config.cityAreaBypassPermission();
+            if (bypassPermission != null
+                    && !bypassPermission.isBlank()
+                    && player.hasPermission(bypassPermission)) {
+                return AccessResult.allow();
+            }
+        }
         Optional<Plot> plotOptional = plotRepository.findContaining(location);
         if (plotOptional.isPresent()) {
-            return plotOptional.get().ownerUuid() != null;
+            Plot plot = plotOptional.get();
+            if (plot.ownerUuid() == null) {
+                return AccessResult.allow();
+            }
+            if (playerId != null) {
+                if (playerId.equals(plot.ownerUuid())) {
+                    return AccessResult.allow();
+                }
+                if (plotMemberRepository.isMember(plot.id(), playerId)) {
+                    return AccessResult.allow();
+                }
+            }
+            if (action == Action.INTERACT && plot.type() != PlotType.SHOP && config.allowInteractOutsideMembers()) {
+                return AccessResult.allow();
+            }
+            return AccessResult.deny("plot.access.denied");
         }
-        return config.cityAreaDefaultDeny() && isInCityArea(location);
+        if (cityAreaRepository.findContaining(location).isPresent()) {
+            if (config.cityAreaDefaultDeny()) {
+                return AccessResult.deny("city.access.denied");
+            }
+            return AccessResult.allow();
+        }
+        if (config.accessDefaultOutsideCityAllow()) {
+            return AccessResult.allow();
+        }
+        return AccessResult.deny("city.access.denied");
     }
 
     public boolean isLimitReached(Player player, PlotType type) {

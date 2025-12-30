@@ -468,6 +468,16 @@ public final class CityCommand implements CommandExecutor {
         int minZ = Math.min(pos1.getBlockZ(), pos2.getBlockZ());
         int maxX = Math.max(pos1.getBlockX(), pos2.getBlockX());
         int maxZ = Math.max(pos1.getBlockZ(), pos2.getBlockZ());
+        int minY = world.getMinHeight();
+        int maxY = world.getMaxHeight();
+        if (config.plotsMustBeInsideCity() && !isInsideCityArea(world, minX, minY, minZ, maxX, maxY, maxZ)) {
+            messages.send(player, "plot.create.denied.outside_city", "");
+            return;
+        }
+        if (!config.plotsAllowOverlap() && hasOverlap(world, minX, minY, minZ, maxX, maxY, maxZ)) {
+            messages.send(player, "plot.create.denied.overlap", "");
+            return;
+        }
         int number = plotRepository.nextNumber();
         Plot plot = new Plot(
                 id,
@@ -475,10 +485,10 @@ public final class CityCommand implements CommandExecutor {
                 type,
                 world.getName(),
                 minX,
-                world.getMinHeight(),
+                minY,
                 minZ,
                 maxX,
-                world.getMaxHeight(),
+                maxY,
                 maxZ,
                 price,
                 null,
@@ -487,8 +497,51 @@ public final class CityCommand implements CommandExecutor {
         plotRepository.upsert(plot);
         messages.send(player, "city.plot.created", "",
                 Map.ofEntries(
-                        Map.entry("id", id),
-                        Map.entry("number", String.valueOf(number))));
+                Map.entry("id", id),
+                Map.entry("number", String.valueOf(number))));
+    }
+
+    private boolean hasOverlap(World world, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+        String worldName = world.getName();
+        for (Plot plot : plotRepository.findAll()) {
+            if (!worldName.equals(plot.world())) {
+                continue;
+            }
+            if (!rangesOverlap(minX, maxX, plot.x1(), plot.x2())) {
+                continue;
+            }
+            if (!rangesOverlap(minY, maxY, plot.y1(), plot.y2())) {
+                continue;
+            }
+            if (!rangesOverlap(minZ, maxZ, plot.z1(), plot.z2())) {
+                continue;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private boolean rangesOverlap(int minA, int maxA, int minB, int maxB) {
+        return minA <= maxB && maxA >= minB;
+    }
+
+    private boolean isInsideCityArea(
+            World world,
+            int minX,
+            int minY,
+            int minZ,
+            int maxX,
+            int maxY,
+            int maxZ
+    ) {
+        String worldName = world.getName();
+        for (CityArea area : cityAreaRepository.findAll()) {
+            if (area.contains(worldName, minX, minY, minZ)
+                    && area.contains(worldName, maxX, maxY, maxZ)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void handlePlotDelete(CommandSender sender, String[] args) {

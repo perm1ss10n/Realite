@@ -1,5 +1,7 @@
 city:
   no-permission: "&cYou do not have permission."
+  access:
+    denied: "&cThe city does not allow this action."
   only-players: "&cOnly players can use this command."
   usage: "&eUsage: /city <area|plot|shop|market> <...>"
   protected: "&cThis territory is protected."
@@ -166,6 +168,13 @@ city:
       unknown-type: "&cUnknown plot type."
       invalid-price: "&cInvalid price."
       exists: "&cPlot {id} already exists."
+plot:
+  access:
+    denied: "&cThis plot does not allow the action."
+  create:
+    denied:
+      overlap: "&cCannot create plot: it overlaps another plot."
+      outside_city: "&cCannot create plot: it is outside the city."
     delete:
       usage: "&eUsage: /city plot delete <id>"
     info:

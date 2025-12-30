@@ -14,12 +14,23 @@ storage:
 logging:
   debug: false
 
+# Access priority: Plot > CityRegion > outside
+access:
+  # Default decision when a point is outside any city region
+  defaultOutsideCity: "ALLOW" # ALLOW | DENY
+
 # Future city area behavior
 cityArea:
   defaultDeny: true
   bypassPermission: "realite.city.bypass"
 
 plots:
+  # Plot has priority over city region access rules
+  priority: "PLOT_OVER_CITY"
+  # City plots must be completely inside city regions
+  mustBeInsideCity: true
+  # Overlapping plots are not allowed
+  allowOverlap: false
   nearby:
     defaultRadius: 150
   types:

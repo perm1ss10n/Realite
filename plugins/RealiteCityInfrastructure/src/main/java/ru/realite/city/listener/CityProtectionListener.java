@@ -20,6 +20,8 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import ru.realite.city.i18n.CityMessages;
+import ru.realite.city.service.AccessResult;
+import ru.realite.city.service.Action;
 import ru.realite.city.service.PlotService;
 import ru.realite.city.service.ShopPointService;
 
@@ -44,15 +46,23 @@ public final class CityProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
-        if (!plotService.canModify(event.getPlayer(), event.getBlock().getLocation())) {
-            deny(event.getPlayer(), event);
+        AccessResult result = plotService.checkAccess(
+                event.getPlayer().getUniqueId(),
+                event.getBlock().getLocation(),
+                Action.MODIFY);
+        if (!result.isAllowed()) {
+            deny(event.getPlayer(), event, result);
         }
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
-        if (!plotService.canModify(event.getPlayer(), event.getBlock().getLocation())) {
-            deny(event.getPlayer(), event);
+        AccessResult result = plotService.checkAccess(
+                event.getPlayer().getUniqueId(),
+                event.getBlock().getLocation(),
+                Action.MODIFY);
+        if (!result.isAllowed()) {
+            deny(event.getPlayer(), event, result);
         }
     }
 
@@ -68,8 +78,12 @@ public final class CityProtectionListener implements Listener {
         if (!isProtectedInteract(block)) {
             return;
         }
-        if (!plotService.canInteract(event.getPlayer(), block.getLocation())) {
-            deny(event.getPlayer(), event);
+        AccessResult result = plotService.checkAccess(
+                event.getPlayer().getUniqueId(),
+                block.getLocation(),
+                Action.INTERACT);
+        if (!result.isAllowed()) {
+            deny(event.getPlayer(), event, result);
         }
     }
 
@@ -79,8 +93,12 @@ public final class CityProtectionListener implements Listener {
         if (player == null) {
             return;
         }
-        if (!plotService.canModify(player, event.getEntity().getLocation())) {
-            deny(player, event);
+        AccessResult result = plotService.checkAccess(
+                player.getUniqueId(),
+                event.getEntity().getLocation(),
+                Action.MODIFY);
+        if (!result.isAllowed()) {
+            deny(player, event, result);
         }
     }
 
@@ -89,12 +107,13 @@ public final class CityProtectionListener implements Listener {
         Location location = event.getEntity().getLocation();
         Entity remover = event.getRemover();
         if (remover instanceof Player player) {
-            if (!plotService.canModify(player, location)) {
-                deny(player, event);
+            AccessResult result = plotService.checkAccess(player.getUniqueId(), location, Action.MODIFY);
+            if (!result.isAllowed()) {
+                deny(player, event, result);
             }
             return;
         }
-        if (plotService.isInCityArea(location)) {
+        if (!plotService.checkAccess(null, location, Action.EXPLOSION).isAllowed()) {
             event.setCancelled(true);
         }
     }
@@ -105,8 +124,9 @@ public final class CityProtectionListener implements Listener {
         Location location = clicked != null
                 ? clicked.getRelative(event.getBlockFace()).getLocation()
                 : event.getPlayer().getLocation();
-        if (!plotService.canModify(event.getPlayer(), location)) {
-            deny(event.getPlayer(), event);
+        AccessResult result = plotService.checkAccess(event.getPlayer().getUniqueId(), location, Action.MODIFY);
+        if (!result.isAllowed()) {
+            deny(event.getPlayer(), event, result);
         }
     }
 
@@ -114,34 +134,38 @@ public final class CityProtectionListener implements Listener {
     public void onBucketFill(PlayerBucketFillEvent event) {
         Block clicked = event.getBlockClicked();
         Location location = clicked != null ? clicked.getLocation() : event.getPlayer().getLocation();
-        if (!plotService.canModify(event.getPlayer(), location)) {
-            deny(event.getPlayer(), event);
+        AccessResult result = plotService.checkAccess(event.getPlayer().getUniqueId(), location, Action.MODIFY);
+        if (!result.isAllowed()) {
+            deny(event.getPlayer(), event, result);
         }
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent event) {
-        event.blockList().removeIf(block -> plotService.isProtectedFromExplosions(block.getLocation()));
+        event.blockList().removeIf(block ->
+                !plotService.checkAccess(null, block.getLocation(), Action.EXPLOSION).isAllowed());
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockExplode(BlockExplodeEvent event) {
-        event.blockList().removeIf(block -> plotService.isProtectedFromExplosions(block.getLocation()));
+        event.blockList().removeIf(block ->
+                !plotService.checkAccess(null, block.getLocation(), Action.EXPLOSION).isAllowed());
     }
 
-    private void deny(Player player, org.bukkit.event.Cancellable event) {
+    private void deny(Player player, org.bukkit.event.Cancellable event, AccessResult result) {
         event.setCancelled(true);
-        sendProtectedMessage(player);
+        sendProtectedMessage(player, result);
     }
 
-    private void sendProtectedMessage(Player player) {
+    private void sendProtectedMessage(Player player, AccessResult result) {
         long now = System.currentTimeMillis();
         long last = lastMessageAt.getOrDefault(player.getUniqueId(), 0L);
         if (now - last < MESSAGE_COOLDOWN_MS) {
             return;
         }
         lastMessageAt.put(player.getUniqueId(), now);
-        messages.send(player, "city.no-permission", "");
+        String key = result.reasonKey() == null ? "city.no-permission" : result.reasonKey();
+        messages.send(player, key, "");
     }
 
     private boolean isProtectedInteract(Block block) {
