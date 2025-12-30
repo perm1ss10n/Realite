@@ -23,6 +23,7 @@ usage:
   leave: "{prefix}&eUsage: /g leave"
   ranks: "{prefix}&eUsage: /g ranks"
   setrank: "{prefix}&eUsage: /g setrank <player> <rankId>"
+  tp: "{prefix}&eUsage: /g tp <player>"
   claim: "{prefix}&eUsage: /g claim <pos1|pos2|apply|clear>"
   chat: "{prefix}&eUsage: /g chat toggle or /gc <message>"
 
@@ -79,6 +80,17 @@ home:
     cancelled: "{prefix}&cTeleport cancelled."
     success: "{prefix}&aTeleported."
   denied: "{prefix}&cYou don't have permission to use guild home."
+
+tp:
+  start: "{prefix}&eTeleporting in {seconds} sec."
+  cancelled: "{prefix}&cTeleport cancelled."
+  success: "{prefix}&aTeleported."
+  denied: "{prefix}&cYou don't have permission to teleport."
+  cooldown: "{prefix}&cYou can teleport again in {seconds} sec."
+  target:
+    not_found: "{prefix}&cPlayer not found."
+    not_in_guild: "{prefix}&cPlayer is not in your guild."
+    offline: "{prefix}&cPlayer is currently offline."
 
 claim:
   pos1: "{prefix}&aPoint 1 set: &f{loc}"

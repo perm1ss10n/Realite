@@ -56,6 +56,7 @@ public final class GuildCommand implements CommandExecutor {
             case "setrank" -> handleSetRank(player, args);
             case "sethome" -> service.setHome(player);
             case "home" -> service.teleportHome(player);
+            case "tp" -> handleTp(player, args);
             case "claim" -> handleClaim(player, args);
             case "salary" -> handleSalary(player, args);
             case "chat" -> handleChat(player, args);
@@ -128,6 +129,14 @@ public final class GuildCommand implements CommandExecutor {
             case "clear" -> service.clearClaim(player);
             default -> messages.send(player, "usage.claim");
         }
+    }
+
+    private void handleTp(Player player, String[] args) {
+        if (args.length != 2) {
+            messages.send(player, "usage.tp");
+            return;
+        }
+        service.teleportToMember(player, args[1]);
     }
 
     private void handleSalary(Player player, String[] args) {
