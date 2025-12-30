@@ -1,0 +1,43 @@
+leaderId: "leader"
+
+defaultId: "member"
+
+ranks:
+  leader:
+    displayNameKey: "rank.name.leader"
+    priority: 100
+    salaryDaily: 250
+    permissions:
+      - INVITE
+      - KICK
+      - PROMOTE
+      - SETHOME
+      - HOME
+      - CLAIM
+      - ACCESS
+      - CHAT
+      - TP
+      - SALARY_VIEW
+  officer:
+    displayNameKey: "rank.name.officer"
+    priority: 50
+    salaryDaily: 150
+    permissions:
+      - INVITE
+      - KICK
+      - SETHOME
+      - HOME
+      - ACCESS
+      - CHAT
+      - TP
+      - SALARY_VIEW
+  member:
+    displayNameKey: "rank.name.member"
+    priority: 10
+    salaryDaily: 75
+    permissions:
+      - ACCESS
+      - HOME
+      - CHAT
+      - TP
+      - SALARY_VIEW

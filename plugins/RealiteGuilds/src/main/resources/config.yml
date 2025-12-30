@@ -1,0 +1,130 @@
+# Основной язык сообщений (ru/en)
+lang: "ru"
+
+# Настройки чата гильдий
+chat:
+  guild:
+    enabled: true
+    toggleCommand: true
+    spy:
+      enabled: true
+      permission: "realite.guilds.chat.spy"
+  prefix:
+    enabled: true
+    showRank: true
+    hover:
+      enabled: true
+
+# Включение функционала плагина
+features:
+  # Приглашения в гильдии
+  invites: true
+  # Присоединение к гильдии
+  join: true
+  # Выход из гильдии
+  leave: true
+  # Роспуск гильдии
+  disband: true
+
+# Настройки рангов
+ranks:
+  # Разрешать больше одного лидера
+  allowMultipleLeaders: false
+
+# Настройки прогрессии гильдий
+progression:
+  levels:
+    - level: 1
+      xp: 0
+    - level: 2
+      xp: 1000
+    - level: 3
+      xp: 2500
+
+# Настройки гильдий
+guild:
+  # Параметры тега гильдии
+  tag:
+    min: 2
+    max: 5
+    regex: "^[A-Z0-9_]+$"
+  # Ограничения на название гильдии
+  name:
+    max: 24
+  # Ограничения на количество участников
+  members:
+    max: 30
+
+# Настройки приглашений
+invites:
+  # Время жизни приглашения в секундах
+  ttlSeconds: 600
+  # Требовать активное приглашение для входа
+  requireInviteToJoin: true
+  # Максимальное число активных приглашений для гильдии
+  maxActiveInvitesPerGuild: 10
+
+# Настройки выхода из гильдии
+leave:
+  # Перезарядка перед повторным выходом в секундах
+  cooldownSeconds: 300
+  # Запрещать выход владельцу гильдии
+  denyIfLeader: true
+
+# Настройки гильдейского дома
+home:
+  enabled: true
+  requiresPermissionFlag: "HOME"
+  teleportWarmupSeconds: 3
+  cancelOnMove: true
+  cancelOnDamage: true
+
+# Настройки телепортации к согильдийцу
+tp:
+  enabled: true
+  warmupSeconds: 5
+  cooldownSeconds: 600
+  cancelOnMove: true
+  cancelOnDamage: true
+  allowDifferentWorlds: false
+  blockedWorlds:
+    - "arena"
+
+# Настройки территорий гильдий
+claim:
+  enabled: true
+  maxSize:
+    x: 120
+    y: 80
+    z: 120
+  allowInWorlds:
+    - "world"
+  blockedWorlds: []
+
+# Настройки защиты доступа
+access:
+  protect:
+    enabled: true
+    requirePermissionFlag: true
+    blocks:
+      - "CHEST"
+      - "TRAPPED_CHEST"
+      - "BARREL"
+      - "SHULKER_BOX"
+      - "FURNACE"
+      - "BLAST_FURNACE"
+      - "SMOKER"
+      - "HOPPER"
+      - "DISPENSER"
+      - "DROPPER"
+      - "BREWING_STAND"
+    doors: true
+
+# Настройки ежедневной зарплаты
+salary:
+  enabled: true
+  dailyTime: "06:00"
+  timezone: "server" # или "Europe/Amsterdam"
+  catchupOnJoin: true
+  maxMissedDays: 3
+  logPayments: true

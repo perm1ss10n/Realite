@@ -5,9 +5,9 @@ import java.util.Optional;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.luckperms.api.LuckPerms;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -70,8 +70,7 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener, Com
                     sourceDisplayName,
                     message,
                     tagsJoiner,
-                    spaceBeforeName
-            ));
+                    spaceBeforeName));
         });
     }
 
@@ -80,7 +79,8 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener, Com
                 .getRegistration(LuckPerms.class);
         if (provider == null) {
             if (messages != null && !luckPermsMissingLogged) {
-                getLogger().warning(ChatColor.stripColor(messages.get("chat.dependency.luckperms-missing")));
+                getLogger().warning(PlainTextComponentSerializer.plainText()
+                        .serialize(messages.get("chat.dependency.luckperms-missing")));
                 luckPermsMissingLogged = true;
             }
             return player -> Optional.empty();

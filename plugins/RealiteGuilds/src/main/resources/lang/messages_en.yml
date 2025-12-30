@@ -1,0 +1,132 @@
+format:
+  prefix: "&6[Guilds]&r "
+
+error:
+  no_permission: "{prefix}&cYou don't have permission."
+  player_only: "{prefix}&cCommand available to players only."
+  player_not_found: "{prefix}&cPlayer not found."
+  guild:
+    tag-exists: "{prefix}&cA guild with this tag already exists."
+    tag-length: "{prefix}&cTag length must be between {min} and {max}."
+    tag-regex: "{prefix}&cTag contains invalid characters."
+    name-length: "{prefix}&cGuild name must be at most {max} characters."
+    name-empty: "{prefix}&cGuild name cannot be empty."
+    no_member: "{prefix}&cYou are not in a guild."
+    disband-disabled: "{prefix}&cGuild disband is disabled."
+    disband-not-owner: "{prefix}&cOnly the owner can disband the guild."
+
+usage:
+  create: "{prefix}&eUsage: /g create <tag> <name...>"
+  info: "{prefix}&eUsage: /g info [tag]"
+  invite: "{prefix}&eUsage: /g invite <player>"
+  join: "{prefix}&eUsage: /g join <tag>"
+  leave: "{prefix}&eUsage: /g leave"
+  ranks: "{prefix}&eUsage: /g ranks"
+  setrank: "{prefix}&eUsage: /g setrank <player> <rankId>"
+  tp: "{prefix}&eUsage: /g tp <player>"
+  claim: "{prefix}&eUsage: /g claim <pos1|pos2|apply|clear>"
+  chat: "{prefix}&eUsage: /g chat toggle or /gc <message>"
+
+admin:
+  addxp:
+    usage: "{prefix}&eUsage: /g admin addxp <tag> <amount> [reason]"
+
+success:
+  create: "{prefix}&aGuild &f[{tag}] {name}&a created!"
+  disband: "{prefix}&aGuild &f[{tag}]&a disbanded."
+
+info:
+  format: "{prefix}&eGuild &6[{tag}]&e {name} &7(owner: {owner})"
+
+guild:
+  created: "{prefix}&aGuild &f[{tag}] {name}&a created."
+  exists: "{prefix}&cA guild with this tag already exists."
+  not_found: "{prefix}&cGuild not found."
+
+invite:
+  sent: "{prefix}&aInvite sent to &f{player}&a."
+  received: "{prefix}&eYou received an invite to guild &f[{tag}] {name}&e from &f{player}&e."
+  expired: "{prefix}&cInvite has expired."
+  none: "{prefix}&cYou have no active invites."
+
+join:
+  success: "{prefix}&aYou joined guild &f[{tag}] {name}&a."
+  denied:
+    no_invite: "{prefix}&cYou need an invite to join."
+    full: "{prefix}&cThe guild is full."
+  already_in_guild: "{prefix}&cYou are already in a guild."
+
+leave:
+  success: "{prefix}&aYou left guild &f[{tag}]&a."
+  denied:
+    leader: "{prefix}&cThe leader cannot leave the guild."
+    cooldown: "{prefix}&cYou can leave the guild in {seconds} sec."
+
+rank:
+  list:
+    header: "{prefix}&eGuild ranks:\n{list}"
+  set:
+    success: "{prefix}&aRank for &f{player}&a set to &f{rank}&a."
+    denied:
+      higher_or_equal: "{prefix}&cYou cannot set a rank equal to or higher than yours."
+      no_permission_flag: "{prefix}&cYou don't have permission to set ranks."
+  not_found: "{prefix}&cRank not found."
+  name:
+    leader: "Leader"
+    officer: "Officer"
+    member: "Member"
+
+home:
+  set: "{prefix}&aGuild home set."
+  not_set: "{prefix}&cGuild home is not set."
+  tp:
+    start: "{prefix}&eTeleporting in {seconds} sec."
+    cancelled: "{prefix}&cTeleport cancelled."
+    success: "{prefix}&aTeleported."
+  denied: "{prefix}&cYou don't have permission to use guild home."
+
+tp:
+  start: "{prefix}&eTeleporting in {seconds} sec."
+  cancelled: "{prefix}&cTeleport cancelled."
+  success: "{prefix}&aTeleported."
+  denied: "{prefix}&cYou don't have permission to teleport."
+  cooldown: "{prefix}&cYou can teleport again in {seconds} sec."
+  target:
+    not_found: "{prefix}&cPlayer not found."
+    not_in_guild: "{prefix}&cPlayer is not in your guild."
+    offline: "{prefix}&cPlayer is currently offline."
+
+claim:
+  pos1: "{prefix}&aPoint 1 set: &f{loc}"
+  pos2: "{prefix}&aPoint 2 set: &f{loc}"
+  apply:
+    success: "{prefix}&aGuild claim set."
+    denied:
+      size: "{prefix}&cClaim size exceeds the limit."
+  clear: "{prefix}&aGuild claim cleared."
+
+access:
+  denied: "{prefix}&cYou don't have access to this block."
+
+salary:
+  info: "{prefix}&eSalary: &f{rate}&e, rank: &f{rank}&e, next: &f{next}&e."
+  paid: "{prefix}&aYou received &f{amount}&a."
+  disabled: "{prefix}&cSalary is disabled."
+  admin:
+    run:
+      start: "{prefix}&eStarting salary payout..."
+      done: "{prefix}&aSalary paid to {count} player(s) for total {total}."
+
+chat:
+  guild:
+    format: "&7[&aG&7] &f{player}: &r{message}"
+  public:
+    prefix: "&7[{tag}] "
+  hover: "&aGuild: &f[{tag}] {guild}\n&7Rank: &f{rank}\n&7Members: &f{members}\n&8Hints:\n&f{hintToggle}\n&f{hintChat}"
+  toggle:
+    on: "{prefix}&aGuild chat enabled."
+    off: "{prefix}&eGuild chat disabled."
+
+xp:
+  added: "{prefix}&aGuild &f[{tag}]&a received &f{amount}&a XP. Total: &f{total}&a, level: &f{level}&a. Reason: &f{reason}&a."
+  levelup: "{prefix}&aGuild &f[{tag}]&a reached level &f{level}&a!"

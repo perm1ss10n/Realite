@@ -1,0 +1,16 @@
+name: RealiteGuilds
+version: 0.1.0
+main: ru.realite.guilds.RealiteGuildsPlugin
+api-version: "1.21"
+
+depend:
+  - RealiteCore
+
+commands:
+  g:
+    description: Guild commands
+    usage: /g <create|info|invite|join|leave|disband|ranks|setrank|sethome|home|tp|claim|salary|chat|admin addxp>
+    aliases: [guild]
+  gc:
+    description: Guild chat
+    usage: /gc <message>
