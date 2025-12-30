@@ -15,6 +15,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
+import ru.realite.core.api.integrations.CityAccessHook;
 import ru.realite.guilds.i18n.GuildMessages;
 import ru.realite.guilds.model.Guild;
 import ru.realite.guilds.service.GuildService;
@@ -26,13 +27,16 @@ public final class GuildAccessProtectionListener implements Listener {
     private final GuildService service;
     private final GuildMessages messages;
     private final FileConfiguration config;
+    private final CityAccessHook cityAccessHook;
     private final Set<Material> protectedBlocks = new HashSet<>();
     private final ConcurrentMap<UUID, Long> lastMessageAt = new ConcurrentHashMap<>();
 
-    public GuildAccessProtectionListener(GuildService service, GuildMessages messages, FileConfiguration config) {
+    public GuildAccessProtectionListener(GuildService service, GuildMessages messages, FileConfiguration config,
+                                         CityAccessHook cityAccessHook) {
         this.service = service;
         this.messages = messages;
         this.config = config;
+        this.cityAccessHook = cityAccessHook;
         loadProtectedBlocks();
     }
 
@@ -51,16 +55,22 @@ public final class GuildAccessProtectionListener implements Listener {
         if (!isProtected(block.getType())) {
             return;
         }
+        Player player = event.getPlayer();
+        if (config.getBoolean("integrations.city.enabled", true)
+                && !cityAccessHook.canInteract(player, block.getLocation())) {
+            event.setCancelled(true);
+            sendDenied(player, "access.city.denied");
+            return;
+        }
         Guild guild = service.findGuildByClaim(block.getLocation());
         if (guild == null) {
             return;
         }
-        Player player = event.getPlayer();
         if (service.canAccessClaim(player, guild)) {
             return;
         }
         event.setCancelled(true);
-        sendDenied(player);
+        sendDenied(player, "access.denied");
     }
 
     private void loadProtectedBlocks() {
@@ -90,13 +100,13 @@ public final class GuildAccessProtectionListener implements Listener {
         return false;
     }
 
-    private void sendDenied(Player player) {
+    private void sendDenied(Player player, String key) {
         long now = System.currentTimeMillis();
         long last = lastMessageAt.getOrDefault(player.getUniqueId(), 0L);
         if (now - last < MESSAGE_COOLDOWN_MS) {
             return;
         }
         lastMessageAt.put(player.getUniqueId(), now);
-        messages.send(player, "access.denied");
+        messages.send(player, key);
     }
 }

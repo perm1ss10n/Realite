@@ -2,6 +2,7 @@ package ru.realite.city;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.city.command.CityCommand;
 import ru.realite.city.i18n.CityMessages;
@@ -9,6 +10,7 @@ import ru.realite.city.listener.CityAreaSelectionListener;
 import ru.realite.city.listener.CityProtectionListener;
 import ru.realite.city.listener.ShopPointListener;
 import ru.realite.city.service.CityAreaSelectionService;
+import ru.realite.city.service.CityInfrastructureAccessHook;
 import ru.realite.city.service.CityHooks;
 import ru.realite.city.service.DefaultCityHooks;
 import ru.realite.city.service.EconomyService;
@@ -19,6 +21,7 @@ import ru.realite.city.service.ShopDirectoryService;
 import ru.realite.city.service.ShopMarkerService;
 import ru.realite.city.service.ShopPointService;
 import ru.realite.city.service.ShopRentService;
+import ru.realite.core.api.integrations.CityAccessHook;
 import ru.realite.city.storage.SqliteCityAreaRepository;
 import ru.realite.city.storage.SqlitePlotMemberRepository;
 import ru.realite.city.storage.SqlitePlotRepository;
@@ -163,6 +166,11 @@ public final class CityInfrastructureModule implements Module {
                 economyService,
                 cityHooks);
         marketService = new MarketService(config, economyService, cityHooks);
+        javaPlugin.getServer().getServicesManager().register(
+                CityAccessHook.class,
+                new CityInfrastructureAccessHook(plotService),
+                javaPlugin,
+                ServicePriority.Normal);
 
         // Listeners
         Bukkit.getPluginManager().registerEvents(
