@@ -17,7 +17,6 @@ import org.bukkit.scheduler.BukkitTask;
 import ru.realite.guilds.i18n.GuildMessages;
 import ru.realite.guilds.model.GuildMember;
 import ru.realite.guilds.storage.GuildRepository;
-import ru.realite.guilds.service.GuildRankPermission;
 
 public final class GuildSalaryService {
 
