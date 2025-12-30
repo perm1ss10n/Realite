@@ -37,6 +37,8 @@ public final class GuildCommand implements CommandExecutor {
             case "invite" -> handleInvite(player, args);
             case "join" -> handleJoin(player, args);
             case "leave" -> service.leave(player);
+            case "ranks" -> handleRanks(player, args);
+            case "setrank" -> handleSetRank(player, args);
             default -> messages.send(player, "usage.create");
         }
         return true;
@@ -75,5 +77,21 @@ public final class GuildCommand implements CommandExecutor {
             return;
         }
         service.join(player, args[1]);
+    }
+
+    private void handleRanks(Player player, String[] args) {
+        if (args.length != 1) {
+            messages.send(player, "usage.ranks");
+            return;
+        }
+        service.listRanks(player);
+    }
+
+    private void handleSetRank(Player player, String[] args) {
+        if (args.length != 3) {
+            messages.send(player, "usage.setrank");
+            return;
+        }
+        service.setRank(player, args[1], args[2]);
     }
 }

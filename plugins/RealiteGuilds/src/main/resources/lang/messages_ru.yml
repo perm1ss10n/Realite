@@ -21,6 +21,8 @@ usage:
   invite: "{prefix}&eИспользование: /g invite <player>"
   join: "{prefix}&eИспользование: /g join <tag>"
   leave: "{prefix}&eИспользование: /g leave"
+  ranks: "{prefix}&eИспользование: /g ranks"
+  setrank: "{prefix}&eИспользование: /g setrank <player> <rankId>"
 
 success:
   create: "{prefix}&aГильдия &f[{tag}] {name}&a успешно создана!"
@@ -52,3 +54,17 @@ leave:
   denied:
     leader: "{prefix}&cВладелец не может покинуть гильдию."
     cooldown: "{prefix}&cВы сможете покинуть гильдию через {seconds} сек."
+
+rank:
+  list:
+    header: "{prefix}&eРанги гильдии:\n{list}"
+  set:
+    success: "{prefix}&aРанг игрока &f{player}&a изменен на &f{rank}&a."
+    denied:
+      higher_or_equal: "{prefix}&cНельзя назначить ранг выше или равный вашему."
+      no_permission_flag: "{prefix}&cНедостаточно прав для изменения ранга."
+  not_found: "{prefix}&cРанг не найден."
+  name:
+    leader: "Лидер"
+    officer: "Офицер"
+    member: "Участник"

@@ -1,8 +1,40 @@
+leaderId: "leader"
+
+defaultId: "member"
+
 ranks:
-  owner:
+  leader:
+    displayNameKey: "rank.name.leader"
+    priority: 100
+    salaryDaily: 250
     permissions:
-      - "guilds.manage"
-    salary: 0
+      - INVITE
+      - KICK
+      - PROMOTE
+      - SETHOME
+      - CLAIM
+      - ACCESS
+      - CHAT
+      - TP
+      - SALARY_VIEW
+  officer:
+    displayNameKey: "rank.name.officer"
+    priority: 50
+    salaryDaily: 150
+    permissions:
+      - INVITE
+      - KICK
+      - SETHOME
+      - ACCESS
+      - CHAT
+      - TP
+      - SALARY_VIEW
   member:
-    permissions: []
-    salary: 0
+    displayNameKey: "rank.name.member"
+    priority: 10
+    salaryDaily: 75
+    permissions:
+      - ACCESS
+      - CHAT
+      - TP
+      - SALARY_VIEW

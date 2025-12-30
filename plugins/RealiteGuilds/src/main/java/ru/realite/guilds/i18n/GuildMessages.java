@@ -59,6 +59,11 @@ public final class GuildMessages {
         return msg(key, toMap(placeholders));
     }
 
+    public String raw(String key) {
+        String raw = messages.getString(key, "&cMissing message: &f" + key);
+        return raw == null ? "" : raw;
+    }
+
     public void send(Player player, String key, Map<String, String> placeholders) {
         player.sendMessage(msg(key, placeholders));
     }
