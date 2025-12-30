@@ -124,7 +124,7 @@ public final class MenuFactory {
         inventory.setItem(14, teleportItem());
         inventory.setItem(16, stubItem(Material.PLAYER_HEAD, "Set owner (player)", "plot_set_owner_player"));
         inventory.setItem(19, stubItem(Material.WRITABLE_BOOK, "Set owner (guild)", "plot_set_owner_guild"));
-        inventory.setItem(22, actionItem(Material.ARROW, "gui.btn.back", "open_plots"));
+        inventory.setItem(22, actionItemKey(Material.ARROW, "gui.btn.back", "open_plots"));
 
         return inventory;
     }
@@ -147,7 +147,7 @@ public final class MenuFactory {
         return Optional.ofNullable(plotId);
     }
 
-    private ItemStack actionItem(Material material, String key, String action) {
+    private ItemStack actionItemKey(Material material, String key, String action) {
         String label = messages.getRaw(key, key);
         return actionItem(material, label, action);
     }
