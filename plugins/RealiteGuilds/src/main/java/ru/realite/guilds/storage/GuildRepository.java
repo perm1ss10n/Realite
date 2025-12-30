@@ -11,6 +11,8 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.guilds.model.Guild;
+import ru.realite.guilds.model.GuildClaim;
+import ru.realite.guilds.model.GuildHome;
 import ru.realite.guilds.model.GuildMember;
 
 public final class GuildRepository {
@@ -47,7 +49,9 @@ public final class GuildRepository {
                     }
                     UUID owner = UUID.fromString(ownerRaw);
                     String normalizedTag = normalizeTag(tagKey);
-                    guilds.put(normalizedTag, new Guild(normalizedTag, name, owner));
+                    GuildHome home = readHome(guildSection);
+                    GuildClaim claim = readClaim(guildSection);
+                    guilds.put(normalizedTag, new Guild(normalizedTag, name, owner, home, claim));
                 }
             }
         }
@@ -129,6 +133,8 @@ public final class GuildRepository {
             ConfigurationSection guildSection = section.createSection(guild.tag());
             guildSection.set("name", guild.name());
             guildSection.set("owner", guild.owner().toString());
+            writeHome(guildSection, guild.home());
+            writeClaim(guildSection, guild.claim());
         }
         save(config, guildsFile, "guilds.yml");
     }
@@ -157,5 +163,74 @@ public final class GuildRepository {
             return "";
         }
         return tag.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private GuildHome readHome(ConfigurationSection guildSection) {
+        ConfigurationSection homeSection = guildSection.getConfigurationSection("home");
+        if (homeSection == null) {
+            return null;
+        }
+        String world = homeSection.getString("world");
+        if (world == null || world.isBlank()) {
+            return null;
+        }
+        double x = homeSection.getDouble("x");
+        double y = homeSection.getDouble("y");
+        double z = homeSection.getDouble("z");
+        float yaw = (float) homeSection.getDouble("yaw", 0.0);
+        float pitch = (float) homeSection.getDouble("pitch", 0.0);
+        return new GuildHome(world, x, y, z, yaw, pitch);
+    }
+
+    private GuildClaim readClaim(ConfigurationSection guildSection) {
+        ConfigurationSection claimSection = guildSection.getConfigurationSection("claim");
+        if (claimSection == null) {
+            return null;
+        }
+        String world = claimSection.getString("world");
+        if (world == null || world.isBlank()) {
+            return null;
+        }
+        ConfigurationSection pos1 = claimSection.getConfigurationSection("pos1");
+        ConfigurationSection pos2 = claimSection.getConfigurationSection("pos2");
+        if (pos1 == null || pos2 == null) {
+            return null;
+        }
+        int x1 = pos1.getInt("x");
+        int y1 = pos1.getInt("y");
+        int z1 = pos1.getInt("z");
+        int x2 = pos2.getInt("x");
+        int y2 = pos2.getInt("y");
+        int z2 = pos2.getInt("z");
+        return new GuildClaim(world, x1, y1, z1, x2, y2, z2);
+    }
+
+    private void writeHome(ConfigurationSection guildSection, GuildHome home) {
+        if (home == null) {
+            return;
+        }
+        ConfigurationSection homeSection = guildSection.createSection("home");
+        homeSection.set("world", home.world());
+        homeSection.set("x", home.x());
+        homeSection.set("y", home.y());
+        homeSection.set("z", home.z());
+        homeSection.set("yaw", home.yaw());
+        homeSection.set("pitch", home.pitch());
+    }
+
+    private void writeClaim(ConfigurationSection guildSection, GuildClaim claim) {
+        if (claim == null) {
+            return;
+        }
+        ConfigurationSection claimSection = guildSection.createSection("claim");
+        claimSection.set("world", claim.world());
+        ConfigurationSection pos1 = claimSection.createSection("pos1");
+        pos1.set("x", claim.x1());
+        pos1.set("y", claim.y1());
+        pos1.set("z", claim.z1());
+        ConfigurationSection pos2 = claimSection.createSection("pos2");
+        pos2.set("x", claim.x2());
+        pos2.set("y", claim.y2());
+        pos2.set("z", claim.z2());
     }
 }

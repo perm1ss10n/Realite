@@ -39,6 +39,9 @@ public final class GuildCommand implements CommandExecutor {
             case "leave" -> service.leave(player);
             case "ranks" -> handleRanks(player, args);
             case "setrank" -> handleSetRank(player, args);
+            case "sethome" -> service.setHome(player);
+            case "home" -> service.teleportHome(player);
+            case "claim" -> handleClaim(player, args);
             default -> messages.send(player, "usage.create");
         }
         return true;
@@ -93,5 +96,20 @@ public final class GuildCommand implements CommandExecutor {
             return;
         }
         service.setRank(player, args[1], args[2]);
+    }
+
+    private void handleClaim(Player player, String[] args) {
+        if (args.length != 2) {
+            messages.send(player, "usage.claim");
+            return;
+        }
+        String sub = args[1].toLowerCase(Locale.ROOT);
+        switch (sub) {
+            case "pos1" -> service.setClaimPos(player, true);
+            case "pos2" -> service.setClaimPos(player, false);
+            case "apply" -> service.applyClaim(player);
+            case "clear" -> service.clearClaim(player);
+            default -> messages.send(player, "usage.claim");
+        }
     }
 }

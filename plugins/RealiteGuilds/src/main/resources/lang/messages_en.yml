@@ -23,6 +23,7 @@ usage:
   leave: "{prefix}&eUsage: /g leave"
   ranks: "{prefix}&eUsage: /g ranks"
   setrank: "{prefix}&eUsage: /g setrank <player> <rankId>"
+  claim: "{prefix}&eUsage: /g claim <pos1|pos2|apply|clear>"
 
 success:
   create: "{prefix}&aGuild &f[{tag}] {name}&a created!"
@@ -68,3 +69,24 @@ rank:
     leader: "Leader"
     officer: "Officer"
     member: "Member"
+
+home:
+  set: "{prefix}&aGuild home set."
+  not_set: "{prefix}&cGuild home is not set."
+  tp:
+    start: "{prefix}&eTeleporting in {seconds} sec."
+    cancelled: "{prefix}&cTeleport cancelled."
+    success: "{prefix}&aTeleported."
+  denied: "{prefix}&cYou don't have permission to use guild home."
+
+claim:
+  pos1: "{prefix}&aPoint 1 set: &f{loc}"
+  pos2: "{prefix}&aPoint 2 set: &f{loc}"
+  apply:
+    success: "{prefix}&aGuild claim set."
+    denied:
+      size: "{prefix}&cClaim size exceeds the limit."
+  clear: "{prefix}&aGuild claim cleared."
+
+access:
+  denied: "{prefix}&cYou don't have access to this block."

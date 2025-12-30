@@ -12,6 +12,7 @@ ranks:
       - KICK
       - PROMOTE
       - SETHOME
+      - HOME
       - CLAIM
       - ACCESS
       - CHAT
@@ -25,6 +26,7 @@ ranks:
       - INVITE
       - KICK
       - SETHOME
+      - HOME
       - ACCESS
       - CHAT
       - TP
@@ -35,6 +37,7 @@ ranks:
     salaryDaily: 75
     permissions:
       - ACCESS
+      - HOME
       - CHAT
       - TP
       - SALARY_VIEW
