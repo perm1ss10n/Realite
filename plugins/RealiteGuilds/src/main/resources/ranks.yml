@@ -1,0 +1,8 @@
+ranks:
+  owner:
+    permissions:
+      - "guilds.manage"
+    salary: 0
+  member:
+    permissions: []
+    salary: 0

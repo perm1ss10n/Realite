@@ -1,0 +1,25 @@
+prefix: "&6[Гильдии]&r "
+
+error:
+  player-only: "{prefix}&cКоманда доступна только игрокам."
+  guild:
+    tag-exists: "{prefix}&cГильдия с таким тегом уже существует."
+    tag-length: "{prefix}&cТег должен быть длиной от {min} до {max}."
+    tag-regex: "{prefix}&cТег содержит недопустимые символы."
+    name-length: "{prefix}&cНазвание не должно превышать {max} символов."
+    name-empty: "{prefix}&cНазвание гильдии не может быть пустым."
+    not-found: "{prefix}&cГильдия не найдена."
+    no-member: "{prefix}&cВы не состоите в гильдии."
+    disband-disabled: "{prefix}&cРоспуск гильдий отключен."
+    disband-not-owner: "{prefix}&cТолько владелец может распустить гильдию."
+
+usage:
+  create: "{prefix}&eИспользование: /g create <tag> <name...>"
+  info: "{prefix}&eИспользование: /g info [tag]"
+
+success:
+  create: "{prefix}&aГильдия &f[{tag}] {name}&a успешно создана!"
+  disband: "{prefix}&aГильдия &f[{tag}]&a распущена."
+
+info:
+  format: "{prefix}&eГильдия &6[{tag}]&e {name} &7(владелец: {owner})"

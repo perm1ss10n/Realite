@@ -1,0 +1,13 @@
+name: RealiteGuilds
+version: 0.1.0
+main: ru.realite.guilds.RealiteGuildsPlugin
+api-version: "1.21"
+
+depend:
+  - RealiteCore
+
+commands:
+  g:
+    description: Guild commands
+    usage: /g <create|info|disband>
+    aliases: [guild]
