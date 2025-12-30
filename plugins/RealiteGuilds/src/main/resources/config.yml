@@ -1,0 +1,15 @@
+language: ru
+
+guild:
+  tag:
+    min: 2
+    max: 4
+    regex: "^[A-Z0-9]+$"
+  name:
+    max: 24
+  create:
+    cost: 1000
+
+features:
+  disband:
+    enabled: true
