@@ -52,7 +52,9 @@ public final class GuildRepository {
                     String normalizedTag = normalizeTag(tagKey);
                     GuildHome home = readHome(guildSection);
                     GuildClaim claim = readClaim(guildSection);
-                    guilds.put(normalizedTag, new Guild(normalizedTag, name, owner, home, claim));
+                    int level = Math.max(1, guildSection.getInt("level", 1));
+                    long xp = Math.max(0L, guildSection.getLong("xp", 0L));
+                    guilds.put(normalizedTag, new Guild(normalizedTag, name, owner, home, claim, level, xp));
                 }
             }
         }
@@ -139,6 +141,8 @@ public final class GuildRepository {
             ConfigurationSection guildSection = section.createSection(guild.tag());
             guildSection.set("name", guild.name());
             guildSection.set("owner", guild.owner().toString());
+            guildSection.set("level", guild.level());
+            guildSection.set("xp", guild.xp());
             writeHome(guildSection, guild.home());
             writeClaim(guildSection, guild.claim());
         }

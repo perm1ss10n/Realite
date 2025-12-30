@@ -8,6 +8,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import ru.realite.guilds.i18n.GuildMessages;
 import ru.realite.guilds.service.GuildChatService;
+import ru.realite.guilds.service.GuildProgressionService;
 import ru.realite.guilds.service.GuildSalaryService;
 import ru.realite.guilds.service.GuildService;
 
@@ -17,13 +18,15 @@ public final class GuildCommand implements CommandExecutor {
     private final GuildMessages messages;
     private final GuildSalaryService salaryService;
     private final GuildChatService chatService;
+    private final GuildProgressionService progressionService;
 
     public GuildCommand(GuildService service, GuildMessages messages, GuildSalaryService salaryService,
-                        GuildChatService chatService) {
+                        GuildChatService chatService, GuildProgressionService progressionService) {
         this.service = service;
         this.messages = messages;
         this.salaryService = salaryService;
         this.chatService = chatService;
+        this.progressionService = progressionService;
     }
 
     @Override
@@ -164,10 +167,31 @@ public final class GuildCommand implements CommandExecutor {
             }
             return;
         }
-        if (args.length != 3 || !"salary".equalsIgnoreCase(args[1]) || !"run".equalsIgnoreCase(args[2])) {
-            sender.sendMessage(messages.msg("error.no_permission"));
+        if (args.length >= 3 && "salary".equalsIgnoreCase(args[1]) && "run".equalsIgnoreCase(args[2])) {
+            salaryService.handleAdminRun(sender);
             return;
         }
-        salaryService.handleAdminRun(sender);
+        if (args.length >= 4 && "addxp".equalsIgnoreCase(args[1])) {
+            handleAdminAddXp(sender, args);
+            return;
+        }
+        sender.sendMessage(messages.msg("admin.addxp.usage"));
+    }
+
+    private void handleAdminAddXp(CommandSender sender, String[] args) {
+        if (args.length < 4) {
+            sender.sendMessage(messages.msg("admin.addxp.usage"));
+            return;
+        }
+        String tag = args[2];
+        long amount;
+        try {
+            amount = Long.parseLong(args[3]);
+        } catch (NumberFormatException ex) {
+            sender.sendMessage(messages.msg("admin.addxp.usage"));
+            return;
+        }
+        String reason = args.length > 4 ? String.join(" ", Arrays.copyOfRange(args, 4, args.length)) : "";
+        progressionService.addXp(sender, tag, amount, reason);
     }
 }

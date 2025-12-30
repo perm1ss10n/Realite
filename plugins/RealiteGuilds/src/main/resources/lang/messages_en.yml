@@ -27,6 +27,10 @@ usage:
   claim: "{prefix}&eUsage: /g claim <pos1|pos2|apply|clear>"
   chat: "{prefix}&eUsage: /g chat toggle or /gc <message>"
 
+admin:
+  addxp:
+    usage: "{prefix}&eUsage: /g admin addxp <tag> <amount> [reason]"
+
 success:
   create: "{prefix}&aGuild &f[{tag}] {name}&a created!"
   disband: "{prefix}&aGuild &f[{tag}]&a disbanded."
@@ -122,3 +126,7 @@ chat:
   toggle:
     on: "{prefix}&aGuild chat enabled."
     off: "{prefix}&eGuild chat disabled."
+
+xp:
+  added: "{prefix}&aGuild &f[{tag}]&a received &f{amount}&a XP. Total: &f{total}&a, level: &f{level}&a. Reason: &f{reason}&a."
+  levelup: "{prefix}&aGuild &f[{tag}]&a reached level &f{level}&a!"
