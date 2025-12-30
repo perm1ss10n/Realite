@@ -120,6 +120,12 @@ access:
       - "BREWING_STAND"
     doors: true
 
+# Интеграции с другими модулями
+integrations:
+  city:
+    # Проверять доступ через RealiteCityInfrastructure до логики гильдий
+    enabled: true
+
 # Настройки ежедневной зарплаты
 salary:
   enabled: true

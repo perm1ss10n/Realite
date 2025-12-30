@@ -107,6 +107,8 @@ claim:
 
 access:
   denied: "{prefix}&cНет доступа к этому блоку."
+  city:
+    denied: "{prefix}&cНет доступа на территории города."
 
 salary:
   info: "{prefix}&eЗарплата: &f{rate}&e, ранг: &f{rank}&e, следующий раз: &f{next}&e."
