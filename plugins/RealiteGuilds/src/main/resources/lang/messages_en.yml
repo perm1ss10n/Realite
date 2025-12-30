@@ -24,6 +24,7 @@ usage:
   ranks: "{prefix}&eUsage: /g ranks"
   setrank: "{prefix}&eUsage: /g setrank <player> <rankId>"
   claim: "{prefix}&eUsage: /g claim <pos1|pos2|apply|clear>"
+  chat: "{prefix}&eUsage: /g chat toggle or /gc <message>"
 
 success:
   create: "{prefix}&aGuild &f[{tag}] {name}&a created!"
@@ -99,3 +100,13 @@ salary:
     run:
       start: "{prefix}&eStarting salary payout..."
       done: "{prefix}&aSalary paid to {count} player(s) for total {total}."
+
+chat:
+  guild:
+    format: "&7[&aG&7] &f{player}: &r{message}"
+  public:
+    prefix: "&7[{tag}] "
+  hover: "&aGuild: &f[{tag}] {guild}\n&7Rank: &f{rank}\n&7Members: &f{members}\n&8Hints:\n&f{hintToggle}\n&f{hintChat}"
+  toggle:
+    on: "{prefix}&aGuild chat enabled."
+    off: "{prefix}&eGuild chat disabled."
