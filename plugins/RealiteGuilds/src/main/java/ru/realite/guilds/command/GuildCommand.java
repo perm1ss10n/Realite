@@ -7,29 +7,40 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import ru.realite.guilds.i18n.GuildMessages;
+import ru.realite.guilds.service.GuildSalaryService;
 import ru.realite.guilds.service.GuildService;
 
 public final class GuildCommand implements CommandExecutor {
 
     private final GuildService service;
     private final GuildMessages messages;
+    private final GuildSalaryService salaryService;
 
-    public GuildCommand(GuildService service, GuildMessages messages) {
+    public GuildCommand(GuildService service, GuildMessages messages, GuildSalaryService salaryService) {
         this.service = service;
         this.messages = messages;
+        this.salaryService = salaryService;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length == 0) {
+            if (sender instanceof Player player) {
+                messages.send(player, "usage.create");
+            } else {
+                sender.sendMessage(messages.msg("error.player_only"));
+            }
+            return true;
+        }
+        String sub = args[0].toLowerCase(Locale.ROOT);
+        if ("admin".equals(sub)) {
+            handleAdmin(sender, args);
+            return true;
+        }
         if (!(sender instanceof Player player)) {
             sender.sendMessage(messages.msg("error.player_only"));
             return true;
         }
-        if (args.length == 0) {
-            messages.send(player, "usage.create");
-            return true;
-        }
-        String sub = args[0].toLowerCase(Locale.ROOT);
         switch (sub) {
             case "create" -> handleCreate(player, args);
             case "info" -> handleInfo(player, args);
@@ -42,6 +53,7 @@ public final class GuildCommand implements CommandExecutor {
             case "sethome" -> service.setHome(player);
             case "home" -> service.teleportHome(player);
             case "claim" -> handleClaim(player, args);
+            case "salary" -> handleSalary(player, args);
             default -> messages.send(player, "usage.create");
         }
         return true;
@@ -111,5 +123,29 @@ public final class GuildCommand implements CommandExecutor {
             case "clear" -> service.clearClaim(player);
             default -> messages.send(player, "usage.claim");
         }
+    }
+
+    private void handleSalary(Player player, String[] args) {
+        if (args.length != 1) {
+            messages.send(player, "usage.create");
+            return;
+        }
+        salaryService.handleSalaryInfo(player);
+    }
+
+    private void handleAdmin(CommandSender sender, String[] args) {
+        if (!sender.isOp() && !sender.hasPermission("realite.guilds.admin")) {
+            if (sender instanceof Player player) {
+                messages.send(player, "error.no_permission");
+            } else {
+                sender.sendMessage(messages.msg("error.no_permission"));
+            }
+            return;
+        }
+        if (args.length != 3 || !"salary".equalsIgnoreCase(args[1]) || !"run".equalsIgnoreCase(args[2])) {
+            sender.sendMessage(messages.msg("error.no_permission"));
+            return;
+        }
+        salaryService.handleAdminRun(sender);
     }
 }

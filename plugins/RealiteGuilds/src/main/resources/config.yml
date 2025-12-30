@@ -84,3 +84,12 @@ access:
       - "DROPPER"
       - "BREWING_STAND"
     doors: true
+
+# Настройки ежедневной зарплаты
+salary:
+  enabled: true
+  dailyTime: "06:00"
+  timezone: "server" # или "Europe/Amsterdam"
+  catchupOnJoin: true
+  maxMissedDays: 3
+  logPayments: true

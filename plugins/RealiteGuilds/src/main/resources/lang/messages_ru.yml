@@ -90,3 +90,12 @@ claim:
 
 access:
   denied: "{prefix}&cНет доступа к этому блоку."
+
+salary:
+  info: "{prefix}&eЗарплата: &f{rate}&e, ранг: &f{rank}&e, следующий раз: &f{next}&e."
+  paid: "{prefix}&aНачислено &f{amount}&a."
+  disabled: "{prefix}&cЗарплата отключена."
+  admin:
+    run:
+      start: "{prefix}&eЗапуск начисления зарплаты..."
+      done: "{prefix}&aЗарплата начислена {count} игрок(ам) на сумму {total}."

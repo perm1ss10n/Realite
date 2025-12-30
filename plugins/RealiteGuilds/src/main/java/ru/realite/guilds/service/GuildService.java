@@ -77,7 +77,7 @@ public final class GuildService {
         UUID ownerId = player.getUniqueId();
         Guild guild = new Guild(tag, name, ownerId, null, null);
         repository.saveGuild(guild);
-        repository.saveMember(new GuildMember(ownerId, tag, rankService.getLeaderId()));
+        repository.saveMember(new GuildMember(ownerId, tag, rankService.getLeaderId(), null));
         messages.send(player, "guild.created", "tag", tag, "name", name);
     }
 
@@ -452,7 +452,7 @@ public final class GuildService {
                 return;
             }
         }
-        repository.saveMember(new GuildMember(player.getUniqueId(), guild.tag(), rankService.getDefaultId()));
+        repository.saveMember(new GuildMember(player.getUniqueId(), guild.tag(), rankService.getDefaultId(), null));
         invites.remove(player.getUniqueId());
         messages.send(player, "join.success", "tag", guild.tag(), "name", guild.name());
     }
@@ -561,7 +561,8 @@ public final class GuildService {
             messages.send(player, "rank.set.denied.higher_or_equal");
             return;
         }
-        repository.saveMember(new GuildMember(target.getUniqueId(), guild.tag(), desiredRank.id()));
+        repository.saveMember(new GuildMember(target.getUniqueId(), guild.tag(), desiredRank.id(),
+                targetMember.lastSalaryDate()));
         messages.send(player, "rank.set.success",
                 "player", target.getName() == null ? target.getUniqueId().toString() : target.getName(),
                 "rank", getRankDisplayName(desiredRank));

@@ -6,7 +6,10 @@ import ru.realite.guilds.command.GuildCommand;
 import ru.realite.guilds.i18n.GuildMessages;
 import ru.realite.guilds.listener.GuildAccessProtectionListener;
 import ru.realite.guilds.listener.GuildHomeWarmupListener;
+import ru.realite.guilds.listener.GuildSalaryJoinListener;
+import ru.realite.guilds.service.EconomyService;
 import ru.realite.guilds.service.GuildRankService;
+import ru.realite.guilds.service.GuildSalaryService;
 import ru.realite.guilds.service.GuildService;
 import ru.realite.guilds.storage.GuildRepository;
 
@@ -16,6 +19,7 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
     private GuildRepository repository;
     private GuildService service;
     private GuildRankService rankService;
+    private GuildSalaryService salaryService;
 
     @Override
     public void onEnable() {
@@ -27,11 +31,13 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
         messages = new GuildMessages(this);
         repository = new GuildRepository(this);
         rankService = new GuildRankService(this);
+        EconomyService economyService = new EconomyService(this);
         service = new GuildService(this, getConfig(), repository, messages, rankService);
+        salaryService = new GuildSalaryService(this, getConfig(), repository, messages, rankService, economyService);
 
         PluginCommand command = getCommand("g");
         if (command != null) {
-            command.setExecutor(new GuildCommand(service, messages));
+            command.setExecutor(new GuildCommand(service, messages, salaryService));
         } else {
             getLogger().severe("Command 'g' not found in plugin.yml");
         }
@@ -40,5 +46,7 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
                 new GuildHomeWarmupListener(service), this);
         getServer().getPluginManager().registerEvents(
                 new GuildAccessProtectionListener(service, messages, getConfig()), this);
+        getServer().getPluginManager().registerEvents(
+                new GuildSalaryJoinListener(salaryService), this);
     }
 }
