@@ -5,11 +5,16 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.city.command.CityCommand;
+import ru.realite.city.gui.GuiService;
+import ru.realite.city.gui.GuiSessionStore;
+import ru.realite.city.gui.MenuFactory;
+import ru.realite.city.gui.MenuListener;
 import ru.realite.city.i18n.CityMessages;
 import ru.realite.city.listener.CityAreaSelectionListener;
 import ru.realite.city.listener.CityProtectionListener;
 import ru.realite.city.listener.ShopPointListener;
 import ru.realite.city.service.CityAreaSelectionService;
+import ru.realite.city.service.CityAdminService;
 import ru.realite.city.service.CityInfrastructureAccessHook;
 import ru.realite.city.service.CityHooks;
 import ru.realite.city.service.DefaultCityHooks;
@@ -71,6 +76,7 @@ public final class CityInfrastructureModule implements Module {
     private MarketService marketService;
     private CityHooks cityHooks;
     private GuildsApi guildsApi;
+    private GuiService guiService;
 
     @Override
     public ModuleMetadata metadata() {
@@ -171,6 +177,10 @@ public final class CityInfrastructureModule implements Module {
                 cityHooks,
                 guildsApi);
         marketService = new MarketService(config, economyService, cityHooks);
+        CityAdminService adminService = new CityAdminService(selectionService, plotRepository);
+        MenuFactory menuFactory = new MenuFactory(javaPlugin, messages, selectionService, plotRepository);
+        GuiSessionStore guiSessionStore = new GuiSessionStore();
+        guiService = new GuiService(config, messages, adminService, guiSessionStore, menuFactory);
         javaPlugin.getServer().getServicesManager().register(
                 CityAccessHook.class,
                 new CityInfrastructureAccessHook(plotService),
@@ -186,6 +196,9 @@ public final class CityInfrastructureModule implements Module {
                 javaPlugin);
         Bukkit.getPluginManager().registerEvents(
                 new ShopPointListener(shopPointService, plotRepository, plotMemberRepository, messages, shopRentService),
+                javaPlugin);
+        Bukkit.getPluginManager().registerEvents(
+                new MenuListener(guiService, menuFactory),
                 javaPlugin);
 
         // Command
@@ -206,7 +219,8 @@ public final class CityInfrastructureModule implements Module {
                     shopDirectoryService,
                     shopMarkerService,
                     marketService,
-                    guildsApi));
+                    guildsApi,
+                    guiService));
         } else {
             ctx.logger().warn("[CityInfrastructure] Command /city not found in plugin.yml; executor not registered.");
         }

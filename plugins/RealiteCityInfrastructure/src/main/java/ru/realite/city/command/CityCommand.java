@@ -9,6 +9,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import ru.realite.city.CityConfig;
+import ru.realite.city.gui.GuiService;
 import ru.realite.city.i18n.CityMessages;
 import ru.realite.city.model.CityArea;
 import ru.realite.city.model.Plot;
@@ -61,6 +62,7 @@ public final class CityCommand implements CommandExecutor {
     private final ShopMarkerService shopMarkerService;
     private final MarketService marketService;
     private final GuildsApi guildsApi;
+    private final GuiService guiService;
 
     public CityCommand(
             CityAreaRepository cityAreaRepository,
@@ -77,7 +79,8 @@ public final class CityCommand implements CommandExecutor {
             ShopDirectoryService shopDirectoryService,
             ShopMarkerService shopMarkerService,
             MarketService marketService,
-            GuildsApi guildsApi) {
+            GuildsApi guildsApi,
+            GuiService guiService) {
         this.cityAreaRepository = cityAreaRepository;
         this.plotRepository = plotRepository;
         this.plotMemberRepository = plotMemberRepository;
@@ -93,6 +96,7 @@ public final class CityCommand implements CommandExecutor {
         this.shopMarkerService = shopMarkerService;
         this.marketService = marketService;
         this.guildsApi = guildsApi;
+        this.guiService = guiService;
     }
 
     @Override
@@ -107,9 +111,26 @@ public final class CityCommand implements CommandExecutor {
             case "plot" -> handlePlot(sender, args);
             case "shop" -> handleShop(sender, args);
             case "market" -> handleMarket(sender, args);
+            case "gui" -> handleGui(sender);
             default -> sendUsage(sender);
         }
         return true;
+    }
+
+    private void handleGui(CommandSender sender) {
+        Player player = requirePlayer(sender);
+        if (player == null) {
+            return;
+        }
+        if (guiService == null || !guiService.guiEnabled()) {
+            messages.send(player, "gui.error.disabled", "");
+            return;
+        }
+        if (!player.hasPermission(ADMIN_PERMISSION)) {
+            messages.send(player, "gui.error.no_permission", "");
+            return;
+        }
+        guiService.openMain(player);
     }
 
     private void handleArea(CommandSender sender, String[] args) {

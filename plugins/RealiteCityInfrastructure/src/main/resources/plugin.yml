@@ -9,7 +9,7 @@ depend:
 commands:
   city:
     description: City tools
-    usage: /city <area|plot|shop|market> <...>
+    usage: /city <area|plot|shop|market|gui> <...>
 
 permissions:
   realite.city.admin:

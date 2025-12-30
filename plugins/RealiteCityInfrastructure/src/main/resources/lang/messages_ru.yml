@@ -208,3 +208,26 @@ area:
   list:
     header: "&eГородские зоны:"
     line: "- {id} ({world}) [{minX},{minY},{minZ}] -> [{maxX},{maxY},{maxZ}]"
+gui:
+  title:
+    admin_main: "&eАдмин: город"
+    admin_selection: "&eАдмин: выделение"
+    admin_plots: "&eАдмин: участки"
+    admin_plot_actions: "&eАдмин: участок"
+  btn:
+    regions: "&7Регионы"
+    plots: "&eУчастки"
+    selection: "&eВыделение"
+    help: "&7Помощь"
+    back: "&cНазад"
+  selection:
+    pos1:
+      set: "&aУстановить позицию 1"
+    pos2:
+      set: "&aУстановить позицию 2"
+    clear: "&cОчистить выделение"
+    status: "&eСтатус выделения"
+  error:
+    disabled: "&cGUI отключена."
+    no_permission: "&cУ вас нет прав."
+    action_failed: "&cНе удалось выполнить действие: {reason}"
