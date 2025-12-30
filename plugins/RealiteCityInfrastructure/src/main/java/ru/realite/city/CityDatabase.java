@@ -42,15 +42,21 @@ public final class CityDatabase {
                     + "z2 INTEGER NOT NULL,"
                     + "price INTEGER NOT NULL DEFAULT 0,"
                     + "owner_uuid TEXT,"
+                    + "owner_type TEXT,"
+                    + "owner_id TEXT,"
                     + "created_at INTEGER NOT NULL,"
                     + "rent_paid_until INTEGER NOT NULL DEFAULT 0"
                     + ")");
 
             ensurePlotNumberColumn(statement);
             ensurePlotRentColumn(statement);
+            ensurePlotOwnerTypeColumn(statement);
+            ensurePlotOwnerIdColumn(statement);
 
             statement.execute("CREATE INDEX IF NOT EXISTS idx_plots_owner "
                     + "ON plots(owner_uuid)");
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_plots_owner_id "
+                    + "ON plots(owner_id)");
             statement.execute("CREATE INDEX IF NOT EXISTS idx_plots_world "
                     + "ON plots(world)");
 
@@ -124,6 +130,32 @@ public final class CityDatabase {
             }
         }
         statement.execute("UPDATE plots SET rent_paid_until = 0 WHERE rent_paid_until IS NULL");
+    }
+
+    private void ensurePlotOwnerTypeColumn(Statement statement) throws SQLException {
+        try {
+            statement.execute("ALTER TABLE plots ADD COLUMN owner_type TEXT");
+        } catch (SQLException e) {
+            String message = e.getMessage();
+            if (message == null || !message.toLowerCase().contains("duplicate column name")) {
+                throw e;
+            }
+        }
+        statement.execute("UPDATE plots SET owner_type = 'PLAYER' "
+                + "WHERE owner_type IS NULL AND owner_uuid IS NOT NULL");
+    }
+
+    private void ensurePlotOwnerIdColumn(Statement statement) throws SQLException {
+        try {
+            statement.execute("ALTER TABLE plots ADD COLUMN owner_id TEXT");
+        } catch (SQLException e) {
+            String message = e.getMessage();
+            if (message == null || !message.toLowerCase().contains("duplicate column name")) {
+                throw e;
+            }
+        }
+        statement.execute("UPDATE plots SET owner_id = owner_uuid "
+                + "WHERE owner_id IS NULL AND owner_uuid IS NOT NULL");
     }
 
     private void ensureShopPointMarkerColumns(Statement statement) throws SQLException {

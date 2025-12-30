@@ -72,7 +72,7 @@ public final class ShopPointListener implements Listener {
         }
         Plot plot = plotOptional.get();
         boolean isAdmin = player.hasPermission(ADMIN_PERMISSION);
-        boolean isOwner = plot.ownerUuid() != null && plot.ownerUuid().equals(player.getUniqueId());
+        boolean isOwner = plot.isOwnedByPlayer(player.getUniqueId());
         boolean isTrusted = plotMemberRepository
                 .findRole(plot.id(), player.getUniqueId())
                 .map(role -> role == PlotMemberRole.TRUSTED)

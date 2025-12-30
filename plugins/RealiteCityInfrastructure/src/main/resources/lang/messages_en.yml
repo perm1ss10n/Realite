@@ -171,6 +171,12 @@ city:
 plot:
   access:
     denied: "&cThis plot does not allow the action."
+  # Plot owner management
+  setowner:
+    success: "&aPlot {id} owner set to {owner}."
+    guild:
+      not_found: "&cGuild {tag} not found."
+    guilds_not_installed: "&cRealiteGuilds is not installed."
   create:
     denied:
       overlap: "&cCannot create plot: it overlaps another plot."

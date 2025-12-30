@@ -2,6 +2,7 @@ package ru.realite.city.storage;
 
 import org.bukkit.Location;
 import ru.realite.city.model.Plot;
+import ru.realite.city.model.PlotOwnerType;
 import ru.realite.city.model.PlotType;
 import ru.realite.core.api.Storage;
 
@@ -29,16 +30,20 @@ public final class SqlitePlotRepository implements PlotRepository {
         cache.clear();
         Connection connection = storage.connection();
             try (PreparedStatement statement = connection.prepareStatement(
-                    "SELECT id, number, type, world, x1, y1, z1, x2, y2, z2, price, owner_uuid, created_at, rent_paid_until "
+                    "SELECT id, number, type, world, x1, y1, z1, x2, y2, z2, price, owner_uuid, owner_type, owner_id, created_at, rent_paid_until "
                             + "FROM plots"
             )) {
                 try (ResultSet rs = statement.executeQuery()) {
                     int count = 0;
                     while (rs.next()) {
-                    UUID ownerUuid = null;
-                    String ownerRaw = rs.getString("owner_uuid");
-                    if (ownerRaw != null && !ownerRaw.isBlank()) {
-                        ownerUuid = UUID.fromString(ownerRaw);
+                    PlotOwnerType ownerType = PlotOwnerType.fromToken(rs.getString("owner_type"));
+                    UUID ownerId = parseUuid(rs.getString("owner_id"));
+                    if (ownerType == null || ownerId == null) {
+                        UUID legacyOwner = parseUuid(rs.getString("owner_uuid"));
+                        if (legacyOwner != null) {
+                            ownerType = PlotOwnerType.PLAYER;
+                            ownerId = legacyOwner;
+                        }
                     }
                     Plot plot = new Plot(
                             rs.getString("id"),
@@ -52,7 +57,8 @@ public final class SqlitePlotRepository implements PlotRepository {
                             rs.getInt("y2"),
                             rs.getInt("z2"),
                             rs.getInt("price"),
-                            ownerUuid,
+                            ownerType,
+                            ownerId,
                             rs.getLong("created_at"),
                             rs.getLong("rent_paid_until")
                     );
@@ -69,8 +75,8 @@ public final class SqlitePlotRepository implements PlotRepository {
         try {
             Connection connection = storage.connection();
             try (PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO plots(id, number, type, world, x1, y1, z1, x2, y2, z2, price, owner_uuid, created_at, rent_paid_until) "
-                            + "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    "INSERT INTO plots(id, number, type, world, x1, y1, z1, x2, y2, z2, price, owner_uuid, owner_type, owner_id, created_at, rent_paid_until) "
+                            + "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                             + "ON CONFLICT(id) DO UPDATE SET "
                             + "number = excluded.number, "
                             + "type = excluded.type, "
@@ -83,6 +89,8 @@ public final class SqlitePlotRepository implements PlotRepository {
                             + "z2 = excluded.z2, "
                             + "price = excluded.price, "
                             + "owner_uuid = excluded.owner_uuid, "
+                            + "owner_type = excluded.owner_type, "
+                            + "owner_id = excluded.owner_id, "
                             + "created_at = excluded.created_at, "
                             + "rent_paid_until = excluded.rent_paid_until"
             )) {
@@ -97,9 +105,12 @@ public final class SqlitePlotRepository implements PlotRepository {
                 statement.setInt(9, plot.y2());
                 statement.setInt(10, plot.z2());
                 statement.setInt(11, plot.price());
-                statement.setString(12, plot.ownerUuid() != null ? plot.ownerUuid().toString() : null);
-                statement.setLong(13, plot.createdAt());
-                statement.setLong(14, plot.rentPaidUntil());
+                UUID ownerUuid = plot.ownerPlayerId();
+                statement.setString(12, ownerUuid != null ? ownerUuid.toString() : null);
+                statement.setString(13, plot.ownerType() != null ? plot.ownerType().name() : null);
+                statement.setString(14, plot.ownerId() != null ? plot.ownerId().toString() : null);
+                statement.setLong(15, plot.createdAt());
+                statement.setLong(16, plot.rentPaidUntil());
                 statement.executeUpdate();
             }
             cache.put(plot.id(), plot);
@@ -161,7 +172,7 @@ public final class SqlitePlotRepository implements PlotRepository {
         }
         List<Plot> result = new ArrayList<>();
         for (Plot plot : cache.values()) {
-            if (owner.equals(plot.ownerUuid())) {
+            if (plot.ownerType() == PlotOwnerType.PLAYER && owner.equals(plot.ownerId())) {
                 result.add(plot);
             }
         }
@@ -175,7 +186,7 @@ public final class SqlitePlotRepository implements PlotRepository {
         }
         long count = 0;
         for (Plot plot : cache.values()) {
-            if (!owner.equals(plot.ownerUuid())) {
+            if (plot.ownerType() != PlotOwnerType.PLAYER || !owner.equals(plot.ownerId())) {
                 continue;
             }
             if (type != null && plot.type() != type) {
@@ -208,5 +219,12 @@ public final class SqlitePlotRepository implements PlotRepository {
             }
         }
         return max + 1;
+    }
+
+    private UUID parseUuid(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        return UUID.fromString(raw);
     }
 }

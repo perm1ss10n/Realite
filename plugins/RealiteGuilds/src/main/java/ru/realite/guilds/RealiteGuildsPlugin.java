@@ -3,10 +3,13 @@ package ru.realite.guilds;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
+import ru.realite.city.service.GuildsApi;
 import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.integrations.CityAccessHook;
 import ru.realite.core.api.guilds.GuildTagProvider;
+import ru.realite.guilds.integration.CityGuildsApiAdapter;
 import ru.realite.guilds.integration.NoopCityAccessHook;
 import ru.realite.guilds.command.GuildChatCommand;
 import ru.realite.guilds.command.GuildCommand;
@@ -75,6 +78,7 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(
                 new GuildChatListener(chatService, realiteChatAvailable), this);
         registerGuildTagProvider();
+        registerCityGuildsApi();
     }
 
     private void registerGuildTagProvider() {
@@ -95,5 +99,13 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
         }
         CityAccessHook hook = provider.getProvider();
         return hook == null ? new NoopCityAccessHook() : hook;
+    }
+
+    private void registerCityGuildsApi() {
+        getServer().getServicesManager().register(
+                GuildsApi.class,
+                new CityGuildsApiAdapter(repository),
+                this,
+                ServicePriority.Normal);
     }
 }

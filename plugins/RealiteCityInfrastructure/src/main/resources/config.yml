@@ -40,6 +40,12 @@ plots:
       enabled: true
   protection:
     allowInteractOutsideMembers: false
+  guild:
+    # Allow guild members to build on guild-owned plots
+    allowBuildForMembers: true
+
+    # Allow guild members to open doors/containers on guild-owned plots
+    allowInteractForMembers: true
   cleanup:
     enabled: true
     blocksPerTick: 2000
