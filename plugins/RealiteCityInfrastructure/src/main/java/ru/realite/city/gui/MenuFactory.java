@@ -118,7 +118,7 @@ public final class MenuFactory {
         return Math.max(0, Math.min(page, maxPage));
     }
 
-    public Inventory adminPlotActions(Player player, Plot plot, boolean confirmDelete) {
+    public Inventory adminPlotActions(Player player, Plot plot, boolean confirmDelete, boolean allowSetOwnerViaGui) {
         Inventory inventory = Bukkit.createInventory(
                 new MenuHolder(MenuType.ADMIN_PLOT_ACTIONS),
                 ACTIONS_SIZE,
@@ -127,8 +127,10 @@ public final class MenuFactory {
         inventory.setItem(10, plotInfoItem(plot));
         inventory.setItem(12, deleteItem(confirmDelete));
         inventory.setItem(14, teleportItem());
-        inventory.setItem(16, stubItem(Material.PLAYER_HEAD, "Set owner (player)", "plot_set_owner_player"));
-        inventory.setItem(19, stubItem(Material.WRITABLE_BOOK, "Set owner (guild)", "plot_set_owner_guild"));
+        if (allowSetOwnerViaGui) {
+            inventory.setItem(16, actionItemKey(Material.PLAYER_HEAD, "gui.btn.set_owner_player", "plot_set_owner_player"));
+            inventory.setItem(19, actionItemKey(Material.WRITABLE_BOOK, "gui.btn.set_owner_guild", "plot_set_owner_guild"));
+        }
         inventory.setItem(21, actionItemKey(Material.LIME_DYE, "gui.btn.show_border", "plot_show_border"));
         inventory.setItem(22, actionItemKey(Material.ARROW, "gui.btn.back", "open_plots"));
 
@@ -324,18 +326,6 @@ public final class MenuFactory {
         if (meta != null) {
             meta.displayName(LEGACY.deserialize("&bTeleport to plot"));
             meta.getPersistentDataContainer().set(actionKey, PersistentDataType.STRING, "plot_teleport");
-            item.setItemMeta(meta);
-        }
-        return item;
-    }
-
-    private ItemStack stubItem(Material material, String label, String action) {
-        ItemStack item = actionItem(material, pageLabel("&7" + label), action);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            List<Component> lore = new ArrayList<>();
-            lore.add(LEGACY.deserialize("&7TBD"));
-            meta.lore(lore);
             item.setItemMeta(meta);
         }
         return item;

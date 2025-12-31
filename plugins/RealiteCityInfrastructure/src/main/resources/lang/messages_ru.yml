@@ -176,6 +176,7 @@ plot:
   # Управление владельцем участка
   setowner:
     success: "&aВладелец участка {id} установлен: {owner}."
+    gui_disabled: "&cНазначение владельца через GUI отключено."
     guild:
       not_found: "&cГильдия {tag} не найдена."
     guilds_not_installed: "&cRealiteGuilds не установлен."
@@ -235,6 +236,8 @@ gui:
     access: "&eДоступ"
     info: "&eИнфо"
     teleport: "&bТелепорт"
+    set_owner_player: "&eНазначить владельца: игрок"
+    set_owner_guild: "&eНазначить владельца: гильдия"
   plot:
     none: "&cУ вас нет участка. &7Подсказка: /city plot buy #<номер> или /city plot nearby."
   access:

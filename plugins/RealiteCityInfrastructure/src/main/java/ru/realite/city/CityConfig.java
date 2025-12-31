@@ -25,6 +25,7 @@ public record CityConfig(
                 boolean plotsMustBeInsideCity,
                 boolean plotsAllowOverlap,
                 String plotsPriority,
+                boolean plotsSetOwnerAllowViaGui,
                 int shopPointsPerPlot,
                 boolean shopRentEnabled,
                 int shopRentPeriodHours,
@@ -85,6 +86,7 @@ public record CityConfig(
                 boolean plotsMustBeInsideCity = config.getBoolean("plots.mustBeInsideCity", true);
                 boolean plotsAllowOverlap = config.getBoolean("plots.allowOverlap", false);
                 String plotsPriority = config.getString("plots.priority", "PLOT_OVER_CITY");
+                boolean plotsSetOwnerAllowViaGui = config.getBoolean("plots.setOwner.allowViaGui", true);
                 int shopPointsPerPlot = config.getInt("shops.pointsPerPlot", 3);
                 boolean shopRentEnabled = config.getBoolean("shops.rent.enabled", false);
                 int shopRentPeriodHours = config.getInt("shops.rent.periodHours", 24);
@@ -141,6 +143,7 @@ public record CityConfig(
                                 plotsMustBeInsideCity,
                                 plotsAllowOverlap,
                                 plotsPriority,
+                                plotsSetOwnerAllowViaGui,
                                 shopPointsPerPlot,
                                 shopRentEnabled,
                                 shopRentPeriodHours,
