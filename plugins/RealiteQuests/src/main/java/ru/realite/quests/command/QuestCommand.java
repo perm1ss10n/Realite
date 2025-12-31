@@ -1,17 +1,18 @@
 package ru.realite.quests.command;
 
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import ru.realite.core.api.quests.QuestService;
 import ru.realite.core.api.quests.QuestProgress;
+import ru.realite.core.api.quests.QuestService;
 import ru.realite.core.api.quests.QuestStartTrigger;
-import ru.realite.quests.service.QuestServiceImpl;
 import ru.realite.quests.model.ObjectiveDefinition;
 import ru.realite.quests.model.QuestDefinition;
 import ru.realite.quests.service.QuestProgressData;
+import ru.realite.quests.service.QuestServiceImpl;
 
 import java.util.List;
 import java.util.Map;
@@ -28,21 +29,23 @@ public final class QuestCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage(ChatColor.RED + "Usage: /quest <start|active|debug>");
+            sender.sendMessage(c("Usage: /quest <start|active|debug>", NamedTextColor.RED));
             return true;
         }
+
         String sub = args[0].toLowerCase();
         QuestService questService = questServiceSupplier.get();
         if (questService == null) {
-            sender.sendMessage(ChatColor.RED + "Quest service not available.");
+            sender.sendMessage(c("Quest service not available.", NamedTextColor.RED));
             return true;
         }
+
         return switch (sub) {
             case "start" -> handleStart(sender, questService, args);
             case "active" -> handleActive(sender, questService);
             case "debug" -> handleDebug(sender, questService, args);
             default -> {
-                sender.sendMessage(ChatColor.RED + "Unknown subcommand.");
+                sender.sendMessage(c("Unknown subcommand.", NamedTextColor.RED));
                 yield true;
             }
         };
@@ -50,109 +53,144 @@ public final class QuestCommand implements CommandExecutor {
 
     private boolean handleStart(CommandSender sender, QuestService questService, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can start quests.");
+            sender.sendMessage(c("Only players can start quests.", NamedTextColor.RED));
             return true;
         }
         if (!sender.hasPermission("realite.quests.admin") && !sender.isOp()) {
-            sender.sendMessage(ChatColor.RED + "No permission.");
+            sender.sendMessage(c("No permission.", NamedTextColor.RED));
             return true;
         }
         if (args.length < 2) {
-            sender.sendMessage(ChatColor.RED + "Usage: /quest start <id> [force]");
+            sender.sendMessage(c("Usage: /quest start <id> [force]", NamedTextColor.RED));
             return true;
         }
+
         String questId = args[1];
         boolean force = args.length > 2 && args[2].equalsIgnoreCase("force");
         QuestStartTrigger trigger = force ? QuestStartTrigger.MANUAL : QuestStartTrigger.COMMAND;
+
         questService.start(player, questId, trigger, force);
-        sender.sendMessage(ChatColor.GREEN + "Quest started: " + questId);
+        sender.sendMessage(Component.text("Quest started: ", NamedTextColor.GREEN)
+                .append(Component.text(questId, NamedTextColor.GOLD)));
         return true;
     }
 
     private boolean handleActive(CommandSender sender, QuestService questService) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can view active quests.");
+            sender.sendMessage(c("Only players can view active quests.", NamedTextColor.RED));
             return true;
         }
-        if (questService instanceof QuestServiceImpl questServiceImpl) {
-            List<String> active = questServiceImpl.getActiveQuestIds(player);
-            if (active.isEmpty()) {
-                sender.sendMessage(ChatColor.YELLOW + "No active quests.");
-                return true;
+        if (!(questService instanceof QuestServiceImpl questServiceImpl)) {
+            sender.sendMessage(c("Quest service not ready.", NamedTextColor.RED));
+            return true;
+        }
+
+        List<String> active = questServiceImpl.getActiveQuestIds(player);
+        if (active.isEmpty()) {
+            sender.sendMessage(c("No active quests.", NamedTextColor.YELLOW));
+            return true;
+        }
+
+        sender.sendMessage(c("Active quests:", NamedTextColor.GREEN));
+        for (String questId : active) {
+            QuestDefinition quest = questServiceImpl.getQuestDefinition(questId);
+
+            if (quest == null) {
+                sender.sendMessage(Component.text("- " + questId, NamedTextColor.GRAY));
+                continue;
             }
-            sender.sendMessage(ChatColor.GREEN + "Active quests:");
-            for (String questId : active) {
-                QuestDefinition quest = questServiceImpl.getQuestDefinition(questId);
-                if (quest == null) {
-                    sender.sendMessage(ChatColor.GRAY + "- " + questId);
-                    continue;
-                }
-                QuestProgress progress = questService.getProgress(player, quest.id());
-                sender.sendMessage(ChatColor.GOLD + "- " + quest.id());
-                for (ObjectiveDefinition objective : quest.objectives()) {
-                    boolean completed = progress != null && progress.completedObjectives().contains(objective.id());
-                    String status = completed ? (ChatColor.GREEN + "✓") : (ChatColor.GRAY + "•");
-                    String description = questServiceImpl.describeObjective(objective);
-                    String progressSuffix = "";
-                    if (!completed) {
-                        int amount = objective.amount();
-                        if (amount > 1) {
-                            int current = questServiceImpl.getObjectiveProgressCount(player, objective,
-                                    progress instanceof QuestProgressData progressData ? progressData : null);
-                            progressSuffix = ChatColor.YELLOW + " (" + current + "/" + amount + ")";
-                        }
+
+            QuestProgress progress = questService.getProgress(player, quest.id());
+            sender.sendMessage(Component.text("- ", NamedTextColor.GOLD)
+                    .append(Component.text(quest.id(), NamedTextColor.GOLD)));
+
+            for (ObjectiveDefinition objective : quest.objectives()) {
+                boolean completed = progress != null && progress.completedObjectives().contains(objective.id());
+
+                Component status = Component.text(completed ? "✓" : "•",
+                        completed ? NamedTextColor.GREEN : NamedTextColor.GRAY);
+
+                String description = questServiceImpl.describeObjective(objective);
+
+                Component line = status
+                        .append(Component.space())
+                        .append(Component.text(description, NamedTextColor.AQUA));
+
+                if (!completed) {
+                    int amount = objective.amount();
+                    if (amount > 1) {
+                        int current = questServiceImpl.getObjectiveProgressCount(
+                                player, objective,
+                                progress instanceof QuestProgressData pd ? pd : null);
+                        line = line.append(Component.text(" (" + current + "/" + amount + ")", NamedTextColor.YELLOW));
                     }
-                    sender.sendMessage(status + " " + ChatColor.AQUA + description + progressSuffix);
                 }
+
+                sender.sendMessage(line);
             }
-            return true;
         }
-        sender.sendMessage(ChatColor.RED + "Quest service not ready.");
         return true;
     }
 
     private boolean handleDebug(CommandSender sender, QuestService questService, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can debug quests.");
+            sender.sendMessage(c("Only players can debug quests.", NamedTextColor.RED));
             return true;
         }
         if (!sender.hasPermission("realite.quests.admin") && !sender.isOp()) {
-            sender.sendMessage(ChatColor.RED + "No permission.");
+            sender.sendMessage(c("No permission.", NamedTextColor.RED));
             return true;
         }
         if (args.length < 2) {
-            sender.sendMessage(ChatColor.RED + "Usage: /quest debug <id>");
+            sender.sendMessage(c("Usage: /quest debug <id>", NamedTextColor.RED));
             return true;
         }
         if (!(questService instanceof QuestServiceImpl questServiceImpl)) {
-            sender.sendMessage(ChatColor.RED + "Quest service not ready.");
+            sender.sendMessage(c("Quest service not ready.", NamedTextColor.RED));
             return true;
         }
+
         String questId = args[1];
         QuestDefinition quest = questServiceImpl.getQuestDefinition(questId);
         if (quest == null) {
-            sender.sendMessage(ChatColor.RED + "Quest not found: " + questId);
+            sender.sendMessage(Component.text("Quest not found: ", NamedTextColor.RED)
+                    .append(Component.text(questId, NamedTextColor.GOLD)));
             return true;
         }
+
         QuestProgress progress = questService.getProgress(player, quest.id());
-        sender.sendMessage(ChatColor.GOLD + "Quest debug: " + quest.id());
+        sender.sendMessage(Component.text("Quest debug: ", NamedTextColor.GOLD)
+                .append(Component.text(quest.id(), NamedTextColor.GOLD)));
+
         if (progress == null) {
-            sender.sendMessage(ChatColor.YELLOW + "No progress data.");
+            sender.sendMessage(c("No progress data.", NamedTextColor.YELLOW));
         }
-        Map<String, Integer> counts = progress instanceof QuestProgressData progressData
-                ? progressData.objectiveCounts()
-                : Map.of();
+
+        Map<String, Integer> counts = progress instanceof QuestProgressData pd ? pd.objectiveCounts() : Map.of();
+
         for (ObjectiveDefinition objective : quest.objectives()) {
             boolean completed = progress != null && progress.completedObjectives().contains(objective.id());
-            String status = completed ? (ChatColor.GREEN + "COMPLETED") : (ChatColor.GRAY + "INCOMPLETE");
-            String countSuffix = "";
+
+            Component status = Component.text(completed ? "COMPLETED" : "INCOMPLETE",
+                    completed ? NamedTextColor.GREEN : NamedTextColor.GRAY);
+
+            Component line = Component.text("- " + objective.id(), NamedTextColor.AQUA)
+                    .append(Component.text(" [" + objective.type() + "] ", NamedTextColor.DARK_GRAY))
+                    .append(status);
+
             if (!completed && counts.containsKey(objective.id())) {
-                countSuffix = ChatColor.YELLOW + " (" + counts.get(objective.id()) + "/" + objective.amount() + ")";
+                line = line.append(Component.text(
+                        " (" + counts.get(objective.id()) + "/" + objective.amount() + ")",
+                        NamedTextColor.YELLOW));
             }
-            sender.sendMessage(ChatColor.AQUA + "- " + objective.id()
-                    + ChatColor.DARK_GRAY + " [" + objective.type() + "] "
-                    + status + countSuffix);
+
+            sender.sendMessage(line);
         }
+
         return true;
+    }
+
+    private static Component c(String text, NamedTextColor color) {
+        return Component.text(text, color);
     }
 }

@@ -57,18 +57,24 @@ public final class QuestLoader {
 
     private QuestDefinition loadFile(File file) {
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+
         String id = yml.getString("id");
         if (id == null || id.isBlank()) {
             logger.warn("[Quests] Quest " + file.getName() + " missing id");
             return null;
         }
+
         List<ObjectiveDefinition> objectives = loadObjectives(file.getName(), yml);
         if (objectives.isEmpty()) {
             logger.warn("[Quests] Quest " + id + " has no valid objectives");
             return null;
         }
+
         List<RewardDefinition> rewards = loadRewards(file.getName(), yml);
-        QuestType type = parseType(config.getString("type", null));
+
+        // FIX: читать из yml, а не из config
+        QuestType type = parseType(yml.getString("type", null));
+
         return new QuestDefinition(id.trim(), type, objectives, rewards);
     }
 

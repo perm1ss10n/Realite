@@ -7,11 +7,11 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import ru.realite.core.api.quests.QuestService;
@@ -96,12 +96,15 @@ public final class QuestObjectiveListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onItemPickup(PlayerPickupItemEvent event) {
+    public void onItemPickup(EntityPickupItemEvent event) {
+        if (!(event.getEntity() instanceof Player player)) {
+            return;
+        }
         QuestService service = questServiceSupplier.get();
         if (!(service instanceof QuestServiceImpl questService)) {
             return;
         }
-        questService.handleHoldItem(event.getPlayer());
+        questService.handleHoldItem(player);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
