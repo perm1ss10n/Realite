@@ -191,6 +191,14 @@ plot:
       usage: "&eUsage: /city plot goto <id|#number>"
       success: "&aTeleported to plot #{number} ({id})."
       invalid-world: "&cWorld {world} is not available."
+visual:
+  border:
+    shown: "&aPlot border is shown."
+    cooldown: "&cPlease wait {seconds} sec. before showing the border again."
+    disabled: "&cPlot border visualization is disabled."
+gui:
+  btn:
+    show_border: "&aShow border"
 area:
   pos1-set: "&apos1 set: &7{loc}"
   pos2-set: "&apos2 set: &7{loc}"
