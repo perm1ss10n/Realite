@@ -1,0 +1,11 @@
+id: "merchant_initiation"
+objectives:
+  - type: "KILL"
+    entity: "PIG"
+    amount: 2
+rewards:
+  - type: "XP"
+    amount: 35
+  - type: "ITEM"
+    material: "EMERALD"
+    amount: 1

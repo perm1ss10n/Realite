@@ -1,0 +1,11 @@
+id: "wanderer_initiation"
+objectives:
+  - type: "KILL"
+    entity: "SHEEP"
+    amount: 1
+rewards:
+  - type: "XP"
+    amount: 25
+  - type: "ITEM"
+    material: "BREAD"
+    amount: 2

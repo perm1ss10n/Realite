@@ -23,11 +23,16 @@ import ru.realite.quests.service.QuestProgressRepository;
 import ru.realite.quests.service.QuestRepository;
 import ru.realite.quests.service.QuestServiceImpl;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -66,6 +71,7 @@ public final class QuestsModule implements Module {
                 "classes.yml",
                 getClass().getClassLoader()
         );
+        ensureQuestDefaults(ctx);
 
         String lang = config.getString("lang", "ru");
         messages = new QuestsMessages(ctx, lang, getClass().getClassLoader());
@@ -178,6 +184,41 @@ public final class QuestsModule implements Module {
         Player player = Bukkit.getPlayer(playerUuid);
         if (player != null && player.isOnline()) {
             player.sendMessage(message);
+        }
+    }
+
+    private void ensureQuestDefaults(ModuleContext ctx) {
+        String[] defaultQuests = {
+                "warrior_initiation.yml",
+                "alchemist_initiation.yml",
+                "miner_initiation.yml",
+                "merchant_initiation.yml",
+                "archer_initiation.yml",
+                "wanderer_initiation.yml"
+        };
+        Path questsDir = ctx.dataFolder().resolve("quests");
+        try {
+            Files.createDirectories(questsDir);
+        } catch (IOException e) {
+            ctx.logger().error("[Quests] Failed to create quests directory", e);
+            return;
+        }
+        ClassLoader loader = getClass().getClassLoader();
+        for (String questFile : defaultQuests) {
+            Path target = questsDir.resolve(questFile);
+            if (Files.exists(target)) {
+                continue;
+            }
+            try (InputStream input = loader.getResourceAsStream("quests/" + questFile)) {
+                if (input == null) {
+                    ctx.logger().warn("[Quests] Default quest resource missing: " + questFile);
+                    continue;
+                }
+                Files.copy(input, target, StandardCopyOption.REPLACE_EXISTING);
+                ctx.logger().info("[Quests] Saved default quest: " + questFile);
+            } catch (IOException e) {
+                ctx.logger().error("[Quests] Failed to save default quest " + questFile, e);
+            }
         }
     }
 }

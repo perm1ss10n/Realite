@@ -1,0 +1,11 @@
+id: "warrior_initiation"
+objectives:
+  - type: "KILL"
+    entity: "ZOMBIE"
+    amount: 3
+rewards:
+  - type: "XP"
+    amount: 45
+  - type: "ITEM"
+    material: "COOKED_BEEF"
+    amount: 4
