@@ -90,6 +90,9 @@ public final class QuestLoader {
                 case INTERACT_NPC -> parseInteractNpc(fileName, id, map);
                 case KILL -> parseKill(fileName, id, map);
                 case GO_TO_LOCATION -> parseLocation(fileName, id, map);
+                case PLACE_BLOCK -> parsePlaceBlock(fileName, id, map);
+                case BREAK_BLOCK -> parseBreakBlock(fileName, id, map);
+                case HOLD_ITEM -> parseHoldItem(fileName, id, map);
             };
             if (definition != null) {
                 objectives.add(definition);
@@ -105,7 +108,7 @@ public final class QuestLoader {
             logger.warn("[Quests] INTERACT_NPC objective missing npcId in " + fileName);
             return null;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.INTERACT_NPC, npcId.trim(), null, 1,
+        return new ObjectiveDefinition(id, ObjectiveType.INTERACT_NPC, npcId.trim(), null, null, 1,
                 null, 0, 0, 0, 0);
     }
 
@@ -123,7 +126,7 @@ public final class QuestLoader {
         if (amount <= 0) {
             amount = 1;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.KILL, null, type, amount,
+        return new ObjectiveDefinition(id, ObjectiveType.KILL, null, type, null, amount,
                 null, 0, 0, 0, 0);
     }
 
@@ -140,8 +143,50 @@ public final class QuestLoader {
         if (radius <= 0) {
             radius = 2.0;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.GO_TO_LOCATION, null, null, 1,
+        return new ObjectiveDefinition(id, ObjectiveType.GO_TO_LOCATION, null, null, null, 1,
                 world.trim(), x, y, z, radius);
+    }
+
+    private ObjectiveDefinition parsePlaceBlock(String fileName, String id, Map<?, ?> map) {
+        List<Material> materials = parseMaterials(map);
+        if (materials.isEmpty()) {
+            logger.warn("[Quests] PLACE_BLOCK objective missing material in " + fileName);
+            return null;
+        }
+        int amount = asInt(map.get("amount"), 1);
+        if (amount <= 0) {
+            amount = 1;
+        }
+        return new ObjectiveDefinition(id, ObjectiveType.PLACE_BLOCK, null, null, materials, amount,
+                null, 0, 0, 0, 0);
+    }
+
+    private ObjectiveDefinition parseBreakBlock(String fileName, String id, Map<?, ?> map) {
+        List<Material> materials = parseMaterials(map);
+        if (materials.isEmpty()) {
+            logger.warn("[Quests] BREAK_BLOCK objective missing material in " + fileName);
+            return null;
+        }
+        int amount = asInt(map.get("amount"), 1);
+        if (amount <= 0) {
+            amount = 1;
+        }
+        return new ObjectiveDefinition(id, ObjectiveType.BREAK_BLOCK, null, null, materials, amount,
+                null, 0, 0, 0, 0);
+    }
+
+    private ObjectiveDefinition parseHoldItem(String fileName, String id, Map<?, ?> map) {
+        List<Material> materials = parseMaterials(map);
+        if (materials.isEmpty()) {
+            logger.warn("[Quests] HOLD_ITEM objective missing material in " + fileName);
+            return null;
+        }
+        int amount = asInt(map.get("amount"), 1);
+        if (amount <= 0) {
+            amount = 1;
+        }
+        return new ObjectiveDefinition(id, ObjectiveType.HOLD_ITEM, null, null, materials, amount,
+                null, 0, 0, 0, 0);
     }
 
     private List<RewardDefinition> loadRewards(String fileName, YamlConfiguration yml) {
@@ -230,6 +275,25 @@ public final class QuestLoader {
         } catch (IllegalArgumentException ex) {
             return null;
         }
+    }
+
+    private List<Material> parseMaterials(Map<?, ?> map) {
+        Object raw = map.get("materials");
+        if (raw instanceof List<?> list) {
+            List<Material> materials = new ArrayList<>();
+            for (Object entry : list) {
+                Material material = parseMaterial(asString(entry));
+                if (material != null) {
+                    materials.add(material);
+                }
+            }
+            return materials;
+        }
+        Material single = parseMaterial(asString(map.get("material")));
+        if (single != null) {
+            return List.of(single);
+        }
+        return List.of();
     }
 
     private String asString(Object value) {

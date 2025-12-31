@@ -1,7 +1,10 @@
 package ru.realite.quests.model;
 
+import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 public final class ObjectiveDefinition {
@@ -10,6 +13,7 @@ public final class ObjectiveDefinition {
     private final ObjectiveType type;
     private final String npcId;
     private final EntityType entityType;
+    private final List<Material> materials;
     private final int amount;
     private final String world;
     private final double x;
@@ -21,6 +25,7 @@ public final class ObjectiveDefinition {
                                ObjectiveType type,
                                String npcId,
                                EntityType entityType,
+                               List<Material> materials,
                                int amount,
                                String world,
                                double x,
@@ -31,6 +36,7 @@ public final class ObjectiveDefinition {
         this.type = Objects.requireNonNull(type, "type");
         this.npcId = npcId;
         this.entityType = entityType;
+        this.materials = materials == null ? null : List.copyOf(materials);
         this.amount = amount;
         this.world = world;
         this.x = x;
@@ -53,6 +59,10 @@ public final class ObjectiveDefinition {
 
     public EntityType entityType() {
         return entityType;
+    }
+
+    public List<Material> materials() {
+        return materials == null ? Collections.emptyList() : materials;
     }
 
     public int amount() {

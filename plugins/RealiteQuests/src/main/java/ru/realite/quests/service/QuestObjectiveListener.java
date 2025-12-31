@@ -7,8 +7,13 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.inventory.CraftItemEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerPickupItemEvent;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import ru.realite.core.api.quests.QuestService;
 
 import java.util.function.Supplier;
@@ -58,5 +63,56 @@ public final class QuestObjectiveListener implements Listener {
             return;
         }
         questService.handleLocation(event.getPlayer(), to);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockPlace(BlockPlaceEvent event) {
+        QuestService service = questServiceSupplier.get();
+        if (!(service instanceof QuestServiceImpl questService)) {
+            return;
+        }
+        questService.handleBlockPlace(event.getPlayer(), event.getBlockPlaced().getType());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockBreak(BlockBreakEvent event) {
+        QuestService service = questServiceSupplier.get();
+        if (!(service instanceof QuestServiceImpl questService)) {
+            return;
+        }
+        questService.handleBlockBreak(event.getPlayer(), event.getBlock().getType());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onInventoryClick(InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) {
+            return;
+        }
+        QuestService service = questServiceSupplier.get();
+        if (!(service instanceof QuestServiceImpl questService)) {
+            return;
+        }
+        questService.handleHoldItem(player);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onItemPickup(PlayerPickupItemEvent event) {
+        QuestService service = questServiceSupplier.get();
+        if (!(service instanceof QuestServiceImpl questService)) {
+            return;
+        }
+        questService.handleHoldItem(event.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onCraftItem(CraftItemEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) {
+            return;
+        }
+        QuestService service = questServiceSupplier.get();
+        if (!(service instanceof QuestServiceImpl questService)) {
+            return;
+        }
+        questService.handleHoldItem(player);
     }
 }
