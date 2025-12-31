@@ -1,5 +1,7 @@
 package ru.realite.quests.service;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
@@ -106,6 +108,7 @@ public final class QuestServiceImpl implements QuestService {
                 String target = objective.npcId();
                 if (matchesNpc(target, npcId, npcName)) {
                     progress.completedObjectivesMutable().add(objective.id());
+                    notifyObjectiveCompleted(player, objective);
                     updated = true;
                 }
             }
@@ -140,6 +143,7 @@ public final class QuestServiceImpl implements QuestService {
                 if (current >= objective.amount()) {
                     progress.completedObjectivesMutable().add(objective.id());
                     progress.objectiveCountsMutable().remove(objective.id());
+                    notifyObjectiveCompleted(player, objective);
                 } else {
                     progress.objectiveCountsMutable().put(objective.id(), current);
                 }
@@ -173,6 +177,7 @@ public final class QuestServiceImpl implements QuestService {
                     continue;
                 }
                 progress.completedObjectivesMutable().add(objective.id());
+                notifyObjectiveCompleted(player, objective);
                 updated = true;
             }
             if (updated) {
@@ -206,6 +211,7 @@ public final class QuestServiceImpl implements QuestService {
                 if (current >= objective.amount()) {
                     progress.completedObjectivesMutable().add(objective.id());
                     progress.objectiveCountsMutable().remove(objective.id());
+                    notifyObjectiveCompleted(player, objective);
                 } else {
                     progress.objectiveCountsMutable().put(objective.id(), current);
                 }
@@ -242,6 +248,7 @@ public final class QuestServiceImpl implements QuestService {
                 if (current >= objective.amount()) {
                     progress.completedObjectivesMutable().add(objective.id());
                     progress.objectiveCountsMutable().remove(objective.id());
+                    notifyObjectiveCompleted(player, objective);
                 } else {
                     progress.objectiveCountsMutable().put(objective.id(), current);
                 }
@@ -274,6 +281,7 @@ public final class QuestServiceImpl implements QuestService {
                 int count = countInventory(player, objective);
                 if (count >= objective.amount()) {
                     progress.completedObjectivesMutable().add(objective.id());
+                    notifyObjectiveCompleted(player, objective);
                     updated = true;
                 }
             }
@@ -296,6 +304,7 @@ public final class QuestServiceImpl implements QuestService {
         progress.state(QuestState.COMPLETED);
         progressRepository.save(player.getUniqueId(), quest.id(), progress);
         grantRewards(player, quest);
+        notifyQuestCompleted(player, quest);
         logger.info("[Quests] Quest completed: " + quest.id() + " for " + player.getName());
     }
 
@@ -359,6 +368,75 @@ public final class QuestServiceImpl implements QuestService {
             }
         }
         return total;
+    }
+
+    public int getObjectiveProgressCount(Player player, ObjectiveDefinition objective, QuestProgressData progress) {
+        if (objective == null || player == null) {
+            return 0;
+        }
+        if (progress == null) {
+            return 0;
+        }
+        return switch (objective.type()) {
+            case KILL, PLACE_BLOCK, BREAK_BLOCK -> progress.objectiveCounts().getOrDefault(objective.id(), 0);
+            case HOLD_ITEM -> countInventory(player, objective);
+            default -> 0;
+        };
+    }
+
+    public String describeObjective(ObjectiveDefinition objective) {
+        if (objective == null) {
+            return "";
+        }
+        return switch (objective.type()) {
+            case INTERACT_NPC -> "Talk to " + objective.npcId();
+            case KILL -> "Kill " + objective.amount() + " " + formatEntity(objective.entityType());
+            case GO_TO_LOCATION -> "Go to " + objective.world() + " (" + formatLocation(objective) + ")";
+            case PLACE_BLOCK -> "Place " + objective.amount() + " " + formatMaterials(objective.materials());
+            case BREAK_BLOCK -> "Break " + objective.amount() + " " + formatMaterials(objective.materials());
+            case HOLD_ITEM -> "Hold " + objective.amount() + " " + formatMaterials(objective.materials());
+        };
+    }
+
+    private void notifyObjectiveCompleted(Player player, ObjectiveDefinition objective) {
+        String description = describeObjective(objective);
+        Component message = Component.text("Objective completed: ", NamedTextColor.GREEN)
+                .append(Component.text(description, NamedTextColor.YELLOW));
+        player.sendMessage(message);
+        player.sendActionBar(message);
+    }
+
+    private void notifyQuestCompleted(Player player, QuestDefinition quest) {
+        Component message = Component.text("Quest completed: ", NamedTextColor.GOLD)
+                .append(Component.text(quest.id(), NamedTextColor.YELLOW));
+        player.sendMessage(message);
+        player.sendActionBar(message);
+    }
+
+    private String formatMaterials(List<Material> materials) {
+        if (materials == null || materials.isEmpty()) {
+            return "material";
+        }
+        List<String> names = new ArrayList<>();
+        for (Material material : materials) {
+            names.add(formatEnum(material.name()));
+        }
+        return String.join("/", names);
+    }
+
+    private String formatEntity(EntityType type) {
+        if (type == null) {
+            return "entity";
+        }
+        return formatEnum(type.name());
+    }
+
+    private String formatLocation(ObjectiveDefinition objective) {
+        return String.format(Locale.ROOT, "%.1f, %.1f, %.1f", objective.x(), objective.y(), objective.z());
+    }
+
+    private String formatEnum(String raw) {
+        return raw.toLowerCase(Locale.ROOT).replace('_', ' ');
     }
 
     public QuestDefinition getQuestDefinition(String questId) {
