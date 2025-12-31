@@ -85,7 +85,7 @@ public final class PlotBorderVisualizationService {
                     return;
                 }
                 for (Location location : points) {
-                    player.spawnParticle(Particle.REDSTONE, location, 1, 0, 0, 0, 0, dust);
+                    player.spawnParticle(Particle.DUST, location, 1, 0, 0, 0, 0, dust);
                 }
             }
         }.runTaskTimer(plugin, 0L, PERIOD_TICKS);
