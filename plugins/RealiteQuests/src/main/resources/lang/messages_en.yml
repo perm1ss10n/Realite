@@ -1,0 +1,12 @@
+quests:
+  backstory:
+    book:
+      title: "{title}"
+      author: "Realite"
+    accept: "✅ Accept the path"
+    skip: "⏭ Skip"
+    later: "📖 Read later"
+    accepted: "&aYou accepted the path of &e{class}&a."
+    skipped: "&7You skipped the lore for &e{class}&7."
+    deferred: "&7You can reread the lore later with &e/class lore&7."
+    missing: "&cBackstory for &e{class} &cnot found."
