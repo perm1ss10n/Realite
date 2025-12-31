@@ -10,9 +10,11 @@ import ru.realite.city.gui.GuiSessionStore;
 import ru.realite.city.gui.MenuFactory;
 import ru.realite.city.gui.MenuListener;
 import ru.realite.city.i18n.CityMessages;
+import ru.realite.city.listener.ChatInputListener;
 import ru.realite.city.listener.CityAreaSelectionListener;
 import ru.realite.city.listener.CityProtectionListener;
 import ru.realite.city.listener.ShopPointListener;
+import ru.realite.city.service.ChatInputService;
 import ru.realite.city.service.CityAreaSelectionService;
 import ru.realite.city.service.CityAdminService;
 import ru.realite.city.service.CityInfrastructureAccessHook;
@@ -77,6 +79,7 @@ public final class CityInfrastructureModule implements Module {
     private CityHooks cityHooks;
     private GuildsApi guildsApi;
     private GuiService guiService;
+    private ChatInputService chatInputService;
 
     @Override
     public ModuleMetadata metadata() {
@@ -177,6 +180,7 @@ public final class CityInfrastructureModule implements Module {
                 cityHooks,
                 guildsApi);
         marketService = new MarketService(config, economyService, cityHooks);
+        chatInputService = new ChatInputService(javaPlugin, config, messages, plotService);
         CityAdminService adminService = new CityAdminService(selectionService, plotRepository);
         MenuFactory menuFactory = new MenuFactory(javaPlugin, messages, selectionService, plotRepository);
         GuiSessionStore guiSessionStore = new GuiSessionStore();
@@ -184,6 +188,7 @@ public final class CityInfrastructureModule implements Module {
                 config,
                 messages,
                 adminService,
+                chatInputService,
                 guiSessionStore,
                 menuFactory,
                 plotRepository,
@@ -206,6 +211,9 @@ public final class CityInfrastructureModule implements Module {
                 javaPlugin);
         Bukkit.getPluginManager().registerEvents(
                 new MenuListener(guiService, menuFactory),
+                javaPlugin);
+        Bukkit.getPluginManager().registerEvents(
+                new ChatInputListener(javaPlugin, config, chatInputService),
                 javaPlugin);
 
         // Command

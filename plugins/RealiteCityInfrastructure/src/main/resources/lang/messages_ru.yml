@@ -243,3 +243,11 @@ gui:
     disabled: "&cGUI отключена."
     no_permission: "&cУ вас нет прав."
     action_failed: "&cНе удалось выполнить действие: {reason}"
+chatinput:
+  cancelled: "&eВвод отменён."
+  timeout: "&cВремя ввода истекло."
+  invalid: "&cНекорректный ввод."
+  prompt:
+    add_trusted: "&eВведите ник игрока для доверенного (или /cancel)."
+    set_owner_player: "&eВведите ник игрока для владельца (или /cancel)."
+    set_owner_guild: "&eВведите тег гильдии для владельца (или /cancel)."

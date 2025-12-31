@@ -243,3 +243,11 @@ gui:
     disabled: "&cGUI is disabled."
     no_permission: "&cYou don't have permission."
     action_failed: "&cAction failed: {reason}"
+chatinput:
+  cancelled: "&eInput cancelled."
+  timeout: "&cInput timed out."
+  invalid: "&cInvalid input."
+  prompt:
+    add_trusted: "&eEnter player name to trust (or /cancel)."
+    set_owner_player: "&eEnter player name for owner (or /cancel)."
+    set_owner_guild: "&eEnter guild tag for owner (or /cancel)."

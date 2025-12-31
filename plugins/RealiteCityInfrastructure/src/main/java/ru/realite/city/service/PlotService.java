@@ -37,6 +37,30 @@ public final class PlotService {
     public record PendingSell(UUID targetUuid, long expiresAt, int price) {
     }
 
+    public enum AddTrustedResult {
+        SUCCESS,
+        PLOT_NOT_FOUND,
+        NOT_OWNED,
+        NOT_OWNER,
+        SELF,
+        LIMIT_REACHED,
+        INVALID_TARGET
+    }
+
+    public record AddTrustedOutcome(AddTrustedResult result, String targetDisplay) {
+    }
+
+    public enum SetOwnerResult {
+        SUCCESS,
+        PLOT_NOT_FOUND,
+        NO_GUILDS,
+        GUILD_NOT_FOUND,
+        INVALID_INPUT
+    }
+
+    public record SetOwnerOutcome(SetOwnerResult result, String ownerDisplay) {
+    }
+
     private final CityConfig config;
     private final CityAreaRepository cityAreaRepository;
     private final PlotRepository plotRepository;
@@ -274,6 +298,93 @@ public final class PlotService {
         }
         pendingTransfers.remove(plotId);
         pendingSells.remove(plotId);
+    }
+
+    public AddTrustedOutcome addTrusted(Player actor, String plotId, String targetName) {
+        if (actor == null || plotId == null || plotId.isBlank()) {
+            return new AddTrustedOutcome(AddTrustedResult.PLOT_NOT_FOUND, "");
+        }
+        if (targetName == null || targetName.isBlank()) {
+            return new AddTrustedOutcome(AddTrustedResult.INVALID_TARGET, "");
+        }
+        Optional<Plot> plotOptional = plotRepository.findById(plotId);
+        if (plotOptional.isEmpty()) {
+            return new AddTrustedOutcome(AddTrustedResult.PLOT_NOT_FOUND, "");
+        }
+        Plot plot = plotOptional.get();
+        if (plot.ownerId() == null) {
+            return new AddTrustedOutcome(AddTrustedResult.NOT_OWNED, "");
+        }
+        boolean isAdmin = actor.hasPermission(ADMIN_PERMISSION);
+        if (!isAdmin && !plot.isOwnedByPlayer(actor.getUniqueId())) {
+            return new AddTrustedOutcome(AddTrustedResult.NOT_OWNER, "");
+        }
+        var target = Bukkit.getOfflinePlayer(targetName);
+        UUID targetId = target.getUniqueId();
+        if (actor.getUniqueId().equals(targetId)) {
+            return new AddTrustedOutcome(AddTrustedResult.SELF, "");
+        }
+        if (config.trustedMax() > 0) {
+            long trustedCount = plotMemberRepository.findMembers(plotId).values().stream()
+                    .filter(role -> role == ru.realite.city.model.PlotMemberRole.TRUSTED)
+                    .count();
+            if (trustedCount >= config.trustedMax()) {
+                return new AddTrustedOutcome(AddTrustedResult.LIMIT_REACHED, "");
+            }
+        }
+        plotMemberRepository.upsert(plotId, targetId, ru.realite.city.model.PlotMemberRole.TRUSTED);
+        String display = target.getName() == null ? targetId.toString() : target.getName();
+        return new AddTrustedOutcome(AddTrustedResult.SUCCESS, display);
+    }
+
+    public SetOwnerOutcome setOwner(String plotId, PlotOwnerType ownerType, String ownerRef) {
+        if (plotId == null || plotId.isBlank()) {
+            return new SetOwnerOutcome(SetOwnerResult.PLOT_NOT_FOUND, "");
+        }
+        if (ownerType == null || ownerRef == null || ownerRef.isBlank()) {
+            return new SetOwnerOutcome(SetOwnerResult.INVALID_INPUT, "");
+        }
+        Optional<Plot> plotOptional = plotRepository.findById(plotId);
+        if (plotOptional.isEmpty()) {
+            return new SetOwnerOutcome(SetOwnerResult.PLOT_NOT_FOUND, "");
+        }
+        Plot plot = plotOptional.get();
+        UUID ownerId;
+        String ownerDisplay;
+        if (ownerType == PlotOwnerType.PLAYER) {
+            var target = Bukkit.getOfflinePlayer(ownerRef);
+            ownerId = target.getUniqueId();
+            ownerDisplay = target.getName() == null ? ownerId.toString() : target.getName();
+        } else {
+            if (guildsApi == null || guildsApi instanceof NoopGuildsApi) {
+                return new SetOwnerOutcome(SetOwnerResult.NO_GUILDS, "");
+            }
+            ownerId = guildsApi.findGuildIdByTag(ownerRef).orElse(null);
+            if (ownerId == null) {
+                return new SetOwnerOutcome(SetOwnerResult.GUILD_NOT_FOUND, "");
+            }
+            ownerDisplay = ownerRef.toUpperCase();
+        }
+        Plot updated = new Plot(
+                plot.id(),
+                plot.number(),
+                plot.type(),
+                plot.world(),
+                plot.x1(),
+                plot.y1(),
+                plot.z1(),
+                plot.x2(),
+                plot.y2(),
+                plot.z2(),
+                plot.price(),
+                ownerType,
+                ownerId,
+                plot.createdAt(),
+                plot.rentPaidUntil());
+        plotRepository.upsert(updated);
+        plotMemberRepository.removeAll(plot.id());
+        clearPendingOffers(plot.id());
+        return new SetOwnerOutcome(SetOwnerResult.SUCCESS, ownerDisplay);
     }
 
     private boolean isTypeEnabled(PlotType type) {
