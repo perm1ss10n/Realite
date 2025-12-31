@@ -6,9 +6,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import ru.realite.classes.RealiteClassesPlugin;
 import ru.realite.classes.gui.ClassSettingsMenu;
+import ru.realite.classes.model.ClassId;
 import ru.realite.classes.service.ClassService;
 import ru.realite.classes.service.EconomyService;
 import ru.realite.classes.service.EvolutionService;
+import ru.realite.classes.service.HiddenClassGate;
+import ru.realite.classes.service.HiddenClassGateResult;
 import ru.realite.classes.storage.ClassConfigRepository;
 import ru.realite.classes.storage.XpConfigRepository;
 import ru.realite.classes.util.ChatTemplate;
@@ -28,6 +31,7 @@ public class ClassCommand implements CommandExecutor {
 
     private final ClassConfigRepository classConfig;
     private final EconomyService economy;
+    private final HiddenClassGate hiddenClassGate;
     private final Messages messages;
 
     @SuppressWarnings("unused")
@@ -38,6 +42,7 @@ public class ClassCommand implements CommandExecutor {
                         EvolutionService evolutionService,
                         ClassConfigRepository classConfig,
                         EconomyService economy,
+                        HiddenClassGate hiddenClassGate,
                         Messages messages,
                         XpConfigRepository xpConfig) {
         this.plugin = plugin;
@@ -45,6 +50,7 @@ public class ClassCommand implements CommandExecutor {
         this.evolutionService = evolutionService;
         this.classConfig = classConfig;
         this.economy = economy;
+        this.hiddenClassGate = hiddenClassGate;
         this.messages = messages;
         this.xpConfig = xpConfig;
     }
@@ -111,6 +117,47 @@ public class ClassCommand implements CommandExecutor {
 
             case "settings" -> {
                 new ClassSettingsMenu().open(p);
+                return true;
+            }
+            case "unlocks" -> {
+                boolean anyHidden = false;
+                p.sendMessage(messages.get("class-unlocks-header"));
+                for (ClassId id : ClassId.values()) {
+                    var def = classConfig.get(id);
+                    if (def == null || !def.hidden) {
+                        continue;
+                    }
+                    anyHidden = true;
+                    HiddenClassGateResult result = hiddenClassGate.check(p, id);
+                    String name = def.name != null ? def.name : id.name();
+                    String questId = hiddenClassGate.requiredQuestId(id);
+                    String questLabel = questId != null ? questId : "-";
+                    String requirement = hiddenClassGate.describeEvolutionRequirement(id);
+                    String status;
+                    if (result.available()) {
+                        status = messages.get("class-unlocks-open");
+                    } else if (!result.questOk() && !result.evolutionOk()) {
+                        status = messages.format("class-unlocks-locked-both", Map.of(
+                                "quest", questLabel,
+                                "req", requirement
+                        ));
+                    } else if (!result.questOk()) {
+                        status = messages.format("class-unlocks-locked-quest", Map.of(
+                                "quest", questLabel
+                        ));
+                    } else {
+                        status = messages.format("class-unlocks-locked-evolution", Map.of(
+                                "req", requirement
+                        ));
+                    }
+                    p.sendMessage(messages.format("class-unlocks-entry", Map.of(
+                            "class", name,
+                            "status", status
+                    )));
+                }
+                if (!anyHidden) {
+                    p.sendMessage(messages.get("class-unlocks-empty"));
+                }
                 return true;
             }
 

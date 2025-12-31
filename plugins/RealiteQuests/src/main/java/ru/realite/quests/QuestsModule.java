@@ -14,6 +14,7 @@ import ru.realite.core.api.events.ClassSelectedEvent;
 import ru.realite.core.api.events.EvolutionCompletedEvent;
 import ru.realite.core.api.quests.ClassBackstoryService;
 import ru.realite.core.api.quests.QuestService;
+import ru.realite.core.api.quests.QuestUnlockService;
 import ru.realite.quests.backstory.BackstoryProgressRepository;
 import ru.realite.quests.backstory.ClassBackstoryConfig;
 import ru.realite.quests.backstory.ClassBackstoryServiceImpl;
@@ -22,6 +23,8 @@ import ru.realite.quests.service.QuestLoader;
 import ru.realite.quests.service.QuestProgressRepository;
 import ru.realite.quests.service.QuestRepository;
 import ru.realite.quests.service.QuestServiceImpl;
+import ru.realite.quests.service.QuestUnlockRepository;
+import ru.realite.quests.service.QuestUnlockServiceImpl;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -121,11 +124,18 @@ public final class QuestsModule implements Module {
             ctx.logger().error("[Quests] Storage smoke test failed", e);
         }
 
+        QuestUnlockService questUnlockService = ctx.services().get(QuestUnlockService.class);
+        if (questUnlockService == null) {
+            QuestUnlockRepository unlockRepository = new QuestUnlockRepository(ctx.dataFolder());
+            questUnlockService = new QuestUnlockServiceImpl(unlockRepository);
+            ctx.services().register(QuestUnlockService.class, questUnlockService);
+        }
+
         questService = ctx.services().get(QuestService.class);
         if (questService == null) {
             QuestRepository repository = new QuestLoader(ctx.dataFolder().resolve("quests"), ctx.logger()).load();
             QuestProgressRepository progressRepository = new QuestProgressRepository(ctx.dataFolder());
-            questService = new QuestServiceImpl(ctx.logger(), ctx.events(), repository, progressRepository);
+            questService = new QuestServiceImpl(ctx.logger(), ctx.events(), repository, progressRepository, questUnlockService);
             ctx.services().register(QuestService.class, questService);
         }
 

@@ -13,6 +13,8 @@ import ru.realite.classes.model.HudMode;
 import ru.realite.classes.service.ClassHudService;
 import ru.realite.classes.service.ClassService;
 import ru.realite.classes.service.EvolutionService;
+import ru.realite.classes.service.HiddenClassGate;
+import ru.realite.classes.service.HiddenClassGateResult;
 import ru.realite.classes.storage.ClassConfigRepository;
 import ru.realite.classes.util.Messages;
 
@@ -23,37 +25,22 @@ public class MenuListener implements Listener {
     private final ClassService classService;
     private final ClassConfigRepository classConfig;
     private final EvolutionService evolutionService;
+    private final HiddenClassGate hiddenClassGate;
     private final Messages messages;
     private final ClassHudService hudService;
 
     public MenuListener(ClassService classService,
                         ClassConfigRepository classConfig,
                         EvolutionService evolutionService,
+                        HiddenClassGate hiddenClassGate,
                         Messages messages,
                         ClassHudService hudService) {
         this.classService = classService;
         this.classConfig = classConfig;
         this.evolutionService = evolutionService;
+        this.hiddenClassGate = hiddenClassGate;
         this.messages = messages;
         this.hudService = hudService;
-    }
-
-    private String requirementsText(ClassConfigRepository.ClassDef def) {
-        if (def.requiresMastered == null || def.requiresMastered.isEmpty()) return "-";
-
-        StringBuilder sb = new StringBuilder();
-        boolean first = true;
-
-        for (var reqId : def.requiresMastered) {
-            var reqDef = classConfig.get(reqId);
-            String nice = (reqDef != null ? reqDef.name : reqId.name());
-
-            if (!first) sb.append(", ");
-            first = false;
-            sb.append(nice);
-        }
-
-        return sb.toString();
     }
 
     @EventHandler
@@ -122,22 +109,32 @@ public class MenuListener implements Listener {
             // скрытый класс: виден, но выбрать нельзя
             var def = classConfig.get(id);
             if (def != null && def.hidden) {
-                boolean unlocked = true;
-                if (def.requiresMastered != null) {
-                    for (var req : def.requiresMastered) {
-                        if (!prof.hasMastered(req)) {
-                            unlocked = false;
-                            break;
-                        }
-                    }
-                }
-
-                if (!unlocked) {
+                HiddenClassGateResult gateResult = hiddenClassGate.check(player, id);
+                if (!gateResult.available()) {
                     player.closeInventory();
-                    player.sendMessage(messages.get("class-locked"));
-                    player.sendMessage(messages.format("class-locked-requirements", Map.of(
-                            "req", requirementsText(def)
-                    )));
+                    String reasonKey = gateResult.reasonKey();
+                    if (reasonKey != null && reasonKey.equals("class-locked-quest")) {
+                        String questId = hiddenClassGate.requiredQuestId(id);
+                        player.sendMessage(messages.format("class-locked-quest", Map.of(
+                                "quest", questId != null ? questId : "-"
+                        )));
+                    } else if (reasonKey != null && reasonKey.equals("class-locked-evolution")) {
+                        player.sendMessage(messages.get("class-locked-evolution"));
+                        player.sendMessage(messages.format("class-locked-requirements", Map.of(
+                                "req", hiddenClassGate.describeEvolutionRequirement(id)
+                        )));
+                    } else if (reasonKey != null && reasonKey.equals("class-locked-both")) {
+                        player.sendMessage(messages.get("class-locked-both"));
+                        String questId = hiddenClassGate.requiredQuestId(id);
+                        player.sendMessage(messages.format("class-locked-quest", Map.of(
+                                "quest", questId != null ? questId : "-"
+                        )));
+                        player.sendMessage(messages.format("class-locked-requirements", Map.of(
+                                "req", hiddenClassGate.describeEvolutionRequirement(id)
+                        )));
+                    } else {
+                        player.sendMessage(messages.get("class-locked"));
+                    }
                     return;
                 }
             }

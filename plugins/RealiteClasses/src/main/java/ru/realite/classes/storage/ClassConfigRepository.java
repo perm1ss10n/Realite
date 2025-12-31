@@ -5,6 +5,8 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import ru.realite.classes.model.ClassId;
 import ru.realite.classes.model.EvolutionDef;
+import ru.realite.classes.model.EvolutionRequirement;
+import ru.realite.classes.model.HiddenClassUnlock;
 import ru.realite.classes.model.ItemAmount;
 
 import java.io.File;
@@ -89,6 +91,7 @@ public class ClassConfigRepository {
 
     private final File dataFolder;
     private final Map<ClassId, ClassDef> map = new EnumMap<>(ClassId.class);
+    private final Map<ClassId, HiddenClassUnlock> hiddenUnlocks = new EnumMap<>(ClassId.class);
 
     public ClassConfigRepository(File dataFolder) {
         this.dataFolder = dataFolder;
@@ -98,6 +101,7 @@ public class ClassConfigRepository {
 
     public void reload() {
         map.clear();
+        hiddenUnlocks.clear();
 
         File file = new File(dataFolder, "classes.yml");
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
@@ -140,6 +144,24 @@ public class ClassConfigRepository {
             }
 
             map.put(id, new ClassDef(id, icon, name, lore, effects, xpPerLevel, xpPerMoney, evolutions, hidden, req));
+        }
+
+        ConfigurationSection hiddenClasses = yml.getConfigurationSection("hiddenClasses");
+        if (hiddenClasses == null)
+            return;
+
+        for (String key : hiddenClasses.getKeys(false)) {
+            ClassId id = ClassId.fromString(key);
+            if (id == null)
+                continue;
+
+            ConfigurationSection s = hiddenClasses.getConfigurationSection(key);
+            if (s == null)
+                continue;
+
+            String questId = s.getString("requireQuestCompleted", null);
+            EvolutionRequirement requirement = parseEvolutionRequirement(s.getConfigurationSection("requireEvolution"));
+            hiddenUnlocks.put(id, new HiddenClassUnlock(questId, requirement));
         }
     }
 
@@ -228,11 +250,29 @@ public class ClassConfigRepository {
         return null;
     }
 
+    private EvolutionRequirement parseEvolutionRequirement(ConfigurationSection section) {
+        if (section == null)
+            return null;
+
+        java.util.Set<ClassId> mastered = new java.util.HashSet<>();
+        for (String raw : section.getStringList("mastered")) {
+            ClassId id = ClassId.fromString(raw);
+            if (id != null) {
+                mastered.add(id);
+            }
+        }
+        return EvolutionRequirement.fromMastered(mastered);
+    }
+
     public ClassDef get(ClassId id) {
         return map.get(id);
     }
 
     public Collection<ClassDef> all() {
         return map.values();
+    }
+
+    public HiddenClassUnlock getHiddenUnlock(ClassId id) {
+        return hiddenUnlocks.get(id);
     }
 }

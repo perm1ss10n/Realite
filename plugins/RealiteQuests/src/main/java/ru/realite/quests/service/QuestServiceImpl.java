@@ -15,6 +15,7 @@ import ru.realite.core.api.quests.QuestProgress;
 import ru.realite.core.api.quests.QuestService;
 import ru.realite.core.api.quests.QuestState;
 import ru.realite.core.api.quests.QuestStartTrigger;
+import ru.realite.core.api.quests.QuestUnlockService;
 import ru.realite.quests.model.ObjectiveDefinition;
 import ru.realite.quests.model.ObjectiveType;
 import ru.realite.quests.model.QuestDefinition;
@@ -35,15 +36,18 @@ public final class QuestServiceImpl implements QuestService {
     private final EventBus eventBus;
     private final QuestRepository repository;
     private final QuestProgressRepository progressRepository;
+    private final QuestUnlockService questUnlockService;
 
     public QuestServiceImpl(Platform logger,
                             EventBus eventBus,
                             QuestRepository repository,
-                            QuestProgressRepository progressRepository) {
+                            QuestProgressRepository progressRepository,
+                            QuestUnlockService questUnlockService) {
         this.logger = Objects.requireNonNull(logger, "logger");
         this.eventBus = Objects.requireNonNull(eventBus, "eventBus");
         this.repository = Objects.requireNonNull(repository, "repository");
         this.progressRepository = Objects.requireNonNull(progressRepository, "progressRepository");
+        this.questUnlockService = questUnlockService;
     }
 
     @Override
@@ -340,6 +344,15 @@ public final class QuestServiceImpl implements QuestService {
                 for (ItemStack item : leftovers.values()) {
                     player.getWorld().dropItemNaturally(player.getLocation(), item);
                 }
+            } else if (reward.type() == RewardType.QUEST_UNLOCK) {
+                if (questUnlockService == null) {
+                    continue;
+                }
+                String unlockId = reward.unlockId();
+                if (unlockId == null || unlockId.isBlank()) {
+                    continue;
+                }
+                questUnlockService.grantUnlock(player, unlockId);
             }
         }
     }
