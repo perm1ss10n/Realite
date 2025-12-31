@@ -18,6 +18,9 @@ import ru.realite.quests.backstory.BackstoryProgressRepository;
 import ru.realite.quests.backstory.ClassBackstoryConfig;
 import ru.realite.quests.backstory.ClassBackstoryServiceImpl;
 import ru.realite.quests.i18n.QuestsMessages;
+import ru.realite.quests.service.QuestLoader;
+import ru.realite.quests.service.QuestProgressRepository;
+import ru.realite.quests.service.QuestRepository;
 import ru.realite.quests.service.QuestServiceImpl;
 
 import java.sql.Connection;
@@ -114,7 +117,9 @@ public final class QuestsModule implements Module {
 
         questService = ctx.services().get(QuestService.class);
         if (questService == null) {
-            questService = new QuestServiceImpl(ctx.logger());
+            QuestRepository repository = new QuestLoader(ctx.dataFolder().resolve("quests"), ctx.logger()).load();
+            QuestProgressRepository progressRepository = new QuestProgressRepository(ctx.dataFolder());
+            questService = new QuestServiceImpl(ctx.logger(), repository, progressRepository);
             ctx.services().register(QuestService.class, questService);
         }
 
