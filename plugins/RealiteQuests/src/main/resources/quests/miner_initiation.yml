@@ -1,0 +1,11 @@
+id: "miner_initiation"
+objectives:
+  - type: "KILL"
+    entity: "ZOMBIE"
+    amount: 2
+rewards:
+  - type: "XP"
+    amount: 35
+  - type: "ITEM"
+    material: "TORCH"
+    amount: 8

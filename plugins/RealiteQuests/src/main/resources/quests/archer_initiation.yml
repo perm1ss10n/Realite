@@ -1,0 +1,11 @@
+id: "archer_initiation"
+objectives:
+  - type: "KILL"
+    entity: "SKELETON"
+    amount: 3
+rewards:
+  - type: "XP"
+    amount: 35
+  - type: "ITEM"
+    material: "ARROW"
+    amount: 16

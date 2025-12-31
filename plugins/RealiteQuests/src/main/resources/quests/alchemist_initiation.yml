@@ -1,0 +1,11 @@
+id: "alchemist_initiation"
+objectives:
+  - type: "KILL"
+    entity: "SPIDER"
+    amount: 2
+rewards:
+  - type: "XP"
+    amount: 35
+  - type: "ITEM"
+    material: "GLASS_BOTTLE"
+    amount: 2
