@@ -22,6 +22,7 @@ public final class GuiSessionStore {
         private int accessPage;
         private String selectedPlotId;
         private boolean deleteConfirmation;
+        private long removeAllConfirmationAt;
 
         public MenuType menu() {
             return menu;
@@ -61,6 +62,14 @@ public final class GuiSessionStore {
 
         public void deleteConfirmation(boolean deleteConfirmation) {
             this.deleteConfirmation = deleteConfirmation;
+        }
+
+        public long removeAllConfirmationAt() {
+            return removeAllConfirmationAt;
+        }
+
+        public void removeAllConfirmationAt(long removeAllConfirmationAt) {
+            this.removeAllConfirmationAt = removeAllConfirmationAt;
         }
     }
 }
