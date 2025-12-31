@@ -191,6 +191,14 @@ plot:
       usage: "&eИспользование: /city plot goto <id|#number>"
       success: "&aТелепортация на участок #{number} ({id})."
       invalid-world: "&cМир {world} недоступен."
+visual:
+  border:
+    shown: "&aГраница участка показана."
+    cooldown: "&cПодождите {seconds} сек. перед следующим показом границы."
+    disabled: "&cПоказ границы участка отключён."
+gui:
+  btn:
+    show_border: "&aПоказать границу"
 area:
   pos1-set: "&apos1 установлена: &7{loc}"
   pos2-set: "&apos2 установлена: &7{loc}"

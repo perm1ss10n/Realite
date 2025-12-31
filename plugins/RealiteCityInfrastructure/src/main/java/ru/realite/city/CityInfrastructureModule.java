@@ -24,6 +24,7 @@ import ru.realite.city.service.EconomyService;
 import ru.realite.city.service.GuildsApi;
 import ru.realite.city.service.MarketService;
 import ru.realite.city.service.NoopGuildsApi;
+import ru.realite.city.service.PlotBorderVisualizationService;
 import ru.realite.city.service.PlotCleanupService;
 import ru.realite.city.service.PlotService;
 import ru.realite.city.service.ShopDirectoryService;
@@ -76,6 +77,7 @@ public final class CityInfrastructureModule implements Module {
     private ShopMarkerService shopMarkerService;
     private ShopDirectoryService shopDirectoryService;
     private MarketService marketService;
+    private PlotBorderVisualizationService plotBorderVisualizationService;
     private CityHooks cityHooks;
     private GuildsApi guildsApi;
     private GuiService guiService;
@@ -169,6 +171,7 @@ public final class CityInfrastructureModule implements Module {
                 shopPointService,
                 economyService);
         shopRentService.start();
+        plotBorderVisualizationService = new PlotBorderVisualizationService(javaPlugin, config, messages);
 
         // Domain service
         plotService = new PlotService(
@@ -189,6 +192,7 @@ public final class CityInfrastructureModule implements Module {
                 messages,
                 adminService,
                 chatInputService,
+                plotBorderVisualizationService,
                 guiSessionStore,
                 menuFactory,
                 plotRepository,

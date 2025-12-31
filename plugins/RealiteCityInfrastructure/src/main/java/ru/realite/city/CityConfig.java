@@ -47,6 +47,10 @@ public record CityConfig(
                 boolean guiEnabled,
                 boolean guiSoundsEnabled,
                 boolean playerGuiEnabled,
+                boolean visualBorderEnabled,
+                int visualBorderDurationSeconds,
+                int visualBorderCooldownSeconds,
+                double visualBorderStep,
                 int trustedMax,
                 boolean chatInputHideMessage,
                 int chatInputTimeoutSeconds,
@@ -105,6 +109,10 @@ public record CityConfig(
                 boolean guiEnabled = config.getBoolean("gui.enabled", true);
                 boolean guiSoundsEnabled = config.getBoolean("gui.sounds.enabled", true);
                 boolean playerGuiEnabled = config.getBoolean("playerGui.enabled", true);
+                boolean visualBorderEnabled = config.getBoolean("visual.border.enabled", true);
+                int visualBorderDurationSeconds = config.getInt("visual.border.durationSeconds", 10);
+                int visualBorderCooldownSeconds = config.getInt("visual.border.cooldownSeconds", 30);
+                double visualBorderStep = config.getDouble("visual.border.step", 1.5);
                 int trustedMax = config.getInt("plots.trusted.max", 5);
                 boolean chatInputHideMessage = config.getBoolean("chatInput.hideMessage", true);
                 int chatInputTimeoutSeconds = config.getInt("chatInput.timeoutSeconds", 30);
@@ -155,6 +163,10 @@ public record CityConfig(
                                 guiEnabled,
                                 guiSoundsEnabled,
                                 playerGuiEnabled,
+                                visualBorderEnabled,
+                                visualBorderDurationSeconds,
+                                visualBorderCooldownSeconds,
+                                visualBorderStep,
                                 trustedMax,
                                 chatInputHideMessage,
                                 chatInputTimeoutSeconds,

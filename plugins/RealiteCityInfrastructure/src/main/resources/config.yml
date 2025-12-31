@@ -15,6 +15,17 @@ gui:
 playerGui:
   enabled: true
 
+visual:
+  border:
+    # Enable plot border visualization
+    enabled: true
+    # How long to show particles (seconds)
+    durationSeconds: 10
+    # Cooldown per player (seconds)
+    cooldownSeconds: 30
+    # Distance between particles along the border
+    step: 1.5
+
 chatInput:
   # Hide player's message while waiting for input
   hideMessage: true

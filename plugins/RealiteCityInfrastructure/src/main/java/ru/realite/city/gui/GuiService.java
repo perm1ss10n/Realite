@@ -13,6 +13,7 @@ import ru.realite.city.model.PlotOwnerType;
 import ru.realite.city.service.AccessResult;
 import ru.realite.city.service.ChatInputService;
 import ru.realite.city.service.CityAdminService;
+import ru.realite.city.service.PlotBorderVisualizationService;
 import ru.realite.city.storage.PlotMemberRepository;
 import ru.realite.city.storage.PlotRepository;
 
@@ -32,6 +33,7 @@ public final class GuiService {
     private final CityMessages messages;
     private final CityAdminService adminService;
     private final ChatInputService chatInputService;
+    private final PlotBorderVisualizationService plotBorderVisualizationService;
     private final GuiSessionStore sessionStore;
     private final MenuFactory menuFactory;
     private final PlotRepository plotRepository;
@@ -41,6 +43,7 @@ public final class GuiService {
                       CityMessages messages,
                       CityAdminService adminService,
                       ChatInputService chatInputService,
+                      PlotBorderVisualizationService plotBorderVisualizationService,
                       GuiSessionStore sessionStore,
                       MenuFactory menuFactory,
                       PlotRepository plotRepository,
@@ -49,6 +52,7 @@ public final class GuiService {
         this.messages = messages;
         this.adminService = adminService;
         this.chatInputService = chatInputService;
+        this.plotBorderVisualizationService = plotBorderVisualizationService;
         this.sessionStore = sessionStore;
         this.menuFactory = menuFactory;
         this.plotRepository = plotRepository;
@@ -340,6 +344,17 @@ public final class GuiService {
                 ));
     }
 
+    public void handlePlayerShowBorder(Player player) {
+        if (player == null) {
+            return;
+        }
+        Plot plot = resolvePlayerPlot(player);
+        if (plot == null) {
+            return;
+        }
+        plotBorderVisualizationService.showBorder(player, plot);
+    }
+
     public void handlePlayerTeleport(Player player) {
         if (player == null) {
             return;
@@ -363,6 +378,26 @@ public final class GuiService {
         Location target = new Location(world, centerX + 0.5, y, centerZ + 0.5);
         player.teleport(target);
         playClick(player);
+    }
+
+    public void handlePlotShowBorder(Player player) {
+        if (player == null) {
+            return;
+        }
+        GuiSessionStore.GuiSession session = sessionStore.getOrCreate(player.getUniqueId());
+        String plotId = session.selectedPlotId();
+        if (plotId == null) {
+            messages.send(player, "gui.error.action_failed", "",
+                    Map.of("reason", formatReason("city.plot.not-found", Map.of("id", "?"))));
+            return;
+        }
+        Optional<Plot> plotOptional = adminService.findPlot(plotId);
+        if (plotOptional.isEmpty()) {
+            messages.send(player, "gui.error.action_failed", "",
+                    Map.of("reason", formatReason("city.plot.not-found", Map.of("id", plotId))));
+            return;
+        }
+        plotBorderVisualizationService.showBorder(player, plotOptional.get());
     }
 
     private boolean handleAccess(Player player, AccessResult result, Map<String, String> vars) {

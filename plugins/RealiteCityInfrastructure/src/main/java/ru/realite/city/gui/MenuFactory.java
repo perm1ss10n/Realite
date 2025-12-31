@@ -129,6 +129,7 @@ public final class MenuFactory {
         inventory.setItem(14, teleportItem());
         inventory.setItem(16, stubItem(Material.PLAYER_HEAD, "Set owner (player)", "plot_set_owner_player"));
         inventory.setItem(19, stubItem(Material.WRITABLE_BOOK, "Set owner (guild)", "plot_set_owner_guild"));
+        inventory.setItem(21, actionItemKey(Material.LIME_DYE, "gui.btn.show_border", "plot_show_border"));
         inventory.setItem(22, actionItemKey(Material.ARROW, "gui.btn.back", "open_plots"));
 
         return inventory;
@@ -169,8 +170,9 @@ public final class MenuFactory {
 
         inventory.setItem(11, actionItemKey(Material.PAPER, "gui.btn.access", "player_open_access"));
         inventory.setItem(13, actionItemKey(Material.BOOK, "gui.btn.info", "player_info"));
+        inventory.setItem(15, actionItemKey(Material.LIME_DYE, "gui.btn.show_border", "player_show_border"));
         if (canTeleport) {
-            inventory.setItem(15, actionItemKey(Material.ENDER_PEARL, "gui.btn.teleport", "player_teleport"));
+            inventory.setItem(16, actionItemKey(Material.ENDER_PEARL, "gui.btn.teleport", "player_teleport"));
         }
 
         return inventory;
