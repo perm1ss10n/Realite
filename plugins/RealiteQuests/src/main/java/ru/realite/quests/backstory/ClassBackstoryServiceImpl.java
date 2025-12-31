@@ -9,6 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import ru.realite.core.api.quests.ClassBackstoryService;
 import ru.realite.core.api.quests.QuestService;
+import ru.realite.core.api.quests.QuestStartTrigger;
 import ru.realite.quests.i18n.QuestsMessages;
 
 import java.util.ArrayList;
@@ -86,7 +87,7 @@ public final class ClassBackstoryServiceImpl implements ClassBackstoryService {
         player.sendMessage(messages.format("quests.backstory.accepted", Map.of("class", normalized)));
         ClassBackstoryDefinition definition = config.get(normalized);
         if (definition != null && definition.introQuestId() != null) {
-            questService.start(player, definition.introQuestId());
+            questService.start(player, definition.introQuestId(), QuestStartTrigger.CLASS_ACCEPTED, false);
         }
     }
 

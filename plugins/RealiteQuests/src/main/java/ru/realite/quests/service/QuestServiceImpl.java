@@ -7,13 +7,18 @@ import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import ru.realite.core.api.EventBus;
 import ru.realite.core.api.Platform;
+import ru.realite.core.api.events.QuestCompletedEvent;
+import ru.realite.core.api.events.QuestStartedEvent;
 import ru.realite.core.api.quests.QuestProgress;
 import ru.realite.core.api.quests.QuestService;
 import ru.realite.core.api.quests.QuestState;
+import ru.realite.core.api.quests.QuestStartTrigger;
 import ru.realite.quests.model.ObjectiveDefinition;
 import ru.realite.quests.model.ObjectiveType;
 import ru.realite.quests.model.QuestDefinition;
+import ru.realite.quests.model.QuestType;
 import ru.realite.quests.model.RewardDefinition;
 import ru.realite.quests.model.RewardType;
 
@@ -27,17 +32,27 @@ import java.util.Set;
 public final class QuestServiceImpl implements QuestService {
 
     private final Platform logger;
+    private final EventBus eventBus;
     private final QuestRepository repository;
     private final QuestProgressRepository progressRepository;
 
-    public QuestServiceImpl(Platform logger, QuestRepository repository, QuestProgressRepository progressRepository) {
+    public QuestServiceImpl(Platform logger,
+                            EventBus eventBus,
+                            QuestRepository repository,
+                            QuestProgressRepository progressRepository) {
         this.logger = Objects.requireNonNull(logger, "logger");
+        this.eventBus = Objects.requireNonNull(eventBus, "eventBus");
         this.repository = Objects.requireNonNull(repository, "repository");
         this.progressRepository = Objects.requireNonNull(progressRepository, "progressRepository");
     }
 
     @Override
     public void start(Player player, String questId) {
+        start(player, questId, QuestStartTrigger.COMMAND, false);
+    }
+
+    @Override
+    public void start(Player player, String questId, QuestStartTrigger trigger, boolean force) {
         if (player == null || questId == null || questId.isBlank()) {
             return;
         }
@@ -50,11 +65,13 @@ public final class QuestServiceImpl implements QuestService {
         if (progress != null && progress.state() == QuestState.ACTIVE) {
             return;
         }
-        if (progress != null && progress.state() == QuestState.COMPLETED) {
+        if (progress != null && progress.state() == QuestState.COMPLETED
+                && quest.type() == QuestType.INTRO && !force) {
             return;
         }
         QuestProgressData fresh = new QuestProgressData(QuestState.ACTIVE, Set.of(), Map.of());
         progressRepository.save(player.getUniqueId(), quest.id(), fresh);
+        eventBus.publish(new QuestStartedEvent(player.getUniqueId(), quest.id(), trigger));
         logger.info("[Quests] Started quest " + quest.id() + " for " + player.getName());
     }
 
@@ -304,6 +321,7 @@ public final class QuestServiceImpl implements QuestService {
         progress.state(QuestState.COMPLETED);
         progressRepository.save(player.getUniqueId(), quest.id(), progress);
         grantRewards(player, quest);
+        eventBus.publish(new QuestCompletedEvent(player.getUniqueId(), quest.id()));
         notifyQuestCompleted(player, quest);
         logger.info("[Quests] Quest completed: " + quest.id() + " for " + player.getName());
     }

@@ -7,6 +7,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import ru.realite.core.api.quests.QuestService;
 import ru.realite.core.api.quests.QuestProgress;
+import ru.realite.core.api.quests.QuestStartTrigger;
 import ru.realite.quests.service.QuestServiceImpl;
 import ru.realite.quests.model.ObjectiveDefinition;
 import ru.realite.quests.model.QuestDefinition;
@@ -57,11 +58,13 @@ public final class QuestCommand implements CommandExecutor {
             return true;
         }
         if (args.length < 2) {
-            sender.sendMessage(ChatColor.RED + "Usage: /quest start <id>");
+            sender.sendMessage(ChatColor.RED + "Usage: /quest start <id> [force]");
             return true;
         }
         String questId = args[1];
-        questService.start(player, questId);
+        boolean force = args.length > 2 && args[2].equalsIgnoreCase("force");
+        QuestStartTrigger trigger = force ? QuestStartTrigger.MANUAL : QuestStartTrigger.COMMAND;
+        questService.start(player, questId, trigger, force);
         sender.sendMessage(ChatColor.GREEN + "Quest started: " + questId);
         return true;
     }

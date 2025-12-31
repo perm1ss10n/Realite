@@ -7,6 +7,7 @@ import ru.realite.core.api.Platform;
 import ru.realite.quests.model.ObjectiveDefinition;
 import ru.realite.quests.model.ObjectiveType;
 import ru.realite.quests.model.QuestDefinition;
+import ru.realite.quests.model.QuestType;
 import ru.realite.quests.model.RewardDefinition;
 import ru.realite.quests.model.RewardType;
 
@@ -67,7 +68,19 @@ public final class QuestLoader {
             return null;
         }
         List<RewardDefinition> rewards = loadRewards(file.getName(), yml);
-        return new QuestDefinition(id.trim(), objectives, rewards);
+        QuestType type = parseType(config.getString("type", null));
+        return new QuestDefinition(id.trim(), type, objectives, rewards);
+    }
+
+    private QuestType parseType(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return QuestType.STANDARD;
+        }
+        try {
+            return QuestType.valueOf(raw.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return QuestType.STANDARD;
+        }
     }
 
     private List<ObjectiveDefinition> loadObjectives(String fileName, YamlConfiguration yml) {

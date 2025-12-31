@@ -1,4 +1,5 @@
 id: "wanderer_initiation"
+type: "INTRO"
 objectives:
   - type: "KILL"
     entity: "SHEEP"
