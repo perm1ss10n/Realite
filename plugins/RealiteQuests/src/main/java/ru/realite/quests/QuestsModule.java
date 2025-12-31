@@ -125,7 +125,7 @@ public final class QuestsModule implements Module {
         if (questService == null) {
             QuestRepository repository = new QuestLoader(ctx.dataFolder().resolve("quests"), ctx.logger()).load();
             QuestProgressRepository progressRepository = new QuestProgressRepository(ctx.dataFolder());
-            questService = new QuestServiceImpl(ctx.logger(), repository, progressRepository);
+            questService = new QuestServiceImpl(ctx.logger(), ctx.events(), repository, progressRepository);
             ctx.services().register(QuestService.class, questService);
         }
 

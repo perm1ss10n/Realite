@@ -1,4 +1,5 @@
 id: "merchant_initiation"
+type: "INTRO"
 objectives:
   - type: "KILL"
     entity: "PIG"

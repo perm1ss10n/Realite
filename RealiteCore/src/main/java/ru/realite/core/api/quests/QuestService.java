@@ -7,7 +7,11 @@ import org.bukkit.entity.Player;
  */
 public interface QuestService {
 
-    void start(Player player, String questId);
+    default void start(Player player, String questId) {
+        start(player, questId, QuestStartTrigger.COMMAND, false);
+    }
+
+    void start(Player player, String questId, QuestStartTrigger trigger, boolean force);
 
     boolean isActive(Player player, String questId);
 

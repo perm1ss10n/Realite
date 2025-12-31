@@ -7,6 +7,7 @@ import ru.realite.core.api.Platform;
 import ru.realite.quests.model.ObjectiveDefinition;
 import ru.realite.quests.model.ObjectiveType;
 import ru.realite.quests.model.QuestDefinition;
+import ru.realite.quests.model.QuestType;
 import ru.realite.quests.model.RewardDefinition;
 import ru.realite.quests.model.RewardType;
 
@@ -56,18 +57,36 @@ public final class QuestLoader {
 
     private QuestDefinition loadFile(File file) {
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+
         String id = yml.getString("id");
         if (id == null || id.isBlank()) {
             logger.warn("[Quests] Quest " + file.getName() + " missing id");
             return null;
         }
+
         List<ObjectiveDefinition> objectives = loadObjectives(file.getName(), yml);
         if (objectives.isEmpty()) {
             logger.warn("[Quests] Quest " + id + " has no valid objectives");
             return null;
         }
+
         List<RewardDefinition> rewards = loadRewards(file.getName(), yml);
-        return new QuestDefinition(id.trim(), objectives, rewards);
+
+        // FIX: читать из yml, а не из config
+        QuestType type = parseType(yml.getString("type", null));
+
+        return new QuestDefinition(id.trim(), type, objectives, rewards);
+    }
+
+    private QuestType parseType(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return QuestType.STANDARD;
+        }
+        try {
+            return QuestType.valueOf(raw.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return QuestType.STANDARD;
+        }
     }
 
     private List<ObjectiveDefinition> loadObjectives(String fileName, YamlConfiguration yml) {
