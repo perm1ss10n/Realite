@@ -182,6 +182,108 @@ public final class QuestServiceImpl implements QuestService {
         }
     }
 
+    public void handleBlockPlace(Player player, Material material) {
+        if (player == null || material == null) {
+            return;
+        }
+        for (QuestDefinition quest : repository.all()) {
+            QuestProgressData progress = progressRepository.getProgress(player.getUniqueId(), quest.id());
+            if (progress == null || progress.state() != QuestState.ACTIVE) {
+                continue;
+            }
+            boolean updated = false;
+            for (ObjectiveDefinition objective : quest.objectives()) {
+                if (objective.type() != ObjectiveType.PLACE_BLOCK) {
+                    continue;
+                }
+                if (progress.completedObjectives().contains(objective.id())) {
+                    continue;
+                }
+                if (!matchesMaterial(objective, material)) {
+                    continue;
+                }
+                int current = progress.objectiveCountsMutable().getOrDefault(objective.id(), 0) + 1;
+                if (current >= objective.amount()) {
+                    progress.completedObjectivesMutable().add(objective.id());
+                    progress.objectiveCountsMutable().remove(objective.id());
+                } else {
+                    progress.objectiveCountsMutable().put(objective.id(), current);
+                }
+                updated = true;
+            }
+            if (updated) {
+                progressRepository.save(player.getUniqueId(), quest.id(), progress);
+                tryCompleteQuest(player, quest, progress);
+            }
+        }
+    }
+
+    public void handleBlockBreak(Player player, Material material) {
+        if (player == null || material == null) {
+            return;
+        }
+        for (QuestDefinition quest : repository.all()) {
+            QuestProgressData progress = progressRepository.getProgress(player.getUniqueId(), quest.id());
+            if (progress == null || progress.state() != QuestState.ACTIVE) {
+                continue;
+            }
+            boolean updated = false;
+            for (ObjectiveDefinition objective : quest.objectives()) {
+                if (objective.type() != ObjectiveType.BREAK_BLOCK) {
+                    continue;
+                }
+                if (progress.completedObjectives().contains(objective.id())) {
+                    continue;
+                }
+                if (!matchesMaterial(objective, material)) {
+                    continue;
+                }
+                int current = progress.objectiveCountsMutable().getOrDefault(objective.id(), 0) + 1;
+                if (current >= objective.amount()) {
+                    progress.completedObjectivesMutable().add(objective.id());
+                    progress.objectiveCountsMutable().remove(objective.id());
+                } else {
+                    progress.objectiveCountsMutable().put(objective.id(), current);
+                }
+                updated = true;
+            }
+            if (updated) {
+                progressRepository.save(player.getUniqueId(), quest.id(), progress);
+                tryCompleteQuest(player, quest, progress);
+            }
+        }
+    }
+
+    public void handleHoldItem(Player player) {
+        if (player == null) {
+            return;
+        }
+        for (QuestDefinition quest : repository.all()) {
+            QuestProgressData progress = progressRepository.getProgress(player.getUniqueId(), quest.id());
+            if (progress == null || progress.state() != QuestState.ACTIVE) {
+                continue;
+            }
+            boolean updated = false;
+            for (ObjectiveDefinition objective : quest.objectives()) {
+                if (objective.type() != ObjectiveType.HOLD_ITEM) {
+                    continue;
+                }
+                if (progress.completedObjectives().contains(objective.id())) {
+                    continue;
+                }
+                int count = countInventory(player, objective);
+                if (count >= objective.amount()) {
+                    progress.completedObjectivesMutable().add(objective.id());
+                    updated = true;
+                }
+            }
+            if (updated) {
+                progressRepository.save(player.getUniqueId(), quest.id(), progress);
+                tryCompleteQuest(player, quest, progress);
+            }
+        }
+    }
+
     private void tryCompleteQuest(Player player, QuestDefinition quest, QuestProgressData progress) {
         if (progress.state() != QuestState.ACTIVE) {
             return;
@@ -238,5 +340,31 @@ public final class QuestServiceImpl implements QuestService {
         double dz = location.getZ() - objective.z();
         double distanceSquared = dx * dx + dy * dy + dz * dz;
         return distanceSquared <= objective.radius() * objective.radius();
+    }
+
+    private boolean matchesMaterial(ObjectiveDefinition objective, Material material) {
+        for (Material allowed : objective.materials()) {
+            if (allowed == material) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private int countInventory(Player player, ObjectiveDefinition objective) {
+        int total = 0;
+        for (Material material : objective.materials()) {
+            for (ItemStack stack : player.getInventory().all(material).values()) {
+                total += stack.getAmount();
+            }
+        }
+        return total;
+    }
+
+    public QuestDefinition getQuestDefinition(String questId) {
+        if (questId == null || questId.isBlank()) {
+            return null;
+        }
+        return repository.get(questId);
     }
 }
