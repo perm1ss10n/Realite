@@ -11,6 +11,7 @@ import ru.realite.core.api.quests.QuestService;
 import ru.realite.core.api.quests.QuestStartTrigger;
 import ru.realite.quests.model.ObjectiveDefinition;
 import ru.realite.quests.model.QuestDefinition;
+import ru.realite.quests.service.ConditionCheckResult;
 import ru.realite.quests.service.QuestProgressData;
 import ru.realite.quests.service.QuestServiceImpl;
 
@@ -197,6 +198,14 @@ public final class QuestCommand implements CommandExecutor {
                 line = line.append(Component.text(
                         " (" + counts.get(objective.id()) + "/" + objective.amount() + ")",
                         NamedTextColor.YELLOW));
+            }
+            if (!completed) {
+                ConditionCheckResult conditionResult = questServiceImpl
+                        .getObjectiveConditionResult(player, quest, objective);
+                if (!conditionResult.allowed() && conditionResult.reasonKey() != null) {
+                    line = line.append(Component.text(" [" + conditionResult.reasonKey() + "]",
+                            NamedTextColor.RED));
+                }
             }
 
             sender.sendMessage(line);

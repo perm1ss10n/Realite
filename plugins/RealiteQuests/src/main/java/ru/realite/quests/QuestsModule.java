@@ -15,6 +15,8 @@ import ru.realite.core.api.events.EvolutionCompletedEvent;
 import ru.realite.core.api.quests.ClassBackstoryService;
 import ru.realite.core.api.quests.QuestService;
 import ru.realite.core.api.quests.QuestUnlockService;
+import ru.realite.core.api.quests.CityAdapter;
+import ru.realite.core.api.quests.GuildAdapter;
 import ru.realite.quests.backstory.BackstoryProgressRepository;
 import ru.realite.quests.backstory.ClassBackstoryConfig;
 import ru.realite.quests.backstory.ClassBackstoryServiceImpl;
@@ -136,7 +138,10 @@ public final class QuestsModule implements Module {
             java.nio.file.Path questsDir = ctx.dataFolder().resolve("quests");
             QuestRepository repository = new QuestLoader(questsDir, ctx.logger()).load();
             QuestProgressRepository progressRepository = new QuestProgressRepository(ctx.dataFolder());
-            questService = new QuestServiceImpl(ctx.logger(), ctx.events(), questsDir, repository, progressRepository, questUnlockService);
+            CityAdapter cityAdapter = ctx.services().get(CityAdapter.class);
+            GuildAdapter guildAdapter = ctx.services().get(GuildAdapter.class);
+            questService = new QuestServiceImpl(ctx.logger(), ctx.events(), questsDir, repository,
+                    progressRepository, questUnlockService, cityAdapter, guildAdapter);
             ctx.services().register(QuestService.class, questService);
         }
 

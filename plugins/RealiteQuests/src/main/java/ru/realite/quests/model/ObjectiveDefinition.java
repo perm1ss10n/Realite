@@ -20,6 +20,7 @@ public final class ObjectiveDefinition {
     private final double y;
     private final double z;
     private final double radius;
+    private final QuestConditions conditions;
 
     public ObjectiveDefinition(String id,
                                ObjectiveType type,
@@ -31,7 +32,8 @@ public final class ObjectiveDefinition {
                                double x,
                                double y,
                                double z,
-                               double radius) {
+                               double radius,
+                               QuestConditions conditions) {
         this.id = Objects.requireNonNull(id, "id");
         this.type = Objects.requireNonNull(type, "type");
         this.npcId = npcId;
@@ -43,6 +45,7 @@ public final class ObjectiveDefinition {
         this.y = y;
         this.z = z;
         this.radius = radius;
+        this.conditions = conditions == null ? QuestConditions.EMPTY : conditions;
     }
 
     public String id() {
@@ -87,5 +90,9 @@ public final class ObjectiveDefinition {
 
     public double radius() {
         return radius;
+    }
+
+    public QuestConditions conditions() {
+        return conditions;
     }
 }

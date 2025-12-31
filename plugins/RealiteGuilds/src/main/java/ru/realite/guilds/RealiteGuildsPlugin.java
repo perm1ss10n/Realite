@@ -9,7 +9,9 @@ import ru.realite.city.service.GuildsApi;
 import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.integrations.CityAccessHook;
 import ru.realite.core.api.guilds.GuildTagProvider;
+import ru.realite.core.api.quests.GuildAdapter;
 import ru.realite.guilds.integration.CityGuildsApiAdapter;
+import ru.realite.guilds.integration.GuildQuestAdapter;
 import ru.realite.guilds.integration.NoopCityAccessHook;
 import ru.realite.guilds.command.GuildChatCommand;
 import ru.realite.guilds.command.GuildCommand;
@@ -78,6 +80,7 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(
                 new GuildChatListener(chatService, realiteChatAvailable), this);
         registerGuildTagProvider();
+        registerGuildQuestAdapter();
         registerCityGuildsApi();
     }
 
@@ -89,6 +92,19 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
         }
         CoreApi core = provider.getProvider();
         core.services().registerIfAbsent(GuildTagProvider.class, new GuildChatTagProvider(chatService));
+    }
+
+    private void registerGuildQuestAdapter() {
+        RegisteredServiceProvider<CoreApi> provider = getServer().getServicesManager()
+                .getRegistration(CoreApi.class);
+        if (provider == null) {
+            return;
+        }
+        CoreApi core = provider.getProvider();
+        if (core == null) {
+            return;
+        }
+        core.services().registerIfAbsent(GuildAdapter.class, new GuildQuestAdapter(repository, rankService));
     }
 
     private CityAccessHook resolveCityAccessHook() {

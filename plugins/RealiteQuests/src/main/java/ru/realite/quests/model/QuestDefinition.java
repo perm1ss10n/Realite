@@ -10,15 +10,18 @@ public final class QuestDefinition {
     private final QuestType type;
     private final List<ObjectiveDefinition> objectives;
     private final List<RewardDefinition> rewards;
+    private final QuestConditions conditions;
 
     public QuestDefinition(String id,
                            QuestType type,
                            List<ObjectiveDefinition> objectives,
-                           List<RewardDefinition> rewards) {
+                           List<RewardDefinition> rewards,
+                           QuestConditions conditions) {
         this.id = Objects.requireNonNull(id, "id");
         this.type = Objects.requireNonNull(type, "type");
         this.objectives = List.copyOf(Objects.requireNonNull(objectives, "objectives"));
         this.rewards = List.copyOf(Objects.requireNonNull(rewards, "rewards"));
+        this.conditions = conditions == null ? QuestConditions.EMPTY : conditions;
     }
 
     public String id() {
@@ -35,5 +38,9 @@ public final class QuestDefinition {
 
     public List<RewardDefinition> rewards() {
         return Collections.unmodifiableList(rewards);
+    }
+
+    public QuestConditions conditions() {
+        return conditions;
     }
 }
