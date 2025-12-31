@@ -133,9 +133,10 @@ public final class QuestsModule implements Module {
 
         questService = ctx.services().get(QuestService.class);
         if (questService == null) {
-            QuestRepository repository = new QuestLoader(ctx.dataFolder().resolve("quests"), ctx.logger()).load();
+            java.nio.file.Path questsDir = ctx.dataFolder().resolve("quests");
+            QuestRepository repository = new QuestLoader(questsDir, ctx.logger()).load();
             QuestProgressRepository progressRepository = new QuestProgressRepository(ctx.dataFolder());
-            questService = new QuestServiceImpl(ctx.logger(), ctx.events(), repository, progressRepository, questUnlockService);
+            questService = new QuestServiceImpl(ctx.logger(), ctx.events(), questsDir, repository, progressRepository, questUnlockService);
             ctx.services().register(QuestService.class, questService);
         }
 

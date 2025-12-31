@@ -9,4 +9,4 @@ depend:
 commands:
   quest:
     description: Quest commands
-    usage: /quest <start|active|debug>
+    usage: /quest <start|active|debug|reload>

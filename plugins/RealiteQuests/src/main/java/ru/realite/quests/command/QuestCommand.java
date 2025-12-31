@@ -29,7 +29,7 @@ public final class QuestCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage(c("Usage: /quest <start|active|debug>", NamedTextColor.RED));
+            sender.sendMessage(c("Usage: /quest <start|active|debug|reload>", NamedTextColor.RED));
             return true;
         }
 
@@ -44,6 +44,7 @@ public final class QuestCommand implements CommandExecutor {
             case "start" -> handleStart(sender, questService, args);
             case "active" -> handleActive(sender, questService);
             case "debug" -> handleDebug(sender, questService, args);
+            case "reload" -> handleReload(sender, questService);
             default -> {
                 sender.sendMessage(c("Unknown subcommand.", NamedTextColor.RED));
                 yield true;
@@ -129,6 +130,20 @@ public final class QuestCommand implements CommandExecutor {
                 sender.sendMessage(line);
             }
         }
+        return true;
+    }
+
+    private boolean handleReload(CommandSender sender, QuestService questService) {
+        if (!sender.hasPermission("realite.quests.admin") && !sender.isOp()) {
+            sender.sendMessage(c("No permission.", NamedTextColor.RED));
+            return true;
+        }
+        if (!(questService instanceof QuestServiceImpl questServiceImpl)) {
+            sender.sendMessage(c("Quest service not ready.", NamedTextColor.RED));
+            return true;
+        }
+        questServiceImpl.reloadQuests();
+        sender.sendMessage(c("Quest definitions reloaded.", NamedTextColor.GREEN));
         return true;
     }
 
