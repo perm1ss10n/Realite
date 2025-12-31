@@ -9,12 +9,21 @@ depend:
 commands:
   city:
     description: City tools
-    usage: /city <area|plot|shop|market> <...>
+    usage: /city <area|plot|shop|market|gui> <...>
+  plot:
+    description: Player plot GUI
+    usage: /plot
 
 permissions:
   realite.city.admin:
     description: Access to city administration commands
     default: op
+  realite.city.plot.use:
+    description: Access to player plot GUI
+    default: true
+  realite.city.plot.teleport:
+    description: Allow teleport to owned plot
+    default: true
   realite.city.bypass:
     description: Bypass city area protection
     default: op

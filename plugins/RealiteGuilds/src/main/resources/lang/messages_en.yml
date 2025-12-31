@@ -107,6 +107,8 @@ claim:
 
 access:
   denied: "{prefix}&cYou don't have access to this block."
+  city:
+    denied: "{prefix}&cYou don't have access in this city area."
 
 salary:
   info: "{prefix}&eSalary: &f{rate}&e, rank: &f{rank}&e, next: &f{next}&e."

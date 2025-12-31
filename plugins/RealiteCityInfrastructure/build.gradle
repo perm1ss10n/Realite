@@ -30,7 +30,8 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 tasks.jar {
-    enabled = false
+    enabled = true
+    archiveClassifier.set("plain")
 }
 
 tasks.shadowJar {

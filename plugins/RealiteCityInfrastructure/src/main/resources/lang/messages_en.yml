@@ -1,5 +1,7 @@
 city:
   no-permission: "&cYou do not have permission."
+  access:
+    denied: "&cThe city does not allow this action."
   only-players: "&cOnly players can use this command."
   usage: "&eUsage: /city <area|plot|shop|market> <...>"
   protected: "&cThis territory is protected."
@@ -166,6 +168,22 @@ city:
       unknown-type: "&cUnknown plot type."
       invalid-price: "&cInvalid price."
       exists: "&cPlot {id} already exists."
+plot:
+  access:
+    denied: "&cThis plot does not allow the action."
+  trusted:
+    limit: "&cTrusted player limit reached ({limit})."
+  # Plot owner management
+  setowner:
+    success: "&aPlot {id} owner set to {owner}."
+    gui_disabled: "&cSetting owner via GUI is disabled."
+    guild:
+      not_found: "&cGuild {tag} not found."
+    guilds_not_installed: "&cRealiteGuilds is not installed."
+  create:
+    denied:
+      overlap: "&cCannot create plot: it overlaps another plot."
+      outside_city: "&cCannot create plot: it is outside the city."
     delete:
       usage: "&eUsage: /city plot delete <id>"
     info:
@@ -174,6 +192,14 @@ city:
       usage: "&eUsage: /city plot goto <id|#number>"
       success: "&aTeleported to plot #{number} ({id})."
       invalid-world: "&cWorld {world} is not available."
+visual:
+  border:
+    shown: "&aPlot border is shown."
+    cooldown: "&cPlease wait {seconds} sec. before showing the border again."
+    disabled: "&cPlot border visualization is disabled."
+gui:
+  btn:
+    show_border: "&aShow border"
 area:
   pos1-set: "&apos1 set: &7{loc}"
   pos2-set: "&apos2 set: &7{loc}"
@@ -193,3 +219,51 @@ area:
   list:
     header: "&eCity areas:"
     line: "- {id} ({world}) [{minX},{minY},{minZ}] -> [{maxX},{maxY},{maxZ}]"
+gui:
+  title:
+    admin_main: "&eAdmin: city"
+    admin_selection: "&eAdmin: selection"
+    admin_plots: "&eAdmin: plots"
+    admin_plot_actions: "&eAdmin: plot"
+    player_main: "&ePlot"
+    player_access: "&ePlot access"
+  btn:
+    regions: "&7Regions"
+    plots: "&ePlots"
+    selection: "&eSelection"
+    help: "&7Help"
+    back: "&cBack"
+    access: "&eAccess"
+    info: "&eInfo"
+    teleport: "&bTeleport"
+    set_owner_player: "&eSet owner: player"
+    set_owner_guild: "&eSet owner: guild"
+  plot:
+    none: "&cYou don't own a plot. &7Tip: /city plot buy #<number> or /city plot nearby."
+  access:
+    add: "&aAdd trusted"
+    remove: "&cClick: remove access"
+    remove_all:
+      button: "&cRemove all trusted"
+      confirm: "&eClick again to remove all trusted players."
+      success: "&aAll trusted players removed."
+      cancelled: "&cRemoval confirmation cancelled."
+  selection:
+    pos1:
+      set: "&aSet position 1"
+    pos2:
+      set: "&aSet position 2"
+    clear: "&cClear selection"
+    status: "&eSelection status"
+  error:
+    disabled: "&cGUI is disabled."
+    no_permission: "&cYou don't have permission."
+    action_failed: "&cAction failed: {reason}"
+chatinput:
+  cancelled: "&eInput cancelled."
+  timeout: "&cInput timed out."
+  invalid: "&cInvalid input."
+  prompt:
+    add_trusted: "&eEnter player name to trust (or /cancel)."
+    set_owner_player: "&eEnter player name for owner (or /cancel)."
+    set_owner_guild: "&eEnter guild tag for owner (or /cancel)."

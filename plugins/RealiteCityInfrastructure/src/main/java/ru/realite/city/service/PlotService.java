@@ -1,9 +1,12 @@
 package ru.realite.city.service;
 
 import org.bukkit.Location;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import ru.realite.city.CityConfig;
 import ru.realite.city.model.Plot;
+import ru.realite.city.model.PlotOwnerType;
 import ru.realite.city.model.PlotType;
 import ru.realite.city.storage.CityAreaRepository;
 import ru.realite.city.storage.PlotMemberRepository;
@@ -35,12 +38,37 @@ public final class PlotService {
     public record PendingSell(UUID targetUuid, long expiresAt, int price) {
     }
 
+    public enum AddTrustedResult {
+        SUCCESS,
+        PLOT_NOT_FOUND,
+        NOT_OWNED,
+        NOT_OWNER,
+        SELF,
+        LIMIT_REACHED,
+        INVALID_TARGET
+    }
+
+    public record AddTrustedOutcome(AddTrustedResult result, String targetDisplay) {
+    }
+
+    public enum SetOwnerResult {
+        SUCCESS,
+        PLOT_NOT_FOUND,
+        NO_GUILDS,
+        GUILD_NOT_FOUND,
+        INVALID_INPUT
+    }
+
+    public record SetOwnerOutcome(SetOwnerResult result, String ownerDisplay) {
+    }
+
     private final CityConfig config;
     private final CityAreaRepository cityAreaRepository;
     private final PlotRepository plotRepository;
     private final PlotMemberRepository plotMemberRepository;
     private final EconomyService economyService;
     private final CityHooks hooks;
+    private final GuildsApi guildsApi;
     private final Map<String, PendingTransfer> pendingTransfers = new ConcurrentHashMap<>();
     private final Map<String, PendingSell> pendingSells = new ConcurrentHashMap<>();
 
@@ -50,7 +78,8 @@ public final class PlotService {
             PlotRepository plotRepository,
             PlotMemberRepository plotMemberRepository,
             EconomyService economyService,
-            CityHooks hooks
+            CityHooks hooks,
+            GuildsApi guildsApi
     ) {
         this.config = config;
         this.cityAreaRepository = cityAreaRepository;
@@ -58,6 +87,7 @@ public final class PlotService {
         this.plotMemberRepository = plotMemberRepository;
         this.economyService = economyService;
         this.hooks = hooks;
+        this.guildsApi = guildsApi;
     }
 
     public Optional<Plot> findContaining(Location location) {
@@ -77,7 +107,7 @@ public final class PlotService {
             return BuyResult.NOT_FOUND;
         }
         Plot plot = plotOptional.get();
-        if (plot.ownerUuid() != null) {
+        if (plot.ownerId() != null) {
             return BuyResult.ALREADY_OWNED;
         }
         if (!isTypeEnabled(plot.type())) {
@@ -115,6 +145,7 @@ public final class PlotService {
                 plot.y2(),
                 plot.z2(),
                 plot.price(),
+                PlotOwnerType.PLAYER,
                 player.getUniqueId(),
                 plot.createdAt(),
                 rentPaidUntil
@@ -127,79 +158,87 @@ public final class PlotService {
         if (player == null || location == null) {
             return true;
         }
-        if (player.hasPermission(ADMIN_PERMISSION)) {
-            return true;
-        }
-        String bypassPermission = config.cityAreaBypassPermission();
-        if (bypassPermission != null
-                && !bypassPermission.isBlank()
-                && player.hasPermission(bypassPermission)) {
-            return true;
-        }
-        Optional<Plot> plotOptional = plotRepository.findContaining(location);
-        if (plotOptional.isPresent()) {
-            Plot plot = plotOptional.get();
-            if (plot.ownerUuid() == null) {
-                return true;
-            }
-            UUID playerId = player.getUniqueId();
-            if (playerId.equals(plot.ownerUuid())) {
-                return true;
-            }
-            return plotMemberRepository.isMember(plot.id(), playerId);
-        }
-        if (!config.cityAreaDefaultDeny()) {
-            return true;
-        }
-        return !isInCityArea(location);
+        return checkAccess(player.getUniqueId(), location, Action.MODIFY).isAllowed();
     }
 
     public boolean canInteract(Player player, Location location) {
         if (player == null || location == null) {
             return true;
         }
-        if (player.hasPermission(ADMIN_PERMISSION)) {
-            return true;
-        }
-        String bypassPermission = config.cityAreaBypassPermission();
-        if (bypassPermission != null
-                && !bypassPermission.isBlank()
-                && player.hasPermission(bypassPermission)) {
-            return true;
-        }
-        Optional<Plot> plotOptional = plotRepository.findContaining(location);
-        if (plotOptional.isPresent()) {
-            Plot plot = plotOptional.get();
-            if (plot.ownerUuid() == null) {
-                return true;
-            }
-            UUID playerId = player.getUniqueId();
-            if (playerId.equals(plot.ownerUuid())) {
-                return true;
-            }
-            if (plotMemberRepository.isMember(plot.id(), playerId)) {
-                return true;
-            }
-            if (plot.type() == PlotType.SHOP) {
-                return false;
-            }
-            return config.allowInteractOutsideMembers();
-        }
-        if (!config.cityAreaDefaultDeny()) {
-            return true;
-        }
-        return !isInCityArea(location);
+        return checkAccess(player.getUniqueId(), location, Action.INTERACT).isAllowed();
     }
 
     public boolean isProtectedFromExplosions(Location location) {
         if (location == null) {
             return false;
         }
+        return !checkAccess(null, location, Action.EXPLOSION).isAllowed();
+    }
+
+    public AccessResult checkAccess(UUID playerId, Location location, Action action) {
+        if (location == null) {
+            return AccessResult.allow();
+        }
+        Player player = playerId == null ? null : Bukkit.getPlayer(playerId);
+        if (player != null) {
+            if (player.hasPermission(ADMIN_PERMISSION)) {
+                return AccessResult.allow();
+            }
+            String bypassPermission = config.cityAreaBypassPermission();
+            if (bypassPermission != null
+                    && !bypassPermission.isBlank()
+                    && player.hasPermission(bypassPermission)) {
+                return AccessResult.allow();
+            }
+        }
         Optional<Plot> plotOptional = plotRepository.findContaining(location);
         if (plotOptional.isPresent()) {
-            return plotOptional.get().ownerUuid() != null;
+            Plot plot = plotOptional.get();
+            if (plot.ownerId() == null) {
+                return AccessResult.allow();
+            }
+            if (plot.ownerType() == PlotOwnerType.GUILD) {
+                if (playerId == null || guildsApi == null) {
+                    return AccessResult.deny("plot.access.denied");
+                }
+                if (!guildsApi.isMember(plot.ownerId(), playerId)) {
+                    return AccessResult.deny("plot.access.denied");
+                }
+                if (action == Action.MODIFY) {
+                    return config.guildAllowBuildForMembers()
+                            ? AccessResult.allow()
+                            : AccessResult.deny("plot.access.denied");
+                }
+                if (action == Action.INTERACT) {
+                    return config.guildAllowInteractForMembers()
+                            ? AccessResult.allow()
+                            : AccessResult.deny("plot.access.denied");
+                }
+                return AccessResult.deny("plot.access.denied");
+            }
+            if (playerId != null) {
+                if (plot.isOwnedByPlayer(playerId)) {
+                    return AccessResult.allow();
+                }
+                if (plotMemberRepository.isMember(plot.id(), playerId)) {
+                    return AccessResult.allow();
+                }
+            }
+            if (action == Action.INTERACT && plot.type() != PlotType.SHOP && config.allowInteractOutsideMembers()) {
+                return AccessResult.allow();
+            }
+            return AccessResult.deny("plot.access.denied");
         }
-        return config.cityAreaDefaultDeny() && isInCityArea(location);
+        if (cityAreaRepository.findContaining(location).isPresent()) {
+            if (config.cityAreaDefaultDeny()) {
+                return AccessResult.deny("city.access.denied");
+            }
+            return AccessResult.allow();
+        }
+        if (config.accessDefaultOutsideCityAllow()) {
+            return AccessResult.allow();
+        }
+        return AccessResult.deny("city.access.denied");
     }
 
     public boolean isLimitReached(Player player, PlotType type) {
@@ -260,6 +299,132 @@ public final class PlotService {
         }
         pendingTransfers.remove(plotId);
         pendingSells.remove(plotId);
+    }
+
+    public AddTrustedOutcome addTrusted(Player actor, String plotId, String targetName) {
+        if (actor == null || plotId == null || plotId.isBlank()) {
+            return new AddTrustedOutcome(AddTrustedResult.PLOT_NOT_FOUND, "");
+        }
+        if (targetName == null || targetName.isBlank()) {
+            return new AddTrustedOutcome(AddTrustedResult.INVALID_TARGET, "");
+        }
+        Optional<Plot> plotOptional = plotRepository.findById(plotId);
+        if (plotOptional.isEmpty()) {
+            return new AddTrustedOutcome(AddTrustedResult.PLOT_NOT_FOUND, "");
+        }
+        Plot plot = plotOptional.get();
+        if (plot.ownerId() == null) {
+            return new AddTrustedOutcome(AddTrustedResult.NOT_OWNED, "");
+        }
+        boolean isAdmin = actor.hasPermission(ADMIN_PERMISSION);
+        if (!isAdmin && !plot.isOwnedByPlayer(actor.getUniqueId())) {
+            return new AddTrustedOutcome(AddTrustedResult.NOT_OWNER, "");
+        }
+        var target = Bukkit.getOfflinePlayer(targetName);
+        UUID targetId = target.getUniqueId();
+        if (actor.getUniqueId().equals(targetId)) {
+            return new AddTrustedOutcome(AddTrustedResult.SELF, "");
+        }
+        if (config.trustedMax() > 0) {
+            long trustedCount = plotMemberRepository.findMembers(plotId).values().stream()
+                    .filter(role -> role == ru.realite.city.model.PlotMemberRole.TRUSTED)
+                    .count();
+            if (trustedCount >= config.trustedMax()) {
+                return new AddTrustedOutcome(AddTrustedResult.LIMIT_REACHED, "");
+            }
+        }
+        plotMemberRepository.upsert(plotId, targetId, ru.realite.city.model.PlotMemberRole.TRUSTED);
+        String display = target.getName() == null ? targetId.toString() : target.getName();
+        return new AddTrustedOutcome(AddTrustedResult.SUCCESS, display);
+    }
+
+    public SetOwnerOutcome setOwner(String plotId, PlotOwnerType ownerType, String ownerRef) {
+        if (plotId == null || plotId.isBlank()) {
+            return new SetOwnerOutcome(SetOwnerResult.PLOT_NOT_FOUND, "");
+        }
+        if (ownerType == null || ownerRef == null || ownerRef.isBlank()) {
+            return new SetOwnerOutcome(SetOwnerResult.INVALID_INPUT, "");
+        }
+        Optional<Plot> plotOptional = plotRepository.findById(plotId);
+        if (plotOptional.isEmpty()) {
+            return new SetOwnerOutcome(SetOwnerResult.PLOT_NOT_FOUND, "");
+        }
+        Plot plot = plotOptional.get();
+        UUID ownerId;
+        String ownerDisplay;
+        if (ownerType == PlotOwnerType.PLAYER) {
+            PlayerLookup lookup = resolvePlayerOwner(ownerRef);
+            if (lookup == null) {
+                return new SetOwnerOutcome(SetOwnerResult.INVALID_INPUT, "");
+            }
+            ownerId = lookup.id();
+            ownerDisplay = lookup.display();
+        } else {
+            if (guildsApi == null || guildsApi instanceof NoopGuildsApi) {
+                return new SetOwnerOutcome(SetOwnerResult.NO_GUILDS, "");
+            }
+            ownerId = guildsApi.findGuildIdByTag(ownerRef).orElse(null);
+            if (ownerId == null) {
+                return new SetOwnerOutcome(SetOwnerResult.GUILD_NOT_FOUND, "");
+            }
+            ownerDisplay = ownerRef.toUpperCase();
+        }
+        Plot updated = new Plot(
+                plot.id(),
+                plot.number(),
+                plot.type(),
+                plot.world(),
+                plot.x1(),
+                plot.y1(),
+                plot.z1(),
+                plot.x2(),
+                plot.y2(),
+                plot.z2(),
+                plot.price(),
+                ownerType,
+                ownerId,
+                plot.createdAt(),
+                plot.rentPaidUntil());
+        plotRepository.upsert(updated);
+        plotMemberRepository.removeAll(plot.id());
+        clearPendingOffers(plot.id());
+        return new SetOwnerOutcome(SetOwnerResult.SUCCESS, ownerDisplay);
+    }
+
+    private record PlayerLookup(UUID id, String display) {
+    }
+
+    private PlayerLookup resolvePlayerOwner(String ownerRef) {
+        if (ownerRef == null || ownerRef.isBlank()) {
+            return null;
+        }
+        UUID ownerId = null;
+        try {
+            ownerId = UUID.fromString(ownerRef);
+        } catch (IllegalArgumentException ignored) {
+        }
+        if (ownerId != null) {
+            Player online = Bukkit.getPlayer(ownerId);
+            if (online != null) {
+                return new PlayerLookup(ownerId, online.getName());
+            }
+            OfflinePlayer offline = Bukkit.getOfflinePlayer(ownerId);
+            if (!offline.hasPlayedBefore()) {
+                return null;
+            }
+            String display = offline.getName() == null ? ownerId.toString() : offline.getName();
+            return new PlayerLookup(ownerId, display);
+        }
+        Player online = Bukkit.getPlayerExact(ownerRef);
+        if (online != null) {
+            return new PlayerLookup(online.getUniqueId(), online.getName());
+        }
+        OfflinePlayer offline = Bukkit.getOfflinePlayer(ownerRef);
+        if (!offline.hasPlayedBefore()) {
+            return null;
+        }
+        String display = offline.getName() == null ? offline.getUniqueId().toString() : offline.getName();
+        return new PlayerLookup(offline.getUniqueId(), display);
     }
 
     private boolean isTypeEnabled(PlotType type) {

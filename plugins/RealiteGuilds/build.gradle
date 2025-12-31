@@ -21,6 +21,7 @@ repositories {
 dependencies {
     compileOnly "io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT"
     compileOnly project(":RealiteCore")
+    compileOnly project(":plugins:RealiteCityInfrastructure")
     compileOnly "net.kyori:adventure-api:4.17.0"
     compileOnly "net.kyori:adventure-text-serializer-legacy:4.17.0"
     compileOnly "com.github.MilkBowl:VaultAPI:1.7"

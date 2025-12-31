@@ -1,5 +1,7 @@
 city:
   no-permission: "&cУ вас нет прав."
+  access:
+    denied: "&cГород не разрешает это действие."
   only-players: "&cКоманду могут использовать только игроки."
   usage: "&eИспользование: /city <area|plot|shop|market> <...>"
   protected: "&cЭта территория защищена."
@@ -166,6 +168,22 @@ city:
       unknown-type: "&cНеизвестный тип участка."
       invalid-price: "&cНекорректная цена."
       exists: "&cУчасток {id} уже существует."
+plot:
+  access:
+    denied: "&cУчасток не разрешает это действие."
+  trusted:
+    limit: "&cДостигнут лимит доверенных игроков ({limit})."
+  # Управление владельцем участка
+  setowner:
+    success: "&aВладелец участка {id} установлен: {owner}."
+    gui_disabled: "&cНазначение владельца через GUI отключено."
+    guild:
+      not_found: "&cГильдия {tag} не найдена."
+    guilds_not_installed: "&cRealiteGuilds не установлен."
+  create:
+    denied:
+      overlap: "&cНельзя создать участок: пересечение с другим участком."
+      outside_city: "&cНельзя создать участок: он выходит за границы города."
     delete:
       usage: "&eИспользование: /city plot delete <id>"
     info:
@@ -174,6 +192,14 @@ city:
       usage: "&eИспользование: /city plot goto <id|#number>"
       success: "&aТелепортация на участок #{number} ({id})."
       invalid-world: "&cМир {world} недоступен."
+visual:
+  border:
+    shown: "&aГраница участка показана."
+    cooldown: "&cПодождите {seconds} сек. перед следующим показом границы."
+    disabled: "&cПоказ границы участка отключён."
+gui:
+  btn:
+    show_border: "&aПоказать границу"
 area:
   pos1-set: "&apos1 установлена: &7{loc}"
   pos2-set: "&apos2 установлена: &7{loc}"
@@ -193,3 +219,51 @@ area:
   list:
     header: "&eГородские зоны:"
     line: "- {id} ({world}) [{minX},{minY},{minZ}] -> [{maxX},{maxY},{maxZ}]"
+gui:
+  title:
+    admin_main: "&eАдмин: город"
+    admin_selection: "&eАдмин: выделение"
+    admin_plots: "&eАдмин: участки"
+    admin_plot_actions: "&eАдмин: участок"
+    player_main: "&eУчасток"
+    player_access: "&eДоступ к участку"
+  btn:
+    regions: "&7Регионы"
+    plots: "&eУчастки"
+    selection: "&eВыделение"
+    help: "&7Помощь"
+    back: "&cНазад"
+    access: "&eДоступ"
+    info: "&eИнфо"
+    teleport: "&bТелепорт"
+    set_owner_player: "&eНазначить владельца: игрок"
+    set_owner_guild: "&eНазначить владельца: гильдия"
+  plot:
+    none: "&cУ вас нет участка. &7Подсказка: /city plot buy #<номер> или /city plot nearby."
+  access:
+    add: "&aДобавить доверенного"
+    remove: "&cКлик: убрать доступ"
+    remove_all:
+      button: "&cУбрать всех доверенных"
+      confirm: "&eНажмите ещё раз, чтобы убрать всех доверенных."
+      success: "&aВсе доверенные удалены."
+      cancelled: "&cПодтверждение удаления отменено."
+  selection:
+    pos1:
+      set: "&aУстановить позицию 1"
+    pos2:
+      set: "&aУстановить позицию 2"
+    clear: "&cОчистить выделение"
+    status: "&eСтатус выделения"
+  error:
+    disabled: "&cGUI отключена."
+    no_permission: "&cУ вас нет прав."
+    action_failed: "&cНе удалось выполнить действие: {reason}"
+chatinput:
+  cancelled: "&eВвод отменён."
+  timeout: "&cВремя ввода истекло."
+  invalid: "&cНекорректный ввод."
+  prompt:
+    add_trusted: "&eВведите ник игрока для доверенного (или /cancel)."
+    set_owner_player: "&eВведите ник игрока для владельца (или /cancel)."
+    set_owner_guild: "&eВведите тег гильдии для владельца (или /cancel)."

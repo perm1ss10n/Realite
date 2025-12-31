@@ -16,10 +16,32 @@ public record Plot(
         int y2,
         int z2,
         int price,
-        UUID ownerUuid,
+        PlotOwnerType ownerType,
+        UUID ownerId,
         long createdAt,
         long rentPaidUntil
 ) {
+    public UUID ownerPlayerId() {
+        if (ownerType == PlotOwnerType.PLAYER) {
+            return ownerId;
+        }
+        return null;
+    }
+
+    public boolean isOwnedByPlayer(UUID playerId) {
+        if (playerId == null) {
+            return false;
+        }
+        return ownerType == PlotOwnerType.PLAYER && playerId.equals(ownerId);
+    }
+
+    public boolean isOwnedByGuild(UUID guildId) {
+        if (guildId == null) {
+            return false;
+        }
+        return ownerType == PlotOwnerType.GUILD && guildId.equals(ownerId);
+    }
+
     public boolean contains(Location location) {
         if (location == null || location.getWorld() == null) {
             return false;

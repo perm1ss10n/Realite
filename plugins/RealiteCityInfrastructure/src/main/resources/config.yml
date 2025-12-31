@@ -7,6 +7,31 @@ limits:
 
 lang: "ru"  # Supported languages: "en", "ru"
 
+gui:
+  enabled: true
+  sounds:
+    enabled: true
+
+playerGui:
+  enabled: true
+
+visual:
+  border:
+    # Enable plot border visualization
+    enabled: true
+    # How long to show particles (seconds)
+    durationSeconds: 10
+    # Cooldown per player (seconds)
+    cooldownSeconds: 30
+    # Distance between particles along the border
+    step: 1.5
+
+chatInput:
+  # Hide player's message while waiting for input
+  hideMessage: true
+  # Input timeout in seconds (0 to disable)
+  timeoutSeconds: 30
+
 # Storage settings
 storage:
   sqliteFile: "city.sqlite"
@@ -14,12 +39,23 @@ storage:
 logging:
   debug: false
 
+# Access priority: Plot > CityRegion > outside
+access:
+  # Default decision when a point is outside any city region
+  defaultOutsideCity: "ALLOW" # ALLOW | DENY
+
 # Future city area behavior
 cityArea:
   defaultDeny: true
   bypassPermission: "realite.city.bypass"
 
 plots:
+  # Plot has priority over city region access rules
+  priority: "PLOT_OVER_CITY"
+  # City plots must be completely inside city regions
+  mustBeInsideCity: true
+  # Overlapping plots are not allowed
+  allowOverlap: false
   nearby:
     defaultRadius: 150
   types:
@@ -29,6 +65,18 @@ plots:
       enabled: true
   protection:
     allowInteractOutsideMembers: false
+  guild:
+    # Allow guild members to build on guild-owned plots
+    allowBuildForMembers: true
+
+    # Allow guild members to open doors/containers on guild-owned plots
+    allowInteractForMembers: true
+  trusted:
+    # Max trusted players per plot (0 = no limit)
+    max: 5
+  setOwner:
+    # Allow setting plot owner via GUI
+    allowViaGui: true
   cleanup:
     enabled: true
     blocksPerTick: 2000

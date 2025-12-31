@@ -2,23 +2,36 @@ package ru.realite.city;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.city.command.CityCommand;
+import ru.realite.city.gui.GuiService;
+import ru.realite.city.gui.GuiSessionStore;
+import ru.realite.city.gui.MenuFactory;
+import ru.realite.city.gui.MenuListener;
 import ru.realite.city.i18n.CityMessages;
+import ru.realite.city.listener.ChatInputListener;
 import ru.realite.city.listener.CityAreaSelectionListener;
 import ru.realite.city.listener.CityProtectionListener;
 import ru.realite.city.listener.ShopPointListener;
+import ru.realite.city.service.ChatInputService;
 import ru.realite.city.service.CityAreaSelectionService;
+import ru.realite.city.service.CityAdminService;
+import ru.realite.city.service.CityInfrastructureAccessHook;
 import ru.realite.city.service.CityHooks;
 import ru.realite.city.service.DefaultCityHooks;
 import ru.realite.city.service.EconomyService;
+import ru.realite.city.service.GuildsApi;
 import ru.realite.city.service.MarketService;
+import ru.realite.city.service.NoopGuildsApi;
+import ru.realite.city.service.PlotBorderVisualizationService;
 import ru.realite.city.service.PlotCleanupService;
 import ru.realite.city.service.PlotService;
 import ru.realite.city.service.ShopDirectoryService;
 import ru.realite.city.service.ShopMarkerService;
 import ru.realite.city.service.ShopPointService;
 import ru.realite.city.service.ShopRentService;
+import ru.realite.core.api.integrations.CityAccessHook;
 import ru.realite.city.storage.SqliteCityAreaRepository;
 import ru.realite.city.storage.SqlitePlotMemberRepository;
 import ru.realite.city.storage.SqlitePlotRepository;
@@ -64,7 +77,11 @@ public final class CityInfrastructureModule implements Module {
     private ShopMarkerService shopMarkerService;
     private ShopDirectoryService shopDirectoryService;
     private MarketService marketService;
+    private PlotBorderVisualizationService plotBorderVisualizationService;
     private CityHooks cityHooks;
+    private GuildsApi guildsApi;
+    private GuiService guiService;
+    private ChatInputService chatInputService;
 
     @Override
     public ModuleMetadata metadata() {
@@ -142,6 +159,7 @@ public final class CityInfrastructureModule implements Module {
         plotCleanupService = new PlotCleanupService(javaPlugin, config, messages);
         economyService = new EconomyService(javaPlugin);
         cityHooks = new DefaultCityHooks(config);
+        guildsApi = resolveGuildsApi(javaPlugin);
         shopPointService = new ShopPointService(shopPointRepository);
         shopMarkerService = new ShopMarkerService(config, shopPointService);
         shopDirectoryService = new ShopDirectoryService(shopListingRepository, shopMarkerService);
@@ -153,6 +171,7 @@ public final class CityInfrastructureModule implements Module {
                 shopPointService,
                 economyService);
         shopRentService.start();
+        plotBorderVisualizationService = new PlotBorderVisualizationService(javaPlugin, config, messages);
 
         // Domain service
         plotService = new PlotService(
@@ -161,8 +180,28 @@ public final class CityInfrastructureModule implements Module {
                 plotRepository,
                 plotMemberRepository,
                 economyService,
-                cityHooks);
+                cityHooks,
+                guildsApi);
         marketService = new MarketService(config, economyService, cityHooks);
+        chatInputService = new ChatInputService(javaPlugin, config, messages, plotService);
+        CityAdminService adminService = new CityAdminService(selectionService, plotRepository);
+        MenuFactory menuFactory = new MenuFactory(javaPlugin, messages, selectionService, plotRepository);
+        GuiSessionStore guiSessionStore = new GuiSessionStore();
+        guiService = new GuiService(
+                config,
+                messages,
+                adminService,
+                chatInputService,
+                plotBorderVisualizationService,
+                guiSessionStore,
+                menuFactory,
+                plotRepository,
+                plotMemberRepository);
+        javaPlugin.getServer().getServicesManager().register(
+                CityAccessHook.class,
+                new CityInfrastructureAccessHook(plotService),
+                javaPlugin,
+                ServicePriority.Normal);
 
         // Listeners
         Bukkit.getPluginManager().registerEvents(
@@ -173,6 +212,12 @@ public final class CityInfrastructureModule implements Module {
                 javaPlugin);
         Bukkit.getPluginManager().registerEvents(
                 new ShopPointListener(shopPointService, plotRepository, plotMemberRepository, messages, shopRentService),
+                javaPlugin);
+        Bukkit.getPluginManager().registerEvents(
+                new MenuListener(guiService, menuFactory),
+                javaPlugin);
+        Bukkit.getPluginManager().registerEvents(
+                new ChatInputListener(javaPlugin, config, chatInputService),
                 javaPlugin);
 
         // Command
@@ -192,12 +237,33 @@ public final class CityInfrastructureModule implements Module {
                     shopRentService,
                     shopDirectoryService,
                     shopMarkerService,
-                    marketService));
+                    marketService,
+                    guildsApi,
+                    guiService));
         } else {
             ctx.logger().warn("[CityInfrastructure] Command /city not found in plugin.yml; executor not registered.");
         }
 
+        var plotCmd = javaPlugin.getCommand("plot");
+        if (plotCmd != null) {
+            plotCmd.setExecutor(new ru.realite.city.command.PlotCommand(guiService, messages));
+        } else {
+            ctx.logger().warn("[CityInfrastructure] Command /plot not found in plugin.yml; executor not registered.");
+        }
+
         ctx.logger().info("[CityInfrastructure] CityInfrastructure enabled");
+    }
+
+    private GuildsApi resolveGuildsApi(JavaPlugin plugin) {
+        if (plugin == null) {
+            return new NoopGuildsApi();
+        }
+        var provider = plugin.getServer().getServicesManager().getRegistration(GuildsApi.class);
+        if (provider == null) {
+            return new NoopGuildsApi();
+        }
+        GuildsApi api = provider.getProvider();
+        return api == null ? new NoopGuildsApi() : api;
     }
 
     @Override

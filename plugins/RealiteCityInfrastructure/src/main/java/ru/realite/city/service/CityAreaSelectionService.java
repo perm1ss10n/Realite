@@ -43,6 +43,10 @@ public final class CityAreaSelectionService {
         selections.merge(playerId, new Selection(null, location), (prev, next) -> prev.withPos2(location));
     }
 
+    public void clearSelection(UUID playerId) {
+        selections.remove(playerId);
+    }
+
     public Optional<Selection> getSelection(UUID playerId) {
         return Optional.ofNullable(selections.get(playerId));
     }

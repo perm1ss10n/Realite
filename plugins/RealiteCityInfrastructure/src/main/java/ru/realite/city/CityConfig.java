@@ -9,6 +9,7 @@ public record CityConfig(
                 String sqliteFile,
                 boolean debug,
                 boolean cityAreaDefaultDeny,
+                boolean accessDefaultOutsideCityAllow,
                 String cityAreaBypassPermission,
                 boolean homePlotsEnabled,
                 boolean shopPlotsEnabled,
@@ -19,6 +20,12 @@ public record CityConfig(
                 int plotCleanupClearAboveY,
                 int plotNearbyDefaultRadius,
                 boolean allowInteractOutsideMembers,
+                boolean guildAllowBuildForMembers,
+                boolean guildAllowInteractForMembers,
+                boolean plotsMustBeInsideCity,
+                boolean plotsAllowOverlap,
+                String plotsPriority,
+                boolean plotsSetOwnerAllowViaGui,
                 int shopPointsPerPlot,
                 boolean shopRentEnabled,
                 int shopRentPeriodHours,
@@ -38,6 +45,16 @@ public record CityConfig(
                 double marketHubX,
                 double marketHubY,
                 double marketHubZ,
+                boolean guiEnabled,
+                boolean guiSoundsEnabled,
+                boolean playerGuiEnabled,
+                boolean visualBorderEnabled,
+                int visualBorderDurationSeconds,
+                int visualBorderCooldownSeconds,
+                double visualBorderStep,
+                int trustedMax,
+                boolean chatInputHideMessage,
+                int chatInputTimeoutSeconds,
                 String language) {
         public static CityConfig from(Config config) {
                 int defaultPlotsPerPlayer = config.getInt("limits.defaultPlotsPerPlayer", 3);
@@ -46,6 +63,8 @@ public record CityConfig(
                 String sqliteFile = config.getString("storage.sqliteFile", "city.sqlite");
                 boolean debug = config.getBoolean("logging.debug", false);
                 boolean cityAreaDefaultDeny = config.getBoolean("cityArea.defaultDeny", true);
+                String outsideToken = config.getString("access.defaultOutsideCity", "ALLOW");
+                boolean accessDefaultOutsideCityAllow = !"DENY".equalsIgnoreCase(outsideToken);
                 String cityAreaBypassPermission = config.getString(
                                 "cityArea.bypassPermission",
                                 "realite.city.bypass");
@@ -60,6 +79,14 @@ public record CityConfig(
                 int plotNearbyDefaultRadius = config.getInt("plots.nearby.defaultRadius", 150);
                 boolean allowInteractOutsideMembers =
                                 config.getBoolean("plots.protection.allowInteractOutsideMembers", false);
+                boolean guildAllowBuildForMembers =
+                                config.getBoolean("plots.guild.allowBuildForMembers", true);
+                boolean guildAllowInteractForMembers =
+                                config.getBoolean("plots.guild.allowInteractForMembers", true);
+                boolean plotsMustBeInsideCity = config.getBoolean("plots.mustBeInsideCity", true);
+                boolean plotsAllowOverlap = config.getBoolean("plots.allowOverlap", false);
+                String plotsPriority = config.getString("plots.priority", "PLOT_OVER_CITY");
+                boolean plotsSetOwnerAllowViaGui = config.getBoolean("plots.setOwner.allowViaGui", true);
                 int shopPointsPerPlot = config.getInt("shops.pointsPerPlot", 3);
                 boolean shopRentEnabled = config.getBoolean("shops.rent.enabled", false);
                 int shopRentPeriodHours = config.getInt("shops.rent.periodHours", 24);
@@ -81,6 +108,16 @@ public record CityConfig(
                 double marketHubX = config.getDouble("market.hub.x", 0);
                 double marketHubY = config.getDouble("market.hub.y", 0);
                 double marketHubZ = config.getDouble("market.hub.z", 0);
+                boolean guiEnabled = config.getBoolean("gui.enabled", true);
+                boolean guiSoundsEnabled = config.getBoolean("gui.sounds.enabled", true);
+                boolean playerGuiEnabled = config.getBoolean("playerGui.enabled", true);
+                boolean visualBorderEnabled = config.getBoolean("visual.border.enabled", true);
+                int visualBorderDurationSeconds = config.getInt("visual.border.durationSeconds", 10);
+                int visualBorderCooldownSeconds = config.getInt("visual.border.cooldownSeconds", 30);
+                double visualBorderStep = config.getDouble("visual.border.step", 1.5);
+                int trustedMax = config.getInt("plots.trusted.max", 5);
+                boolean chatInputHideMessage = config.getBoolean("chatInput.hideMessage", true);
+                int chatInputTimeoutSeconds = config.getInt("chatInput.timeoutSeconds", 30);
                 String language = config.getString("lang", config.getString("language", "ru"));
 
                 return new CityConfig(
@@ -90,6 +127,7 @@ public record CityConfig(
                                 sqliteFile,
                                 debug,
                                 cityAreaDefaultDeny,
+                                accessDefaultOutsideCityAllow,
                                 cityAreaBypassPermission,
                                 homePlotsEnabled,
                                 shopPlotsEnabled,
@@ -100,6 +138,12 @@ public record CityConfig(
                                 plotCleanupClearAboveY,
                                 plotNearbyDefaultRadius,
                                 allowInteractOutsideMembers,
+                                guildAllowBuildForMembers,
+                                guildAllowInteractForMembers,
+                                plotsMustBeInsideCity,
+                                plotsAllowOverlap,
+                                plotsPriority,
+                                plotsSetOwnerAllowViaGui,
                                 shopPointsPerPlot,
                                 shopRentEnabled,
                                 shopRentPeriodHours,
@@ -119,6 +163,16 @@ public record CityConfig(
                                 marketHubX,
                                 marketHubY,
                                 marketHubZ,
+                                guiEnabled,
+                                guiSoundsEnabled,
+                                playerGuiEnabled,
+                                visualBorderEnabled,
+                                visualBorderDurationSeconds,
+                                visualBorderCooldownSeconds,
+                                visualBorderStep,
+                                trustedMax,
+                                chatInputHideMessage,
+                                chatInputTimeoutSeconds,
                                 language);
         }
 
