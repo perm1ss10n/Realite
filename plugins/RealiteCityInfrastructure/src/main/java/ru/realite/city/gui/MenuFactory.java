@@ -201,6 +201,7 @@ public final class MenuFactory {
         }
 
         inventory.setItem(45, actionItem(Material.ARROW, pageLabel("&e<"), "player_access_prev"));
+        inventory.setItem(48, actionItemKey(Material.RED_DYE, "gui.access.remove_all.button", "player_access_remove_all"));
         inventory.setItem(49, addTrustedItem(canAdd));
         inventory.setItem(50, pageIndicatorItem(page, maxPage));
         inventory.setItem(53, actionItem(Material.ARROW, pageLabel("&e>"), "player_access_next"));

@@ -283,6 +283,7 @@ public final class GuiService {
         session.accessPage(safePage);
         session.selectedPlotId(plot.id());
         session.deleteConfirmation(false);
+        session.removeAllConfirmationAt(0L);
         boolean canAdd = config.trustedMax() <= 0 || trusted.size() < config.trustedMax();
         player.openInventory(menuFactory.playerAccess(player, plot, trusted, safePage, maxPage, canAdd));
     }
@@ -317,6 +318,34 @@ public final class GuiService {
             messages.send(player, "city.plot.member.not-found", "");
         }
         openPlayerAccess(player, sessionStore.getOrCreate(player.getUniqueId()).accessPage());
+    }
+
+    public void handlePlayerAccessRemoveAll(Player player) {
+        if (player == null) {
+            return;
+        }
+        Plot plot = resolvePlayerPlot(player);
+        if (plot == null) {
+            return;
+        }
+        GuiSessionStore.GuiSession session = sessionStore.getOrCreate(player.getUniqueId());
+        long now = System.currentTimeMillis();
+        long confirmationAt = session.removeAllConfirmationAt();
+        if (confirmationAt > 0 && now - confirmationAt <= 10_000L) {
+            plotMemberRepository.findMembers(plot.id()).entrySet().stream()
+                    .filter(entry -> entry.getValue() == PlotMemberRole.TRUSTED)
+                    .map(Map.Entry::getKey)
+                    .forEach(memberId -> plotMemberRepository.remove(plot.id(), memberId));
+            session.removeAllConfirmationAt(0L);
+            messages.send(player, "gui.access.remove_all.success", "");
+            openPlayerAccess(player, session.accessPage());
+            return;
+        }
+        if (confirmationAt > 0 && now - confirmationAt > 10_000L) {
+            messages.send(player, "gui.access.remove_all.cancelled", "");
+        }
+        session.removeAllConfirmationAt(now);
+        messages.send(player, "gui.access.remove_all.confirm", "");
     }
 
     public void handlePlayerAccessAdd(Player player) {

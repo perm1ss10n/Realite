@@ -243,6 +243,11 @@ gui:
   access:
     add: "&aAdd trusted"
     remove: "&cClick: remove access"
+    remove_all:
+      button: "&cRemove all trusted"
+      confirm: "&eClick again to remove all trusted players."
+      success: "&aAll trusted players removed."
+      cancelled: "&cRemoval confirmation cancelled."
   selection:
     pos1:
       set: "&aSet position 1"

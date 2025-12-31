@@ -62,6 +62,7 @@ public final class MenuListener implements Listener {
             case "player_access_prev" -> guiService.handlePlayerAccessPrev(player);
             case "player_access_next" -> guiService.handlePlayerAccessNext(player);
             case "player_access_add" -> guiService.handlePlayerAccessAdd(player);
+            case "player_access_remove_all" -> guiService.handlePlayerAccessRemoveAll(player);
             case "player_access_remove" -> menuFactory.extractMemberId(event.getCurrentItem())
                     .map(java.util.UUID::fromString)
                     .ifPresent(memberId -> guiService.handlePlayerAccessRemove(player, memberId));
