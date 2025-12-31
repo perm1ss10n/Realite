@@ -1029,54 +1029,27 @@ public final class CityCommand implements CommandExecutor {
         }
 
         PlotOwnerType ownerType;
-        UUID ownerId;
-        String ownerDisplay;
         if ("player".equals(ownerTypeRaw)) {
-            OfflinePlayer target = Bukkit.getOfflinePlayer(ownerRef);
-            ownerId = target.getUniqueId();
             ownerType = PlotOwnerType.PLAYER;
-            ownerDisplay = target.getName() == null ? ownerId.toString() : target.getName();
         } else if ("guild".equals(ownerTypeRaw)) {
-            if (guildsApi == null || guildsApi instanceof NoopGuildsApi) {
-                messages.send(sender, "plot.setowner.guilds_not_installed", "");
-                return;
-            }
-            ownerId = guildsApi.findGuildIdByTag(ownerRef).orElse(null);
-            if (ownerId == null) {
-                messages.send(sender, "plot.setowner.guild.not_found", "",
-                        Map.of("tag", ownerRef));
-                return;
-            }
             ownerType = PlotOwnerType.GUILD;
-            ownerDisplay = ownerRef.toUpperCase();
         } else {
             sendUsage(sender);
             return;
         }
 
-        Plot updated = new Plot(
-                plot.id(),
-                plot.number(),
-                plot.type(),
-                plot.world(),
-                plot.x1(),
-                plot.y1(),
-                plot.z1(),
-                plot.x2(),
-                plot.y2(),
-                plot.z2(),
-                plot.price(),
-                ownerType,
-                ownerId,
-                plot.createdAt(),
-                plot.rentPaidUntil());
-        plotRepository.upsert(updated);
-        plotMemberRepository.removeAll(plot.id());
-        plotService.clearPendingOffers(plot.id());
-        messages.send(sender, "plot.setowner.success", "",
-                Map.ofEntries(
-                        Map.entry("id", plot.id()),
-                        Map.entry("owner", ownerDisplay)));
+        PlotService.SetOwnerOutcome outcome = plotService.setOwner(plot.id(), ownerType, ownerRef);
+        switch (outcome.result()) {
+            case PLOT_NOT_FOUND -> messages.send(sender, "city.plot.not-found", "", Map.of("id", plot.id()));
+            case NO_GUILDS -> messages.send(sender, "plot.setowner.guilds_not_installed", "");
+            case GUILD_NOT_FOUND -> messages.send(sender, "plot.setowner.guild.not_found", "",
+                    Map.of("tag", ownerRef));
+            case INVALID_INPUT -> messages.send(sender, "chatinput.invalid", "");
+            case SUCCESS -> messages.send(sender, "plot.setowner.success", "",
+                    Map.ofEntries(
+                            Map.entry("id", plot.id()),
+                            Map.entry("owner", outcome.ownerDisplay())));
+        }
     }
 
     private void handlePlotGoto(CommandSender sender, String[] args) {

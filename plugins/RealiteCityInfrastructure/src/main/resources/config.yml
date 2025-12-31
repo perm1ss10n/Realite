@@ -74,6 +74,9 @@ plots:
   trusted:
     # Max trusted players per plot (0 = no limit)
     max: 5
+  setOwner:
+    # Allow setting plot owner via GUI
+    allowViaGui: true
   cleanup:
     enabled: true
     blocksPerTick: 2000

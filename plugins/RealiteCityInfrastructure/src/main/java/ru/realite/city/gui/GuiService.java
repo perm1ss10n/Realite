@@ -105,7 +105,11 @@ public final class GuiService {
         session.menu(MenuType.ADMIN_PLOT_ACTIONS);
         session.selectedPlotId(plotId);
         session.deleteConfirmation(false);
-        player.openInventory(menuFactory.adminPlotActions(player, plotOptional.get(), false));
+        player.openInventory(menuFactory.adminPlotActions(
+                player,
+                plotOptional.get(),
+                false,
+                config.plotsSetOwnerAllowViaGui()));
     }
 
     public void handleSelectionPos1(Player player) {
@@ -156,7 +160,11 @@ public final class GuiService {
             session.deleteConfirmation(true);
             Optional<Plot> plotOptional = adminService.findPlot(plotId);
             if (plotOptional.isPresent()) {
-                player.openInventory(menuFactory.adminPlotActions(player, plotOptional.get(), true));
+                player.openInventory(menuFactory.adminPlotActions(
+                        player,
+                        plotOptional.get(),
+                        true,
+                        config.plotsSetOwnerAllowViaGui()));
             }
             return;
         }
@@ -191,6 +199,11 @@ public final class GuiService {
             messages.send(player, "gui.error.no_permission", "");
             return;
         }
+        if (!config.plotsSetOwnerAllowViaGui()) {
+            messages.send(player, "gui.error.action_failed", "",
+                    Map.of("reason", messages.getRaw("plot.setowner.gui_disabled", "disabled")));
+            return;
+        }
         String plotId = sessionStore.getOrCreate(player.getUniqueId()).selectedPlotId();
         if (plotId == null) {
             messages.send(player, "gui.error.action_failed", "",
@@ -206,6 +219,11 @@ public final class GuiService {
         }
         if (!player.hasPermission(ADMIN_PERMISSION)) {
             messages.send(player, "gui.error.no_permission", "");
+            return;
+        }
+        if (!config.plotsSetOwnerAllowViaGui()) {
+            messages.send(player, "gui.error.action_failed", "",
+                    Map.of("reason", messages.getRaw("plot.setowner.gui_disabled", "disabled")));
             return;
         }
         String plotId = sessionStore.getOrCreate(player.getUniqueId()).selectedPlotId();

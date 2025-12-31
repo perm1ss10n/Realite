@@ -176,6 +176,7 @@ plot:
   # Plot owner management
   setowner:
     success: "&aPlot {id} owner set to {owner}."
+    gui_disabled: "&cSetting owner via GUI is disabled."
     guild:
       not_found: "&cGuild {tag} not found."
     guilds_not_installed: "&cRealiteGuilds is not installed."
@@ -235,6 +236,8 @@ gui:
     access: "&eAccess"
     info: "&eInfo"
     teleport: "&bTeleport"
+    set_owner_player: "&eSet owner: player"
+    set_owner_guild: "&eSet owner: guild"
   plot:
     none: "&cYou don't own a plot. &7Tip: /city plot buy #<number> or /city plot nearby."
   access:

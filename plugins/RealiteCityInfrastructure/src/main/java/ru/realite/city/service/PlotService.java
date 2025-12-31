@@ -2,6 +2,7 @@ package ru.realite.city.service;
 
 import org.bukkit.Location;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import ru.realite.city.CityConfig;
 import ru.realite.city.model.Plot;
@@ -352,9 +353,12 @@ public final class PlotService {
         UUID ownerId;
         String ownerDisplay;
         if (ownerType == PlotOwnerType.PLAYER) {
-            var target = Bukkit.getOfflinePlayer(ownerRef);
-            ownerId = target.getUniqueId();
-            ownerDisplay = target.getName() == null ? ownerId.toString() : target.getName();
+            PlayerLookup lookup = resolvePlayerOwner(ownerRef);
+            if (lookup == null) {
+                return new SetOwnerOutcome(SetOwnerResult.INVALID_INPUT, "");
+            }
+            ownerId = lookup.id();
+            ownerDisplay = lookup.display();
         } else {
             if (guildsApi == null || guildsApi instanceof NoopGuildsApi) {
                 return new SetOwnerOutcome(SetOwnerResult.NO_GUILDS, "");
@@ -385,6 +389,42 @@ public final class PlotService {
         plotMemberRepository.removeAll(plot.id());
         clearPendingOffers(plot.id());
         return new SetOwnerOutcome(SetOwnerResult.SUCCESS, ownerDisplay);
+    }
+
+    private record PlayerLookup(UUID id, String display) {
+    }
+
+    private PlayerLookup resolvePlayerOwner(String ownerRef) {
+        if (ownerRef == null || ownerRef.isBlank()) {
+            return null;
+        }
+        UUID ownerId = null;
+        try {
+            ownerId = UUID.fromString(ownerRef);
+        } catch (IllegalArgumentException ignored) {
+        }
+        if (ownerId != null) {
+            Player online = Bukkit.getPlayer(ownerId);
+            if (online != null) {
+                return new PlayerLookup(ownerId, online.getName());
+            }
+            OfflinePlayer offline = Bukkit.getOfflinePlayer(ownerId);
+            if (!offline.hasPlayedBefore()) {
+                return null;
+            }
+            String display = offline.getName() == null ? ownerId.toString() : offline.getName();
+            return new PlayerLookup(ownerId, display);
+        }
+        Player online = Bukkit.getPlayerExact(ownerRef);
+        if (online != null) {
+            return new PlayerLookup(online.getUniqueId(), online.getName());
+        }
+        OfflinePlayer offline = Bukkit.getOfflinePlayer(ownerRef);
+        if (!offline.hasPlayedBefore()) {
+            return null;
+        }
+        String display = offline.getName() == null ? offline.getUniqueId().toString() : offline.getName();
+        return new PlayerLookup(offline.getUniqueId(), display);
     }
 
     private boolean isTypeEnabled(PlotType type) {
