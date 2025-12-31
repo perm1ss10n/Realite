@@ -52,6 +52,16 @@ public final class MenuListener implements Listener {
             case "plot_delete", "plot_delete_confirm" -> guiService.handleDeletePlot(player);
             case "plot_teleport" -> guiService.handleTeleport(player);
             case "plot_set_owner_player", "plot_set_owner_guild" -> guiService.handleStubOwner(player);
+            case "player_open_access" -> guiService.openPlayerAccess(player, 0);
+            case "player_info" -> guiService.handlePlayerInfo(player);
+            case "player_teleport" -> guiService.handlePlayerTeleport(player);
+            case "player_back" -> guiService.openPlayerMain(player);
+            case "player_access_prev" -> guiService.handlePlayerAccessPrev(player);
+            case "player_access_next" -> guiService.handlePlayerAccessNext(player);
+            case "player_access_add" -> guiService.handlePlayerAccessAdd(player);
+            case "player_access_remove" -> menuFactory.extractMemberId(event.getCurrentItem())
+                    .map(java.util.UUID::fromString)
+                    .ifPresent(memberId -> guiService.handlePlayerAccessRemove(player, memberId));
             case "open_plot_actions" -> menuFactory.extractPlotId(event.getCurrentItem())
                     .ifPresent(plotId -> guiService.openPlotActions(player, plotId));
             default -> {

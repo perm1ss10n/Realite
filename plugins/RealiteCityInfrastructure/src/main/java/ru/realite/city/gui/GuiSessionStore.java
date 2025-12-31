@@ -19,6 +19,7 @@ public final class GuiSessionStore {
     public static final class GuiSession {
         private MenuType menu = MenuType.ADMIN_MAIN;
         private int plotsPage;
+        private int accessPage;
         private String selectedPlotId;
         private boolean deleteConfirmation;
 
@@ -36,6 +37,14 @@ public final class GuiSessionStore {
 
         public void plotsPage(int plotsPage) {
             this.plotsPage = Math.max(0, plotsPage);
+        }
+
+        public int accessPage() {
+            return accessPage;
+        }
+
+        public void accessPage(int accessPage) {
+            this.accessPage = Math.max(0, accessPage);
         }
 
         public String selectedPlotId() {

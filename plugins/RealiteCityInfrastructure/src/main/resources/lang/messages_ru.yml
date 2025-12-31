@@ -171,6 +171,8 @@ city:
 plot:
   access:
     denied: "&cУчасток не разрешает это действие."
+  trusted:
+    limit: "&cДостигнут лимит доверенных игроков ({limit})."
   # Управление владельцем участка
   setowner:
     success: "&aВладелец участка {id} установлен: {owner}."
@@ -214,12 +216,22 @@ gui:
     admin_selection: "&eАдмин: выделение"
     admin_plots: "&eАдмин: участки"
     admin_plot_actions: "&eАдмин: участок"
+    player_main: "&eУчасток"
+    player_access: "&eДоступ к участку"
   btn:
     regions: "&7Регионы"
     plots: "&eУчастки"
     selection: "&eВыделение"
     help: "&7Помощь"
     back: "&cНазад"
+    access: "&eДоступ"
+    info: "&eИнфо"
+    teleport: "&bТелепорт"
+  plot:
+    none: "&cУ вас нет участка. &7Подсказка: /city plot buy #<номер> или /city plot nearby."
+  access:
+    add: "&aДобавить доверенного"
+    remove: "&cКлик: убрать доступ"
   selection:
     pos1:
       set: "&aУстановить позицию 1"

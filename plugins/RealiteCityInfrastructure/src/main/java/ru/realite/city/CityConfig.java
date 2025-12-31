@@ -46,6 +46,8 @@ public record CityConfig(
                 double marketHubZ,
                 boolean guiEnabled,
                 boolean guiSoundsEnabled,
+                boolean playerGuiEnabled,
+                int trustedMax,
                 String language) {
         public static CityConfig from(Config config) {
                 int defaultPlotsPerPlayer = config.getInt("limits.defaultPlotsPerPlayer", 3);
@@ -100,6 +102,8 @@ public record CityConfig(
                 double marketHubZ = config.getDouble("market.hub.z", 0);
                 boolean guiEnabled = config.getBoolean("gui.enabled", true);
                 boolean guiSoundsEnabled = config.getBoolean("gui.sounds.enabled", true);
+                boolean playerGuiEnabled = config.getBoolean("playerGui.enabled", true);
+                int trustedMax = config.getInt("plots.trusted.max", 5);
                 String language = config.getString("lang", config.getString("language", "ru"));
 
                 return new CityConfig(
@@ -146,6 +150,8 @@ public record CityConfig(
                                 marketHubZ,
                                 guiEnabled,
                                 guiSoundsEnabled,
+                                playerGuiEnabled,
+                                trustedMax,
                                 language);
         }
 
