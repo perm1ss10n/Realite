@@ -6,6 +6,7 @@ import org.bukkit.entity.EntityType;
 import ru.realite.core.api.Platform;
 import ru.realite.quests.model.ObjectiveDefinition;
 import ru.realite.quests.model.ObjectiveType;
+import ru.realite.quests.model.QuestConditions;
 import ru.realite.quests.model.QuestDefinition;
 import ru.realite.quests.model.QuestType;
 import ru.realite.quests.model.RewardDefinition;
@@ -64,6 +65,7 @@ public final class QuestLoader {
             return null;
         }
 
+        QuestConditions questConditions = parseConditions(yml);
         List<ObjectiveDefinition> objectives = loadObjectives(file.getName(), yml);
         if (objectives.isEmpty()) {
             logger.warn("[Quests] Quest " + id + " has no valid objectives");
@@ -79,7 +81,7 @@ public final class QuestLoader {
         // FIX: читать из yml, а не из config
         QuestType type = parseType(yml.getString("type", null));
 
-        return new QuestDefinition(id.trim(), type, objectives, rewards);
+        return new QuestDefinition(id.trim(), type, objectives, rewards, questConditions);
     }
 
     private QuestType parseType(String raw) {
@@ -109,13 +111,14 @@ public final class QuestLoader {
             if (id == null || id.isBlank()) {
                 id = type.name().toLowerCase(Locale.ROOT) + "_" + index;
             }
+            QuestConditions objectiveConditions = parseConditions(map);
             ObjectiveDefinition definition = switch (type) {
-                case INTERACT_NPC -> parseInteractNpc(fileName, id, map);
-                case KILL -> parseKill(fileName, id, map);
-                case GO_TO_LOCATION -> parseLocation(fileName, id, map);
-                case PLACE_BLOCK -> parsePlaceBlock(fileName, id, map);
-                case BREAK_BLOCK -> parseBreakBlock(fileName, id, map);
-                case HOLD_ITEM -> parseHoldItem(fileName, id, map);
+                case INTERACT_NPC -> parseInteractNpc(fileName, id, map, objectiveConditions);
+                case KILL -> parseKill(fileName, id, map, objectiveConditions);
+                case GO_TO_LOCATION -> parseLocation(fileName, id, map, objectiveConditions);
+                case PLACE_BLOCK -> parsePlaceBlock(fileName, id, map, objectiveConditions);
+                case BREAK_BLOCK -> parseBreakBlock(fileName, id, map, objectiveConditions);
+                case HOLD_ITEM -> parseHoldItem(fileName, id, map, objectiveConditions);
             };
             if (definition != null) {
                 objectives.add(definition);
@@ -125,17 +128,19 @@ public final class QuestLoader {
         return objectives;
     }
 
-    private ObjectiveDefinition parseInteractNpc(String fileName, String id, Map<?, ?> map) {
+    private ObjectiveDefinition parseInteractNpc(String fileName, String id, Map<?, ?> map,
+                                                 QuestConditions conditions) {
         String npcId = asString(map.get("npcId"));
         if (npcId == null || npcId.isBlank()) {
             logger.warn("[Quests] INTERACT_NPC objective missing npcId in " + fileName);
             return null;
         }
         return new ObjectiveDefinition(id, ObjectiveType.INTERACT_NPC, npcId.trim(), null, null, 1,
-                null, 0, 0, 0, 0);
+                null, 0, 0, 0, 0, conditions);
     }
 
-    private ObjectiveDefinition parseKill(String fileName, String id, Map<?, ?> map) {
+    private ObjectiveDefinition parseKill(String fileName, String id, Map<?, ?> map,
+                                          QuestConditions conditions) {
         String entityRaw = asString(map.get("entity"));
         if (entityRaw == null) {
             entityRaw = asString(map.get("entityType"));
@@ -150,10 +155,11 @@ public final class QuestLoader {
             amount = 1;
         }
         return new ObjectiveDefinition(id, ObjectiveType.KILL, null, type, null, amount,
-                null, 0, 0, 0, 0);
+                null, 0, 0, 0, 0, conditions);
     }
 
-    private ObjectiveDefinition parseLocation(String fileName, String id, Map<?, ?> map) {
+    private ObjectiveDefinition parseLocation(String fileName, String id, Map<?, ?> map,
+                                              QuestConditions conditions) {
         String world = asString(map.get("world"));
         Double x = asDouble(map.get("x"));
         Double y = asDouble(map.get("y"));
@@ -167,10 +173,11 @@ public final class QuestLoader {
             radius = 2.0;
         }
         return new ObjectiveDefinition(id, ObjectiveType.GO_TO_LOCATION, null, null, null, 1,
-                world.trim(), x, y, z, radius);
+                world.trim(), x, y, z, radius, conditions);
     }
 
-    private ObjectiveDefinition parsePlaceBlock(String fileName, String id, Map<?, ?> map) {
+    private ObjectiveDefinition parsePlaceBlock(String fileName, String id, Map<?, ?> map,
+                                                QuestConditions conditions) {
         List<Material> materials = parseMaterials(map);
         if (materials.isEmpty()) {
             logger.warn("[Quests] PLACE_BLOCK objective missing material in " + fileName);
@@ -181,10 +188,11 @@ public final class QuestLoader {
             amount = 1;
         }
         return new ObjectiveDefinition(id, ObjectiveType.PLACE_BLOCK, null, null, materials, amount,
-                null, 0, 0, 0, 0);
+                null, 0, 0, 0, 0, conditions);
     }
 
-    private ObjectiveDefinition parseBreakBlock(String fileName, String id, Map<?, ?> map) {
+    private ObjectiveDefinition parseBreakBlock(String fileName, String id, Map<?, ?> map,
+                                                QuestConditions conditions) {
         List<Material> materials = parseMaterials(map);
         if (materials.isEmpty()) {
             logger.warn("[Quests] BREAK_BLOCK objective missing material in " + fileName);
@@ -195,10 +203,11 @@ public final class QuestLoader {
             amount = 1;
         }
         return new ObjectiveDefinition(id, ObjectiveType.BREAK_BLOCK, null, null, materials, amount,
-                null, 0, 0, 0, 0);
+                null, 0, 0, 0, 0, conditions);
     }
 
-    private ObjectiveDefinition parseHoldItem(String fileName, String id, Map<?, ?> map) {
+    private ObjectiveDefinition parseHoldItem(String fileName, String id, Map<?, ?> map,
+                                              QuestConditions conditions) {
         List<Material> materials = parseMaterials(map);
         if (materials.isEmpty()) {
             logger.warn("[Quests] HOLD_ITEM objective missing material in " + fileName);
@@ -209,7 +218,7 @@ public final class QuestLoader {
             amount = 1;
         }
         return new ObjectiveDefinition(id, ObjectiveType.HOLD_ITEM, null, null, materials, amount,
-                null, 0, 0, 0, 0);
+                null, 0, 0, 0, 0, conditions);
     }
 
     private List<RewardDefinition> loadRewards(String fileName, YamlConfiguration yml) {
@@ -343,8 +352,40 @@ public final class QuestLoader {
         return List.of();
     }
 
+    private QuestConditions parseConditions(YamlConfiguration yml) {
+        boolean requireCity = yml.getBoolean("requireCity", false);
+        boolean requireOutsideCity = yml.getBoolean("requireOutsideCity", false);
+        boolean requireGuild = yml.getBoolean("requireGuild", false);
+        boolean requirePlot = yml.getBoolean("requirePlot", false);
+        List<String> allowedCityIds = normalizeStrings(yml.getStringList("allowedCityIds"));
+        String allowedCity = yml.getString("allowedCityIds");
+        if ((allowedCityIds == null || allowedCityIds.isEmpty()) && allowedCity != null) {
+            allowedCityIds = normalizeStrings(List.of(allowedCity));
+        }
+        return new QuestConditions(requireCity, requireOutsideCity, requireGuild, requirePlot, allowedCityIds);
+    }
+
+    private QuestConditions parseConditions(Map<?, ?> map) {
+        boolean requireCity = asBoolean(map.get("requireCity"), false);
+        boolean requireOutsideCity = asBoolean(map.get("requireOutsideCity"), false);
+        boolean requireGuild = asBoolean(map.get("requireGuild"), false);
+        boolean requirePlot = asBoolean(map.get("requirePlot"), false);
+        List<String> allowedCityIds = normalizeStrings(parseStringList(map.get("allowedCityIds")));
+        return new QuestConditions(requireCity, requireOutsideCity, requireGuild, requirePlot, allowedCityIds);
+    }
+
     private String asString(Object value) {
         return value == null ? null : String.valueOf(value);
+    }
+
+    private boolean asBoolean(Object value, boolean fallback) {
+        if (value instanceof Boolean bool) {
+            return bool;
+        }
+        if (value instanceof String str) {
+            return Boolean.parseBoolean(str);
+        }
+        return fallback;
     }
 
     private int asInt(Object value, int fallback) {
@@ -382,5 +423,39 @@ public final class QuestLoader {
 
     private String normalize(String questId) {
         return questId.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private List<String> normalizeStrings(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return List.of();
+        }
+        List<String> result = new ArrayList<>();
+        for (String value : values) {
+            if (value == null) {
+                continue;
+            }
+            String trimmed = value.trim();
+            if (!trimmed.isEmpty()) {
+                result.add(trimmed);
+            }
+        }
+        return result;
+    }
+
+    private List<String> parseStringList(Object raw) {
+        if (raw instanceof List<?> list) {
+            List<String> values = new ArrayList<>();
+            for (Object entry : list) {
+                String value = asString(entry);
+                if (value != null) {
+                    values.add(value);
+                }
+            }
+            return values;
+        }
+        if (raw instanceof String str) {
+            return List.of(str);
+        }
+        return List.of();
     }
 }

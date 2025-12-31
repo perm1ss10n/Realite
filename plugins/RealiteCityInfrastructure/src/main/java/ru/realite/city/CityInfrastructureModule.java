@@ -10,6 +10,7 @@ import ru.realite.city.gui.GuiSessionStore;
 import ru.realite.city.gui.MenuFactory;
 import ru.realite.city.gui.MenuListener;
 import ru.realite.city.i18n.CityMessages;
+import ru.realite.city.integration.CityQuestAdapter;
 import ru.realite.city.listener.ChatInputListener;
 import ru.realite.city.listener.CityAreaSelectionListener;
 import ru.realite.city.listener.CityProtectionListener;
@@ -32,6 +33,7 @@ import ru.realite.city.service.ShopMarkerService;
 import ru.realite.city.service.ShopPointService;
 import ru.realite.city.service.ShopRentService;
 import ru.realite.core.api.integrations.CityAccessHook;
+import ru.realite.core.api.quests.CityAdapter;
 import ru.realite.city.storage.SqliteCityAreaRepository;
 import ru.realite.city.storage.SqlitePlotMemberRepository;
 import ru.realite.city.storage.SqlitePlotRepository;
@@ -182,6 +184,9 @@ public final class CityInfrastructureModule implements Module {
                 economyService,
                 cityHooks,
                 guildsApi);
+        ctx.services().registerIfAbsent(
+                CityAdapter.class,
+                new CityQuestAdapter(cityAreaRepository, plotService));
         marketService = new MarketService(config, economyService, cityHooks);
         chatInputService = new ChatInputService(javaPlugin, config, messages, plotService);
         CityAdminService adminService = new CityAdminService(selectionService, plotRepository);

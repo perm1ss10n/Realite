@@ -16,8 +16,11 @@ import ru.realite.core.api.quests.QuestService;
 import ru.realite.core.api.quests.QuestState;
 import ru.realite.core.api.quests.QuestStartTrigger;
 import ru.realite.core.api.quests.QuestUnlockService;
+import ru.realite.core.api.quests.CityAdapter;
+import ru.realite.core.api.quests.GuildAdapter;
 import ru.realite.quests.model.ObjectiveDefinition;
 import ru.realite.quests.model.ObjectiveType;
+import ru.realite.quests.model.QuestConditions;
 import ru.realite.quests.model.QuestDefinition;
 import ru.realite.quests.model.QuestType;
 import ru.realite.quests.model.RewardDefinition;
@@ -38,19 +41,27 @@ public final class QuestServiceImpl implements QuestService {
     private QuestRepository repository;
     private final QuestProgressRepository progressRepository;
     private final QuestUnlockService questUnlockService;
+    private final CityAdapter cityAdapter;
+    private final GuildAdapter guildAdapter;
+
+    private static final String FEATURE_UNAVAILABLE_REASON = "feature unavailable";
 
     public QuestServiceImpl(Platform logger,
             EventBus eventBus,
             java.nio.file.Path questsDir,
             QuestRepository repository,
             QuestProgressRepository progressRepository,
-            QuestUnlockService questUnlockService) {
+            QuestUnlockService questUnlockService,
+            CityAdapter cityAdapter,
+            GuildAdapter guildAdapter) {
         this.logger = Objects.requireNonNull(logger, "logger");
         this.eventBus = Objects.requireNonNull(eventBus, "eventBus");
         this.questsDir = Objects.requireNonNull(questsDir, "questsDir");
         this.repository = Objects.requireNonNull(repository, "repository");
         this.progressRepository = Objects.requireNonNull(progressRepository, "progressRepository");
         this.questUnlockService = questUnlockService;
+        this.cityAdapter = cityAdapter;
+        this.guildAdapter = guildAdapter;
     }
 
     @Override
@@ -137,6 +148,9 @@ public final class QuestServiceImpl implements QuestService {
                 if (progress.completedObjectives().contains(objective.id())) {
                     continue;
                 }
+                if (!canProgressObjective(player, player.getLocation(), quest, objective)) {
+                    continue;
+                }
                 String target = objective.npcId();
                 if (matchesNpc(target, npcId, npcName)) {
                     progress.completedObjectivesMutable().add(objective.id());
@@ -151,7 +165,7 @@ public final class QuestServiceImpl implements QuestService {
         }
     }
 
-    public void handleKill(Player player, EntityType entityType) {
+    public void handleKill(Player player, EntityType entityType, Location location) {
         if (player == null || entityType == null) {
             return;
         }
@@ -166,6 +180,9 @@ public final class QuestServiceImpl implements QuestService {
                     continue;
                 }
                 if (progress.completedObjectives().contains(objective.id())) {
+                    continue;
+                }
+                if (!canProgressObjective(player, location, quest, objective)) {
                     continue;
                 }
                 if (objective.entityType() != entityType) {
@@ -205,6 +222,9 @@ public final class QuestServiceImpl implements QuestService {
                 if (progress.completedObjectives().contains(objective.id())) {
                     continue;
                 }
+                if (!canProgressObjective(player, location, quest, objective)) {
+                    continue;
+                }
                 if (!matchesLocation(objective, location)) {
                     continue;
                 }
@@ -219,7 +239,7 @@ public final class QuestServiceImpl implements QuestService {
         }
     }
 
-    public void handleBlockPlace(Player player, Material material) {
+    public void handleBlockPlace(Player player, Material material, Location location) {
         if (player == null || material == null) {
             return;
         }
@@ -234,6 +254,9 @@ public final class QuestServiceImpl implements QuestService {
                     continue;
                 }
                 if (progress.completedObjectives().contains(objective.id())) {
+                    continue;
+                }
+                if (!canProgressObjective(player, location, quest, objective)) {
                     continue;
                 }
                 if (!matchesMaterial(objective, material)) {
@@ -256,7 +279,7 @@ public final class QuestServiceImpl implements QuestService {
         }
     }
 
-    public void handleBlockBreak(Player player, Material material) {
+    public void handleBlockBreak(Player player, Material material, Location location) {
         if (player == null || material == null) {
             return;
         }
@@ -271,6 +294,9 @@ public final class QuestServiceImpl implements QuestService {
                     continue;
                 }
                 if (progress.completedObjectives().contains(objective.id())) {
+                    continue;
+                }
+                if (!canProgressObjective(player, location, quest, objective)) {
                     continue;
                 }
                 if (!matchesMaterial(objective, material)) {
@@ -308,6 +334,9 @@ public final class QuestServiceImpl implements QuestService {
                     continue;
                 }
                 if (progress.completedObjectives().contains(objective.id())) {
+                    continue;
+                }
+                if (!canProgressObjective(player, player.getLocation(), quest, objective)) {
                     continue;
                 }
                 int count = countInventory(player, objective);
@@ -418,6 +447,66 @@ public final class QuestServiceImpl implements QuestService {
         return total;
     }
 
+    private boolean canProgressObjective(Player player, Location location, QuestDefinition quest,
+                                         ObjectiveDefinition objective) {
+        return checkConditions(player, location, quest.conditions()).allowed()
+                && checkConditions(player, location, objective.conditions()).allowed();
+    }
+
+    private ConditionCheckResult checkConditions(Player player, Location location, QuestConditions conditions) {
+        if (conditions == null || conditions.isEmpty()) {
+            return ConditionCheckResult.allow();
+        }
+        if (player == null) {
+            return ConditionCheckResult.deny(null);
+        }
+        Location target = location != null ? location : player.getLocation();
+        if (conditions.requireGuild()) {
+            if (guildAdapter == null) {
+                return ConditionCheckResult.deny(FEATURE_UNAVAILABLE_REASON);
+            }
+            if (!guildAdapter.isInGuild(player)) {
+                return ConditionCheckResult.deny(null);
+            }
+        }
+        boolean needsCity = conditions.requireCity()
+                || conditions.requireOutsideCity()
+                || conditions.requirePlot()
+                || !conditions.allowedCityIds().isEmpty();
+        if (needsCity) {
+            if (cityAdapter == null) {
+                return ConditionCheckResult.deny(FEATURE_UNAVAILABLE_REASON);
+            }
+            boolean inCity = cityAdapter.isInsideCityRegion(target);
+            if (conditions.requireCity() && !inCity) {
+                return ConditionCheckResult.deny(null);
+            }
+            if (conditions.requireOutsideCity() && inCity) {
+                return ConditionCheckResult.deny(null);
+            }
+            if (conditions.requirePlot() && !cityAdapter.isInsideCityPlot(target)) {
+                return ConditionCheckResult.deny(null);
+            }
+            if (!conditions.allowedCityIds().isEmpty()) {
+                String cityId = cityAdapter.getCityId(target).orElse(null);
+                if (cityId == null) {
+                    return ConditionCheckResult.deny(null);
+                }
+                boolean allowed = false;
+                for (String allowedCityId : conditions.allowedCityIds()) {
+                    if (allowedCityId.equalsIgnoreCase(cityId)) {
+                        allowed = true;
+                        break;
+                    }
+                }
+                if (!allowed) {
+                    return ConditionCheckResult.deny(null);
+                }
+            }
+        }
+        return ConditionCheckResult.allow();
+    }
+
     public int getObjectiveProgressCount(Player player, ObjectiveDefinition objective, QuestProgressData progress) {
         if (objective == null || player == null) {
             return 0;
@@ -492,5 +581,17 @@ public final class QuestServiceImpl implements QuestService {
             return null;
         }
         return repository.get(questId);
+    }
+
+    public ConditionCheckResult getObjectiveConditionResult(Player player, QuestDefinition quest,
+                                                            ObjectiveDefinition objective) {
+        if (player == null || quest == null || objective == null) {
+            return ConditionCheckResult.deny(null);
+        }
+        ConditionCheckResult questResult = checkConditions(player, player.getLocation(), quest.conditions());
+        if (!questResult.allowed()) {
+            return questResult;
+        }
+        return checkConditions(player, player.getLocation(), objective.conditions());
     }
 }

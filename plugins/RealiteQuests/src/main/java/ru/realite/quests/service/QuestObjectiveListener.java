@@ -46,7 +46,7 @@ public final class QuestObjectiveListener implements Listener {
         if (!(service instanceof QuestServiceImpl questService)) {
             return;
         }
-        questService.handleKill(killer, event.getEntityType());
+        questService.handleKill(killer, event.getEntityType(), event.getEntity().getLocation());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -71,7 +71,8 @@ public final class QuestObjectiveListener implements Listener {
         if (!(service instanceof QuestServiceImpl questService)) {
             return;
         }
-        questService.handleBlockPlace(event.getPlayer(), event.getBlockPlaced().getType());
+        questService.handleBlockPlace(event.getPlayer(), event.getBlockPlaced().getType(),
+                event.getBlockPlaced().getLocation());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -80,7 +81,8 @@ public final class QuestObjectiveListener implements Listener {
         if (!(service instanceof QuestServiceImpl questService)) {
             return;
         }
-        questService.handleBlockBreak(event.getPlayer(), event.getBlock().getType());
+        questService.handleBlockBreak(event.getPlayer(), event.getBlock().getType(),
+                event.getBlock().getLocation());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
