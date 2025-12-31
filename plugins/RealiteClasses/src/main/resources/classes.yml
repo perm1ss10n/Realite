@@ -314,6 +314,19 @@ classes:
 
 # Скрытые классы:
 
+hiddenClasses:
+  MERCENARY:
+    requireQuestCompleted: mercenary_unlock
+    requireEvolution:
+      mastered:
+        - WARRIOR
+  WARLOCK:
+    requireQuestCompleted: warlock_unlock
+    requireEvolution:
+      mastered:
+        - ALCHEMIST
+        - WANDERER
+
   MERCENARY:
     hidden: true
     icon: NETHERITE_SWORD
@@ -322,8 +335,6 @@ classes:
       - "Скрытый класс."
       - "Доступен только тем, кто прошёл путь воина до конца."
       - "Сила, опыт и золото — его единственные принципы."
-    requires-mastered:
-      - WARRIOR
     effects:
       - "HERO_OF_THE_VILLAGE:0"
     xp-per-money: 0.01     # 50 монет прибыли = 1 XP
@@ -384,9 +395,6 @@ classes:
       - "Скрытый класс."
       - "Мастер запретных знаний и тёмных экспериментов."
       - "Требует полного пути алхимика и бродяги."
-    requires-mastered:
-      - ALCHEMIST
-      - WANDERER
     xp-per-level: 130
     evolutions:
       - id: warlock

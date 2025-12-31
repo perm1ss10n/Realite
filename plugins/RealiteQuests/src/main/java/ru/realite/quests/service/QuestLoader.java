@@ -71,6 +71,10 @@ public final class QuestLoader {
         }
 
         List<RewardDefinition> rewards = loadRewards(file.getName(), yml);
+        RewardDefinition unlockReward = loadGrantQuestUnlock(file.getName(), yml);
+        if (unlockReward != null) {
+            rewards.add(unlockReward);
+        }
 
         // FIX: читать из yml, а не из config
         QuestType type = parseType(yml.getString("type", null));
@@ -221,6 +225,7 @@ public final class QuestLoader {
             RewardDefinition definition = switch (type) {
                 case XP -> parseXpReward(fileName, map);
                 case ITEM -> parseItemReward(fileName, map);
+                case QUEST_UNLOCK -> parseQuestUnlockReward(fileName, map);
             };
             if (definition != null) {
                 rewards.add(definition);
@@ -235,7 +240,7 @@ public final class QuestLoader {
             logger.warn("[Quests] XP reward missing amount in " + fileName);
             return null;
         }
-        return new RewardDefinition(RewardType.XP, amount, null);
+        return new RewardDefinition(RewardType.XP, amount, null, null);
     }
 
     private RewardDefinition parseItemReward(String fileName, Map<?, ?> map) {
@@ -249,7 +254,22 @@ public final class QuestLoader {
         if (amount <= 0) {
             amount = 1;
         }
-        return new RewardDefinition(RewardType.ITEM, amount, material);
+        return new RewardDefinition(RewardType.ITEM, amount, material, null);
+    }
+
+    private RewardDefinition parseQuestUnlockReward(String fileName, Map<?, ?> map) {
+        String unlockId = asString(map.get("unlock"));
+        if (unlockId == null) {
+            unlockId = asString(map.get("questUnlock"));
+        }
+        if (unlockId == null) {
+            unlockId = asString(map.get("id"));
+        }
+        if (unlockId == null || unlockId.isBlank()) {
+            logger.warn("[Quests] QUEST_UNLOCK reward missing unlock id in " + fileName);
+            return null;
+        }
+        return new RewardDefinition(RewardType.QUEST_UNLOCK, 0, null, unlockId.trim());
     }
 
     private ObjectiveType parseObjectiveType(String raw) {
@@ -294,6 +314,14 @@ public final class QuestLoader {
         } catch (IllegalArgumentException ex) {
             return null;
         }
+    }
+
+    private RewardDefinition loadGrantQuestUnlock(String fileName, YamlConfiguration yml) {
+        String unlockId = yml.getString("grantQuestUnlock");
+        if (unlockId == null || unlockId.isBlank()) {
+            return null;
+        }
+        return new RewardDefinition(RewardType.QUEST_UNLOCK, 0, null, unlockId.trim());
     }
 
     private List<Material> parseMaterials(Map<?, ?> map) {

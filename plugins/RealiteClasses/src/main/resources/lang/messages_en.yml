@@ -8,7 +8,7 @@ no-class: "&cNo class selected. Type &e/class choose"
 already-chosen: "&cClass already selected. To change it, use: &e/class change"
 cant-change: "&cYou can only change your class at the final evolution stage or with a donor permission."
 
-usage: "&eUsage: &f/class&7, &f/class choose&7, &f/class change&7, &f/class info&7, &f/class evolve&7, &f/class lore"
+usage: "&eUsage: &f/class&7, &f/class choose&7, &f/class change&7, &f/class info&7, &f/class evolve&7, &f/class lore&7, &f/class unlocks"
 
 class-help-header: "&6&lRealiteClasses &7— commands:"
 
@@ -18,6 +18,7 @@ class-help:
   - "&e/class info &7— view class information and progress"
   - "&e/class evolve &7— attempt to evolve your class"
   - "&e/class lore &7— read class backstory"
+  - "&e/class unlocks &7— hidden class status"
   - "&e/class settings &7— interface and HUD settings"
 
 class-help-admin:
@@ -42,7 +43,18 @@ evolve-no-money: "&cNot enough money."
 evolve-no-items: "&cRequired items are missing."
 
 class-locked: "&5This path is sealed for now. &dYou have yet to uncover all the secrets of the required classes."
+class-locked-quest: "&7Complete the unlock quest: &e{quest}"
+class-locked-evolution: "&dYou must finish the required class evolutions."
+class-locked-both: "&5This path is sealed. &dYou need the quest and the evolutions."
 class-locked-requirements: "&7You must fully complete: &e{req}"
+
+class-unlocks-header: "&6&lHidden classes:"
+class-unlocks-entry: "&e{class}&7: {status}"
+class-unlocks-open: "&aAvailable"
+class-unlocks-locked-quest: "&cLocked (quest: &f{quest}&c)"
+class-unlocks-locked-evolution: "&cLocked (evolutions: &f{req}&c)"
+class-unlocks-locked-both: "&cLocked (quest: &f{quest}&c, evolutions: &f{req}&c)"
+class-unlocks-empty: "&7No hidden classes configured."
 
 mastered-yes: "&acompleted"
 mastered-no: "&cnot completed"

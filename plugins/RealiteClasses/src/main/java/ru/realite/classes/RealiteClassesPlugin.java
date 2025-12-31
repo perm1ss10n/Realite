@@ -16,6 +16,8 @@ import ru.realite.classes.service.ClassTagProviderImpl;
 import ru.realite.classes.service.EconomyService;
 import ru.realite.classes.service.EffectService;
 import ru.realite.classes.service.EvolutionService;
+import ru.realite.classes.service.EvolutionRequirementAdapter;
+import ru.realite.classes.service.HiddenClassGate;
 import ru.realite.classes.service.ProgressionService;
 
 import ru.realite.classes.storage.ClassConfigRepository;
@@ -52,6 +54,8 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
     private EffectService effectService;
     private ClassHudService hudService;
     private ClassTagProvider classTagProvider;
+    private EvolutionRequirementAdapter evolutionRequirementAdapter;
+    private HiddenClassGate hiddenClassGate;
 
     // ===== gui =====
     private ClassSelectMenu menu;
@@ -103,12 +107,13 @@ public void onEnable() {
                         evolutionService,
                         classConfig,
                         economyService,
+                        hiddenClassGate,
                         messages,
                         xpConfig));
 
         // --- listeners ---
         Bukkit.getPluginManager().registerEvents(
-                new MenuListener(classService, classConfig, evolutionService, messages, hudService),
+                new MenuListener(classService, classConfig, evolutionService, hiddenClassGate, messages, hudService),
                 this);
         Bukkit.getPluginManager().registerEvents(new PlayerJoinListener(classService, effectService), this);
         Bukkit.getPluginManager().registerEvents(new PlayerQuitListener(classService, hudService), this);
@@ -179,6 +184,12 @@ public void onEnable() {
         // --- menu ---
         this.menu = new ClassSelectMenu(this, classConfig);
 
+        this.evolutionRequirementAdapter = new EvolutionRequirementAdapter(classService);
+        this.hiddenClassGate = new HiddenClassGate(
+                classConfig,
+                evolutionRequirementAdapter,
+                () -> core.services().get(ru.realite.core.api.quests.QuestUnlockService.class));
+
         registerClassTagProvider();
 
         platform.info("[Classes] reloadAll completed");
@@ -204,6 +215,10 @@ public void onEnable() {
 
     public ClassSelectMenu getMenu() {
         return menu;
+    }
+
+    public HiddenClassGate getHiddenClassGate() {
+        return hiddenClassGate;
     }
 
     public ClassConfigRepository getClassConfig() {

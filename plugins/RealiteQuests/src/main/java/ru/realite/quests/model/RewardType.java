@@ -2,5 +2,6 @@ package ru.realite.quests.model;
 
 public enum RewardType {
     XP,
-    ITEM
+    ITEM,
+    QUEST_UNLOCK
 }

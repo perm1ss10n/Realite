@@ -4,7 +4,7 @@ no-class: "&cКласс не выбран. Напиши &e/class choose"
 already-chosen: "&cКласс уже выбран. Для смены: &e/class change"
 cant-change: "&cСменить класс можно только на финальной эволюции или с донат-правом."
 
-usage: "&eИспользование: &f/class&7, &f/class choose&7, &f/class change&7, &f/class info&7, &f/class evolve&7, &f/class lore"
+usage: "&eИспользование: &f/class&7, &f/class choose&7, &f/class change&7, &f/class info&7, &f/class evolve&7, &f/class lore&7, &f/class unlocks"
 
 class-help-header: "&6&lRealiteClasses &7— команды:"
 
@@ -14,6 +14,7 @@ class-help:
   - "&e/class info &7— информация о классе и прогрессе"
   - "&e/class evolve &7— попытаться эволюционировать класс"
   - "&e/class lore &7— прочитать предысторию класса"
+  - "&e/class unlocks &7— статус скрытых классов"
   - "&e/class settings &7— настройки интерфейса"
 
 class-help-admin:
@@ -37,7 +38,18 @@ evolve-no-money: "&cНе хватает денег."
 evolve-no-items: "&cНе хватает предметов для эволюции."
 
 class-locked: "&5Этот путь пока запечатан. &dТы ещё не познал все тайны нужных классов."
+class-locked-quest: "&7Нужно выполнить квест-разблокировку: &e{quest}"
+class-locked-evolution: "&dНужно пройти путь эволюции требуемых классов."
+class-locked-both: "&5Этот путь запечатан. &dНужны квест и эволюции."
 class-locked-requirements: "&7Нужно пройти до конца: &e{req}"
+
+class-unlocks-header: "&6&lСкрытые классы:"
+class-unlocks-entry: "&e{class}&7: {status}"
+class-unlocks-open: "&aОткрыт"
+class-unlocks-locked-quest: "&cЗакрыт (квест: &f{quest}&c)"
+class-unlocks-locked-evolution: "&cЗакрыт (эволюции: &f{req}&c)"
+class-unlocks-locked-both: "&cЗакрыт (квест: &f{quest}&c, эволюции: &f{req}&c)"
+class-unlocks-empty: "&7Скрытых классов нет."
 
 mastered-yes: "&aпройден до конца"
 mastered-no: "&cне пройден"
