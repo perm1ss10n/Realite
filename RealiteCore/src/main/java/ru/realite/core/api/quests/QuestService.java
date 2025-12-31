@@ -8,4 +8,8 @@ import org.bukkit.entity.Player;
 public interface QuestService {
 
     void start(Player player, String questId);
+
+    boolean isActive(Player player, String questId);
+
+    QuestProgress getProgress(Player player, String questId);
 }
