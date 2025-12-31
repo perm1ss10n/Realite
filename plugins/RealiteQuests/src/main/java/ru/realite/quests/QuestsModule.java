@@ -12,6 +12,13 @@ import ru.realite.core.api.Subscription;
 import ru.realite.core.api.events.ClassLevelUpEvent;
 import ru.realite.core.api.events.ClassSelectedEvent;
 import ru.realite.core.api.events.EvolutionCompletedEvent;
+import ru.realite.core.api.quests.ClassBackstoryService;
+import ru.realite.core.api.quests.QuestService;
+import ru.realite.quests.backstory.BackstoryProgressRepository;
+import ru.realite.quests.backstory.ClassBackstoryConfig;
+import ru.realite.quests.backstory.ClassBackstoryServiceImpl;
+import ru.realite.quests.i18n.QuestsMessages;
+import ru.realite.quests.service.QuestServiceImpl;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -26,6 +33,11 @@ import java.util.UUID;
 public final class QuestsModule implements Module {
 
     private final List<Subscription> subscriptions = new ArrayList<>();
+    private Config config;
+    private Config classesConfig;
+    private QuestsMessages messages;
+    private ClassBackstoryService backstoryService;
+    private QuestService questService;
     private final ModuleMetadata metadata = new ModuleMetadata(
             new ModuleId("realite-quests"),
             "RealiteQuests",
@@ -40,16 +52,25 @@ public final class QuestsModule implements Module {
 
     @Override
     public void onLoad(ModuleContext ctx) {
-        Config cfg = ctx.configs().loadOrCreateDefault(
+        config = ctx.configs().loadOrCreateDefault(
                 ctx.dataFolder().resolve("config.yml"),
                 "config.yml",
                 getClass().getClassLoader()
         );
 
-        String title = cfg.getString("quests.title", "Realite Quests");
-        int dailyLimit = cfg.getInt("quests.daily.limit", 3);
-        boolean enabled = cfg.getBoolean("quests.enabled", true);
-        List<String> tags = cfg.getStringList("quests.tags");
+        classesConfig = ctx.configs().loadOrCreateDefault(
+                ctx.dataFolder().resolve("classes.yml"),
+                "classes.yml",
+                getClass().getClassLoader()
+        );
+
+        String lang = config.getString("lang", "ru");
+        messages = new QuestsMessages(ctx, lang, getClass().getClassLoader());
+
+        String title = config.getString("quests.title", "Realite Quests");
+        int dailyLimit = config.getInt("quests.daily.limit", 3);
+        boolean enabled = config.getBoolean("quests.enabled", true);
+        List<String> tags = config.getStringList("quests.tags");
 
         ctx.logger().info("[Quests] Config loaded: title=" + title
                 + ", enabled=" + enabled
@@ -91,11 +112,36 @@ public final class QuestsModule implements Module {
             ctx.logger().error("[Quests] Storage smoke test failed", e);
         }
 
+        questService = ctx.services().get(QuestService.class);
+        if (questService == null) {
+            questService = new QuestServiceImpl(ctx.logger());
+            ctx.services().register(QuestService.class, questService);
+        }
+
+        ClassBackstoryService existingBackstory = ctx.services().get(ClassBackstoryService.class);
+        if (existingBackstory != null) {
+            backstoryService = existingBackstory;
+        } else {
+            BackstoryProgressRepository progressRepository = new BackstoryProgressRepository(ctx.dataFolder());
+            ClassBackstoryConfig backstoryConfig = new ClassBackstoryConfig(classesConfig);
+            backstoryService = new ClassBackstoryServiceImpl(
+                    backstoryConfig,
+                    progressRepository,
+                    questService,
+                    messages
+            );
+            ctx.services().register(ClassBackstoryService.class, backstoryService);
+        }
+
         subscriptions.add(ctx.events().subscribe(ClassSelectedEvent.class, event -> {
             ctx.logger().info("[Quests] Player " + event.playerUuid()
                     + " selected class " + event.classId());
             sendMessage(event.playerUuid(),
                     "Quest update: class selected " + event.classId());
+            Player player = Bukkit.getPlayer(event.playerUuid());
+            if (player != null) {
+                backstoryService.show(player, event.classId(), false);
+            }
         }));
 
         subscriptions.add(ctx.events().subscribe(ClassLevelUpEvent.class, event -> {

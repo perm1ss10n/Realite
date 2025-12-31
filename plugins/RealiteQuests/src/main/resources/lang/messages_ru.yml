@@ -1,0 +1,12 @@
+quests:
+  backstory:
+    book:
+      title: "{title}"
+      author: "Realite"
+    accept: "✅ Принять путь"
+    skip: "⏭ Пропустить"
+    later: "📖 Перечитать позже"
+    accepted: "&aТы принял путь класса &e{class}&a."
+    skipped: "&7Ты пропустил лор класса &e{class}&7."
+    deferred: "&7Лор можно перечитать позже командой &e/class lore&7."
+    missing: "&cЛор для класса &e{class} &cне найден."

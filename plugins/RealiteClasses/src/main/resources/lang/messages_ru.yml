@@ -4,7 +4,7 @@ no-class: "&cКласс не выбран. Напиши &e/class choose"
 already-chosen: "&cКласс уже выбран. Для смены: &e/class change"
 cant-change: "&cСменить класс можно только на финальной эволюции или с донат-правом."
 
-usage: "&eИспользование: &f/class&7, &f/class choose&7, &f/class change&7, &f/class info&7, &f/class evolve"
+usage: "&eИспользование: &f/class&7, &f/class choose&7, &f/class change&7, &f/class info&7, &f/class evolve&7, &f/class lore"
 
 class-help-header: "&6&lRealiteClasses &7— команды:"
 
@@ -13,6 +13,7 @@ class-help:
   - "&e/class change &7— сменить класс (если разрешено)"
   - "&e/class info &7— информация о классе и прогрессе"
   - "&e/class evolve &7— попытаться эволюционировать класс"
+  - "&e/class lore &7— прочитать предысторию класса"
   - "&e/class settings &7— настройки интерфейса"
 
 class-help-admin:

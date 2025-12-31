@@ -8,7 +8,7 @@ no-class: "&cNo class selected. Type &e/class choose"
 already-chosen: "&cClass already selected. To change it, use: &e/class change"
 cant-change: "&cYou can only change your class at the final evolution stage or with a donor permission."
 
-usage: "&eUsage: &f/class&7, &f/class choose&7, &f/class change&7, &f/class info&7, &f/class evolve"
+usage: "&eUsage: &f/class&7, &f/class choose&7, &f/class change&7, &f/class info&7, &f/class evolve&7, &f/class lore"
 
 class-help-header: "&6&lRealiteClasses &7— commands:"
 
@@ -17,6 +17,7 @@ class-help:
   - "&e/class change &7— change your class (if allowed)"
   - "&e/class info &7— view class information and progress"
   - "&e/class evolve &7— attempt to evolve your class"
+  - "&e/class lore &7— read class backstory"
   - "&e/class settings &7— interface and HUD settings"
 
 class-help-admin:

@@ -14,6 +14,8 @@ import ru.realite.classes.storage.XpConfigRepository;
 import ru.realite.classes.util.ChatTemplate;
 import ru.realite.classes.util.ItemComponents;
 import ru.realite.classes.util.Messages;
+import ru.realite.classes.core.CoreAccess;
+import ru.realite.core.api.quests.ClassBackstoryService;
 
 import java.util.Map;
 
@@ -202,6 +204,56 @@ public class ClassCommand implements CommandExecutor {
                     p.sendMessage(messages.get("evolve-" + res));
                 }
                 return true;
+            }
+
+            case "lore" -> {
+                ClassBackstoryService backstoryService =
+                        CoreAccess.core().services().get(ClassBackstoryService.class);
+
+                if (backstoryService == null) {
+                    return true;
+                }
+
+                if (args.length == 1) {
+                    if (!prof.hasClass()) {
+                        p.sendMessage(messages.get("no-class"));
+                        return true;
+                    }
+                    backstoryService.show(p, prof.getClassId().name(), true);
+                    return true;
+                }
+
+                String action = args[1].toLowerCase();
+                switch (action) {
+                    case "accept" -> {
+                        if (args.length < 3) {
+                            p.sendMessage(messages.get("usage"));
+                            return true;
+                        }
+                        backstoryService.accept(p, args[2]);
+                        return true;
+                    }
+                    case "skip" -> {
+                        if (args.length < 3) {
+                            p.sendMessage(messages.get("usage"));
+                            return true;
+                        }
+                        backstoryService.skip(p, args[2]);
+                        return true;
+                    }
+                    case "later" -> {
+                        if (args.length < 3) {
+                            p.sendMessage(messages.get("usage"));
+                            return true;
+                        }
+                        backstoryService.defer(p, args[2]);
+                        return true;
+                    }
+                    default -> {
+                        backstoryService.show(p, args[1], true);
+                        return true;
+                    }
+                }
             }
 
             default -> {
