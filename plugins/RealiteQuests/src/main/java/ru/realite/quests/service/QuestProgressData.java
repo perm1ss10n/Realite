@@ -13,11 +13,16 @@ import java.util.Set;
 public final class QuestProgressData implements QuestProgress {
 
     private QuestState state;
+    private boolean rewardGranted;
     private final Set<String> completedObjectives;
     private final Map<String, Integer> objectiveCounts;
 
-    public QuestProgressData(QuestState state, Set<String> completedObjectives, Map<String, Integer> objectiveCounts) {
+    public QuestProgressData(QuestState state,
+                             boolean rewardGranted,
+                             Set<String> completedObjectives,
+                             Map<String, Integer> objectiveCounts) {
         this.state = Objects.requireNonNull(state, "state");
+        this.rewardGranted = rewardGranted;
         this.completedObjectives = new HashSet<>(Objects.requireNonNull(completedObjectives, "completedObjectives"));
         this.objectiveCounts = new HashMap<>(Objects.requireNonNull(objectiveCounts, "objectiveCounts"));
     }
@@ -29,6 +34,14 @@ public final class QuestProgressData implements QuestProgress {
 
     public void state(QuestState state) {
         this.state = Objects.requireNonNull(state, "state");
+    }
+
+    public boolean rewardGranted() {
+        return rewardGranted;
+    }
+
+    public void rewardGranted(boolean rewardGranted) {
+        this.rewardGranted = rewardGranted;
     }
 
     @Override

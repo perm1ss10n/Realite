@@ -34,17 +34,20 @@ public final class QuestServiceImpl implements QuestService {
 
     private final Platform logger;
     private final EventBus eventBus;
-    private final QuestRepository repository;
+    private final java.nio.file.Path questsDir;
+    private QuestRepository repository;
     private final QuestProgressRepository progressRepository;
     private final QuestUnlockService questUnlockService;
 
     public QuestServiceImpl(Platform logger,
                             EventBus eventBus,
+                            java.nio.file.Path questsDir,
                             QuestRepository repository,
                             QuestProgressRepository progressRepository,
                             QuestUnlockService questUnlockService) {
         this.logger = Objects.requireNonNull(logger, "logger");
         this.eventBus = Objects.requireNonNull(eventBus, "eventBus");
+        this.questsDir = Objects.requireNonNull(questsDir, "questsDir");
         this.repository = Objects.requireNonNull(repository, "repository");
         this.progressRepository = Objects.requireNonNull(progressRepository, "progressRepository");
         this.questUnlockService = questUnlockService;
@@ -73,7 +76,7 @@ public final class QuestServiceImpl implements QuestService {
                 && quest.type() == QuestType.INTRO && !force) {
             return;
         }
-        QuestProgressData fresh = new QuestProgressData(QuestState.ACTIVE, Set.of(), Map.of());
+        QuestProgressData fresh = new QuestProgressData(QuestState.ACTIVE, false, Set.of(), Map.of());
         progressRepository.save(player.getUniqueId(), quest.id(), fresh);
         eventBus.publish(new QuestStartedEvent(player.getUniqueId(), quest.id(), trigger));
         logger.info("[Quests] Started quest " + quest.id() + " for " + player.getName());
@@ -101,10 +104,21 @@ public final class QuestServiceImpl implements QuestService {
         if (player == null) {
             return result;
         }
+        Set<String> active = new java.util.HashSet<>(progressRepository.getActiveQuestIds(player.getUniqueId()));
         for (QuestDefinition quest : repository.all()) {
             if (isActive(player, quest.id())) {
-                result.add(quest.id());
+                active.add(quest.id());
             }
+        }
+        result.addAll(active);
+        return result;
+    }
+
+    public boolean reloadQuests() {
+        QuestRepository loaded = new QuestLoader(questsDir, logger).load();
+        this.repository = loaded;
+        return true;
+    }
         }
         return result;
     }
@@ -323,11 +337,17 @@ public final class QuestServiceImpl implements QuestService {
             }
         }
         progress.state(QuestState.COMPLETED);
+        boolean grantRewards = !progress.rewardGranted();
+        if (grantRewards) {
+            progress.rewardGranted(true);
+        }
         progressRepository.save(player.getUniqueId(), quest.id(), progress);
-        grantRewards(player, quest);
-        eventBus.publish(new QuestCompletedEvent(player.getUniqueId(), quest.id()));
-        notifyQuestCompleted(player, quest);
-        logger.info("[Quests] Quest completed: " + quest.id() + " for " + player.getName());
+        if (grantRewards) {
+            grantRewards(player, quest);
+            eventBus.publish(new QuestCompletedEvent(player.getUniqueId(), quest.id()));
+            notifyQuestCompleted(player, quest);
+            logger.info("[Quests] Quest completed: " + quest.id() + " for " + player.getName());
+        }
     }
 
     private void grantRewards(Player player, QuestDefinition quest) {
