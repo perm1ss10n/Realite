@@ -15,6 +15,12 @@ gui:
 playerGui:
   enabled: true
 
+chatInput:
+  # Hide player's message while waiting for input
+  hideMessage: true
+  # Input timeout in seconds (0 to disable)
+  timeoutSeconds: 30
+
 # Storage settings
 storage:
   sqliteFile: "city.sqlite"

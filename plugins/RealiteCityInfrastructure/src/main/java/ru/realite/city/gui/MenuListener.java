@@ -51,7 +51,8 @@ public final class MenuListener implements Listener {
             case "plots_next" -> guiService.handlePlotsNext(player);
             case "plot_delete", "plot_delete_confirm" -> guiService.handleDeletePlot(player);
             case "plot_teleport" -> guiService.handleTeleport(player);
-            case "plot_set_owner_player", "plot_set_owner_guild" -> guiService.handleStubOwner(player);
+            case "plot_set_owner_player" -> guiService.handlePlotSetOwnerPlayer(player);
+            case "plot_set_owner_guild" -> guiService.handlePlotSetOwnerGuild(player);
             case "player_open_access" -> guiService.openPlayerAccess(player, 0);
             case "player_info" -> guiService.handlePlayerInfo(player);
             case "player_teleport" -> guiService.handlePlayerTeleport(player);

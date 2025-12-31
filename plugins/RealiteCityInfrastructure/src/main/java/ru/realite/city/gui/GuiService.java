@@ -11,6 +11,7 @@ import ru.realite.city.model.Plot;
 import ru.realite.city.model.PlotMemberRole;
 import ru.realite.city.model.PlotOwnerType;
 import ru.realite.city.service.AccessResult;
+import ru.realite.city.service.ChatInputService;
 import ru.realite.city.service.CityAdminService;
 import ru.realite.city.storage.PlotMemberRepository;
 import ru.realite.city.storage.PlotRepository;
@@ -25,10 +26,12 @@ import java.util.stream.Collectors;
 public final class GuiService {
 
     private static final String PLAYER_TELEPORT_PERMISSION = "realite.city.plot.teleport";
+    private static final String ADMIN_PERMISSION = "realite.city.admin";
 
     private final CityConfig config;
     private final CityMessages messages;
     private final CityAdminService adminService;
+    private final ChatInputService chatInputService;
     private final GuiSessionStore sessionStore;
     private final MenuFactory menuFactory;
     private final PlotRepository plotRepository;
@@ -37,6 +40,7 @@ public final class GuiService {
     public GuiService(CityConfig config,
                       CityMessages messages,
                       CityAdminService adminService,
+                      ChatInputService chatInputService,
                       GuiSessionStore sessionStore,
                       MenuFactory menuFactory,
                       PlotRepository plotRepository,
@@ -44,6 +48,7 @@ public final class GuiService {
         this.config = config;
         this.messages = messages;
         this.adminService = adminService;
+        this.chatInputService = chatInputService;
         this.sessionStore = sessionStore;
         this.menuFactory = menuFactory;
         this.plotRepository = plotRepository;
@@ -174,6 +179,40 @@ public final class GuiService {
         handleAccess(player, adminService.stubSetOwner(player), null);
     }
 
+    public void handlePlotSetOwnerPlayer(Player player) {
+        if (player == null) {
+            return;
+        }
+        if (!player.hasPermission(ADMIN_PERMISSION)) {
+            messages.send(player, "gui.error.no_permission", "");
+            return;
+        }
+        String plotId = sessionStore.getOrCreate(player.getUniqueId()).selectedPlotId();
+        if (plotId == null) {
+            messages.send(player, "gui.error.action_failed", "",
+                    Map.of("reason", formatReason("city.plot.not-found", Map.of("id", "?"))));
+            return;
+        }
+        chatInputService.start(player, ChatInputService.Mode.SET_OWNER_PLAYER, plotId);
+    }
+
+    public void handlePlotSetOwnerGuild(Player player) {
+        if (player == null) {
+            return;
+        }
+        if (!player.hasPermission(ADMIN_PERMISSION)) {
+            messages.send(player, "gui.error.no_permission", "");
+            return;
+        }
+        String plotId = sessionStore.getOrCreate(player.getUniqueId()).selectedPlotId();
+        if (plotId == null) {
+            messages.send(player, "gui.error.action_failed", "",
+                    Map.of("reason", formatReason("city.plot.not-found", Map.of("id", "?"))));
+            return;
+        }
+        chatInputService.start(player, ChatInputService.Mode.SET_OWNER_GUILD, plotId);
+    }
+
     public boolean guiEnabled() {
         return config.guiEnabled();
     }
@@ -273,7 +312,7 @@ public final class GuiService {
             messages.send(player, "plot.trusted.limit", "", Map.of("limit", String.valueOf(config.trustedMax())));
             return;
         }
-        messages.send(player, "gui.access.add", "");
+        chatInputService.start(player, ChatInputService.Mode.ADD_TRUSTED, plot.id());
     }
 
     public void handlePlayerInfo(Player player) {

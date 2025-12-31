@@ -48,6 +48,8 @@ public record CityConfig(
                 boolean guiSoundsEnabled,
                 boolean playerGuiEnabled,
                 int trustedMax,
+                boolean chatInputHideMessage,
+                int chatInputTimeoutSeconds,
                 String language) {
         public static CityConfig from(Config config) {
                 int defaultPlotsPerPlayer = config.getInt("limits.defaultPlotsPerPlayer", 3);
@@ -104,6 +106,8 @@ public record CityConfig(
                 boolean guiSoundsEnabled = config.getBoolean("gui.sounds.enabled", true);
                 boolean playerGuiEnabled = config.getBoolean("playerGui.enabled", true);
                 int trustedMax = config.getInt("plots.trusted.max", 5);
+                boolean chatInputHideMessage = config.getBoolean("chatInput.hideMessage", true);
+                int chatInputTimeoutSeconds = config.getInt("chatInput.timeoutSeconds", 30);
                 String language = config.getString("lang", config.getString("language", "ru"));
 
                 return new CityConfig(
@@ -152,6 +156,8 @@ public record CityConfig(
                                 guiSoundsEnabled,
                                 playerGuiEnabled,
                                 trustedMax,
+                                chatInputHideMessage,
+                                chatInputTimeoutSeconds,
                                 language);
         }
 
