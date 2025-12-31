@@ -180,7 +180,14 @@ public final class CityInfrastructureModule implements Module {
         CityAdminService adminService = new CityAdminService(selectionService, plotRepository);
         MenuFactory menuFactory = new MenuFactory(javaPlugin, messages, selectionService, plotRepository);
         GuiSessionStore guiSessionStore = new GuiSessionStore();
-        guiService = new GuiService(config, messages, adminService, guiSessionStore, menuFactory);
+        guiService = new GuiService(
+                config,
+                messages,
+                adminService,
+                guiSessionStore,
+                menuFactory,
+                plotRepository,
+                plotMemberRepository);
         javaPlugin.getServer().getServicesManager().register(
                 CityAccessHook.class,
                 new CityInfrastructureAccessHook(plotService),
@@ -223,6 +230,13 @@ public final class CityInfrastructureModule implements Module {
                     guiService));
         } else {
             ctx.logger().warn("[CityInfrastructure] Command /city not found in plugin.yml; executor not registered.");
+        }
+
+        var plotCmd = javaPlugin.getCommand("plot");
+        if (plotCmd != null) {
+            plotCmd.setExecutor(new ru.realite.city.command.PlotCommand(guiService, messages));
+        } else {
+            ctx.logger().warn("[CityInfrastructure] Command /plot not found in plugin.yml; executor not registered.");
         }
 
         ctx.logger().info("[CityInfrastructure] CityInfrastructure enabled");

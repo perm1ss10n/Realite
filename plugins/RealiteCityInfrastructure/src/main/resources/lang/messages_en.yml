@@ -171,6 +171,8 @@ city:
 plot:
   access:
     denied: "&cThis plot does not allow the action."
+  trusted:
+    limit: "&cTrusted player limit reached ({limit})."
   # Plot owner management
   setowner:
     success: "&aPlot {id} owner set to {owner}."
@@ -214,12 +216,22 @@ gui:
     admin_selection: "&eAdmin: selection"
     admin_plots: "&eAdmin: plots"
     admin_plot_actions: "&eAdmin: plot"
+    player_main: "&ePlot"
+    player_access: "&ePlot access"
   btn:
     regions: "&7Regions"
     plots: "&ePlots"
     selection: "&eSelection"
     help: "&7Help"
     back: "&cBack"
+    access: "&eAccess"
+    info: "&eInfo"
+    teleport: "&bTeleport"
+  plot:
+    none: "&cYou don't own a plot. &7Tip: /city plot buy #<number> or /city plot nearby."
+  access:
+    add: "&aAdd trusted"
+    remove: "&cClick: remove access"
   selection:
     pos1:
       set: "&aSet position 1"

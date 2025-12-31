@@ -12,6 +12,9 @@ gui:
   sounds:
     enabled: true
 
+playerGui:
+  enabled: true
+
 # Storage settings
 storage:
   sqliteFile: "city.sqlite"
@@ -51,6 +54,9 @@ plots:
 
     # Allow guild members to open doors/containers on guild-owned plots
     allowInteractForMembers: true
+  trusted:
+    # Max trusted players per plot (0 = no limit)
+    max: 5
   cleanup:
     enabled: true
     blocksPerTick: 2000

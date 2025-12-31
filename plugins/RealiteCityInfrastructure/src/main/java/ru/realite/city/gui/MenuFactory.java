@@ -32,12 +32,16 @@ public final class MenuFactory {
     private static final int PLOTS_SIZE = 54;
     private static final int ACTIONS_SIZE = 27;
     private static final int PLOTS_PER_PAGE = 45;
+    private static final int PLAYER_MAIN_SIZE = 27;
+    private static final int PLAYER_ACCESS_SIZE = 54;
+    static final int TRUSTED_PER_PAGE = 45;
 
     private final CityMessages messages;
     private final CityAreaSelectionService selectionService;
     private final PlotRepository plotRepository;
     private final NamespacedKey actionKey;
     private final NamespacedKey plotIdKey;
+    private final NamespacedKey memberIdKey;
 
     public MenuFactory(JavaPlugin plugin,
                        CityMessages messages,
@@ -48,6 +52,7 @@ public final class MenuFactory {
         this.plotRepository = plotRepository;
         this.actionKey = new NamespacedKey(plugin, "gui_action");
         this.plotIdKey = new NamespacedKey(plugin, "gui_plot_id");
+        this.memberIdKey = new NamespacedKey(plugin, "gui_member_id");
     }
 
     public Inventory adminMain() {
@@ -147,6 +152,59 @@ public final class MenuFactory {
         return Optional.ofNullable(plotId);
     }
 
+    public Optional<String> extractMemberId(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return Optional.empty();
+        }
+        ItemMeta meta = item.getItemMeta();
+        String memberId = meta.getPersistentDataContainer().get(memberIdKey, PersistentDataType.STRING);
+        return Optional.ofNullable(memberId);
+    }
+
+    public Inventory playerMain(Player player, Plot plot, boolean canTeleport) {
+        Inventory inventory = Bukkit.createInventory(
+                new MenuHolder(MenuType.PLAYER_MAIN),
+                PLAYER_MAIN_SIZE,
+                messages.get("gui.title.player_main", "Plot"));
+
+        inventory.setItem(11, actionItemKey(Material.PAPER, "gui.btn.access", "player_open_access"));
+        inventory.setItem(13, actionItemKey(Material.BOOK, "gui.btn.info", "player_info"));
+        if (canTeleport) {
+            inventory.setItem(15, actionItemKey(Material.ENDER_PEARL, "gui.btn.teleport", "player_teleport"));
+        }
+
+        return inventory;
+    }
+
+    public Inventory playerAccess(Player player,
+                                  Plot plot,
+                                  List<UUID> trusted,
+                                  int page,
+                                  int maxPage,
+                                  boolean canAdd) {
+        Inventory inventory = Bukkit.createInventory(
+                new MenuHolder(MenuType.PLAYER_ACCESS),
+                PLAYER_ACCESS_SIZE,
+                messages.get("gui.title.player_access", "Access"));
+
+        int startIndex = page * TRUSTED_PER_PAGE;
+        int endIndex = Math.min(trusted.size(), startIndex + TRUSTED_PER_PAGE);
+
+        int slot = 0;
+        for (int i = startIndex; i < endIndex; i++) {
+            UUID memberId = trusted.get(i);
+            inventory.setItem(slot++, trustedMemberItem(memberId));
+        }
+
+        inventory.setItem(45, actionItem(Material.ARROW, pageLabel("&e<"), "player_access_prev"));
+        inventory.setItem(49, addTrustedItem(canAdd));
+        inventory.setItem(50, pageIndicatorItem(page, maxPage));
+        inventory.setItem(53, actionItem(Material.ARROW, pageLabel("&e>"), "player_access_next"));
+        inventory.setItem(52, actionItemKey(Material.BARRIER, "gui.btn.back", "player_back"));
+
+        return inventory;
+    }
+
     private ItemStack actionItemKey(Material material, String key, String action) {
         String label = messages.getRaw(key, key);
         return actionItem(material, label, action);
@@ -161,6 +219,36 @@ public final class MenuFactory {
             item.setItemMeta(meta);
         }
         return item;
+    }
+
+    private ItemStack trustedMemberItem(UUID memberId) {
+        ItemStack item = new ItemStack(Material.PLAYER_HEAD);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            OfflinePlayer player = Bukkit.getOfflinePlayer(memberId);
+            String name = player.getName() == null ? memberId.toString() : player.getName();
+            meta.displayName(LEGACY.deserialize("&e" + name));
+            List<Component> lore = new ArrayList<>();
+            lore.add(LEGACY.deserialize(messages.getRaw("gui.access.remove", "&cRemove")));
+            meta.lore(lore);
+            meta.getPersistentDataContainer().set(actionKey, PersistentDataType.STRING, "player_access_remove");
+            meta.getPersistentDataContainer().set(memberIdKey, PersistentDataType.STRING, memberId.toString());
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
+    private ItemStack addTrustedItem(boolean canAdd) {
+        if (!canAdd) {
+            ItemStack item = new ItemStack(Material.BARRIER);
+            ItemMeta meta = item.getItemMeta();
+            if (meta != null) {
+                meta.displayName(LEGACY.deserialize(messages.getRaw("gui.access.add", "Add trusted")));
+                item.setItemMeta(meta);
+            }
+            return item;
+        }
+        return actionItemKey(Material.GREEN_DYE, "gui.access.add", "player_access_add");
     }
 
     private ItemStack selectionStatusItem(Player player) {
