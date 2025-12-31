@@ -77,7 +77,31 @@ public final class QuestCommand implements CommandExecutor {
                 sender.sendMessage(ChatColor.YELLOW + "No active quests.");
                 return true;
             }
-            sender.sendMessage(ChatColor.GREEN + "Active quests: " + String.join(", ", active));
+            sender.sendMessage(ChatColor.GREEN + "Active quests:");
+            for (String questId : active) {
+                QuestDefinition quest = questServiceImpl.getQuestDefinition(questId);
+                if (quest == null) {
+                    sender.sendMessage(ChatColor.GRAY + "- " + questId);
+                    continue;
+                }
+                QuestProgress progress = questService.getProgress(player, quest.id());
+                sender.sendMessage(ChatColor.GOLD + "- " + quest.id());
+                for (ObjectiveDefinition objective : quest.objectives()) {
+                    boolean completed = progress != null && progress.completedObjectives().contains(objective.id());
+                    String status = completed ? (ChatColor.GREEN + "✓") : (ChatColor.GRAY + "•");
+                    String description = questServiceImpl.describeObjective(objective);
+                    String progressSuffix = "";
+                    if (!completed) {
+                        int amount = objective.amount();
+                        if (amount > 1) {
+                            int current = questServiceImpl.getObjectiveProgressCount(player, objective,
+                                    progress instanceof QuestProgressData progressData ? progressData : null);
+                            progressSuffix = ChatColor.YELLOW + " (" + current + "/" + amount + ")";
+                        }
+                    }
+                    sender.sendMessage(status + " " + ChatColor.AQUA + description + progressSuffix);
+                }
+            }
             return true;
         }
         sender.sendMessage(ChatColor.RED + "Quest service not ready.");
