@@ -40,11 +40,11 @@ public final class QuestServiceImpl implements QuestService {
     private final QuestUnlockService questUnlockService;
 
     public QuestServiceImpl(Platform logger,
-                            EventBus eventBus,
-                            java.nio.file.Path questsDir,
-                            QuestRepository repository,
-                            QuestProgressRepository progressRepository,
-                            QuestUnlockService questUnlockService) {
+            EventBus eventBus,
+            java.nio.file.Path questsDir,
+            QuestRepository repository,
+            QuestProgressRepository progressRepository,
+            QuestUnlockService questUnlockService) {
         this.logger = Objects.requireNonNull(logger, "logger");
         this.eventBus = Objects.requireNonNull(eventBus, "eventBus");
         this.questsDir = Objects.requireNonNull(questsDir, "questsDir");
@@ -118,9 +118,6 @@ public final class QuestServiceImpl implements QuestService {
         QuestRepository loaded = new QuestLoader(questsDir, logger).load();
         this.repository = loaded;
         return true;
-    }
-        }
-        return result;
     }
 
     public void handleNpcInteract(Player player, String npcId, String npcName) {
