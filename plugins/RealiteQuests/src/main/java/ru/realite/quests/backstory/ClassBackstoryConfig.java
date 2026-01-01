@@ -28,7 +28,8 @@ public final class ClassBackstoryConfig {
         if (introQuestId != null && introQuestId.isBlank()) {
             introQuestId = null;
         }
-        return new ClassBackstoryDefinition(normalized, title, pages, introQuestId);
+        List<String> postIntroQuests = normalizeQuestList(config.getStringList(base + "postIntroQuests"));
+        return new ClassBackstoryDefinition(normalized, title, pages, introQuestId, postIntroQuests);
     }
 
     private String normalize(String classId) {
@@ -40,5 +41,15 @@ public final class ClassBackstoryConfig {
             return null;
         }
         return trimmed.toUpperCase(Locale.ROOT);
+    }
+
+    private List<String> normalizeQuestList(List<String> questIds) {
+        if (questIds == null || questIds.isEmpty()) {
+            return List.of();
+        }
+        return questIds.stream()
+                .filter(id -> id != null && !id.isBlank())
+                .map(String::trim)
+                .toList();
     }
 }

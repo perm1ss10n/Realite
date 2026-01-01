@@ -84,6 +84,7 @@ public final class ClassBackstoryServiceImpl implements ClassBackstoryService {
             return;
         }
         progressRepository.setAccepted(player.getUniqueId(), normalized, true);
+        progressRepository.setAcceptedClass(player.getUniqueId(), normalized);
         player.sendMessage(messages.format("quests.backstory.accepted", Map.of("class", normalized)));
         ClassBackstoryDefinition definition = config.get(normalized);
         if (definition != null && definition.introQuestId() != null) {

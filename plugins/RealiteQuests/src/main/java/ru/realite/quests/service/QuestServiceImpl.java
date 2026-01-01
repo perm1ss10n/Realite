@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import ru.realite.core.api.EventBus;
 import ru.realite.core.api.Platform;
+import ru.realite.core.api.classes.ClassXpService;
 import ru.realite.core.api.events.QuestCompletedEvent;
 import ru.realite.core.api.events.QuestStartedEvent;
 import ru.realite.core.api.quests.QuestProgress;
@@ -43,6 +44,10 @@ public final class QuestServiceImpl implements QuestService {
     private final QuestUnlockService questUnlockService;
     private final CityAdapter cityAdapter;
     private final GuildAdapter guildAdapter;
+    private final ClassXpService classXpService;
+    private final boolean residencyMustBeInsideCity;
+    private final boolean residencyCountOwner;
+    private final boolean residencyCountMember;
 
     private static final String FEATURE_UNAVAILABLE_REASON = "feature unavailable";
 
@@ -53,7 +58,11 @@ public final class QuestServiceImpl implements QuestService {
             QuestProgressRepository progressRepository,
             QuestUnlockService questUnlockService,
             CityAdapter cityAdapter,
-            GuildAdapter guildAdapter) {
+            GuildAdapter guildAdapter,
+            ClassXpService classXpService,
+            boolean residencyMustBeInsideCity,
+            boolean residencyCountOwner,
+            boolean residencyCountMember) {
         this.logger = Objects.requireNonNull(logger, "logger");
         this.eventBus = Objects.requireNonNull(eventBus, "eventBus");
         this.questsDir = Objects.requireNonNull(questsDir, "questsDir");
@@ -62,6 +71,10 @@ public final class QuestServiceImpl implements QuestService {
         this.questUnlockService = questUnlockService;
         this.cityAdapter = cityAdapter;
         this.guildAdapter = guildAdapter;
+        this.classXpService = classXpService;
+        this.residencyMustBeInsideCity = residencyMustBeInsideCity;
+        this.residencyCountOwner = residencyCountOwner;
+        this.residencyCountMember = residencyCountMember;
     }
 
     @Override
@@ -216,7 +229,8 @@ public final class QuestServiceImpl implements QuestService {
             }
             boolean updated = false;
             for (ObjectiveDefinition objective : quest.objectives()) {
-                if (objective.type() != ObjectiveType.GO_TO_LOCATION) {
+                if (objective.type() != ObjectiveType.GO_TO_LOCATION
+                        && objective.type() != ObjectiveType.CITY_PLOT_RESIDENCY) {
                     continue;
                 }
                 if (progress.completedObjectives().contains(objective.id())) {
@@ -225,12 +239,20 @@ public final class QuestServiceImpl implements QuestService {
                 if (!canProgressObjective(player, location, quest, objective)) {
                     continue;
                 }
-                if (!matchesLocation(objective, location)) {
-                    continue;
+                if (objective.type() == ObjectiveType.GO_TO_LOCATION) {
+                    if (!matchesLocation(objective, location)) {
+                        continue;
+                    }
+                    progress.completedObjectivesMutable().add(objective.id());
+                    notifyObjectiveCompleted(player, objective);
+                    updated = true;
+                } else if (objective.type() == ObjectiveType.CITY_PLOT_RESIDENCY) {
+                    if (hasPlotResidency(player)) {
+                        progress.completedObjectivesMutable().add(objective.id());
+                        notifyObjectiveCompleted(player, objective);
+                        updated = true;
+                    }
                 }
-                progress.completedObjectivesMutable().add(objective.id());
-                notifyObjectiveCompleted(player, objective);
-                updated = true;
             }
             if (updated) {
                 progressRepository.save(player.getUniqueId(), quest.id(), progress);
@@ -380,6 +402,10 @@ public final class QuestServiceImpl implements QuestService {
         for (RewardDefinition reward : quest.rewards()) {
             if (reward.type() == RewardType.XP) {
                 player.giveExp(reward.amount());
+            } else if (reward.type() == RewardType.CLASS_XP) {
+                if (classXpService != null) {
+                    classXpService.addXp(player, reward.amount());
+                }
             } else if (reward.type() == RewardType.ITEM) {
                 Material material = reward.material();
                 if (material == null) {
@@ -517,6 +543,7 @@ public final class QuestServiceImpl implements QuestService {
         return switch (objective.type()) {
             case KILL, PLACE_BLOCK, BREAK_BLOCK -> progress.objectiveCounts().getOrDefault(objective.id(), 0);
             case HOLD_ITEM -> countInventory(player, objective);
+            case CITY_PLOT_RESIDENCY -> progress.completedObjectives().contains(objective.id()) ? 1 : 0;
             default -> 0;
         };
     }
@@ -532,7 +559,25 @@ public final class QuestServiceImpl implements QuestService {
             case PLACE_BLOCK -> "Place " + objective.amount() + " " + formatMaterials(objective.materials());
             case BREAK_BLOCK -> "Break " + objective.amount() + " " + formatMaterials(objective.materials());
             case HOLD_ITEM -> "Hold " + objective.amount() + " " + formatMaterials(objective.materials());
+            case CITY_PLOT_RESIDENCY -> "Become a city plot resident";
         };
+    }
+
+    private boolean hasPlotResidency(Player player) {
+        if (player == null) {
+            return false;
+        }
+        if (cityAdapter == null) {
+            return false;
+        }
+        if (!residencyCountOwner && !residencyCountMember) {
+            return false;
+        }
+        return cityAdapter.hasPlotResidency(
+                player,
+                residencyCountOwner,
+                residencyCountMember,
+                residencyMustBeInsideCity);
     }
 
     private void notifyObjectiveCompleted(Player player, ObjectiveDefinition objective) {

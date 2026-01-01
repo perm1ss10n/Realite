@@ -6,5 +6,9 @@ quests:
   tags:
     - "starter"
     - "daily"
+  residency:
+    mustBeInsideCity: true
+    countOwner: true
+    countMember: true
 
 lang: "ru"

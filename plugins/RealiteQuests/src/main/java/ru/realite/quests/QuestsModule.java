@@ -12,8 +12,11 @@ import ru.realite.core.api.Subscription;
 import ru.realite.core.api.events.ClassLevelUpEvent;
 import ru.realite.core.api.events.ClassSelectedEvent;
 import ru.realite.core.api.events.EvolutionCompletedEvent;
+import ru.realite.core.api.events.QuestCompletedEvent;
+import ru.realite.core.api.classes.ClassXpService;
 import ru.realite.core.api.quests.ClassBackstoryService;
 import ru.realite.core.api.quests.QuestService;
+import ru.realite.core.api.quests.QuestStartTrigger;
 import ru.realite.core.api.quests.QuestUnlockService;
 import ru.realite.core.api.quests.CityAdapter;
 import ru.realite.core.api.quests.GuildAdapter;
@@ -51,6 +54,8 @@ public final class QuestsModule implements Module {
     private QuestsMessages messages;
     private ClassBackstoryService backstoryService;
     private QuestService questService;
+    private BackstoryProgressRepository backstoryProgressRepository;
+    private ClassBackstoryConfig backstoryConfig;
     private final ModuleMetadata metadata = new ModuleMetadata(
             new ModuleId("realite-quests"),
             "RealiteQuests",
@@ -140,8 +145,13 @@ public final class QuestsModule implements Module {
             QuestProgressRepository progressRepository = new QuestProgressRepository(ctx.dataFolder());
             CityAdapter cityAdapter = ctx.services().get(CityAdapter.class);
             GuildAdapter guildAdapter = ctx.services().get(GuildAdapter.class);
+            ClassXpService classXpService = ctx.services().get(ClassXpService.class);
+            boolean mustBeInsideCity = config.getBoolean("quests.residency.mustBeInsideCity", true);
+            boolean countOwner = config.getBoolean("quests.residency.countOwner", true);
+            boolean countMember = config.getBoolean("quests.residency.countMember", true);
             questService = new QuestServiceImpl(ctx.logger(), ctx.events(), questsDir, repository,
-                    progressRepository, questUnlockService, cityAdapter, guildAdapter);
+                    progressRepository, questUnlockService, cityAdapter, guildAdapter, classXpService,
+                    mustBeInsideCity, countOwner, countMember);
             ctx.services().register(QuestService.class, questService);
         }
 
@@ -149,11 +159,11 @@ public final class QuestsModule implements Module {
         if (existingBackstory != null) {
             backstoryService = existingBackstory;
         } else {
-            BackstoryProgressRepository progressRepository = new BackstoryProgressRepository(ctx.dataFolder());
-            ClassBackstoryConfig backstoryConfig = new ClassBackstoryConfig(classesConfig);
+            backstoryProgressRepository = new BackstoryProgressRepository(ctx.dataFolder());
+            backstoryConfig = new ClassBackstoryConfig(classesConfig);
             backstoryService = new ClassBackstoryServiceImpl(
                     backstoryConfig,
-                    progressRepository,
+                    backstoryProgressRepository,
                     questService,
                     messages
             );
@@ -186,6 +196,33 @@ public final class QuestsModule implements Module {
             sendMessage(event.playerUuid(),
                     "Quest update: evolution completed " + event.evolutionId());
         }));
+
+        subscriptions.add(ctx.events().subscribe(QuestCompletedEvent.class, event -> {
+            if (!(questService instanceof QuestServiceImpl questServiceImpl)) {
+                return;
+            }
+            if (backstoryProgressRepository == null || backstoryConfig == null) {
+                return;
+            }
+            String classId = backstoryProgressRepository.getAcceptedClass(event.playerUuid());
+            if (classId == null) {
+                return;
+            }
+            var definition = backstoryConfig.get(classId);
+            if (definition == null || definition.introQuestId() == null) {
+                return;
+            }
+            if (!definition.introQuestId().equalsIgnoreCase(event.questId())) {
+                return;
+            }
+            Player player = Bukkit.getPlayer(event.playerUuid());
+            if (player == null) {
+                return;
+            }
+            for (String questId : definition.postIntroQuests()) {
+                questServiceImpl.start(player, questId, QuestStartTrigger.CLASS_ACCEPTED, false);
+            }
+        }));
     }
 
     @Override
@@ -210,7 +247,9 @@ public final class QuestsModule implements Module {
                 "miner_initiation.yml",
                 "merchant_initiation.yml",
                 "archer_initiation.yml",
-                "wanderer_initiation.yml"
+                "wanderer_initiation.yml",
+                "common_gear_up.yml",
+                "common_settle_in_city.yml"
         };
         Path questsDir = ctx.dataFolder().resolve("quests");
         try {

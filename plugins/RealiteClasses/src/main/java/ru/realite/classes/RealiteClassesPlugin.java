@@ -5,6 +5,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import ru.realite.classes.command.ClassCommand;
 import ru.realite.classes.gui.ClassSelectMenu;
+import ru.realite.classes.integration.ClassXpServiceAdapter;
 import ru.realite.classes.listener.ClassActionXpListener;
 import ru.realite.classes.listener.MenuListener;
 import ru.realite.classes.listener.PlayerJoinListener;
@@ -30,6 +31,7 @@ import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.CoreModuleEntrypoint;
 import ru.realite.core.api.Platform;
 import ru.realite.core.api.classes.ClassTagProvider;
+import ru.realite.core.api.classes.ClassXpService;
 
 import java.io.File;
 import java.io.InputStream;
@@ -54,6 +56,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
     private EffectService effectService;
     private ClassHudService hudService;
     private ClassTagProvider classTagProvider;
+    private ClassXpService classXpService;
     private EvolutionRequirementAdapter evolutionRequirementAdapter;
     private HiddenClassGate hiddenClassGate;
 
@@ -133,6 +136,7 @@ public void onEnable() {
             classService.saveAll();
         }
         unregisterClassTagProvider();
+        unregisterClassXpService();
         if (platform != null) {
             platform.info("[Classes] Disabled");
         }
@@ -191,6 +195,7 @@ public void onEnable() {
                 () -> core.services().get(ru.realite.core.api.quests.QuestUnlockService.class));
 
         registerClassTagProvider();
+        registerClassXpService();
 
         platform.info("[Classes] reloadAll completed");
     }
@@ -285,5 +290,24 @@ public void onEnable() {
             core.services().unregister(ClassTagProvider.class);
         }
         classTagProvider = null;
+    }
+
+    private void registerClassXpService() {
+        if (core == null || progressionService == null) {
+            return;
+        }
+        classXpService = new ClassXpServiceAdapter(progressionService);
+        core.services().replace(ClassXpService.class, classXpService);
+    }
+
+    private void unregisterClassXpService() {
+        if (core == null || classXpService == null) {
+            return;
+        }
+        ClassXpService registered = core.services().get(ClassXpService.class);
+        if (registered == classXpService) {
+            core.services().unregister(ClassXpService.class);
+        }
+        classXpService = null;
     }
 }

@@ -39,6 +39,28 @@ public final class BackstoryProgressRepository {
         save(playerUuid, yml);
     }
 
+    public void setAcceptedClass(UUID playerUuid, String classId) {
+        String normalized = normalize(classId);
+        if (normalized == null) {
+            return;
+        }
+        YamlConfiguration yml = load(playerUuid);
+        yml.set("backstory.acceptedClass", normalized);
+        save(playerUuid, yml);
+    }
+
+    public String getAcceptedClass(UUID playerUuid) {
+        if (playerUuid == null) {
+            return null;
+        }
+        YamlConfiguration yml = load(playerUuid);
+        String raw = yml.getString("backstory.acceptedClass", null);
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        return normalize(raw);
+    }
+
     private YamlConfiguration load(UUID uuid) {
         File file = file(uuid);
         if (!file.exists()) {

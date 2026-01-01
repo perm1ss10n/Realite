@@ -119,6 +119,7 @@ public final class QuestLoader {
                 case PLACE_BLOCK -> parsePlaceBlock(fileName, id, map, objectiveConditions);
                 case BREAK_BLOCK -> parseBreakBlock(fileName, id, map, objectiveConditions);
                 case HOLD_ITEM -> parseHoldItem(fileName, id, map, objectiveConditions);
+                case CITY_PLOT_RESIDENCY -> parseCityPlotResidency(id, objectiveConditions);
             };
             if (definition != null) {
                 objectives.add(definition);
@@ -221,6 +222,11 @@ public final class QuestLoader {
                 null, 0, 0, 0, 0, conditions);
     }
 
+    private ObjectiveDefinition parseCityPlotResidency(String id, QuestConditions conditions) {
+        return new ObjectiveDefinition(id, ObjectiveType.CITY_PLOT_RESIDENCY, null, null, null, 1,
+                null, 0, 0, 0, 0, conditions);
+    }
+
     private List<RewardDefinition> loadRewards(String fileName, YamlConfiguration yml) {
         List<Map<?, ?>> entries = yml.getMapList("rewards");
         List<RewardDefinition> rewards = new ArrayList<>();
@@ -233,6 +239,7 @@ public final class QuestLoader {
             }
             RewardDefinition definition = switch (type) {
                 case XP -> parseXpReward(fileName, map);
+                case CLASS_XP -> parseClassXpReward(fileName, map);
                 case ITEM -> parseItemReward(fileName, map);
                 case QUEST_UNLOCK -> parseQuestUnlockReward(fileName, map);
             };
@@ -250,6 +257,15 @@ public final class QuestLoader {
             return null;
         }
         return new RewardDefinition(RewardType.XP, amount, null, null);
+    }
+
+    private RewardDefinition parseClassXpReward(String fileName, Map<?, ?> map) {
+        int amount = asInt(map.get("amount"), 0);
+        if (amount <= 0) {
+            logger.warn("[Quests] CLASS_XP reward missing amount in " + fileName);
+            return null;
+        }
+        return new RewardDefinition(RewardType.CLASS_XP, amount, null, null);
     }
 
     private RewardDefinition parseItemReward(String fileName, Map<?, ?> map) {
@@ -348,6 +364,14 @@ public final class QuestLoader {
         Material single = parseMaterial(asString(map.get("material")));
         if (single != null) {
             return List.of(single);
+        }
+        Material item = parseMaterial(asString(map.get("item")));
+        if (item != null) {
+            return List.of(item);
+        }
+        Material block = parseMaterial(asString(map.get("block")));
+        if (block != null) {
+            return List.of(block);
         }
         return List.of();
     }
