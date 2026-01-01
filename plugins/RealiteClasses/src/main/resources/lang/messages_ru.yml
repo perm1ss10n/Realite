@@ -17,11 +17,30 @@ class-help:
 
 class-help-admin:
   - "&e/class reload &7— перезагрузить конфиги"
+  - "&e/class admin ... &7— админ-команды классов"
 
 chosen: "&aКласс выбран: &e{class}"
 
 no-permission: "&cНет прав."
 reloaded: "&aКонфиги перезагружены: &fconfig.yml, classes.yml, lang/messages_*.yml, xp.yml"
+
+admin-usage: "&eИспользование: &f/class admin <evolution|level|mastered|grant|preset|unlock-ready> ..."
+admin-usage-evolution: "&eИспользование: &f/class admin evolution <set|next|max|reset> <player> [evolutionId]"
+admin-usage-level: "&eИспользование: &f/class admin level <set|add> <player> <level>"
+admin-usage-mastered: "&eИспользование: &f/class admin mastered <add|remove|list> <player> [classId]"
+admin-usage-grant: "&eИспользование: &f/class admin grant <player> <classId> [evolutionId] [level]"
+admin-usage-preset: "&eИспользование: &f/class admin preset <list|apply|save|delete> [presetId] [player]"
+admin-usage-unlock-ready: "&eИспользование: &f/class admin unlock-ready <player> <hiddenClassId>"
+
+admin-success: "&aГотово."
+unknown-player: "&cИгрок не найден."
+unknown-class: "&cНеизвестный classId."
+unknown-evolution: "&cНеизвестная эволюция."
+tester-disabled: "&cTester mode отключен в конфиге."
+no-class-selected: "&cУ игрока не выбран класс."
+mastered-list: "&7Mastered: &e{list}"
+preset-list: "&7Presets: &e{list}"
+preset-not-found: "&cПресет не найден."
 
 status: "&aКласс: &e{class} &7| &aЭволюция: &e{evolution}"
 

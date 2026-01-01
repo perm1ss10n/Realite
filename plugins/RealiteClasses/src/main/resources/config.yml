@@ -6,6 +6,9 @@ effects:
 storage:
   autosave-minutes: 5
 
+testerMode:
+  enabled: false
+
 permissions:
   change-class: "realiteclass.change"
   admin-reload: "realiteclass.admin.reload"
