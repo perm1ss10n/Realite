@@ -1,0 +1,41 @@
+id: common_settle_in_city
+type: COMMON
+scope: CITY
+
+title: "Осесть в городе"
+description: "Получи жильё в городе и обустрой базовый быт."
+
+start:
+  trigger: MANUAL
+
+objectives:
+  - id: residency
+    type: CITY_PLOT_RESIDENCY
+    text: "Купи участок или пропишись у друга в городе"
+
+  - id: place_chests
+    type: PLACE_BLOCK
+    block: CHEST
+    amount: 4
+    text: "Поставь 4 сундука"
+
+  - id: place_furnace
+    type: PLACE_BLOCK
+    block: FURNACE
+    amount: 1
+    text: "Поставь печь"
+
+  - id: place_crafting
+    type: PLACE_BLOCK
+    block: CRAFTING_TABLE
+    amount: 1
+    text: "Поставь верстак"
+
+rewards:
+  - type: XP
+    amount: 220
+  - type: CLASS_XP
+    amount: 110
+
+onComplete:
+  message: "quests.common.settle_in_city.complete"

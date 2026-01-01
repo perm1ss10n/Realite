@@ -1,0 +1,55 @@
+id: common_gear_up
+type: COMMON
+scope: GLOBAL
+
+title: "Снаряжение новичка"
+description: "Собери базовые ресурсы и подготовь полный комплект железной брони."
+
+start:
+  trigger: MANUAL
+
+objectives:
+  - id: logs
+    type: HOLD_ITEM
+    item: OAK_LOG
+    amount: 16
+    text: "Собери 16 брёвен"
+
+  - id: cobble
+    type: HOLD_ITEM
+    item: COBBLESTONE
+    amount: 32
+    text: "Собери 32 булыжника"
+
+  - id: iron_helmet
+    type: HOLD_ITEM
+    item: IRON_HELMET
+    amount: 1
+    text: "Сделай железный шлем"
+
+  - id: iron_chest
+    type: HOLD_ITEM
+    item: IRON_CHESTPLATE
+    amount: 1
+    text: "Сделай железный нагрудник"
+
+  - id: iron_legs
+    type: HOLD_ITEM
+    item: IRON_LEGGINGS
+    amount: 1
+    text: "Сделай железные поножи"
+
+  - id: iron_boots
+    type: HOLD_ITEM
+    item: IRON_BOOTS
+    amount: 1
+    text: "Сделай железные ботинки"
+
+rewards:
+  - type: XP
+    amount: 250
+  - type: CLASS_XP
+    amount: 120
+
+onComplete:
+  message: "quests.common.gear_up.complete"

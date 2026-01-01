@@ -6,6 +6,7 @@ public record ClassBackstoryDefinition(
         String classId,
         String title,
         List<String> pages,
-        String introQuestId
+        String introQuestId,
+        List<String> postIntroQuests
 ) {
 }

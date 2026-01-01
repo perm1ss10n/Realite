@@ -36,4 +36,14 @@ public interface CityAdapter {
     default boolean isMayor(Player player, String cityId) {
         return false;
     }
+
+    /**
+     * Проверяет, владеет ли игрок участком или является участником участка.
+     */
+    default boolean hasPlotResidency(Player player,
+                                     boolean countOwner,
+                                     boolean countMember,
+                                     boolean mustBeInsideCity) {
+        return false;
+    }
 }

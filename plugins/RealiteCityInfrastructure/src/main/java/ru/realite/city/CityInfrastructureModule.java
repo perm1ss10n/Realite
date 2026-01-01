@@ -186,7 +186,7 @@ public final class CityInfrastructureModule implements Module {
                 guildsApi);
         ctx.services().registerIfAbsent(
                 CityAdapter.class,
-                new CityQuestAdapter(cityAreaRepository, plotService));
+                new CityQuestAdapter(cityAreaRepository, plotService, plotRepository, plotMemberRepository));
         marketService = new MarketService(config, economyService, cityHooks);
         chatInputService = new ChatInputService(javaPlugin, config, messages, plotService);
         CityAdminService adminService = new CityAdminService(selectionService, plotRepository);

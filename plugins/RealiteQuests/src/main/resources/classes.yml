@@ -5,6 +5,9 @@ classes:
       - "&6Странник&7 — путь тех, кто ищет дорогу и своё предназначение."
       - "&7Ты учишься ориентироваться в мире и слышать зов новых дорог."
     introQuestId: "wanderer_initiation"
+    postIntroQuests:
+      - "common_gear_up"
+      - "common_settle_in_city"
 
   WARRIOR:
     title: "Путь воина"
@@ -12,6 +15,9 @@ classes:
       - "&6Воин&7 рождается в решимости защищать и побеждать."
       - "&7Твоё оружие — дисциплина, а твой путь — испытания и честь."
     introQuestId: "warrior_initiation"
+    postIntroQuests:
+      - "common_gear_up"
+      - "common_settle_in_city"
 
   ALCHEMIST:
     title: "Путь алхимика"
@@ -19,6 +25,9 @@ classes:
       - "&6Алхимик&7 изучает мир через зелья, эссенции и тайные формулы."
       - "&7Каждый опыт приближает к мастерству и новым открытиям."
     introQuestId: "alchemist_initiation"
+    postIntroQuests:
+      - "common_gear_up"
+      - "common_settle_in_city"
 
   MINER:
     title: "Путь шахтёра"
@@ -26,6 +35,9 @@ classes:
       - "&6Шахтёр&7 знает цену труду и тишине глубин."
       - "&7Под землёй рождаются ресурсы, а в тебе — стойкость."
     introQuestId: "miner_initiation"
+    postIntroQuests:
+      - "common_gear_up"
+      - "common_settle_in_city"
 
   MERCHANT:
     title: "Путь торговца"
@@ -33,6 +45,9 @@ classes:
       - "&6Торговец&7 строит связи и умеет видеть ценность вещей."
       - "&7На рынке важны честность, хватка и умение договариваться."
     introQuestId: "merchant_initiation"
+    postIntroQuests:
+      - "common_gear_up"
+      - "common_settle_in_city"
 
   ARCHER:
     title: "Путь лучника"
@@ -40,3 +55,6 @@ classes:
       - "&6Лучник&7 полагается на меткость, выдержку и лёгкость шагов."
       - "&7Твоя цель — далеко, но рука всегда уверена."
     introQuestId: "archer_initiation"
+    postIntroQuests:
+      - "common_gear_up"
+      - "common_settle_in_city"
