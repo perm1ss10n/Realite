@@ -33,21 +33,25 @@ public final class GuildCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
             if (sender instanceof Player player) {
-                messages.send(player, "usage.create");
+                // раньше тут было usage.create -> поэтому казалось, что "/g" умеет только create
+                messages.send(player, "usage.root");
             } else {
                 sender.sendMessage(messages.msg("error.player_only"));
             }
             return true;
         }
+
         String sub = args[0].toLowerCase(Locale.ROOT);
         if ("admin".equals(sub)) {
             handleAdmin(sender, args);
             return true;
         }
+
         if (!(sender instanceof Player player)) {
             sender.sendMessage(messages.msg("error.player_only"));
             return true;
         }
+
         switch (sub) {
             case "create" -> handleCreate(player, args);
             case "info" -> handleInfo(player, args);
@@ -63,7 +67,7 @@ public final class GuildCommand implements CommandExecutor {
             case "claim" -> handleClaim(player, args);
             case "salary" -> handleSalary(player, args);
             case "chat" -> handleChat(player, args);
-            default -> messages.send(player, "usage.create");
+            default -> messages.send(player, "usage.root");
         }
         return true;
     }
@@ -144,18 +148,26 @@ public final class GuildCommand implements CommandExecutor {
 
     private void handleSalary(Player player, String[] args) {
         if (args.length != 1) {
-            messages.send(player, "usage.create");
+            messages.send(player, "usage.salary");
             return;
         }
         salaryService.handleSalaryInfo(player);
     }
 
     private void handleChat(Player player, String[] args) {
-        if (args.length != 2 || !"toggle".equalsIgnoreCase(args[1])) {
-            messages.send(player, "usage.chat");
+        // Обычным игрокам toggle вообще не нужен: только OP / permission
+        if (args.length == 2 && "toggle".equalsIgnoreCase(args[1])) {
+            if (!player.isOp() && !player.hasPermission("realite.guilds.chat.toggle")) {
+                messages.send(player, "error.no_permission");
+                return;
+            }
+            boolean enabled = chatService.toggle(player); // <-- toggle должен возвращать boolean
+            messages.send(player, enabled ? "chat.toggle.on" : "chat.toggle.off");
             return;
         }
-        chatService.toggle(player);
+
+        // Для всех остальных показываем usage (и оставляем /gc для сообщений отдельной командой)
+        messages.send(player, "usage.chat");
     }
 
     private void handleAdmin(CommandSender sender, String[] args) {

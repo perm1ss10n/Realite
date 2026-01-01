@@ -5,13 +5,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+
+import net.milkbowl.vault.chat.Chat;
+
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+
 import ru.realite.guilds.i18n.GuildMessages;
 import ru.realite.guilds.model.Guild;
 import ru.realite.guilds.model.GuildMember;
@@ -21,6 +27,12 @@ public final class GuildChatService {
 
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
 
+    // Раньше toggle был "только для админов/опов". Сейчас toggle по умолчанию
+    // доступен членам гильдии.
+    // Если нужно ограничить — включи chat.guild.toggle.requirePermission=true в
+    // конфиге.
+    private static final String DEFAULT_TOGGLE_PERMISSION = "realite.guilds.chat.toggle";
+
     private final JavaPlugin plugin;
     private final FileConfiguration config;
     private final GuildRepository repository;
@@ -28,8 +40,12 @@ public final class GuildChatService {
     private final GuildRankService rankService;
     private final Set<UUID> toggled = new HashSet<>();
 
+    // Vault Chat (LuckPerms умеет отдавать префиксы/группы через Vault hook)
+    private Chat vaultChat;
+    private boolean vaultChatResolved;
+
     public GuildChatService(JavaPlugin plugin, FileConfiguration config, GuildRepository repository,
-                            GuildMessages messages, GuildRankService rankService) {
+            GuildMessages messages, GuildRankService rankService) {
         this.plugin = plugin;
         this.config = config;
         this.repository = repository;
@@ -65,6 +81,27 @@ public final class GuildChatService {
         return config.getString("chat.guild.spy.permission", "realite.guilds.chat.spy");
     }
 
+    // --- Toggle permission config (новое) ---
+
+    private boolean isTogglePermissionRequired() {
+        return config.getBoolean("chat.guild.toggle.requirePermission", false);
+    }
+
+    private String getTogglePermission() {
+        return config.getString("chat.guild.toggle.permission", DEFAULT_TOGGLE_PERMISSION);
+    }
+
+    private boolean canToggle(Player player) {
+        // По умолчанию: ВСЕМ членам гильдии можно.
+        if (!isTogglePermissionRequired()) {
+            return true;
+        }
+        String perm = getTogglePermission();
+        return perm != null && !perm.isBlank() && player.hasPermission(perm);
+    }
+
+    // --- Toggle state ---
+
     public boolean isToggled(Player player) {
         return toggled.contains(player.getUniqueId());
     }
@@ -73,49 +110,120 @@ public final class GuildChatService {
         toggled.remove(player.getUniqueId());
     }
 
-    public void toggle(Player player) {
+    /**
+     * Toggle гильд-чата.
+     * Возвращает true если включили, false если выключили.
+     * Сообщения on/off НЕ шлём здесь — пусть команда решает, что показывать.
+     */
+    public boolean toggle(Player player) {
         if (!isGuildChatEnabled() || !isToggleCommandEnabled()) {
             messages.send(player, "error.no_permission");
-            return;
+            return false;
         }
+
         GuildMember member = repository.getMember(player.getUniqueId());
         if (member == null) {
             messages.send(player, "error.guild.no_member");
-            return;
+            return false;
         }
-        if (toggled.contains(player.getUniqueId())) {
-            toggled.remove(player.getUniqueId());
-            messages.send(player, "chat.toggle.off");
+
+        if (!canToggle(player)) {
+            messages.send(player, "error.no_permission");
+            return false;
+        }
+
+        UUID id = player.getUniqueId();
+        if (toggled.contains(id)) {
+            toggled.remove(id);
+            return false;
         } else {
-            toggled.add(player.getUniqueId());
-            messages.send(player, "chat.toggle.on");
+            toggled.add(id);
+            return true;
         }
     }
+
+    // --- Recipients helpers (новое, для будущего bridge) ---
+
+    /**
+     * Онлайн-участники гильдии отправителя.
+     * Не включает spy (spy отдельно).
+     */
+    public List<Player> getGuildRecipients(Player sender) {
+        GuildMember member = repository.getMember(sender.getUniqueId());
+        if (member == null)
+            return List.of();
+
+        String tag = member.tag();
+        if (tag == null || tag.isBlank())
+            return List.of();
+
+        List<Player> recipients = new ArrayList<>();
+        for (Player viewer : Bukkit.getOnlinePlayers()) {
+            GuildMember viewerMember = repository.getMember(viewer.getUniqueId());
+            if (viewerMember != null && tag.equalsIgnoreCase(viewerMember.tag())) {
+                recipients.add(viewer);
+            }
+        }
+        return recipients;
+    }
+
+    /**
+     * Онлайн-игроки со spy правом.
+     */
+    public List<Player> getSpyRecipients(Player sender) {
+        String perm = getSpyPermission();
+        if (!isSpyEnabled() || perm == null || perm.isBlank())
+            return List.of();
+
+        List<Player> spies = new ArrayList<>();
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (p.hasPermission(perm)) {
+                spies.add(p);
+            }
+        }
+        return spies;
+    }
+
+    // --- Sending ---
 
     public void sendGuildChat(Player sender, Component message) {
         if (!isGuildChatEnabled()) {
             messages.send(sender, "error.no_permission");
             return;
         }
+
         GuildMember member = repository.getMember(sender.getUniqueId());
         if (member == null) {
             messages.send(sender, "error.guild.no_member");
             return;
         }
+
         Guild guild = repository.getGuild(member.tag());
         if (guild == null) {
             messages.send(sender, "guild.not_found");
             return;
         }
+
         Component formatted = formatGuildMessage(sender, guild, member, message);
-        String spyPermission = getSpyPermission();
-        boolean spyEnabled = isSpyEnabled() && spyPermission != null && !spyPermission.isBlank();
-        for (Player viewer : Bukkit.getOnlinePlayers()) {
-            GuildMember viewerMember = repository.getMember(viewer.getUniqueId());
-            boolean sameGuild = viewerMember != null && member.tag().equalsIgnoreCase(viewerMember.tag());
-            boolean spy = spyEnabled && viewer.hasPermission(spyPermission);
-            if (sameGuild || spy) {
-                viewer.sendMessage(formatted);
+
+        // 1) Члены гильдии
+        List<Player> guildRecipients = getGuildRecipients(sender);
+        for (Player p : guildRecipients) {
+            p.sendMessage(formatted);
+        }
+
+        // 2) Spy (тем, кто не в guildRecipients)
+        List<Player> spies = getSpyRecipients(sender);
+        if (!spies.isEmpty()) {
+            Set<UUID> already = new HashSet<>();
+            for (Player p : guildRecipients) {
+                already.add(p.getUniqueId());
+            }
+
+            for (Player spy : spies) {
+                if (!already.contains(spy.getUniqueId())) {
+                    spy.sendMessage(formatted);
+                }
             }
         }
     }
@@ -123,6 +231,8 @@ public final class GuildChatService {
     public void sendGuildChatAsync(Player sender, Component message) {
         Bukkit.getScheduler().runTask(plugin, () -> sendGuildChat(sender, message));
     }
+
+    // --- Public prefix / hover ---
 
     public Component buildPublicPrefix(Player player) {
         return buildPublicPrefix(player, true);
@@ -140,12 +250,16 @@ public final class GuildChatService {
         if (guild == null) {
             return Component.empty();
         }
+
         String prefixRaw = messages.raw("chat.public.prefix");
         prefixRaw = applyPlaceholders(prefixRaw, player, guild, member);
         Component prefix = LEGACY.deserialize(prefixRaw);
+
         if (includeHover && isHoverEnabled()) {
             Component hover = buildHover(player, guild, member);
-            prefix = prefix.hoverEvent(HoverEvent.showText(hover));
+            if (!hover.equals(Component.empty())) {
+                prefix = prefix.hoverEvent(HoverEvent.showText(hover));
+            }
         }
         return prefix;
     }
@@ -155,13 +269,18 @@ public final class GuildChatService {
             return Component.empty();
         }
         String hoverRaw = messages.raw("chat.hover");
+
         boolean showRank = isShowRankEnabled();
-        boolean showToggle = isToggleCommandEnabled();
         boolean showChat = isGuildChatEnabled();
+
+        // toggle показываем по логике canToggle (а не по OP)
+        boolean showToggle = isToggleCommandEnabled() && canToggle(player);
+
         hoverRaw = filterHoverLines(hoverRaw, showRank, showToggle, showChat);
         hoverRaw = applyPlaceholders(hoverRaw, player, guild, member);
         hoverRaw = hoverRaw.replace("{hintToggle}", "/g chat toggle");
         hoverRaw = hoverRaw.replace("{hintChat}", "/gc <msg>");
+
         return LEGACY.deserialize(hoverRaw);
     }
 
@@ -180,9 +299,15 @@ public final class GuildChatService {
         return buildHover(player, guild, member);
     }
 
+    /**
+     * Формат гильдейского чата:
+     * в messages/config делай так, как хочешь, например:
+     * "&7[&aG&7] {lpPrefix}&r{group} &f{rank} &f{player}: &r{message}"
+     */
     public Component formatGuildMessage(Player player, Guild guild, GuildMember member, Component message) {
         String raw = messages.raw("chat.guild.format");
         raw = applyPlaceholders(raw, player, guild, member);
+
         List<String> parts = splitMessageFormat(raw);
         Component result = LEGACY.deserialize(parts.get(0));
         if (parts.size() == 1) {
@@ -196,11 +321,18 @@ public final class GuildChatService {
 
     private String applyPlaceholders(String raw, Player player, Guild guild, GuildMember member) {
         String replaced = raw;
+
+        // player/guild placeholders
         replaced = replaced.replace("{player}", player.getName());
         replaced = replaced.replace("{guild}", guild.name());
         replaced = replaced.replace("{tag}", guild.tag());
         replaced = replaced.replace("{members}", String.valueOf(repository.countMembersByTag(guild.tag())));
         replaced = replaced.replace("{rank}", resolveRankName(member));
+
+        // LuckPerms meta через Vault Chat (если доступно)
+        replaced = replaced.replace("{lpPrefix}", safe(resolveVaultPrefix(player)));
+        replaced = replaced.replace("{group}", safe(resolveVaultPrimaryGroup(player)));
+
         return replaced;
     }
 
@@ -217,7 +349,7 @@ public final class GuildChatService {
     }
 
     private String filterHoverLines(String hoverRaw, boolean showRank, boolean showToggle, boolean showChat) {
-        String[] lines = hoverRaw.split("\\\\n", -1);
+        String[] lines = hoverRaw.split("\\n", -1);
         List<String> filtered = new ArrayList<>();
         for (String line : lines) {
             if (!showRank && line.contains("{rank}")) {
@@ -251,5 +383,47 @@ public final class GuildChatService {
             parts.add(raw);
         }
         return parts;
+    }
+
+    private void resolveVaultChat() {
+        if (vaultChatResolved)
+            return;
+        vaultChatResolved = true;
+
+        try {
+            RegisteredServiceProvider<Chat> reg = Bukkit.getServicesManager().getRegistration(Chat.class);
+            if (reg != null) {
+                vaultChat = reg.getProvider();
+            }
+        } catch (Throwable ignored) {
+            vaultChat = null;
+        }
+    }
+
+    private String resolveVaultPrefix(Player player) {
+        resolveVaultChat();
+        if (vaultChat == null)
+            return "";
+        try {
+            // совместимо со старыми сигнатурами Vault
+            return vaultChat.getPlayerPrefix(player.getWorld(), player.getName());
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    private String resolveVaultPrimaryGroup(Player player) {
+        resolveVaultChat();
+        if (vaultChat == null)
+            return "";
+        try {
+            return vaultChat.getPrimaryGroup(player.getWorld(), player.getName());
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    private static String safe(String s) {
+        return (s == null) ? "" : s;
     }
 }
