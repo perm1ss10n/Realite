@@ -13,6 +13,14 @@ commands:
     aliases: [classes]
 
 permissions:
+  realite.classes.admin:
+    description: "Base permission for RealiteClasses admin commands"
+    default: op
+
+  realite.classes.admin.tester:
+    description: "Access to tester-mode admin commands"
+    default: op
+
   realiteclass.choose:
     description: "Разрешает выбрать класс (если ещё не выбран)"
     default: true

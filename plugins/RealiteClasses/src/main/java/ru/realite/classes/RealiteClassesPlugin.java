@@ -19,6 +19,7 @@ import ru.realite.classes.service.EvolutionService;
 import ru.realite.classes.service.ProgressionService;
 
 import ru.realite.classes.storage.ClassConfigRepository;
+import ru.realite.classes.storage.TesterPresetRepository;
 import ru.realite.classes.storage.XpConfigRepository;
 import ru.realite.classes.storage.YamlProfileRepository;
 
@@ -42,6 +43,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
     private Messages messages;
     private ClassConfigRepository classConfig;
     private XpConfigRepository xpConfig;
+    private TesterPresetRepository testerPresets;
 
     // ===== services =====
     private YamlProfileRepository profiles;
@@ -89,6 +91,7 @@ public void onEnable() {
         saveDefaultConfig();
         saveIfNotExists("classes.yml");
         saveIfNotExists("xp.yml");
+        saveIfNotExists("tester-presets.yml");
         saveIfNotExists("lang/messages_ru.yml");
         saveIfNotExists("lang/messages_en.yml");
 
@@ -104,7 +107,8 @@ public void onEnable() {
                         classConfig,
                         economyService,
                         messages,
-                        xpConfig));
+                        xpConfig,
+                        testerPresets));
 
         // --- listeners ---
         Bukkit.getPluginManager().registerEvents(
@@ -152,6 +156,7 @@ public void onEnable() {
         // --- configs ---
         this.classConfig = new ClassConfigRepository(data);
         this.xpConfig = new XpConfigRepository(data, getLogger());
+        this.testerPresets = new TesterPresetRepository(data);
 
         // --- repositories ---
         this.profiles = new YamlProfileRepository(data);
@@ -212,6 +217,10 @@ public void onEnable() {
 
     public XpConfigRepository getXpConfig() {
         return xpConfig;
+    }
+
+    public TesterPresetRepository getTesterPresets() {
+        return testerPresets;
     }
 
     public EconomyService getEconomyService() {

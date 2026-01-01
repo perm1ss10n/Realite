@@ -21,11 +21,30 @@ class-help:
 
 class-help-admin:
   - "&e/class reload &7— reload plugin configs"
+  - "&e/class admin ... &7— admin class commands"
 
 chosen: "&aClass selected: &e{class}"
 
 no-permission: "&cYou do not have permission."
 reloaded: "&aConfigs reloaded: &fconfig.yml, classes.yml, lang/messages_*.yml, xp.yml"
+
+admin-usage: "&eUsage: &f/class admin <evolution|level|mastered|grant|preset|unlock-ready> ..."
+admin-usage-evolution: "&eUsage: &f/class admin evolution <set|next|max|reset> <player> [evolutionId]"
+admin-usage-level: "&eUsage: &f/class admin level <set|add> <player> <level>"
+admin-usage-mastered: "&eUsage: &f/class admin mastered <add|remove|list> <player> [classId]"
+admin-usage-grant: "&eUsage: &f/class admin grant <player> <classId> [evolutionId] [level]"
+admin-usage-preset: "&eUsage: &f/class admin preset <list|apply|save|delete> [presetId] [player]"
+admin-usage-unlock-ready: "&eUsage: &f/class admin unlock-ready <player> <hiddenClassId>"
+
+admin-success: "&aDone."
+unknown-player: "&cPlayer not found."
+unknown-class: "&cUnknown classId."
+unknown-evolution: "&cUnknown evolution."
+tester-disabled: "&cTester mode is disabled in config."
+no-class-selected: "&cPlayer has no class selected."
+mastered-list: "&7Mastered: &e{list}"
+preset-list: "&7Presets: &e{list}"
+preset-not-found: "&cPreset not found."
 
 status: "&aClass: &e{class} &7| &aEvolution: &e{evolution}"
 
