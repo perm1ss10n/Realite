@@ -61,16 +61,16 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
     private boolean initialized;
     private boolean shuttingDown;
 
-@Override
-public void onEnable() {
-    getLogger().info("RealiteClasses loaded. Waiting for module enable.");
+    @Override
+    public void onEnable() {
+        getLogger().info("RealiteClasses loaded. Waiting for module enable.");
 
-    try {
-        initialize(ru.realite.classes.core.CoreAccess.core());
-    } catch (Exception e) {
-        getLogger().warning("CoreApi not available yet. Waiting for module enable.");
+        try {
+            initialize(ru.realite.classes.core.CoreAccess.core());
+        } catch (Exception e) {
+            getLogger().warning("CoreApi not available yet. Waiting for module enable.");
+        }
     }
-}
 
     @Override
     public void onDisable() {
@@ -107,8 +107,7 @@ public void onEnable() {
                         classConfig,
                         economyService,
                         messages,
-                        xpConfig,
-                        testerPresets));
+                        xpConfig));
 
         // --- listeners ---
         Bukkit.getPluginManager().registerEvents(
@@ -245,7 +244,8 @@ public void onEnable() {
     private void saveIfNotExists(String resourcePath) {
         try {
             File out = new File(getDataFolder(), resourcePath);
-            if (out.exists()) return;
+            if (out.exists())
+                return;
 
             out.getParentFile().mkdirs();
 
