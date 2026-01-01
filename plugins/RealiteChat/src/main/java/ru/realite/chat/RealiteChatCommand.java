@@ -33,7 +33,8 @@ public final class RealiteChatCommand implements TabExecutor {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             String a = args[0].toLowerCase();
-            if ("reload".startsWith(a)) return List.of("reload");
+            if ("reload".startsWith(a))
+                return List.of("reload");
         }
         return List.of();
     }

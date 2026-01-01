@@ -1,14 +1,26 @@
 package ru.realite.chat;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+
 import java.util.ArrayList;
 import java.util.List;
-import net.kyori.adventure.text.Component;
 
 final class ChatFormat {
+
+    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
+
     private final List<Token> tokens;
 
     ChatFormat(String template) {
         this.tokens = parse(template == null ? "" : template);
+    }
+
+    private static Component legacy(String text) {
+        if (text == null || text.isEmpty())
+            return Component.empty();
+        // поддержка и & и § в конфиге
+        return LEGACY.deserialize(text.replace('§', '&'));
     }
 
     Component render(Context context) {
@@ -16,6 +28,7 @@ final class ChatFormat {
         boolean lastTagRendered = false;
         boolean lastTokenWasTag = false;
         boolean lastAppendedSpace = false;
+
         for (Token token : tokens) {
             if (token instanceof TagToken tagToken) {
                 Component rendered = tagToken.render(context);
@@ -32,6 +45,7 @@ final class ChatFormat {
                 lastTokenWasTag = true;
                 continue;
             }
+
             if (token instanceof OptionalGuildToken optionalGuildToken) {
                 Component rendered = optionalGuildToken.render(context);
                 if (!isEmpty(rendered)) {
@@ -47,6 +61,7 @@ final class ChatFormat {
                 lastTokenWasTag = true;
                 continue;
             }
+
             if (token instanceof NameToken nameToken) {
                 if (context.spaceBeforeName() && lastTagRendered) {
                     AppendResult appended = appendText(result, " ", lastAppendedSpace);
@@ -59,9 +74,11 @@ final class ChatFormat {
                 lastAppendedSpace = false;
                 continue;
             }
+
             if (token instanceof LiteralToken literalToken) {
                 String value = literalToken.value();
                 if (value.isBlank() && lastTokenWasTag && !lastTagRendered) {
+                    // если после тега пустые пробелы, и тег не отрендерился — пропускаем
                     lastTokenWasTag = false;
                     continue;
                 }
@@ -72,11 +89,13 @@ final class ChatFormat {
                 lastTokenWasTag = false;
                 continue;
             }
+
             result = result.append(token.render(context));
             lastTagRendered = false;
             lastTokenWasTag = false;
             lastAppendedSpace = false;
         }
+
         return result;
     }
 
@@ -84,8 +103,12 @@ final class ChatFormat {
         List<Token> parsed = new ArrayList<>();
         StringBuilder literal = new StringBuilder();
         int i = 0;
+
         while (i < template.length()) {
             char ch = template.charAt(i);
+
+            // специальный синтаксис: [{guild}] — блок, который исчезает целиком если
+            // гильдии нет
             if (ch == '[') {
                 int blockEnd = template.indexOf(']', i + 1);
                 if (blockEnd != -1) {
@@ -104,6 +127,8 @@ final class ChatFormat {
                     }
                 }
             }
+
+            // обычные плейсхолдеры {prefix} {class} {guild} {name} {message}
             if (ch == '{') {
                 int end = template.indexOf('}', i + 1);
                 if (end == -1) {
@@ -120,21 +145,24 @@ final class ChatFormat {
                 i = end + 1;
                 continue;
             }
+
             literal.append(ch);
             i++;
         }
+
         if (!literal.isEmpty()) {
             parsed.add(new LiteralToken(literal.toString()));
         }
+
         return parsed;
     }
 
     private Token tokenFor(String placeholder) {
         return switch (placeholder) {
-            case "prefix" -> new TagToken(context -> context.prefix());
-            case "class" -> new TagToken(context -> context.classTag());
-            case "guild" -> new TagToken(context -> context.guild());
-            case "name" -> new NameToken(context -> context.name());
+            case "prefix" -> new TagToken(Context::prefix);
+            case "class" -> new TagToken(Context::classTag);
+            case "guild" -> new TagToken(Context::guild);
+            case "name" -> new NameToken(Context::name);
             case "message" -> new ComponentToken(Context::message);
             default -> new LiteralToken("{" + placeholder + "}");
         };
@@ -147,7 +175,8 @@ final class ChatFormat {
     private record LiteralToken(String value) implements Token {
         @Override
         public Component render(Context context) {
-            return Component.text(value);
+            // ВАЖНО: литералы шаблона могут содержать &/§ цвета
+            return legacy(value);
         }
     }
 
@@ -172,9 +201,10 @@ final class ChatFormat {
             if (guild.equals(Component.empty())) {
                 return Component.empty();
             }
-            return Component.text("[")
+            // если хочешь красить скобки через & — тоже парсим как legacy
+            return legacy("[")
                     .append(guild)
-                    .append(Component.text("]"));
+                    .append(legacy("]"));
         }
     }
 
@@ -205,11 +235,11 @@ final class ChatFormat {
                 Component message,
                 String joiner,
                 boolean spaceBeforeName) {
-            this.prefix = prefix;
-            this.classTag = classTag;
-            this.guild = guild;
-            this.name = name;
-            this.message = message;
+            this.prefix = prefix == null ? Component.empty() : prefix;
+            this.classTag = classTag == null ? Component.empty() : classTag;
+            this.guild = guild == null ? Component.empty() : guild;
+            this.name = name == null ? Component.empty() : name;
+            this.message = message == null ? Component.empty() : message;
             this.joiner = joiner == null ? "" : joiner;
             this.spaceBeforeName = spaceBeforeName;
         }
@@ -255,7 +285,10 @@ final class ChatFormat {
         if (normalized.isEmpty()) {
             return new AppendResult(base, lastSpace);
         }
-        Component next = base.append(Component.text(normalized));
+
+        // ВАЖНО: joiner/пробелы/любые куски текста могут содержать legacy-цвета
+        Component next = base.append(legacy(normalized));
+
         boolean endsWithSpace = normalized.endsWith(" ");
         return new AppendResult(next, endsWithSpace);
     }
@@ -268,5 +301,6 @@ final class ChatFormat {
         return text.substring(index);
     }
 
-    private record AppendResult(Component component, boolean lastSpace) {}
+    private record AppendResult(Component component, boolean lastSpace) {
+    }
 }

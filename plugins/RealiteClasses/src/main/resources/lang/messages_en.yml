@@ -23,6 +23,12 @@ class-help-admin:
   - "&e/class reload &7— reload plugin configs"
   - "&e/class admin ... &7— admin class commands"
 
+usage-admin: "&cUsage: /class admin <player> <classId>"
+player-not-found: "&cPlayer not found."
+unknown-class: "&cUnknown class: &e{class}"
+admin-set: "&aYou assigned class &e{class} &ato player &e{player}&a."
+admin-set-self: "&aAn admin assigned you the class &e{class}&a."
+
 chosen: "&aClass selected: &e{class}"
 
 no-permission: "&cYou do not have permission."

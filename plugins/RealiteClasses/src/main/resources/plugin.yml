@@ -27,7 +27,7 @@ permissions:
 
   realiteclass.change:
     description: "Разрешает сменить класс в любой момент (минуя ограничения по эволюции)"
-    default: false
+    default: op
 
   realiteclass.admin.*:
     description: "Доступ ко всем админ-командам RealiteClasses"

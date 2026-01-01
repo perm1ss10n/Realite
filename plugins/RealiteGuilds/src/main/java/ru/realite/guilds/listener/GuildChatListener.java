@@ -1,7 +1,6 @@
 package ru.realite.guilds.listener;
 
 import io.papermc.paper.event.player.AsyncChatEvent;
-import net.kyori.adventure.text.Component;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -18,22 +17,24 @@ public final class GuildChatListener implements Listener {
         this.realiteChatAvailable = realiteChatAvailable;
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onAsyncChat(AsyncChatEvent event) {
+        // TODO: После интеграции с RealiteChat этот перехват надо удалить:
+        // гильдийский чат будет отправляться из RealiteChat через bridge.
+
+        // 1) Guild chat toggle: полностью перехватываем и уходим в гильдейский канал
         if (chatService.isGuildChatEnabled() && chatService.isToggled(event.getPlayer())) {
             event.setCancelled(true);
             chatService.sendGuildChatAsync(event.getPlayer(), event.message());
             return;
         }
-        if (realiteChatAvailable || !chatService.isPrefixEnabled()) {
+
+        // 2) Публичные префиксы/теги НЕ рисуем здесь через renderer.
+        // Этим занимается RealiteChat через {guild} + GuildTagProvider.
+        // Если RealiteChat нет — просто ничего не делаем (не ломаем чужие чат-плагины).
+        if (!realiteChatAvailable) {
             return;
         }
-        Component prefix = chatService.buildPublicPrefix(event.getPlayer());
-        if (prefix.equals(Component.empty())) {
-            return;
-        }
-        event.renderer((source, sourceDisplayName, message, viewer) ->
-                prefix.append(sourceDisplayName).append(Component.text(": ")).append(message));
     }
 
     @EventHandler

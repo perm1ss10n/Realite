@@ -6,6 +6,9 @@ chat:
   guild:
     enabled: true
     toggleCommand: true
+    toggle:
+      requirePermission: false
+      permission: "realite.guilds.chat.toggle"
     spy:
       enabled: true
       permission: "realite.guilds.chat.spy"
@@ -14,6 +17,7 @@ chat:
     showRank: true
     hover:
       enabled: true
+
 
 # Включение функционала плагина
 features:

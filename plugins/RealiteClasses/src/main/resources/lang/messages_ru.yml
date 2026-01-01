@@ -19,6 +19,12 @@ class-help-admin:
   - "&e/class reload &7— перезагрузить конфиги"
   - "&e/class admin ... &7— админ-команды классов"
 
+usage-admin: "&cИспользование: /class admin <player> <classId>"
+player-not-found: "&cИгрок не найден."
+unknown-class: "&cНеизвестный класс: {class}"
+admin-set: "&aВы назначили игроку {player} класс {class}."
+admin-set-self: "&aАдмин назначил вам класс {class}."
+
 chosen: "&aКласс выбран: &e{class}"
 
 no-permission: "&cНет прав."

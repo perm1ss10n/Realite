@@ -26,6 +26,8 @@ usage:
   tp: "{prefix}&eИспользование: /g tp <player>"
   claim: "{prefix}&eИспользование: /g claim <pos1|pos2|apply|clear>"
   chat: "{prefix}&eИспользование: /g chat toggle или /gc <message>"
+  help: "{prefix}&eКоманды:\n&6/g create <tag> <name...>\n&6/g info [tag]\n&6/g invite <player>\n&6/g join <tag>\n&6/g leave\n&6/g ranks\n&6/g setrank <player> <rankId>\n&6/g home|sethome\n&6/g tp <player>\n&6/g claim pos1|pos2|apply|clear\n&6/g salary\n&6/g chat toggle"
+
 
 admin:
   addxp:
@@ -121,7 +123,7 @@ salary:
 
 chat:
   guild:
-    format: "&7[&aG&7] &f{player}: &r{message}"
+    format: "&7[&aG&7] {lpPrefix}&r&7[{group}]&f{rank}&f{player}: &r{message}"
   public:
     prefix: "&7[{tag}] "
   hover: "&aГильдия: &f[{tag}] {guild}\n&7Ранг: &f{rank}\n&7Участников: &f{members}\n&8Подсказки:\n&f{hintToggle}\n&f{hintChat}"

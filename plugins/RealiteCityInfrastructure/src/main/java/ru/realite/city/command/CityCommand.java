@@ -23,7 +23,6 @@ import ru.realite.city.service.CityAreaSelectionService.Selection;
 import ru.realite.city.service.EconomyService;
 import ru.realite.city.service.GuildsApi;
 import ru.realite.city.service.MarketService;
-import ru.realite.city.service.NoopGuildsApi;
 import ru.realite.city.service.PlotCleanupService;
 import ru.realite.city.service.PlotService;
 import ru.realite.city.service.ShopDirectoryService;
