@@ -1,7 +1,38 @@
-allprojects {
-    repositories {
-        mavenCentral()
-        maven { url = "https://repo.papermc.io/repository/maven-public/" }
-        maven { url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
+def distDir = layout.projectDirectory.dir("dist")
+
+tasks.register("copyServerJars", Copy) {
+    group = "distribution"
+    description = "Collect jars from :plugins:* and :RealiteCore into /dist"
+
+    // билдим все подпроекты, где есть build
+    dependsOn(subprojects.collect { it.tasks.matching { t -> t.name == "build" } })
+
+    into(distDir)
+
+    // ✅ все плагины из :plugins:*
+    def pluginProjects = subprojects.findAll { it.path.startsWith(":plugins:") }
+    from(pluginProjects.collect { it.layout.buildDirectory.dir("libs") }) {
+        include("*.jar")
+        exclude("*-sources.jar", "*-javadoc.jar", "*-plain.jar")
     }
+
+    // ✅ ядро
+    from(project(":RealiteCore").layout.buildDirectory.dir("libs")) {
+        include("*.jar")
+        exclude("*-sources.jar", "*-javadoc.jar", "*-plain.jar")
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
+
+tasks.register("buildAndDist") {
+    group = "distribution"
+    description = "Run clean+build on subprojects and collect jars into /dist"
+
+    // чистим все подпроекты (там clean есть)
+    dependsOn(subprojects.collect { it.tasks.matching { t -> t.name == "clean" } })
+
+    // потом билд + копирование
+    dependsOn("copyServerJars")
+}
+
