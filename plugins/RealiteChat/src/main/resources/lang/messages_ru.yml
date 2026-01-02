@@ -1,4 +1,12 @@
 chat:
+  guild:
+    usage: "&eИспользование: &f/gc <сообщение>"
+    no-permission: "&cУ вас нет прав на использование гильдейского чата."
+    no-guild: "&cВы не состоите в гильдии."
+    player-only: "&cЭту команду может использовать только игрок."
+    # ✅ prefix + rank + name + message
+    format: "&7[&bГильдия&7] [{prefix}] [{guildRank}] &f{name}: &r{message}"
+
   reload:
     usage: "&eИспользование: &f/realitechat reload"
     no-permission: "&cУ вас нет прав на выполнение этой команды."

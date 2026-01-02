@@ -30,7 +30,13 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
 
     private static final String DEFAULT_FORMAT = "{prefix}{class}{guild}{name}: {message}";
 
-    /** Legacy (& / §) -> Component (используем только для строк из конфигов / LP meta) */
+    // fallback если messages не содержит chat.guild.format
+    private static final String DEFAULT_GUILD_CHAT_FORMAT = "&7[&bГильдия&7] {prefix}{guildRank}&f{name}: &r{message}";
+
+    /**
+     * Legacy (& / §) -> Component (используем только для строк из конфигов / LP
+     * meta)
+     */
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
 
     private PrefixProvider prefixProvider = player -> Optional.empty();
@@ -40,6 +46,7 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
 
     private ChatMessages messages;
     private ChatFormat chatFormat;
+    private ChatFormat guildChatFormat;
 
     private String tagsJoiner = "";
     private boolean spaceBeforeName = true;
@@ -57,7 +64,10 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
 
     private boolean luckPermsMissingLogged = false;
 
-    /** Один стабильный renderer, чтобы его нельзя было “потерять” и можно было проверять переопределение */
+    /**
+     * Один стабильный renderer, чтобы его нельзя было “потерять” и можно было
+     * проверять переопределение
+     */
     private final ChatRenderer OUR_RENDERER = (source, sourceDisplayName, message, viewer) -> {
         Component lpPrefix = prefixEnabled
                 ? prefixProvider.getPrefix(source).orElse(Component.empty())
@@ -68,11 +78,11 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
 
         Component name = (sourceDisplayName == null) ? Component.text(source.getName()) : sourceDisplayName;
 
-        // НИКАКИХ логов на каждый чат в проде
         return chatFormat.render(new ChatFormat.Context(
                 lpPrefix,
                 classTag,
                 guildTag,
+                Component.empty(), // guildRank (в общем чате по дефолту не используем)
                 name,
                 message,
                 tagsJoiner,
@@ -136,7 +146,8 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
     /** Debug: если кто-то перетёр renderer после нас — узнаем кто */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onAsyncChatMonitor(AsyncChatEvent event) {
-        if (!debug) return;
+        if (!debug)
+            return;
 
         if (event.renderer() != OUR_RENDERER) {
             getLogger().warning("[debug] ChatRenderer overridden by: " + event.renderer().getClass().getName());
@@ -144,8 +155,8 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
     }
 
     private PrefixProvider resolvePrefixProvider() {
-        RegisteredServiceProvider<LuckPerms> provider =
-                getServer().getServicesManager().getRegistration(LuckPerms.class);
+        RegisteredServiceProvider<LuckPerms> provider = getServer().getServicesManager()
+                .getRegistration(LuckPerms.class);
 
         if (provider == null) {
             if (messages != null && !luckPermsMissingLogged) {
@@ -161,27 +172,28 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
     }
 
     private ClassTagProvider resolveClassTagProvider() {
-        RegisteredServiceProvider<CoreApi> provider =
-                Bukkit.getServicesManager().getRegistration(CoreApi.class);
-        if (provider == null) return null;
+        RegisteredServiceProvider<CoreApi> provider = Bukkit.getServicesManager().getRegistration(CoreApi.class);
+        if (provider == null)
+            return null;
 
         CoreApi core = provider.getProvider();
         return core.services().get(ClassTagProvider.class);
     }
 
     private GuildTagProvider resolveGuildTagProvider() {
-        RegisteredServiceProvider<CoreApi> provider =
-                Bukkit.getServicesManager().getRegistration(CoreApi.class);
-        if (provider == null) return null;
+        RegisteredServiceProvider<CoreApi> provider = Bukkit.getServicesManager().getRegistration(CoreApi.class);
+        if (provider == null)
+            return null;
 
         CoreApi core = provider.getProvider();
         return core.services().get(GuildTagProvider.class);
     }
 
     private GuildChatBridge resolveGuildChatBridge() {
-        RegisteredServiceProvider<GuildChatBridge> provider =
-                Bukkit.getServicesManager().getRegistration(GuildChatBridge.class);
-        if (provider == null) return null;
+        RegisteredServiceProvider<GuildChatBridge> provider = Bukkit.getServicesManager()
+                .getRegistration(GuildChatBridge.class);
+        if (provider == null)
+            return null;
         return provider.getProvider();
     }
 
@@ -193,7 +205,8 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
         Component fallbackComponent = parseLegacy(fallback);
 
         if (provider == null) {
-            if (debug) getLogger().info("[debug] ClassTagProvider missing -> fallback");
+            if (debug)
+                getLogger().info("[debug] ClassTagProvider missing -> fallback");
             return fallbackComponent;
         }
 
@@ -235,7 +248,8 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
         GuildTagProvider provider = (guildTagProvider != null) ? guildTagProvider : resolveGuildTagProvider();
 
         if (provider == null) {
-            if (debug) getLogger().info("[debug] GuildTagProvider missing");
+            if (debug)
+                getLogger().info("[debug] GuildTagProvider missing");
             return Component.empty();
         }
 
@@ -260,16 +274,50 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
         return guildChatBridge;
     }
 
+    /**
+     * /gc — гильдийский чат.
+     * Форматирование делаем здесь (RealiteChat), а RealiteGuilds даёт только
+     * доменную инфу и получателей.
+     */
     void sendGuildChat(Player sender, Component message) {
         GuildChatBridge bridge = guildChatBridge;
         if (bridge == null) {
             return;
         }
 
-        Component formatted = bridge.format(sender, message);
-        if (formatted.equals(Component.empty())) {
+        if (!bridge.isEnabled()) {
+            sender.sendMessage(messages.get("chat.guild.no-permission"));
             return;
         }
+
+        if (!bridge.isMember(sender)) {
+            sender.sendMessage(messages.get("chat.guild.no-guild"));
+            return;
+        }
+
+        Component lpPrefix = prefixEnabled
+                ? prefixProvider.getPrefix(sender).orElse(Component.empty())
+                : Component.empty();
+
+        String rankStr = bridge.getGuildRank(sender);
+        Component guildRank = parseLegacy(rankStr == null || rankStr.isBlank() ? "" : (rankStr + " "));
+
+        Component name = Component.text(sender.getName());
+
+        ChatFormat fmt = (guildChatFormat != null)
+                ? guildChatFormat
+                : new ChatFormat(DEFAULT_GUILD_CHAT_FORMAT);
+
+        Component formatted = fmt.render(new ChatFormat.Context(
+                lpPrefix,
+                Component.empty(), // classTag не нужен в гильд-чате
+                Component.empty(), // guildTag не нужен в гильд-чате
+                guildRank, // ✅ только guildRank
+                name,
+                message,
+                "", // joiner не нужен
+                true // spaceBeforeName
+        ));
 
         List<Player> recipients = bridge.getGuildRecipients(sender);
         Set<UUID> sent = new HashSet<>();
@@ -278,11 +326,9 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
             recipient.sendMessage(formatted);
         }
 
-        if (bridge.isSpyEnabled()) {
-            for (Player spy : bridge.getSpyRecipients(sender)) {
-                if (sent.add(spy.getUniqueId())) {
-                    spy.sendMessage(formatted);
-                }
+        for (Player spy : bridge.getSpyRecipients(sender)) {
+            if (sent.add(spy.getUniqueId())) {
+                spy.sendMessage(formatted);
             }
         }
     }
@@ -313,9 +359,18 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
 
         messages.reload(language);
 
+        // ✅ грузим формат гильд-чата из messages
+        String guildTemplate = messages.raw("chat.guild.format");
+        if (guildTemplate == null || guildTemplate.isBlank()) {
+            guildTemplate = DEFAULT_GUILD_CHAT_FORMAT;
+        }
+        guildChatFormat = new ChatFormat(guildTemplate);
+
         if (debug) {
             getLogger().info("[debug] chat.format = " + template);
-            getLogger().info("[debug] enabled: prefix=" + prefixEnabled + " class=" + classEnabled + " guild=" + guildEnabled);
+            getLogger().info("[debug] chat.guild.format = " + guildTemplate);
+            getLogger().info(
+                    "[debug] enabled: prefix=" + prefixEnabled + " class=" + classEnabled + " guild=" + guildEnabled);
             logDependencyDebug();
         }
     }
@@ -325,8 +380,10 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
         getLogger().info("[debug] CoreApi registered in Bukkit Services: " + (coreReg != null));
         if (coreReg != null) {
             CoreApi core = coreReg.getProvider();
-            getLogger().info("[debug] Core services ClassTagProvider: " + (core.services().get(ClassTagProvider.class) != null));
-            getLogger().info("[debug] Core services GuildTagProvider: " + (core.services().get(GuildTagProvider.class) != null));
+            getLogger().info(
+                    "[debug] Core services ClassTagProvider: " + (core.services().get(ClassTagProvider.class) != null));
+            getLogger().info(
+                    "[debug] Core services GuildTagProvider: " + (core.services().get(GuildTagProvider.class) != null));
         }
 
         var lpReg = Bukkit.getServicesManager().getRegistration(LuckPerms.class);
@@ -357,7 +414,8 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
     }
 
     private static Component parseLegacy(String text) {
-        if (text == null || text.isEmpty()) return Component.empty();
+        if (text == null || text.isEmpty())
+            return Component.empty();
         return LEGACY.deserialize(text.replace('§', '&'));
     }
 }

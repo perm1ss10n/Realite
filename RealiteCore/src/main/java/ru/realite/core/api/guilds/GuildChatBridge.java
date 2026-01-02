@@ -14,9 +14,20 @@ public interface GuildChatBridge {
 
     List<Player> getSpyRecipients(Player sender);
 
+    // Legacy: больше не используем в RealiteChat, но оставляем для совместимости
     Component format(Player sender, Component message);
 
+    // Legacy: больше не используем в RealiteChat, но оставляем для совместимости
     boolean isSpyEnabled();
 
+    // Legacy: больше не используем в RealiteChat, но оставляем для совместимости
     String getSpyPermission();
+
+    /**
+     * Display rank of player inside their guild (localized / human readable).
+     * Default empty for backward compatibility.
+     */
+    default String getGuildRank(Player player) {
+        return "";
+    }
 }

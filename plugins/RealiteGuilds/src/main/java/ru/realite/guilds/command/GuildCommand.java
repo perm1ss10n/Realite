@@ -20,8 +20,12 @@ public final class GuildCommand implements CommandExecutor {
     private final GuildChatService chatService;
     private final GuildProgressionService progressionService;
 
-    public GuildCommand(GuildService service, GuildMessages messages, GuildSalaryService salaryService,
-                        GuildChatService chatService, GuildProgressionService progressionService) {
+    public GuildCommand(
+            GuildService service,
+            GuildMessages messages,
+            GuildSalaryService salaryService,
+            GuildChatService chatService,
+            GuildProgressionService progressionService) {
         this.service = service;
         this.messages = messages;
         this.salaryService = salaryService;
@@ -33,7 +37,6 @@ public final class GuildCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
             if (sender instanceof Player player) {
-                // раньше тут было usage.create -> поэтому казалось, что "/g" умеет только create
                 messages.send(player, "usage.root");
             } else {
                 sender.sendMessage(messages.msg("error.player_only"));
@@ -66,9 +69,13 @@ public final class GuildCommand implements CommandExecutor {
             case "tp" -> handleTp(player, args);
             case "claim" -> handleClaim(player, args);
             case "salary" -> handleSalary(player, args);
-            case "chat" -> handleChat(player, args);
+
+            // /g toggle — админский переключатель гильдийского чата (server-level).
+            case "toggle" -> handleToggle(player, args);
+
             default -> messages.send(player, "usage.root");
         }
+
         return true;
     }
 
@@ -154,20 +161,24 @@ public final class GuildCommand implements CommandExecutor {
         salaryService.handleSalaryInfo(player);
     }
 
-    private void handleChat(Player player, String[] args) {
-        // Обычным игрокам toggle вообще не нужен: только OP / permission
-        if (args.length == 2 && "toggle".equalsIgnoreCase(args[1])) {
-            if (!chatService.isToggleCommandEnabled() || !chatService.canAdminToggle(player)) {
-                messages.send(player, "error.no_permission");
-                return;
-            }
-            boolean enabled = chatService.toggleEnabled();
-            messages.send(player, enabled ? "chat.toggle.on" : "chat.toggle.off");
+    private void handleToggle(Player player, String[] args) {
+        if (args.length != 1) {
+            messages.send(player, "usage.toggle");
             return;
         }
 
-        // Для всех остальных показываем usage (и оставляем /gc для сообщений отдельной командой)
-        messages.send(player, "usage.chat");
+        if (!chatService.isToggleCommandEnabled()) {
+            messages.send(player, "chat.guild.toggle.command_disabled");
+            return;
+        }
+
+        if (!chatService.canAdminToggle(player)) {
+            messages.send(player, "chat.guild.toggle.no_permission");
+            return;
+        }
+
+        boolean enabled = chatService.toggleEnabled();
+        messages.send(player, enabled ? "chat.guild.toggle.enabled" : "chat.guild.toggle.disabled");
     }
 
     private void handleAdmin(CommandSender sender, String[] args) {
@@ -179,14 +190,17 @@ public final class GuildCommand implements CommandExecutor {
             }
             return;
         }
+
         if (args.length >= 3 && "salary".equalsIgnoreCase(args[1]) && "run".equalsIgnoreCase(args[2])) {
             salaryService.handleAdminRun(sender);
             return;
         }
+
         if (args.length >= 4 && "addxp".equalsIgnoreCase(args[1])) {
             handleAdminAddXp(sender, args);
             return;
         }
+
         sender.sendMessage(messages.msg("admin.addxp.usage"));
     }
 
@@ -195,6 +209,7 @@ public final class GuildCommand implements CommandExecutor {
             sender.sendMessage(messages.msg("admin.addxp.usage"));
             return;
         }
+
         String tag = args[2];
         long amount;
         try {
@@ -203,6 +218,7 @@ public final class GuildCommand implements CommandExecutor {
             sender.sendMessage(messages.msg("admin.addxp.usage"));
             return;
         }
+
         String reason = args.length > 4 ? String.join(" ", Arrays.copyOfRange(args, 4, args.length)) : "";
         progressionService.addXp(sender, tag, amount, reason);
     }

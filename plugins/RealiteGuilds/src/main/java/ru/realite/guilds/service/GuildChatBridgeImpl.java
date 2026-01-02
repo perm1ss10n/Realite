@@ -33,9 +33,13 @@ public final class GuildChatBridgeImpl implements GuildChatBridge {
         return chatService.getSpyRecipients(sender);
     }
 
+    /**
+     * Форматирование гильд-чата теперь полностью в RealiteChat.
+     * Здесь просто pass-through.
+     */
     @Override
     public Component format(Player sender, Component message) {
-        return chatService.format(sender, message);
+        return message;
     }
 
     @Override
@@ -46,5 +50,10 @@ public final class GuildChatBridgeImpl implements GuildChatBridge {
     @Override
     public String getSpyPermission() {
         return chatService.getSpyPermission();
+    }
+
+    @Override
+    public String getGuildRank(Player player) {
+        return chatService.getGuildRankDisplay(player);
     }
 }

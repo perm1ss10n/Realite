@@ -1,9 +1,11 @@
 package ru.realite.chat;
 
 import java.io.File;
+
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -31,6 +33,22 @@ final class ChatMessages {
         messages = YamlConfiguration.loadConfiguration(file);
     }
 
+    /**
+     * Возвращает сырую строку из messages yml (без десериализации).
+     * Нужно для шаблонов, которые парсит ChatFormat (legacy &/§).
+     */
+    String raw(String key) {
+        return messages.getString(key);
+    }
+
+    /**
+     * raw с fallback.
+     */
+    String rawOr(String key, String fallback) {
+        String value = raw(key);
+        return (value == null || value.isBlank()) ? fallback : value;
+    }
+
     Component get(String key) {
         String raw = messages.getString(key);
         if (raw == null) {
@@ -40,16 +58,16 @@ final class ChatMessages {
     }
 
     private Component deserialize(String raw) {
-        if (raw == null || raw.isEmpty())
+        if (raw == null || raw.isEmpty()) {
             return Component.empty();
+        }
 
-        // Если похоже на MiniMessage — парсим MiniMessage
-        // (почти все ваши строки типа <green>... именно такие)
+        // Если похоже на MiniMessage — пробуем MiniMessage
         if (raw.indexOf('<') != -1 && raw.indexOf('>') != -1) {
             try {
                 return MINI.deserialize(raw);
             } catch (Exception ignored) {
-                // Если кривая строка — упадём в legacy
+                // если кривая строка — упадём в legacy
             }
         }
 

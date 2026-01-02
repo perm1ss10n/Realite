@@ -128,7 +128,7 @@ final class ChatFormat {
                 }
             }
 
-            // обычные плейсхолдеры {prefix} {class} {guild} {name} {message}
+            // обычные плейсхолдеры
             if (ch == '{') {
                 int end = template.indexOf('}', i + 1);
                 if (end == -1) {
@@ -162,6 +162,8 @@ final class ChatFormat {
             case "prefix" -> new TagToken(Context::prefix);
             case "class" -> new TagToken(Context::classTag);
             case "guild" -> new TagToken(Context::guild);
+            case "guildRank" -> new TagToken(Context::guildRank);
+
             case "name" -> new NameToken(Context::name);
             case "message" -> new ComponentToken(Context::message);
             default -> new LiteralToken("{" + placeholder + "}");
@@ -175,7 +177,6 @@ final class ChatFormat {
     private record LiteralToken(String value) implements Token {
         @Override
         public Component render(Context context) {
-            // ВАЖНО: литералы шаблона могут содержать &/§ цвета
             return legacy(value);
         }
     }
@@ -201,7 +202,6 @@ final class ChatFormat {
             if (guild.equals(Component.empty())) {
                 return Component.empty();
             }
-            // если хочешь красить скобки через & — тоже парсим как legacy
             return legacy("[")
                     .append(guild)
                     .append(legacy("]"));
@@ -223,14 +223,19 @@ final class ChatFormat {
         private final Component prefix;
         private final Component classTag;
         private final Component guild;
+
+        private final Component guildRank;
+
         private final Component name;
         private final Component message;
         private final String joiner;
         private final boolean spaceBeforeName;
 
-        Context(Component prefix,
+        Context(
+                Component prefix,
                 Component classTag,
                 Component guild,
+                Component guildRank,
                 Component name,
                 Component message,
                 String joiner,
@@ -238,6 +243,9 @@ final class ChatFormat {
             this.prefix = prefix == null ? Component.empty() : prefix;
             this.classTag = classTag == null ? Component.empty() : classTag;
             this.guild = guild == null ? Component.empty() : guild;
+
+            this.guildRank = guildRank == null ? Component.empty() : guildRank;
+
             this.name = name == null ? Component.empty() : name;
             this.message = message == null ? Component.empty() : message;
             this.joiner = joiner == null ? "" : joiner;
@@ -254,6 +262,10 @@ final class ChatFormat {
 
         Component guild() {
             return guild;
+        }
+
+        Component guildRank() {
+            return guildRank;
         }
 
         Component name() {
@@ -286,7 +298,6 @@ final class ChatFormat {
             return new AppendResult(base, lastSpace);
         }
 
-        // ВАЖНО: joiner/пробелы/любые куски текста могут содержать legacy-цвета
         Component next = base.append(legacy(normalized));
 
         boolean endsWithSpace = normalized.endsWith(" ");

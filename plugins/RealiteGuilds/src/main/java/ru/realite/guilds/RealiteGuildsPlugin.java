@@ -86,7 +86,7 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
             return;
         }
         CoreApi core = provider.getProvider();
-        core.services().registerIfAbsent(GuildTagProvider.class, new GuildChatTagProvider(chatService));
+        core.services().registerIfAbsent(GuildTagProvider.class, new GuildChatTagProvider(repository, messages, rankService));
     }
 
     private CityAccessHook resolveCityAccessHook() {

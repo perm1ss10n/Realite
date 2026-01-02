@@ -18,7 +18,7 @@ public final class GuildChatMessageCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(Component.text("Command available for players only."));
+            sender.sendMessage(plugin.getMessages().get("chat.guild.player-only"));
             return true;
         }
 
@@ -28,7 +28,7 @@ public final class GuildChatMessageCommand implements CommandExecutor {
         }
 
         if (args.length == 0) {
-            player.sendMessage(Component.text("Использование: /gc <сообщение>"));
+            player.sendMessage(plugin.getMessages().get("chat.guild.usage"));
             return true;
         }
 
