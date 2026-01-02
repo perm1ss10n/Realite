@@ -2,6 +2,10 @@ package ru.realite.chat;
 
 import io.papermc.paper.chat.ChatRenderer;
 import io.papermc.paper.event.player.AsyncChatEvent;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.Optional;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -14,11 +18,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.classes.ClassTag;
 import ru.realite.core.api.classes.ClassTagProvider;
+import ru.realite.core.api.guilds.GuildChatBridge;
 import ru.realite.core.api.guilds.GuildTagProvider;
 
 public final class RealiteChatPlugin extends JavaPlugin implements Listener {
@@ -31,6 +37,7 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
     private PrefixProvider prefixProvider = player -> Optional.empty();
     private ClassTagProvider classTagProvider;
     private GuildTagProvider guildTagProvider;
+    private GuildChatBridge guildChatBridge;
 
     private ChatMessages messages;
     private ChatFormat chatFormat;
@@ -87,6 +94,7 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
         prefixProvider = resolvePrefixProvider();
         classTagProvider = resolveClassTagProvider();
         guildTagProvider = resolveGuildTagProvider();
+        guildChatBridge = resolveGuildChatBridge();
 
         reloadAll();
 
@@ -97,6 +105,16 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
             RealiteChatCommand handler = new RealiteChatCommand(this);
             cmd.setExecutor(handler);
             cmd.setTabCompleter(handler);
+        }
+
+        var guildToggle = getCommand("g");
+        if (guildToggle != null) {
+            guildToggle.setExecutor(new GuildChatToggleCommand(this));
+        }
+
+        var guildChat = getCommand("gc");
+        if (guildChat != null) {
+            guildChat.setExecutor(new GuildChatMessageCommand(this));
         }
 
         if (debug) {
@@ -118,6 +136,14 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onAsyncChat(AsyncChatEvent event) {
+        GuildChatBridge bridge = guildChatBridge;
+        if (bridge != null && bridge.isEnabled() && bridge.isToggled(event.getPlayer())) {
+            event.setCancelled(true);
+            Player sender = event.getPlayer();
+            Component message = event.message();
+            Bukkit.getScheduler().runTask(this, () -> sendGuildChat(sender, message));
+            return;
+        }
         event.renderer(OUR_RENDERER);
     }
 
@@ -128,6 +154,14 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
 
         if (event.renderer() != OUR_RENDERER) {
             getLogger().warning("[debug] ChatRenderer overridden by: " + event.renderer().getClass().getName());
+        }
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        GuildChatBridge bridge = guildChatBridge;
+        if (bridge != null) {
+            bridge.clearToggle(event.getPlayer());
         }
     }
 
@@ -164,6 +198,13 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
 
         CoreApi core = provider.getProvider();
         return core.services().get(GuildTagProvider.class);
+    }
+
+    private GuildChatBridge resolveGuildChatBridge() {
+        RegisteredServiceProvider<GuildChatBridge> provider =
+                Bukkit.getServicesManager().getRegistration(GuildChatBridge.class);
+        if (provider == null) return null;
+        return provider.getProvider();
     }
 
     private Component buildClassTagComponent(Player player) {
@@ -235,6 +276,37 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
             }
         }
         return base;
+    }
+
+    GuildChatBridge getGuildChatBridge() {
+        return guildChatBridge;
+    }
+
+    void sendGuildChat(Player sender, Component message) {
+        GuildChatBridge bridge = guildChatBridge;
+        if (bridge == null || !bridge.isEnabled()) {
+            return;
+        }
+
+        Component formatted = bridge.format(sender, message);
+        if (formatted.equals(Component.empty())) {
+            return;
+        }
+
+        List<Player> recipients = bridge.getGuildRecipients(sender);
+        Set<UUID> sent = new HashSet<>();
+        for (Player recipient : recipients) {
+            sent.add(recipient.getUniqueId());
+            recipient.sendMessage(formatted);
+        }
+
+        if (bridge.isSpyEnabled()) {
+            for (Player spy : bridge.getSpyRecipients(sender)) {
+                if (sent.add(spy.getUniqueId())) {
+                    spy.sendMessage(formatted);
+                }
+            }
+        }
     }
 
     public void reloadAll() {

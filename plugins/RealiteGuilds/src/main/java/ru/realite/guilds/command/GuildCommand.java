@@ -161,8 +161,7 @@ public final class GuildCommand implements CommandExecutor {
                 messages.send(player, "error.no_permission");
                 return;
             }
-            boolean enabled = chatService.toggle(player); // <-- toggle должен возвращать boolean
-            messages.send(player, enabled ? "chat.toggle.on" : "chat.toggle.off");
+            chatService.toggleAndNotify(player);
             return;
         }
 

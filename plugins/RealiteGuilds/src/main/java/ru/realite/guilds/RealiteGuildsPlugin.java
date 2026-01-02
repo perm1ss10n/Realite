@@ -1,24 +1,24 @@
 package ru.realite.guilds;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.city.service.GuildsApi;
 import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.integrations.CityAccessHook;
+import ru.realite.core.api.guilds.GuildChatBridge;
 import ru.realite.core.api.guilds.GuildTagProvider;
 import ru.realite.guilds.integration.CityGuildsApiAdapter;
 import ru.realite.guilds.integration.NoopCityAccessHook;
-import ru.realite.guilds.command.GuildChatCommand;
 import ru.realite.guilds.command.GuildCommand;
 import ru.realite.guilds.i18n.GuildMessages;
 import ru.realite.guilds.listener.GuildAccessProtectionListener;
-import ru.realite.guilds.listener.GuildChatListener;
 import ru.realite.guilds.listener.GuildHomeWarmupListener;
 import ru.realite.guilds.listener.GuildSalaryJoinListener;
 import ru.realite.guilds.service.EconomyService;
+import ru.realite.guilds.service.GuildChatBridgeImpl;
 import ru.realite.guilds.service.GuildChatService;
 import ru.realite.guilds.service.GuildChatTagProvider;
 import ru.realite.guilds.service.GuildProgressionService;
@@ -59,13 +59,6 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
         } else {
             getLogger().severe("Command 'g' not found in plugin.yml");
         }
-        PluginCommand guildChatCommand = getCommand("gc");
-        if (guildChatCommand != null) {
-            guildChatCommand.setExecutor(new GuildChatCommand(chatService, messages));
-        } else {
-            getLogger().severe("Command 'gc' not found in plugin.yml");
-        }
-
         getServer().getPluginManager().registerEvents(
                 new GuildHomeWarmupListener(service), this);
         CityAccessHook cityAccessHook = resolveCityAccessHook();
@@ -73,12 +66,17 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
                 new GuildAccessProtectionListener(service, messages, getConfig(), cityAccessHook), this);
         getServer().getPluginManager().registerEvents(
                 new GuildSalaryJoinListener(salaryService), this);
-        Plugin realiteChatPlugin = getServer().getPluginManager().getPlugin("RealiteChat");
-        boolean realiteChatAvailable = realiteChatPlugin != null && realiteChatPlugin.isEnabled();
-        getServer().getPluginManager().registerEvents(
-                new GuildChatListener(chatService, realiteChatAvailable), this);
+        registerGuildChatBridge();
         registerGuildTagProvider();
         registerCityGuildsApi();
+    }
+
+    private void registerGuildChatBridge() {
+        Bukkit.getServicesManager().register(
+                GuildChatBridge.class,
+                new GuildChatBridgeImpl(chatService),
+                this,
+                ServicePriority.Normal);
     }
 
     private void registerGuildTagProvider() {

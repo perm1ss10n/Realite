@@ -110,6 +110,10 @@ public final class GuildChatService {
         toggled.remove(player.getUniqueId());
     }
 
+    public boolean isMember(Player player) {
+        return repository.getMember(player.getUniqueId()) != null;
+    }
+
     /**
      * Toggle гильд-чата.
      * Возвращает true если включили, false если выключили.
@@ -140,6 +144,12 @@ public final class GuildChatService {
             toggled.add(id);
             return true;
         }
+    }
+
+    public boolean toggleAndNotify(Player player) {
+        boolean enabled = toggle(player);
+        messages.send(player, enabled ? "chat.toggle.on" : "chat.toggle.off");
+        return enabled;
     }
 
     // --- Recipients helpers (новое, для будущего bridge) ---
@@ -192,19 +202,10 @@ public final class GuildChatService {
             return;
         }
 
-        GuildMember member = repository.getMember(sender.getUniqueId());
-        if (member == null) {
-            messages.send(sender, "error.guild.no_member");
+        Component formatted = format(sender, message);
+        if (formatted.equals(Component.empty())) {
             return;
         }
-
-        Guild guild = repository.getGuild(member.tag());
-        if (guild == null) {
-            messages.send(sender, "guild.not_found");
-            return;
-        }
-
-        Component formatted = formatGuildMessage(sender, guild, member, message);
 
         // 1) Члены гильдии
         List<Player> guildRecipients = getGuildRecipients(sender);
@@ -278,7 +279,7 @@ public final class GuildChatService {
 
         hoverRaw = filterHoverLines(hoverRaw, showRank, showToggle, showChat);
         hoverRaw = applyPlaceholders(hoverRaw, player, guild, member);
-        hoverRaw = hoverRaw.replace("{hintToggle}", "/g chat toggle");
+        hoverRaw = hoverRaw.replace("{hintToggle}", "/g");
         hoverRaw = hoverRaw.replace("{hintChat}", "/gc <msg>");
 
         return LEGACY.deserialize(hoverRaw);
@@ -297,6 +298,27 @@ public final class GuildChatService {
             return Component.empty();
         }
         return buildHover(player, guild, member);
+    }
+
+    public Component format(Player sender, Component message) {
+        if (!isGuildChatEnabled()) {
+            messages.send(sender, "error.no_permission");
+            return Component.empty();
+        }
+
+        GuildMember member = repository.getMember(sender.getUniqueId());
+        if (member == null) {
+            messages.send(sender, "error.guild.no_member");
+            return Component.empty();
+        }
+
+        Guild guild = repository.getGuild(member.tag());
+        if (guild == null) {
+            messages.send(sender, "guild.not_found");
+            return Component.empty();
+        }
+
+        return formatGuildMessage(sender, guild, member, message);
     }
 
     /**
