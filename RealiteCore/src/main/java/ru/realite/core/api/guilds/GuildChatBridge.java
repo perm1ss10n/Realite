@@ -8,15 +8,7 @@ public interface GuildChatBridge {
 
     boolean isEnabled();
 
-    boolean isToggleCommandEnabled();
-
     boolean isMember(Player player);
-
-    boolean isToggled(Player player);
-
-    boolean toggle(Player player);
-
-    void clearToggle(Player player);
 
     List<Player> getGuildRecipients(Player sender);
 

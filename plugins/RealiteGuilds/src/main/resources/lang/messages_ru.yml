@@ -25,8 +25,8 @@ usage:
   setrank: "{prefix}&eИспользование: /g setrank <player> <rankId>"
   tp: "{prefix}&eИспользование: /g tp <player>"
   claim: "{prefix}&eИспользование: /g claim <pos1|pos2|apply|clear>"
-  chat: "{prefix}&eИспользование: /g chat toggle или /gc <message>"
-  help: "{prefix}&eКоманды:\n&6/g create <tag> <name...>\n&6/g info [tag]\n&6/g invite <player>\n&6/g join <tag>\n&6/g leave\n&6/g ranks\n&6/g setrank <player> <rankId>\n&6/g home|sethome\n&6/g tp <player>\n&6/g claim pos1|pos2|apply|clear\n&6/g salary\n&6/g chat toggle"
+  chat: "{prefix}&eИспользование: /gc <message>"
+  help: "{prefix}&eКоманды:\n&6/g create <tag> <name...>\n&6/g info [tag]\n&6/g invite <player>\n&6/g join <tag>\n&6/g leave\n&6/g ranks\n&6/g setrank <player> <rankId>\n&6/g home|sethome\n&6/g tp <player>\n&6/g claim pos1|pos2|apply|clear\n&6/g salary"
 
 
 admin:
