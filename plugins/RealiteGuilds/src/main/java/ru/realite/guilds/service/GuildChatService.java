@@ -3,8 +3,8 @@ package ru.realite.guilds.service;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
+import java.util.Set;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -27,18 +27,12 @@ public final class GuildChatService {
 
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
 
-    // Раньше toggle был "только для админов/опов". Сейчас toggle по умолчанию
-    // доступен членам гильдии.
-    // Если нужно ограничить — включи chat.guild.toggle.requirePermission=true в
-    // конфиге.
-    private static final String DEFAULT_TOGGLE_PERMISSION = "realite.guilds.chat.toggle";
-
     private final JavaPlugin plugin;
     private final FileConfiguration config;
     private final GuildRepository repository;
     private final GuildMessages messages;
     private final GuildRankService rankService;
-    private final Set<UUID> toggled = new HashSet<>();
+    private boolean guildChatEnabled;
 
     // Vault Chat (LuckPerms умеет отдавать префиксы/группы через Vault hook)
     private Chat vaultChat;
@@ -51,10 +45,11 @@ public final class GuildChatService {
         this.repository = repository;
         this.messages = messages;
         this.rankService = rankService;
+        this.guildChatEnabled = config.getBoolean("chat.guild.enabled", true);
     }
 
     public boolean isGuildChatEnabled() {
-        return config.getBoolean("chat.guild.enabled", true);
+        return guildChatEnabled;
     }
 
     public boolean isToggleCommandEnabled() {
@@ -81,65 +76,21 @@ public final class GuildChatService {
         return config.getString("chat.guild.spy.permission", "realite.guilds.chat.spy");
     }
 
-    // --- Toggle permission config (новое) ---
+    // --- Toggle state (server-level) ---
 
-    private boolean isTogglePermissionRequired() {
-        return config.getBoolean("chat.guild.toggle.requirePermission", false);
-    }
-
-    private String getTogglePermission() {
-        return config.getString("chat.guild.toggle.permission", DEFAULT_TOGGLE_PERMISSION);
-    }
-
-    private boolean canToggle(Player player) {
-        // По умолчанию: ВСЕМ членам гильдии можно.
-        if (!isTogglePermissionRequired()) {
-            return true;
-        }
-        String perm = getTogglePermission();
-        return perm != null && !perm.isBlank() && player.hasPermission(perm);
-    }
-
-    // --- Toggle state ---
-
-    public boolean isToggled(Player player) {
-        return toggled.contains(player.getUniqueId());
-    }
-
-    public void clearToggle(Player player) {
-        toggled.remove(player.getUniqueId());
+    public boolean isMember(Player player) {
+        return repository.getMember(player.getUniqueId()) != null;
     }
 
     /**
-     * Toggle гильд-чата.
+     * Toggle гильд-чата на уровне сервера.
      * Возвращает true если включили, false если выключили.
-     * Сообщения on/off НЕ шлём здесь — пусть команда решает, что показывать.
      */
-    public boolean toggle(Player player) {
-        if (!isGuildChatEnabled() || !isToggleCommandEnabled()) {
-            messages.send(player, "error.no_permission");
-            return false;
-        }
-
-        GuildMember member = repository.getMember(player.getUniqueId());
-        if (member == null) {
-            messages.send(player, "error.guild.no_member");
-            return false;
-        }
-
-        if (!canToggle(player)) {
-            messages.send(player, "error.no_permission");
-            return false;
-        }
-
-        UUID id = player.getUniqueId();
-        if (toggled.contains(id)) {
-            toggled.remove(id);
-            return false;
-        } else {
-            toggled.add(id);
-            return true;
-        }
+    public boolean toggleEnabled() {
+        guildChatEnabled = !guildChatEnabled;
+        config.set("chat.guild.enabled", guildChatEnabled);
+        plugin.saveConfig();
+        return guildChatEnabled;
     }
 
     // --- Recipients helpers (новое, для будущего bridge) ---
@@ -192,19 +143,10 @@ public final class GuildChatService {
             return;
         }
 
-        GuildMember member = repository.getMember(sender.getUniqueId());
-        if (member == null) {
-            messages.send(sender, "error.guild.no_member");
+        Component formatted = format(sender, message);
+        if (formatted.equals(Component.empty())) {
             return;
         }
-
-        Guild guild = repository.getGuild(member.tag());
-        if (guild == null) {
-            messages.send(sender, "guild.not_found");
-            return;
-        }
-
-        Component formatted = formatGuildMessage(sender, guild, member, message);
 
         // 1) Члены гильдии
         List<Player> guildRecipients = getGuildRecipients(sender);
@@ -273,12 +215,11 @@ public final class GuildChatService {
         boolean showRank = isShowRankEnabled();
         boolean showChat = isGuildChatEnabled();
 
-        // toggle показываем по логике canToggle (а не по OP)
-        boolean showToggle = isToggleCommandEnabled() && canToggle(player);
+        boolean showToggle = isToggleCommandEnabled() && canAdminToggle(player);
 
         hoverRaw = filterHoverLines(hoverRaw, showRank, showToggle, showChat);
         hoverRaw = applyPlaceholders(hoverRaw, player, guild, member);
-        hoverRaw = hoverRaw.replace("{hintToggle}", "/g chat toggle");
+        hoverRaw = hoverRaw.replace("{hintToggle}", "/g");
         hoverRaw = hoverRaw.replace("{hintChat}", "/gc <msg>");
 
         return LEGACY.deserialize(hoverRaw);
@@ -297,6 +238,27 @@ public final class GuildChatService {
             return Component.empty();
         }
         return buildHover(player, guild, member);
+    }
+
+    public Component format(Player sender, Component message) {
+        if (!isGuildChatEnabled()) {
+            messages.send(sender, "error.no_permission");
+            return Component.empty();
+        }
+
+        GuildMember member = repository.getMember(sender.getUniqueId());
+        if (member == null) {
+            messages.send(sender, "error.guild.no_member");
+            return Component.empty();
+        }
+
+        Guild guild = repository.getGuild(member.tag());
+        if (guild == null) {
+            messages.send(sender, "guild.not_found");
+            return Component.empty();
+        }
+
+        return formatGuildMessage(sender, guild, member, message);
     }
 
     /**
@@ -364,6 +326,10 @@ public final class GuildChatService {
             filtered.add(line);
         }
         return String.join("\n", filtered);
+    }
+
+    public boolean canAdminToggle(Player player) {
+        return player.isOp() || player.hasPermission("realite.guilds.chat.toggle");
     }
 
     private List<String> splitMessageFormat(String raw) {

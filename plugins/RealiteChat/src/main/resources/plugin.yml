@@ -8,6 +8,9 @@ commands:
     description: Reload RealiteChat configuration
     usage: /realitechat reload
     permission: realite.chat.reload
+  gc:
+    description: Guild chat message
+    usage: /gc <message>
 permissions:
   realite.chat.admin:
     description: Allows full RealiteChat administration
