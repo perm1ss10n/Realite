@@ -157,11 +157,12 @@ public final class GuildCommand implements CommandExecutor {
     private void handleChat(Player player, String[] args) {
         // Обычным игрокам toggle вообще не нужен: только OP / permission
         if (args.length == 2 && "toggle".equalsIgnoreCase(args[1])) {
-            if (!player.isOp() && !player.hasPermission("realite.guilds.chat.toggle")) {
+            if (!chatService.isToggleCommandEnabled() || !chatService.canAdminToggle(player)) {
                 messages.send(player, "error.no_permission");
                 return;
             }
-            chatService.toggleAndNotify(player);
+            boolean enabled = chatService.toggleEnabled();
+            messages.send(player, enabled ? "chat.toggle.on" : "chat.toggle.off");
             return;
         }
 

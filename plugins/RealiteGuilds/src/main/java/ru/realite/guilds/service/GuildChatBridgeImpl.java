@@ -19,28 +19,8 @@ public final class GuildChatBridgeImpl implements GuildChatBridge {
     }
 
     @Override
-    public boolean isToggleCommandEnabled() {
-        return chatService.isToggleCommandEnabled();
-    }
-
-    @Override
     public boolean isMember(Player player) {
         return chatService.isMember(player);
-    }
-
-    @Override
-    public boolean isToggled(Player player) {
-        return chatService.isToggled(player);
-    }
-
-    @Override
-    public boolean toggle(Player player) {
-        return chatService.toggleAndNotify(player);
-    }
-
-    @Override
-    public void clearToggle(Player player) {
-        chatService.clearToggle(player);
     }
 
     @Override

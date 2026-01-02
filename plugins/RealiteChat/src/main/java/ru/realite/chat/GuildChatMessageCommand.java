@@ -23,12 +23,12 @@ public final class GuildChatMessageCommand implements CommandExecutor {
         }
 
         GuildChatBridge bridge = plugin.getGuildChatBridge();
-        if (bridge == null || !bridge.isEnabled()) {
+        if (bridge == null) {
             return true;
         }
 
         if (args.length == 0) {
-            player.sendMessage(Component.text("Usage: /gc <message>"));
+            player.sendMessage(Component.text("Использование: /gc <сообщение>"));
             return true;
         }
 

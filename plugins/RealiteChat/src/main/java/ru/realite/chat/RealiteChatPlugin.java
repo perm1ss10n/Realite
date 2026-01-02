@@ -18,7 +18,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.core.api.CoreApi;
@@ -107,11 +106,6 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
             cmd.setTabCompleter(handler);
         }
 
-        var guildToggle = getCommand("g");
-        if (guildToggle != null) {
-            guildToggle.setExecutor(new GuildChatToggleCommand(this));
-        }
-
         var guildChat = getCommand("gc");
         if (guildChat != null) {
             guildChat.setExecutor(new GuildChatMessageCommand(this));
@@ -136,14 +130,6 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onAsyncChat(AsyncChatEvent event) {
-        GuildChatBridge bridge = guildChatBridge;
-        if (bridge != null && bridge.isEnabled() && bridge.isToggled(event.getPlayer())) {
-            event.setCancelled(true);
-            Player sender = event.getPlayer();
-            Component message = event.message();
-            Bukkit.getScheduler().runTask(this, () -> sendGuildChat(sender, message));
-            return;
-        }
         event.renderer(OUR_RENDERER);
     }
 
@@ -154,14 +140,6 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
 
         if (event.renderer() != OUR_RENDERER) {
             getLogger().warning("[debug] ChatRenderer overridden by: " + event.renderer().getClass().getName());
-        }
-    }
-
-    @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        GuildChatBridge bridge = guildChatBridge;
-        if (bridge != null) {
-            bridge.clearToggle(event.getPlayer());
         }
     }
 
@@ -284,7 +262,7 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
 
     void sendGuildChat(Player sender, Component message) {
         GuildChatBridge bridge = guildChatBridge;
-        if (bridge == null || !bridge.isEnabled()) {
+        if (bridge == null) {
             return;
         }
 
