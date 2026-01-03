@@ -28,7 +28,14 @@ evolution: "Эволюция"
 level: "Уровень"
 
 admin:
-  usage: "&eИспользование: &f/class admin <grant|evolution|level|mastered|preset|unlock-ready>"
+  usage: |-
+    &6&lClass Admin Commands
+    &8────────────────────────
+    &e/class admin grant &7— назначить класс, эволюцию и уровень
+    &e/class admin evolution &7— установить, повысить, сбросить или максимизировать эволюцию
+    &e/class admin level &7— установить или добавить уровень
+    &e/class admin mastered &7— управление мастерством классов
+    &e/class admin unlock-ready &7— открыть или закрыть скрытый класс для игрока
   player-not-found: "&cИгрок не найден."
   unknown-class: "&cНеизвестный класс: {class}"
   set:
@@ -48,7 +55,6 @@ admin:
   usage-evolution: "&eИспользование: &f/class admin evolution <set|next|max|reset> <player> [evolutionId]"
   usage-level: "&eИспользование: &f/class admin level <set|add> <player> <level>"
   usage-mastered: "&eИспользование: &f/class admin mastered <add|remove|list> <player> [classId]"
-  usage-preset: "&eИспользование: &f/class admin preset <list|apply|save|delete> [presetId] [player]"
   usage-unlock-ready: "&eИспользование: &f/class admin unlock-ready <player> <hiddenClassId>"
   mastered-list-empty: "&7Мастерство: &eнет пройденных классов."
   mastered-list-header: "&6Освоенные классы игрока &e{player}&6:"
@@ -63,8 +69,6 @@ admin:
 
 mastered-list: "&7Мастерство: &e{list}"
 tester-disabled: "&cTester mode отключен в конфиге."
-preset-list: "&7Presets: &e{list}"
-preset-not-found: "&cПресет не найден."
 
 status: "&aКласс: &e{class} &7| &aЭволюция: &e{evolution}"
 

@@ -28,7 +28,14 @@ evolution: "Evolution"
 level: "Level"
 
 admin:
-  usage: "&eUsage: &f/class admin <grant|evolution|level|mastered|preset|unlock-ready>"
+  usage: |-
+    &6&lClass Admin Commands
+    &8────────────────────────
+    &e/class admin grant &7— assign a class to a player
+    &e/class admin evolution &7— set, advance, max or reset evolution
+    &e/class admin level &7— set or add level
+    &e/class admin mastered &7— manage mastery
+    &e/class admin unlock-ready &7— unlock hidden class
   player-not-found: "&cPlayer not found."
   unknown-class: "&cUnknown class: {class}"
 
@@ -49,7 +56,6 @@ admin:
   usage-evolution: "&eUsage: &f/class admin evolution <set|next|max|reset> <player> [evolutionId]"
   usage-level: "&eUsage: &f/class admin level <set|add> <player> <level>"
   usage-mastered: "&eUsage: &f/class admin mastered <add|remove|list> <player> [classId]"
-  usage-preset: "&eUsage: &f/class admin preset <list|apply|save|delete> [presetId] [player]"
   usage-unlock-ready: "&eUsage: &f/class admin unlock-ready <player> <hiddenClassId>"
 
   mastered-list-empty: "&7Mastery: &eno completed classes."
@@ -65,8 +71,6 @@ admin:
 
 mastered-list: "&7Mastery: &e{list}"
 tester-disabled: "&cTester mode is disabled in config."
-preset-list: "&7Presets: &e{list}"
-preset-not-found: "&cPreset not found."
 
 status: "&aClass: &e{class} &7| &aEvolution: &e{evolution}"
 

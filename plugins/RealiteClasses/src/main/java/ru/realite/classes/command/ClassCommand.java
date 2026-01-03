@@ -149,7 +149,7 @@ public class ClassCommand implements CommandExecutor {
                         // usage-grant: "&eИспользование: &f/class admin grant <player> <classId>
                         // [evolutionId] [level]
                         if (args.length < 4) {
-                            p.sendMessage(messages.get("admin-usage-grant"));
+                            p.sendMessage(messages.get("admin.usage-grant"));
                             return true;
                         }
 
@@ -231,14 +231,14 @@ public class ClassCommand implements CommandExecutor {
                         // admin-usage-evolution: "&eИспользование: &f/class admin evolution
                         // <set|next|max|reset> <player> [evolutionId]"
 
-                        ClassId classId = resolveClassId(p, args[3]);
-                        if (classId == null)
-                            return true;
-
                         if (args.length < 4) {
                             p.sendMessage(messages.get("admin-usage-evolution"));
                             return true;
                         }
+
+                        ClassId classId = resolveClassId(p, args[3]);
+                        if (classId == null)
+                            return true;
 
                         String action = args[2].toLowerCase();
                         Player target = resolveTarget(p, args[3]);
@@ -350,7 +350,7 @@ public class ClassCommand implements CommandExecutor {
                         // admin-usage-level: "&eИспользование: &f/class admin level <set|add> <player>
                         // <level>"
                         if (args.length < 5) {
-                            p.sendMessage(messages.get("admin-usage-level"));
+                            p.sendMessage(messages.get("admin.usage-level"));
                             return true;
                         }
 
@@ -391,7 +391,7 @@ public class ClassCommand implements CommandExecutor {
                                 newLevel = oldLevel + value;
                             }
                             default -> {
-                                p.sendMessage(messages.get("admin-usage-level"));
+                                p.sendMessage(messages.get("admin.usage-level"));
                                 return true;
                             }
                         }
@@ -471,12 +471,14 @@ public class ClassCommand implements CommandExecutor {
                                 profTarget.addMastered(classId);
                                 classService.save(profTarget);
 
+                                var def = classConfig.get(classId);
+                                String className = (def != null ? def.name : classId.name());
                                 p.sendMessage(messages.format("admin.set.mastery", Map.of(
                                         "player", target.getName(),
-                                        "class", classId.name(),
+                                        "class", className + " &7(" + classId.name() + ")",
                                         "mastered", messages.get("mastered-yes"))));
                                 target.sendMessage(messages.format("admin.set-self.mastery", Map.of(
-                                        "class", classId.name(),
+                                        "class", className,
                                         "mastered", messages.get("mastered-yes"))));
                                 return true;
                             }
@@ -492,12 +494,14 @@ public class ClassCommand implements CommandExecutor {
                                 profTarget.removeMastered(classId);
                                 classService.save(profTarget);
 
+                                var def = classConfig.get(classId);
+                                String className = (def != null ? def.name : classId.name());
                                 p.sendMessage(messages.format("admin.set.mastery", Map.of(
                                         "player", target.getName(),
-                                        "class", classId.name(),
+                                        "class", className + " &7(" + classId.name() + ")",
                                         "mastered", messages.get("mastered-no"))));
                                 target.sendMessage(messages.format("admin.set-self.mastery", Map.of(
-                                        "class", classId.name(),
+                                        "class", className,
                                         "mastered", messages.get("mastered-no"))));
                                 return true;
                             }
@@ -505,7 +509,7 @@ public class ClassCommand implements CommandExecutor {
 
                                 var mastered = profTarget.getMasteredClasses();
                                 if (mastered == null || mastered.isEmpty()) {
-                                    p.sendMessage(messages.format("admin.mastered-empty", Map.of(
+                                    p.sendMessage(messages.format("admin.mastered-list-empty", Map.of(
                                             "player", target.getName())));
                                     return true;
                                 }
@@ -533,13 +537,7 @@ public class ClassCommand implements CommandExecutor {
                             }
                         }
                     }
-                    // TODO: Доделать preset, unlock-ready
-                    case "preset" -> {
-                        // admin-usage-preset: "&eИспользование: &f/class admin preset
-                        // <list|apply|save|delete> [presetId] [player]"
-                        p.sendMessage(messages.get("admin.usage-preset"));
-                        return true;
-                    }
+                    // TODO: Доделать unlock-ready
                     case "unlock-ready" -> {
                         // admin-usage-unlock-ready: "&eИспользование: &f/class admin unlock-ready
                         // <player> <hiddenClassId>"
