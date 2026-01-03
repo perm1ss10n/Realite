@@ -90,19 +90,6 @@ public class ProgressionService {
 
                 p.setEvolutionNotified(true);
                 
-                //В старом виде без локализации через ванильный перевод клиента:
-                // String moneyText = (next.costMoney > 0) ? ("$" + (long) next.costMoney) :
-                // "0$";
-                // String itemsText = ItemFormat.formatList(next.costItems);
-
-                // player.sendMessage(messages.format("evolution-available", Map.of(
-                // "class", def.name,
-                // "evolution", next.title,
-                // "required", String.valueOf(next.requiredLevel),
-                // "money", moneyText,
-                // "items", itemsText
-                // )));
-                // p.setEvolutionNotified(true);
             }
         }
 

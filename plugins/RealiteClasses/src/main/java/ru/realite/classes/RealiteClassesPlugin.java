@@ -234,6 +234,10 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         return progressionService;
     }
 
+    public ClassHudService getHudService() {
+        return hudService;
+    }
+
     @Override
     public ru.realite.core.api.Module module() {
         return entrypoint.module();

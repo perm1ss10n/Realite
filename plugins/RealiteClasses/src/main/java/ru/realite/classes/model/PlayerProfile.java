@@ -100,6 +100,10 @@ public class PlayerProfile {
         return id != null && masteredClasses.contains(id.name());
     }
 
+    public boolean removeMastered(ClassId id) {
+        return id != null && masteredClasses.remove(id.name());
+    }
+
     public int getClassLevel() {
         return classLevel;
     }

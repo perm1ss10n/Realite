@@ -1,72 +1,87 @@
-#
-# Sorry for my English, I'm Russian :)
-# English messages for RealiteClasses
-
 only-players: "&cOnly players can use this command."
 
-no-class: "&cNo class selected. Type &e/class choose"
-already-chosen: "&cClass already selected. To change it, use: &e/class change"
-cant-change: "&cYou can only change your class at the final evolution stage or with a donor permission."
+no-class: "&cNo class selected. Use &e/class choose"
+already-chosen: "&cClass already selected. To change it: &e/class change"
+cant-change: "&cYou can change class only at the final evolution or with donor permission."
 
 usage: "&eUsage: &f/class&7, &f/class choose&7, &f/class change&7, &f/class info&7, &f/class evolve"
 
 class-help-header: "&6&lRealiteClasses &7— commands:"
 
 class-help:
-  - "&e/class choose &7— choose your main class (available for Wanderer)"
-  - "&e/class change &7— change your class (if allowed)"
-  - "&e/class info &7— view class information and progress"
-  - "&e/class evolve &7— attempt to evolve your class"
-  - "&e/class settings &7— interface and HUD settings"
+  - "&e/class choose &7— choose a main class (available for Wanderer)"
+  - "&e/class change &7— change class (if allowed)"
+  - "&e/class info &7— class and progression info"
+  - "&e/class evolve &7— try to evolve your class"
+  - "&e/class settings &7— interface settings"
 
 class-help-admin:
-  - "&e/class reload &7— reload plugin configs"
+  - "&e/class reload &7— reload configs"
   - "&e/class admin ... &7— admin class commands"
-
-usage-admin: "&cUsage: /class admin <player> <classId>"
-player-not-found: "&cPlayer not found."
-unknown-class: "&cUnknown class: &e{class}"
-admin-set: "&aYou assigned class &e{class} &ato player &e{player}&a."
-admin-set-self: "&aAn admin assigned you the class &e{class}&a."
 
 chosen: "&aClass selected: &e{class}"
 
-no-permission: "&cYou do not have permission."
+no-permission: "&cYou don't have permission."
 reloaded: "&aConfigs reloaded: &fconfig.yml, classes.yml, lang/messages_*.yml, xp.yml"
 
-admin-usage: "&eUsage: &f/class admin <evolution|level|mastered|grant|preset|unlock-ready> ..."
-admin-usage-evolution: "&eUsage: &f/class admin evolution <set|next|max|reset> <player> [evolutionId]"
-admin-usage-level: "&eUsage: &f/class admin level <set|add> <player> <level>"
-admin-usage-mastered: "&eUsage: &f/class admin mastered <add|remove|list> <player> [classId]"
-admin-usage-grant: "&eUsage: &f/class admin grant <player> <classId> [evolutionId] [level]"
-admin-usage-preset: "&eUsage: &f/class admin preset <list|apply|save|delete> [presetId] [player]"
-admin-usage-unlock-ready: "&eUsage: &f/class admin unlock-ready <player> <hiddenClassId>"
+evolution: "Evolution"
+level: "Level"
 
-admin-success: "&aDone."
-unknown-player: "&cPlayer not found."
-unknown-class: "&cUnknown classId."
-unknown-evolution: "&cUnknown evolution."
+admin:
+  usage: "&eUsage: &f/class admin <grant|evolution|level|mastered|preset|unlock-ready>"
+  player-not-found: "&cPlayer not found."
+  unknown-class: "&cUnknown class: {class}"
+
+  set:
+    grant: "&aYou assigned class {class}{extra} to player {player}."
+    evolution: "&aYou set evolution {evolution} for player {player}."
+    next-evolution: "&aYou advanced player {player} to evolution: {evolution}."
+    level: "&aYou set player {player}'s level to: {level}."
+    mastery: "&aYou updated mastery for player {player}, class {class}: {mastered}."
+
+  set-self:
+    grant: "&aAn admin assigned you class: {class}{extra}."
+    evolution: "&aAn admin set your evolution to: {evolution}."
+    level: "&aAn admin set your level to: {level}."
+    mastery: "&aAn admin updated your mastery for class {class}: {mastered}."
+
+  usage-grant: "&eUsage: &f/class admin grant <player> <classId> [evolutionId] [level]"
+  usage-evolution: "&eUsage: &f/class admin evolution <set|next|max|reset> <player> [evolutionId]"
+  usage-level: "&eUsage: &f/class admin level <set|add> <player> <level>"
+  usage-mastered: "&eUsage: &f/class admin mastered <add|remove|list> <player> [classId]"
+  usage-preset: "&eUsage: &f/class admin preset <list|apply|save|delete> [presetId] [player]"
+  usage-unlock-ready: "&eUsage: &f/class admin unlock-ready <player> <hiddenClassId>"
+
+  mastered-list-empty: "&7Mastery: &eno completed classes."
+  mastered-list-header: "&6Completed classes of player &e{player}&6:"
+  mastered-list-line: "&7- &e{class}"
+
+  success: "&aDone."
+  unknown-evolution: "&cUnknown evolution: {evolution}"
+  invalid-level: "&cInvalid level: {level}"
+  no-evolutions: "&cThis class has no evolutions."
+  no-class-selected: "&cPlayer has no class selected."
+  already-max-evolution: "&cPlayer is already at maximum evolution."
+
+mastered-list: "&7Mastery: &e{list}"
 tester-disabled: "&cTester mode is disabled in config."
-no-class-selected: "&cPlayer has no class selected."
-mastered-list: "&7Mastered: &e{list}"
 preset-list: "&7Presets: &e{list}"
 preset-not-found: "&cPreset not found."
 
 status: "&aClass: &e{class} &7| &aEvolution: &e{evolution}"
 
-# UPDATED: shows level + money + items
-evolution-available: "&aEvolution available! &e{class} &7→ &6{evolution} &7(level {required}) &7| &e{money} &7| &e{items} &7. Use &a/class evolve"
+evolution-available: "&aEvolution available! &e{class} &7→ &6{evolution} &7(lv. {required}) &7| &e{money} &7| &e{items} &7. Use &a/class evolve"
 
 evolved: "&aEvolution successful! &e{class} &7→ &6{evolution}"
 
-evolve-no-class: "&cYou have no class."
+evolve-no-class: "&cYou don't have a class."
 evolve-already-max: "&cYou are already at the maximum evolution."
 evolve-not-enough-level: "&cNot enough level to evolve."
 evolve-no-money: "&cNot enough money."
-evolve-no-items: "&cRequired items are missing."
+evolve-no-items: "&cNot enough items to evolve."
 
-class-locked: "&5This path is sealed for now. &dYou have yet to uncover all the secrets of the required classes."
-class-locked-requirements: "&7You must fully complete: &e{req}"
+class-locked: "&5This path is sealed for now. &dYou have not yet mastered all required classes."
+class-locked-requirements: "&7You must fully master: &e{req}"
 
 mastered-yes: "&acompleted"
 mastered-no: "&cnot completed"
@@ -76,6 +91,6 @@ info-body:
   - "&7Evolution: &a{evolution}"
   - "&7Level: &b{level}"
   - "&7XP: &b{xp}&7 / to next level: &b{xpToNext}"
-  - "&7Next evolution: &e{nextEvolution} &7(level {nextRequired})"
+  - "&7Next evolution: &e{nextEvolution} &7(lv. {nextRequired})"
   - "&7Cost: &e{nextCostMoney} &7| items: &e{nextCostItems}"
   - "&7Mastery: {mastered}"

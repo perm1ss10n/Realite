@@ -19,32 +19,50 @@ class-help-admin:
   - "&e/class reload &7— перезагрузить конфиги"
   - "&e/class admin ... &7— админ-команды классов"
 
-usage-admin: "&cИспользование: /class admin <player> <classId>"
-player-not-found: "&cИгрок не найден."
-unknown-class: "&cНеизвестный класс: {class}"
-admin-set: "&aВы назначили игроку {player} класс {class}."
-admin-set-self: "&aАдмин назначил вам класс {class}."
-
 chosen: "&aКласс выбран: &e{class}"
 
 no-permission: "&cНет прав."
 reloaded: "&aКонфиги перезагружены: &fconfig.yml, classes.yml, lang/messages_*.yml, xp.yml"
 
-admin-usage: "&eИспользование: &f/class admin <evolution|level|mastered|grant|preset|unlock-ready> ..."
-admin-usage-evolution: "&eИспользование: &f/class admin evolution <set|next|max|reset> <player> [evolutionId]"
-admin-usage-level: "&eИспользование: &f/class admin level <set|add> <player> <level>"
-admin-usage-mastered: "&eИспользование: &f/class admin mastered <add|remove|list> <player> [classId]"
-admin-usage-grant: "&eИспользование: &f/class admin grant <player> <classId> [evolutionId] [level]"
-admin-usage-preset: "&eИспользование: &f/class admin preset <list|apply|save|delete> [presetId] [player]"
-admin-usage-unlock-ready: "&eИспользование: &f/class admin unlock-ready <player> <hiddenClassId>"
+evolution: "Эволюция"
+level: "Уровень"
 
-admin-success: "&aГотово."
-unknown-player: "&cИгрок не найден."
-unknown-class: "&cНеизвестный classId."
-unknown-evolution: "&cНеизвестная эволюция."
+admin:
+  usage: "&eИспользование: &f/class admin <grant|evolution|level|mastered|preset|unlock-ready>"
+  player-not-found: "&cИгрок не найден."
+  unknown-class: "&cНеизвестный класс: {class}"
+  set:
+    grant: "&aВы назначили игроку {player} класс: {class}{extra}."
+    evolution: "&aВы назначили игроку {player} эволюцию: {evolution}."
+    next-evolution: "&aВы повысили эволюцию игрока {player} до: {evolution}."
+    level: "&aВы установили уровень игрока {player} на: {level}."
+    mastery: "&aВы обновили мастерство игрока {player} для класса {class}: {mastered}."
+    
+  set-self:
+    grant: "&aАдмин назначил вам класс: {class}{extra}."
+    evolution: "&aАдмин назначил вам эволюцию: {evolution}."
+    level: "&aАдмин установил ваш уровень на: {level}."
+    mastery: "&aАдмин обновил ваше мастерство для класса {class}: {mastered}."
+  
+  usage-grant: "&eИспользование: &f/class admin grant <player> <classId> [evolutionId] [level]"
+  usage-evolution: "&eИспользование: &f/class admin evolution <set|next|max|reset> <player> [evolutionId]"
+  usage-level: "&eИспользование: &f/class admin level <set|add> <player> <level>"
+  usage-mastered: "&eИспользование: &f/class admin mastered <add|remove|list> <player> [classId]"
+  usage-preset: "&eИспользование: &f/class admin preset <list|apply|save|delete> [presetId] [player]"
+  usage-unlock-ready: "&eИспользование: &f/class admin unlock-ready <player> <hiddenClassId>"
+  mastered-list-empty: "&7Мастерство: &eнет пройденных классов."
+  mastered-list-header: "&6Освоенные классы игрока &e{player}&6:"
+  mastered-list-line: "&7- &e{class}"
+
+  success: "&aГотово."
+  unknown-evolution: "&cНеизвестная эволюция: {evolution}"
+  invalid-level: "&cНеверный уровень: {level}"
+  no-evolutions: "&cУ класса нет эволюций."
+  no-class-selected: "&cУ игрока не выбран класс."
+  already-max-evolution: "&cИгрок уже на максимальной эволюции."
+
+mastered-list: "&7Мастерство: &e{list}"
 tester-disabled: "&cTester mode отключен в конфиге."
-no-class-selected: "&cУ игрока не выбран класс."
-mastered-list: "&7Mastered: &e{list}"
 preset-list: "&7Presets: &e{list}"
 preset-not-found: "&cПресет не найден."
 

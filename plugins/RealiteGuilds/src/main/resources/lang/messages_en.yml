@@ -16,7 +16,29 @@ error:
     disband-not-owner: "{prefix}&cOnly the guild owner can disband the guild."
 
 usage:
-  root: "{prefix}&eUsage: /g <create|info|invite|join|leave|ranks|setrank|home|sethome|tp|claim|salary|toggle>"
+  root: |-
+    &6&lRealiteGuilds &7— commands
+    &8────────────────────────
+    &a▸ Main
+    &e/g create <tag> <name...> &7— create a guild
+    &e/g info &7— guild information
+    &e/g join &7— accept an invitation
+    &e/g leave &7— leave a guild
+    &e/g disband &7— disband a guild
+
+    &a▸ Members and Roles
+    &e/g invite <player> &7— invite a player
+    &e/g ranks &7— list ranks
+    &e/g setrank <player> <rank> &7— set a rank
+
+    &a▸ Territory and Home
+    &e/g claim &7— claim guild territory
+    &e/g home &7— teleport to guild home
+    &e/g sethome &7— set guild home
+    &e/g tp &7— teleport to a guild member
+
+    &a▸ Economy and Chat
+    &e/g salary &7— get salary
   create: "{prefix}&eUsage: /g create <tag> <name...>"
   info: "{prefix}&eUsage: /g info [tag]"
   invite: "{prefix}&eUsage: /g invite <player>"
