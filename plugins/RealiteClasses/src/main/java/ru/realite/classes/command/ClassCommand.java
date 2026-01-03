@@ -475,7 +475,7 @@ public class ClassCommand implements CommandExecutor {
                                 String className = (def != null ? def.name : classId.name());
                                 p.sendMessage(messages.format("admin.set.mastery", Map.of(
                                         "player", target.getName(),
-                                        "class", className + " &7(" + classId.name() + ")",
+                                        "class", className + " (" + classId.name() + ")",
                                         "mastered", messages.get("mastered-yes"))));
                                 target.sendMessage(messages.format("admin.set-self.mastery", Map.of(
                                         "class", className,
@@ -498,7 +498,7 @@ public class ClassCommand implements CommandExecutor {
                                 String className = (def != null ? def.name : classId.name());
                                 p.sendMessage(messages.format("admin.set.mastery", Map.of(
                                         "player", target.getName(),
-                                        "class", className + " &7(" + classId.name() + ")",
+                                        "class", className + " (" + classId.name() + ")",
                                         "mastered", messages.get("mastered-no"))));
                                 target.sendMessage(messages.format("admin.set-self.mastery", Map.of(
                                         "class", className,
@@ -522,7 +522,7 @@ public class ClassCommand implements CommandExecutor {
                                     if (cid != null) {
                                         var def = classConfig.get(cid);
                                         if (def != null && def.name != null) {
-                                            display = def.name + " &7(" + classIdStr + ")";
+                                            display = def.name + " (" + classIdStr + ")";
                                         }
                                     }
 
