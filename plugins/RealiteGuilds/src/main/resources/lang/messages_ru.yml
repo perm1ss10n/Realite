@@ -39,6 +39,8 @@ usage:
 
     &a▸ Экономика и чат
     &e/g salary &7— получить жалование
+    &e/g upgrades &7— список апгрейдов
+    &e/g upgrade buy <id> &7— купить апгрейд
   create: "{prefix}&eИспользование: /g create <tag> <name...>"
   info: "{prefix}&eИспользование: /g info [tag]"
   invite: "{prefix}&eИспользование: /g invite <player>"
@@ -49,7 +51,9 @@ usage:
   tp: "{prefix}&eИспользование: /g tp <player>"
   claim: "{prefix}&eИспользование: /g claim <pos1|pos2|apply|clear>"
   toggle: "{prefix}&eИспользование: /g toggle"
-  help: "{prefix}&eКоманды:\n&6/g create <tag> <name...>\n&6/g info [tag]\n&6/g invite <player>\n&6/g join <tag>\n&6/g leave\n&6/g ranks\n&6/g setrank <player> <rankId>\n&6/g home|sethome\n&6/g tp <player>\n&6/g claim pos1|pos2|apply|clear\n&6/g salary\n&6/g toggle"
+  upgrades: "{prefix}&eИспользование: /g upgrades"
+  upgrade: "{prefix}&eИспользование: /g upgrade buy <id>"
+  help: "{prefix}&eКоманды:\n&6/g create <tag> <name...>\n&6/g info [tag]\n&6/g invite <player>\n&6/g join <tag>\n&6/g leave\n&6/g ranks\n&6/g setrank <player> <rankId>\n&6/g home|sethome\n&6/g tp <player>\n&6/g claim pos1|pos2|apply|clear\n&6/g salary\n&6/g upgrades\n&6/g upgrade buy <id>\n&6/g toggle"
 
 admin:
   addxp:
@@ -142,6 +146,19 @@ salary:
     run:
       start: "{prefix}&eЗапуск начисления зарплаты..."
       done: "{prefix}&aЗарплата начислена {count} игрок(ам) на сумму {total}."
+
+upgrade:
+  list:
+    header: "{prefix}&eАпгрейды гильдии:"
+    entry: "{prefix}&6{id} &7— &f{name} &7[{level}/{max}] &8| &eЦена: {cost} &8| &7{description}"
+    maxed: "макс"
+    unavailable: "-"
+  buy:
+    success: "{prefix}&aАпгрейд куплен."
+    insufficient_funds: "{prefix}&cНедостаточно средств."
+    max_level: "{prefix}&cУже максимальный уровень."
+    not_found: "{prefix}&cНеизвестный апгрейд."
+    requirements: "{prefix}&cТребования не выполнены."
 
 chat:
   guild:

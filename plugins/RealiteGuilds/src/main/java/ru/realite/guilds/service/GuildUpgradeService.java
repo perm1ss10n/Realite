@@ -99,6 +99,37 @@ public final class GuildUpgradeService {
         return new PurchaseResult(PurchaseStatus.SUCCESS, cost, targetLevel, newBalance);
     }
 
+    public UpgradeListResult list(Player player) {
+        if (player == null) {
+            return new UpgradeListResult(UpgradeListStatus.INVALID_REQUEST, List.of());
+        }
+        GuildMember member = repository.getMember(player.getUniqueId());
+        if (member == null) {
+            return new UpgradeListResult(UpgradeListStatus.NOT_IN_GUILD, List.of());
+        }
+        Guild guild = repository.getGuild(member.tag());
+        if (guild == null) {
+            return new UpgradeListResult(UpgradeListStatus.GUILD_NOT_FOUND, List.of());
+        }
+        List<UpgradeEntry> entries = upgradeConfig.getUpgrades().values().stream()
+                .sorted((a, b) -> a.id().compareToIgnoreCase(b.id()))
+                .map(definition -> {
+                    int currentLevel = repository.getUpgradeLevel(guild.tag(), definition.id());
+                    boolean maxed = currentLevel >= definition.maxLevel();
+                    double nextCost = maxed ? 0.0d : resolveCost(definition, currentLevel + 1);
+                    return new UpgradeEntry(
+                            definition.id(),
+                            definition.name(),
+                            definition.description(),
+                            currentLevel,
+                            definition.maxLevel(),
+                            nextCost,
+                            maxed);
+                })
+                .toList();
+        return new UpgradeListResult(UpgradeListStatus.SUCCESS, entries);
+    }
+
     private boolean meetsRequirements(Guild guild, UpgradeDefinition definition) {
         Map<String, Integer> requirements = definition.requirements();
         if (requirements == null || requirements.isEmpty()) {
@@ -308,6 +339,13 @@ public final class GuildUpgradeService {
         }
     }
 
+    public record UpgradeListResult(UpgradeListStatus status, List<UpgradeEntry> entries) {
+    }
+
+    public record UpgradeEntry(String id, String name, String description, int level, int maxLevel,
+                               double nextCost, boolean maxed) {
+    }
+
     public enum PurchaseStatus {
         SUCCESS,
         INVALID_REQUEST,
@@ -320,5 +358,12 @@ public final class GuildUpgradeService {
         MAX_LEVEL,
         INVALID_COST,
         INSUFFICIENT_FUNDS
+    }
+
+    public enum UpgradeListStatus {
+        SUCCESS,
+        INVALID_REQUEST,
+        NOT_IN_GUILD,
+        GUILD_NOT_FOUND
     }
 }

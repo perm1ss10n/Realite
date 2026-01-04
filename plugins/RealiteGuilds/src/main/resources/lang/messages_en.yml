@@ -39,6 +39,8 @@ usage:
 
     &a▸ Economy and Chat
     &e/g salary &7— get salary
+    &e/g upgrades &7— list upgrades
+    &e/g upgrade buy <id> &7— buy an upgrade
   create: "{prefix}&eUsage: /g create <tag> <name...>"
   info: "{prefix}&eUsage: /g info [tag]"
   invite: "{prefix}&eUsage: /g invite <player>"
@@ -49,7 +51,9 @@ usage:
   tp: "{prefix}&eUsage: /g tp <player>"
   claim: "{prefix}&eUsage: /g claim <pos1|pos2|apply|clear>"
   toggle: "{prefix}&eUsage: /g toggle"
-  help: "{prefix}&eCommands:\n&6/g create <tag> <name...>\n&6/g info [tag]\n&6/g invite <player>\n&6/g join <tag>\n&6/g leave\n&6/g ranks\n&6/g setrank <player> <rankId>\n&6/g home|sethome\n&6/g tp <player>\n&6/g claim pos1|pos2|apply|clear\n&6/g salary\n&6/g toggle"
+  upgrades: "{prefix}&eUsage: /g upgrades"
+  upgrade: "{prefix}&eUsage: /g upgrade buy <id>"
+  help: "{prefix}&eCommands:\n&6/g create <tag> <name...>\n&6/g info [tag]\n&6/g invite <player>\n&6/g join <tag>\n&6/g leave\n&6/g ranks\n&6/g setrank <player> <rankId>\n&6/g home|sethome\n&6/g tp <player>\n&6/g claim pos1|pos2|apply|clear\n&6/g salary\n&6/g upgrades\n&6/g upgrade buy <id>\n&6/g toggle"
 
 admin:
   addxp:
@@ -142,6 +146,19 @@ salary:
     run:
       start: "{prefix}&eStarting salary payout..."
       done: "{prefix}&aSalary has been paid to {count} player(s) for a total of {total}."
+
+upgrade:
+  list:
+    header: "{prefix}&eGuild upgrades:"
+    entry: "{prefix}&6{id} &7— &f{name} &7[{level}/{max}] &8| &eCost: {cost} &8| &7{description}"
+    maxed: "max"
+    unavailable: "-"
+  buy:
+    success: "{prefix}&aUpgrade purchased."
+    insufficient_funds: "{prefix}&cInsufficient funds."
+    max_level: "{prefix}&cAlready at maximum level."
+    not_found: "{prefix}&cUnknown upgrade."
+    requirements: "{prefix}&cRequirements not met."
 
 chat:
   guild:
