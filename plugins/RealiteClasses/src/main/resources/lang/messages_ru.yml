@@ -44,18 +44,29 @@ admin:
     next-evolution: "&aВы повысили эволюцию игрока {player} до: {evolution}."
     level: "&aВы установили уровень игрока {player} на: {level}."
     mastery: "&aВы обновили мастерство игрока {player} для класса {class}: {mastered}."
+    unlock-ready: "&aИгроку &f{player}&a для класса &f{class}&a установлено: {ready}"
+  
+  check:
+    unlock-ready: "&e{player}&f: unlock-ready для &f{class}&f = {ready}"
     
   set-self:
     grant: "&aАдмин назначил вам класс: {class}{extra}."
     evolution: "&aАдмин назначил вам эволюцию: {evolution}."
     level: "&aАдмин установил ваш уровень на: {level}."
     mastery: "&aАдмин обновил ваше мастерство для класса {class}: {mastered}."
+    unlock-ready: "&aГотовность к разблокировке класса &f{class}&a: {ready}"
+    unlock-ready-cleared: "&cТвои unlock-ready классы были сброшены администратором."
   
   usage-grant: "&eИспользование: &f/class admin grant <player> <classId> [evolutionId] [level]"
   usage-evolution: "&eИспользование: &f/class admin evolution <set|next|max|reset> <player> [evolutionId]"
   usage-level: "&eИспользование: &f/class admin level <set|add> <player> <level>"
   usage-mastered: "&eИспользование: &f/class admin mastered <add|remove|list> <player> [classId]"
-  usage-unlock-ready: "&eИспользование: &f/class admin unlock-ready <player> <hiddenClassId>"
+  usage-unlock-ready: "&eИспользование: &f/class admin unlock-ready <add|remove|check|list|clear> <player> [hiddenClassId]"
+  unlock-ready-not-hidden: "&cКласс &f{class}&c не является скрытым."
+  unlock-ready-list-empty: "&eУ игрока &f{player}&e нет unlock-ready классов."
+  unlock-ready-list-header: "&eUnlock-ready классы игрока &f{player}&e:"
+  unlock-ready-list-line: " &7- &f{class}"
+  unlock-ready-cleared: "&aСброшены unlock-ready классы игрока &f{player}&a."
   mastered-list-empty: "&7Мастерство: &eнет пройденных классов."
   mastered-list-header: "&6Освоенные классы игрока &e{player}&6:"
   mastered-list-line: "&7- &e{class}"

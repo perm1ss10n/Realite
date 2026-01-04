@@ -1,8 +1,8 @@
 only-players: "&cOnly players can use this command."
 
 no-class: "&cNo class selected. Use &e/class choose"
-already-chosen: "&cClass already selected. To change it: &e/class change"
-cant-change: "&cYou can change class only at the final evolution or with donor permission."
+already-chosen: "&cClass already selected. To change it, use: &e/class change"
+cant-change: "&cYou can change class only at the final evolution or with a donor permission."
 
 usage: "&eUsage: &f/class&7, &f/class choose&7, &f/class change&7, &f/class info&7, &f/class evolve"
 
@@ -10,18 +10,18 @@ class-help-header: "&6&lRealiteClasses &7— commands:"
 
 class-help:
   - "&e/class choose &7— choose a main class (available for Wanderer)"
-  - "&e/class change &7— change class (if allowed)"
-  - "&e/class info &7— class and progression info"
-  - "&e/class evolve &7— try to evolve your class"
+  - "&e/class change &7— change your class (if allowed)"
+  - "&e/class info &7— class and progression information"
+  - "&e/class evolve &7— attempt to evolve your class"
   - "&e/class settings &7— interface settings"
 
 class-help-admin:
   - "&e/class reload &7— reload configs"
-  - "&e/class admin ... &7— admin class commands"
+  - "&e/class admin ... &7— class admin commands"
 
 chosen: "&aClass selected: &e{class}"
 
-no-permission: "&cYou don't have permission."
+no-permission: "&cYou do not have permission."
 reloaded: "&aConfigs reloaded: &fconfig.yml, classes.yml, lang/messages_*.yml, xp.yml"
 
 evolution: "Evolution"
@@ -31,33 +31,42 @@ admin:
   usage: |-
     &6&lClass Admin Commands
     &8────────────────────────
-    &e/class admin grant &7— assign a class to a player
-    &e/class admin evolution &7— set, advance, max or reset evolution
+    &e/class admin grant &7— assign class, evolution, and level
+    &e/class admin evolution &7— set, advance, reset, or maximize evolution
     &e/class admin level &7— set or add level
-    &e/class admin mastered &7— manage mastery
-    &e/class admin unlock-ready &7— unlock hidden class
+    &e/class admin mastered &7— manage class mastery
+    &e/class admin unlock-ready &7— allow or revoke access to a hidden class
   player-not-found: "&cPlayer not found."
   unknown-class: "&cUnknown class: {class}"
-
   set:
-    grant: "&aYou assigned class {class}{extra} to player {player}."
-    evolution: "&aYou set evolution {evolution} for player {player}."
-    next-evolution: "&aYou advanced player {player} to evolution: {evolution}."
+    grant: "&aYou assigned player {player} the class: {class}{extra}."
+    evolution: "&aYou set player {player}'s evolution to: {evolution}."
+    next-evolution: "&aYou advanced player {player}'s evolution to: {evolution}."
     level: "&aYou set player {player}'s level to: {level}."
-    mastery: "&aYou updated mastery for player {player}, class {class}: {mastered}."
+    mastery: "&aYou updated mastery for player {player} in class {class}: {mastered}."
+    unlock-ready: "&aPlayer &f{player}&a now has unlock-ready set for class &f{class}&a: {ready}"
+
+  check:
+    unlock-ready: "&e{player}&f: unlock-ready for &f{class}&f = {ready}"
 
   set-self:
-    grant: "&aAn admin assigned you class: {class}{extra}."
+    grant: "&aAn admin assigned you the class: {class}{extra}."
     evolution: "&aAn admin set your evolution to: {evolution}."
     level: "&aAn admin set your level to: {level}."
     mastery: "&aAn admin updated your mastery for class {class}: {mastered}."
+    unlock-ready: "&aClass unlock readiness for &f{class}&a: {ready}"
+    unlock-ready-cleared: "&cYour unlock-ready classes were cleared by an administrator."
 
   usage-grant: "&eUsage: &f/class admin grant <player> <classId> [evolutionId] [level]"
   usage-evolution: "&eUsage: &f/class admin evolution <set|next|max|reset> <player> [evolutionId]"
   usage-level: "&eUsage: &f/class admin level <set|add> <player> <level>"
   usage-mastered: "&eUsage: &f/class admin mastered <add|remove|list> <player> [classId]"
-  usage-unlock-ready: "&eUsage: &f/class admin unlock-ready <player> <hiddenClassId>"
-
+  usage-unlock-ready: "&eUsage: &f/class admin unlock-ready <add|remove|check|list|clear> <player> [hiddenClassId]"
+  unlock-ready-not-hidden: "&cClass &f{class}&c is not a hidden class."
+  unlock-ready-list-empty: "&ePlayer &f{player}&e has no unlock-ready classes."
+  unlock-ready-list-header: "&eUnlock-ready classes for player &f{player}&e:"
+  unlock-ready-list-line: " &7- &f{class}"
+  unlock-ready-cleared: "&aUnlock-ready classes for player &f{player}&a have been cleared."
   mastered-list-empty: "&7Mastery: &eno completed classes."
   mastered-list-header: "&6Completed classes of player &e{player}&6:"
   mastered-list-line: "&7- &e{class}"
@@ -66,11 +75,11 @@ admin:
   unknown-evolution: "&cUnknown evolution: {evolution}"
   invalid-level: "&cInvalid level: {level}"
   no-evolutions: "&cThis class has no evolutions."
-  no-class-selected: "&cPlayer has no class selected."
-  already-max-evolution: "&cPlayer is already at maximum evolution."
+  no-class-selected: "&cThe player has no class selected."
+  already-max-evolution: "&cThe player is already at the maximum evolution."
 
 mastered-list: "&7Mastery: &e{list}"
-tester-disabled: "&cTester mode is disabled in config."
+tester-disabled: "&cTester mode is disabled in the config."
 
 status: "&aClass: &e{class} &7| &aEvolution: &e{evolution}"
 
@@ -78,17 +87,17 @@ evolution-available: "&aEvolution available! &e{class} &7→ &6{evolution} &7(lv
 
 evolved: "&aEvolution successful! &e{class} &7→ &6{evolution}"
 
-evolve-no-class: "&cYou don't have a class."
+evolve-no-class: "&cYou do not have a class."
 evolve-already-max: "&cYou are already at the maximum evolution."
-evolve-not-enough-level: "&cNot enough level to evolve."
-evolve-no-money: "&cNot enough money."
-evolve-no-items: "&cNot enough items to evolve."
+evolve-not-enough-level: "&cYou do not have enough levels to evolve."
+evolve-no-money: "&cYou do not have enough money."
+evolve-no-items: "&cYou do not have the required items to evolve."
 
-class-locked: "&5This path is sealed for now. &dYou have not yet mastered all required classes."
+class-locked: "&5This path is sealed for now. &dYou have not yet mastered all the required classes."
 class-locked-requirements: "&7You must fully master: &e{req}"
 
-mastered-yes: "&acompleted"
-mastered-no: "&cnot completed"
+mastered-yes: "&afully mastered"
+mastered-no: "&cnot mastered"
 
 info-header: "&6&lClass: &e{class}"
 info-body:

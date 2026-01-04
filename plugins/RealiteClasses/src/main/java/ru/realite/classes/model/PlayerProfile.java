@@ -1,6 +1,11 @@
 package ru.realite.classes.model;
 
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.Collections;
+import java.util.HashMap;
 
 public class PlayerProfile {
 
@@ -31,11 +36,15 @@ public class PlayerProfile {
 
     // максимальный уровень, которого игрок достигал в каждом классе (навсегда
     // храним max)
-    private java.util.Map<String, Integer> maxLevelByClass = new java.util.HashMap<>();
+    private Map<String, Integer> maxLevelByClass = new HashMap<>();
 
     // какие классы “закрыты” как пройденные до финальной эволюции (для unlock
     // скрытых классов)
-    private java.util.Set<String> masteredClasses = new java.util.HashSet<>();
+    private Set<String> masteredClasses = new HashSet<>();
+
+    // классы, которые готовы к разблокировке (выполнены условия, но ещё не
+    // разблокированы)
+    private Set<String> readyToUnlockClasses = new HashSet<>();
 
     public PlayerProfile(UUID uuid) {
         this.uuid = uuid;
@@ -75,20 +84,20 @@ public class PlayerProfile {
         this.starterClass = starterClass;
     }
 
-    public java.util.Map<String, Integer> getMaxLevelByClass() {
+    public Map<String, Integer> getMaxLevelByClass() {
         return maxLevelByClass;
     }
 
-    public void setMaxLevelByClass(java.util.Map<String, Integer> map) {
-        this.maxLevelByClass = (map != null) ? map : new java.util.HashMap<>();
+    public void setMaxLevelByClass(Map<String, Integer> map) {
+        this.maxLevelByClass = (map != null) ? map : new HashMap<>();
     }
 
-    public java.util.Set<String> getMasteredClasses() {
+    public Set<String> getMasteredClasses() {
         return masteredClasses;
     }
 
-    public void setMasteredClasses(java.util.Set<String> set) {
-        this.masteredClasses = (set != null) ? set : new java.util.HashSet<>();
+    public void setMasteredClasses(Set<String> set) {
+        this.masteredClasses = (set != null) ? set : new HashSet<>();
     }
 
     public void addMastered(ClassId id) {
@@ -152,10 +161,29 @@ public class PlayerProfile {
         this.hudMode = (hudMode != null ? hudMode : HudMode.BOSSBAR);
     }
 
+    public Set<String> getReadyToUnlockClasses() {
+        return Collections.unmodifiableSet(readyToUnlockClasses);
+    }
+
+    public void addReadyToUnlockClass(ClassId classId) {
+        readyToUnlockClasses.add(classId.name());
+    }
+
+    public void removeReadyToUnlockClass(ClassId classId) {
+        readyToUnlockClasses.remove(classId.name());
+    }
+
+    public boolean hasReadyToUnlockClass(ClassId classId) {
+        return readyToUnlockClasses.contains(classId.name());
+    }
+
+    public void clearReadyToUnlockClasses() {
+        readyToUnlockClasses.clear();
+    }
+
     // =====================
     // UTILS
     // =====================
-
     public boolean hasClass() {
         return classId != null;
     }

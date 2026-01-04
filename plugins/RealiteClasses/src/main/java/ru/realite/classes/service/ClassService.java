@@ -62,8 +62,10 @@ public class ClassService {
     public void assignClass(Player player, ClassId newClass) {
         assignClass(player, newClass, null, null);
     }
+
     /**
-     * Перегруженный метод назначения класса с возможностью указания эволюции и уровня.
+     * Перегруженный метод назначения класса с возможностью указания эволюции и
+     * уровня.
      */
     public void assignClass(Player player, ClassId newClass, @Nullable String evolutionId, @Nullable Integer level) {
         PlayerProfile p = getProfile(player);
@@ -91,6 +93,9 @@ public class ClassService {
         p.setEvolutionNotified(false);
         p.setLastClassChange(System.currentTimeMillis());
 
+        // ✅ снимаем unlock-ready на этот класс, чтобы флаг не висел после получения
+        p.removeReadyToUnlockClass(newClass);
+        
         save(p);
 
         // важно: можно расширить событие позже, но хотя бы текущее не ломаем

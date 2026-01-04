@@ -537,13 +537,125 @@ public class ClassCommand implements CommandExecutor {
                             }
                         }
                     }
-                    // TODO: Доделать unlock-ready
                     case "unlock-ready" -> {
                         // admin-usage-unlock-ready: "&eИспользование: &f/class admin unlock-ready
-                        // <player> <hiddenClassId>"
-                        p.sendMessage(messages.get("admin.usage-unlock-ready"));
-                        return true;
+                        // <add|remove|check|list|clear> <player> [hiddenClassId]"
+                        if (args.length < 4) {
+                            p.sendMessage(messages.get("admin.usage-unlock-ready"));
+                            return true;
+                        }
+
+                        String action = args[2].toLowerCase();
+                        Player target = resolveTarget(p, args[3]);
+                        if (target == null)
+                            return true;
+
+                        PlayerProfile profTarget = classService.getProfile(target);
+                        if (profTarget == null)
+                            return true;
+
+                        if (action.equals("list")) {
+                            var ready = profTarget.getReadyToUnlockClasses();
+                            if (ready == null || ready.isEmpty()) {
+                                p.sendMessage(messages.format("admin.unlock-ready-list-empty", Map.of(
+                                        "player", target.getName())));
+                                return true;
+                            }
+
+                            p.sendMessage(messages.format("admin.unlock-ready-list-header", Map.of(
+                                    "player", target.getName())));
+
+                            for (String classIdStr : ready) {
+                                String display = classIdStr;
+
+                                ClassId cid = ClassId.fromString(classIdStr);
+                                if (cid != null) {
+                                    var def = classConfig.get(cid);
+                                    if (def != null && def.name != null) {
+                                        display = def.name + " (" + classIdStr + ")";
+                                    }
+                                }
+
+                                p.sendMessage(messages.format("admin.unlock-ready-list-line", Map.of(
+                                        "class", display)));
+                            }
+                            return true;
+                        }
+
+                        if (action.equals("clear")) {
+                            profTarget.clearReadyToUnlockClasses();
+                            classService.save(profTarget);
+
+                            p.sendMessage(messages.format("admin.unlock-ready-cleared", Map.of(
+                                    "player", target.getName())));
+                            target.sendMessage(messages.get("admin.set-self.unlock-ready-cleared"));
+                            return true;
+                        }
+
+                        if (args.length < 5) {
+                            p.sendMessage(messages.get("admin.usage-unlock-ready"));
+                            return true;
+                        }
+
+                        ClassId hiddenClassId = resolveClassId(p, args[4]);
+                        if (hiddenClassId == null)
+                            return true;
+
+                        var def = classConfig.get(hiddenClassId);
+                        if (def == null) {
+                            p.sendMessage(messages.format("admin.unknown-class", Map.of("class", args[4])));
+                            return true;
+                        }
+                        if (!def.hidden) {
+                            p.sendMessage(messages.format("admin.unlock-ready-not-hidden", Map.of(
+                                    "class", def.name != null ? def.name : hiddenClassId.name())));
+                            return true;
+                        }
+
+                        String className = (def.name != null ? def.name : hiddenClassId.name());
+
+                        switch (action) {
+                            case "add" -> {
+                                profTarget.addReadyToUnlockClass(hiddenClassId);
+                                classService.save(profTarget);
+
+                                p.sendMessage(messages.format("admin.set.unlock-ready", Map.of(
+                                        "player", target.getName(),
+                                        "class", className + " (" + hiddenClassId.name() + ")",
+                                        "ready", messages.get("mastered-yes"))));
+                                target.sendMessage(messages.format("admin.set-self.unlock-ready", Map.of(
+                                        "class", className,
+                                        "ready", messages.get("mastered-yes"))));
+                                return true;
+                            }
+                            case "remove" -> {
+                                profTarget.removeReadyToUnlockClass(hiddenClassId);
+                                classService.save(profTarget);
+
+                                p.sendMessage(messages.format("admin.set.unlock-ready", Map.of(
+                                        "player", target.getName(),
+                                        "class", className + " (" + hiddenClassId.name() + ")",
+                                        "ready", messages.get("mastered-no"))));
+                                target.sendMessage(messages.format("admin.set-self.unlock-ready", Map.of(
+                                        "class", className,
+                                        "ready", messages.get("mastered-no"))));
+                                return true;
+                            }
+                            case "check" -> {
+                                boolean ready = profTarget.hasReadyToUnlockClass(hiddenClassId);
+                                p.sendMessage(messages.format("admin.check.unlock-ready", Map.of(
+                                        "player", target.getName(),
+                                        "class", className + " (" + hiddenClassId.name() + ")",
+                                        "ready", ready ? messages.get("mastered-yes") : messages.get("mastered-no"))));
+                                return true;
+                            }
+                            default -> {
+                                p.sendMessage(messages.get("admin.usage-unlock-ready"));
+                                return true;
+                            }
+                        }
                     }
+
                     default -> {
                         // usage-admin: "&eИспользование: &f/class admin
                         // <evolution|level|mastered|grant|preset|unlock-ready>"
