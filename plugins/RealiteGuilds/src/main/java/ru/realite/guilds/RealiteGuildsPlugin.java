@@ -25,7 +25,10 @@ import ru.realite.guilds.service.GuildProgressionService;
 import ru.realite.guilds.service.GuildRankService;
 import ru.realite.guilds.service.GuildSalaryService;
 import ru.realite.guilds.service.GuildService;
+import ru.realite.guilds.service.GuildTreasuryService;
+import ru.realite.guilds.service.GuildUpgradeService;
 import ru.realite.guilds.storage.GuildRepository;
+import ru.realite.guilds.storage.GuildUpgradeConfigRepository;
 
 public final class RealiteGuildsPlugin extends JavaPlugin {
 
@@ -36,6 +39,9 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
     private GuildSalaryService salaryService;
     private GuildChatService chatService;
     private GuildProgressionService progressionService;
+    private GuildUpgradeConfigRepository upgradeConfigRepository;
+    private GuildTreasuryService treasuryService;
+    private GuildUpgradeService upgradeService;
 
     @Override
     public void onEnable() {
@@ -49,10 +55,18 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
         repository = new GuildRepository(this);
         rankService = new GuildRankService(this);
         EconomyService economyService = new EconomyService(this);
+        upgradeConfigRepository = new GuildUpgradeConfigRepository(this);
+        treasuryService = new GuildTreasuryService(this);
         service = new GuildService(this, getConfig(), repository, messages, rankService);
         salaryService = new GuildSalaryService(this, getConfig(), repository, messages, rankService, economyService);
         chatService = new GuildChatService(this, getConfig(), repository, messages, rankService);
         progressionService = new GuildProgressionService(this, getConfig(), repository, messages);
+        upgradeService = new GuildUpgradeService(this,
+                repository,
+                rankService,
+                upgradeConfigRepository,
+                treasuryService,
+                () -> resolveCoreApi());
 
         PluginCommand command = getCommand("g");
         if (command != null) {
@@ -88,6 +102,15 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
         }
         CoreApi core = provider.getProvider();
         core.services().registerIfAbsent(GuildTagProvider.class, new GuildChatTagProvider(repository, messages, rankService));
+    }
+
+    private CoreApi resolveCoreApi() {
+        RegisteredServiceProvider<CoreApi> provider = getServer().getServicesManager()
+                .getRegistration(CoreApi.class);
+        if (provider == null) {
+            return null;
+        }
+        return provider.getProvider();
     }
 
     private CityAccessHook resolveCityAccessHook() {
