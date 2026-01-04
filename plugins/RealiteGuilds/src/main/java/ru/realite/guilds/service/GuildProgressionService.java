@@ -48,7 +48,7 @@ public final class GuildProgressionService {
         int newLevel = resolveLevel(newXp);
 
         Guild updated = new Guild(guild.tag(), guild.name(), guild.owner(), guild.home(), guild.claim(),
-                newLevel, newXp);
+                newLevel, newXp, guild.upgradeLevels());
         repository.saveGuild(updated);
 
         String safeReason = reason == null || reason.isBlank() ? "—" : reason;

@@ -76,7 +76,7 @@ public final class GuildService {
             return;
         }
         UUID ownerId = player.getUniqueId();
-        Guild guild = new Guild(tag, name, ownerId, null, null, 1, 0L);
+        Guild guild = new Guild(tag, name, ownerId, null, null, 1, 0L, new HashMap<>());
         repository.saveGuild(guild);
         repository.saveMember(new GuildMember(ownerId, tag, rankService.getLeaderId(), null));
         messages.send(player, "guild.created", "tag", tag, "name", name);
@@ -103,7 +103,7 @@ public final class GuildService {
         }
         GuildHome home = GuildHome.fromLocation(player.getLocation());
         repository.saveGuild(new Guild(guild.tag(), guild.name(), guild.owner(), home, guild.claim(),
-                guild.level(), guild.xp()));
+                guild.level(), guild.xp(), guild.upgradeLevels()));
         messages.send(player, "home.set");
     }
 
@@ -273,7 +273,7 @@ public final class GuildService {
                 pos2.getBlockY(),
                 pos2.getBlockZ());
         repository.saveGuild(new Guild(guild.tag(), guild.name(), guild.owner(), guild.home(), claim,
-                guild.level(), guild.xp()));
+                guild.level(), guild.xp(), guild.upgradeLevels()));
         messages.send(player, "claim.apply.success");
     }
 
@@ -297,7 +297,7 @@ public final class GuildService {
             return;
         }
         repository.saveGuild(new Guild(guild.tag(), guild.name(), guild.owner(), guild.home(), null,
-                guild.level(), guild.xp()));
+                guild.level(), guild.xp(), guild.upgradeLevels()));
         messages.send(player, "claim.clear");
     }
 
