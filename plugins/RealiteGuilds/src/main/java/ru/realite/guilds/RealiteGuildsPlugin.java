@@ -70,7 +70,7 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
 
         PluginCommand command = getCommand("g");
         if (command != null) {
-            command.setExecutor(new GuildCommand(service, messages, salaryService, chatService, progressionService));
+            command.setExecutor(new GuildCommand(service, messages, salaryService, chatService, progressionService, upgradeService));
         } else {
             getLogger().severe("Command 'g' not found in plugin.yml");
         }
