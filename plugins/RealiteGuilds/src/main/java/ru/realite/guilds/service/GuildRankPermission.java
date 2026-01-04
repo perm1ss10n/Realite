@@ -13,7 +13,9 @@ public enum GuildRankPermission {
     ACCESS,
     CHAT,
     TP,
-    SALARY_VIEW;
+    SALARY_VIEW,
+    TREASURY_SPEND,
+    UPGRADES_MANAGE;
 
     public static Optional<GuildRankPermission> fromString(String raw) {
         if (raw == null || raw.isBlank()) {

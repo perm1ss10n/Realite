@@ -18,6 +18,8 @@ ranks:
       - CHAT
       - TP
       - SALARY_VIEW
+      - TREASURY_SPEND
+      - UPGRADES_MANAGE
   officer:
     displayNameKey: "rank.name.officer"
     priority: 50
@@ -31,6 +33,7 @@ ranks:
       - CHAT
       - TP
       - SALARY_VIEW
+      - UPGRADES_MANAGE
   member:
     displayNameKey: "rank.name.member"
     priority: 10
