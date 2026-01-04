@@ -41,6 +41,7 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
         saveResource("ranks.yml", false);
+        saveResource("upgrades.yml", false);
         saveResource("lang/messages_ru.yml", false);
         saveResource("lang/messages_en.yml", false);
 
