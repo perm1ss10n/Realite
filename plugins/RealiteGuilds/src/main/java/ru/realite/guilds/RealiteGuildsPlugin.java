@@ -16,6 +16,7 @@ import ru.realite.guilds.command.GuildCommand;
 import ru.realite.guilds.i18n.GuildMessages;
 import ru.realite.guilds.listener.GuildAccessProtectionListener;
 import ru.realite.guilds.listener.GuildHomeWarmupListener;
+import ru.realite.guilds.listener.GuildPveDamageListener;
 import ru.realite.guilds.listener.GuildSalaryJoinListener;
 import ru.realite.guilds.service.EconomyService;
 import ru.realite.guilds.service.GuildChatBridgeImpl;
@@ -26,6 +27,7 @@ import ru.realite.guilds.service.GuildRankService;
 import ru.realite.guilds.service.GuildSalaryService;
 import ru.realite.guilds.service.GuildService;
 import ru.realite.guilds.service.GuildTreasuryService;
+import ru.realite.guilds.service.GuildUpgradeEffectService;
 import ru.realite.guilds.service.GuildUpgradeService;
 import ru.realite.guilds.storage.GuildRepository;
 import ru.realite.guilds.storage.GuildUpgradeConfigRepository;
@@ -42,6 +44,7 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
     private GuildUpgradeConfigRepository upgradeConfigRepository;
     private GuildTreasuryService treasuryService;
     private GuildUpgradeService upgradeService;
+    private GuildUpgradeEffectService upgradeEffectService;
 
     @Override
     public void onEnable() {
@@ -57,7 +60,8 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
         EconomyService economyService = new EconomyService(this);
         upgradeConfigRepository = new GuildUpgradeConfigRepository(this);
         treasuryService = new GuildTreasuryService(this);
-        service = new GuildService(this, getConfig(), repository, messages, rankService);
+        upgradeEffectService = new GuildUpgradeEffectService(getConfig(), repository, upgradeConfigRepository);
+        service = new GuildService(this, getConfig(), repository, messages, rankService, upgradeEffectService);
         salaryService = new GuildSalaryService(this, getConfig(), repository, messages, rankService, economyService);
         chatService = new GuildChatService(this, getConfig(), repository, messages, rankService);
         progressionService = new GuildProgressionService(this, getConfig(), repository, messages);
@@ -81,6 +85,8 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
                 new GuildAccessProtectionListener(service, messages, getConfig(), cityAccessHook), this);
         getServer().getPluginManager().registerEvents(
                 new GuildSalaryJoinListener(salaryService), this);
+        getServer().getPluginManager().registerEvents(
+                new GuildPveDamageListener(repository, service, upgradeEffectService), this);
         registerGuildChatBridge();
         registerGuildTagProvider();
         registerCityGuildsApi();
