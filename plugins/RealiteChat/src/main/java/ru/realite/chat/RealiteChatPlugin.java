@@ -1,6 +1,11 @@
 package ru.realite.chat;
 
+import io.papermc.paper.chat.ChatRenderer;
 import io.papermc.paper.event.player.AsyncChatEvent;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.Optional;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -11,24 +16,37 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.classes.ClassTag;
 import ru.realite.core.api.classes.ClassTagProvider;
+import ru.realite.core.api.guilds.GuildChatBridge;
 import ru.realite.core.api.guilds.GuildTagProvider;
 
 public final class RealiteChatPlugin extends JavaPlugin implements Listener {
 
     private static final String DEFAULT_FORMAT = "{prefix}{class}{guild}{name}: {message}";
 
+    // fallback если messages не содержит chat.guild.format
+    private static final String DEFAULT_GUILD_CHAT_FORMAT = "&7[&bГильдия&7] {prefix}{guildRank}&f{name}: &r{message}";
+
+    /**
+     * Legacy (& / §) -> Component (используем только для строк из конфигов / LP
+     * meta)
+     */
+    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
+
     private PrefixProvider prefixProvider = player -> Optional.empty();
     private ClassTagProvider classTagProvider;
     private GuildTagProvider guildTagProvider;
+    private GuildChatBridge guildChatBridge;
 
     private ChatMessages messages;
     private ChatFormat chatFormat;
+    private ChatFormat guildChatFormat;
 
     private String tagsJoiner = "";
     private boolean spaceBeforeName = true;
@@ -41,7 +59,35 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
     private boolean classRomanEnabled = true;
     private boolean guildHoverEnabled = true;
 
+    /** debug флаг из конфига (логируем только если включено) */
+    private boolean debug = false;
+
     private boolean luckPermsMissingLogged = false;
+
+    /**
+     * Один стабильный renderer, чтобы его нельзя было “потерять” и можно было
+     * проверять переопределение
+     */
+    private final ChatRenderer OUR_RENDERER = (source, sourceDisplayName, message, viewer) -> {
+        Component lpPrefix = prefixEnabled
+                ? prefixProvider.getPrefix(source).orElse(Component.empty())
+                : Component.empty();
+
+        Component classTag = classEnabled ? buildClassTagComponent(source) : Component.empty();
+        Component guildTag = guildEnabled ? buildGuildTagComponent(source) : Component.empty();
+
+        Component name = (sourceDisplayName == null) ? Component.text(source.getName()) : sourceDisplayName;
+
+        return chatFormat.render(new ChatFormat.Context(
+                lpPrefix,
+                classTag,
+                guildTag,
+                Component.empty(), // guildRank (в общем чате по дефолту не используем)
+                name,
+                message,
+                tagsJoiner,
+                spaceBeforeName));
+    };
 
     @Override
     public void onEnable() {
@@ -57,6 +103,7 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
         prefixProvider = resolvePrefixProvider();
         classTagProvider = resolveClassTagProvider();
         guildTagProvider = resolveGuildTagProvider();
+        guildChatBridge = resolveGuildChatBridge();
 
         reloadAll();
 
@@ -68,6 +115,15 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
             cmd.setExecutor(handler);
             cmd.setTabCompleter(handler);
         }
+
+        var guildChat = getCommand("gc");
+        if (guildChat != null) {
+            guildChat.setExecutor(new GuildChatMessageCommand(this));
+        }
+
+        if (debug) {
+            logDependencyDebug();
+        }
     }
 
     ChatMessages getMessages() {
@@ -78,25 +134,24 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
         return sender.hasPermission("realite.chat.admin") || sender.hasPermission("realite.chat.reload");
     }
 
-    @EventHandler
+    /**
+     * Ставим renderer максимально поздно.
+     * (MONITOR используем только для debug-проверки перетирания)
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onAsyncChat(AsyncChatEvent event) {
-        event.renderer((source, sourceDisplayName, message, viewer) -> {
-            Component luckPermsPrefix = prefixEnabled
-                    ? prefixProvider.getPrefix(source).orElse(Component.empty())
-                    : Component.empty();
+        event.renderer(OUR_RENDERER);
+    }
 
-            Component classTagComponent = classEnabled ? buildClassTagComponent(source) : Component.empty();
-            Component guildTag = guildEnabled ? buildGuildTagComponent(source) : Component.empty();
+    /** Debug: если кто-то перетёр renderer после нас — узнаем кто */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onAsyncChatMonitor(AsyncChatEvent event) {
+        if (!debug)
+            return;
 
-            return chatFormat.render(new ChatFormat.Context(
-                    luckPermsPrefix,
-                    classTagComponent,
-                    guildTag,
-                    sourceDisplayName,
-                    message,
-                    tagsJoiner,
-                    spaceBeforeName));
-        });
+        if (event.renderer() != OUR_RENDERER) {
+            getLogger().warning("[debug] ChatRenderer overridden by: " + event.renderer().getClass().getName());
+        }
     }
 
     private PrefixProvider resolvePrefixProvider() {
@@ -118,7 +173,8 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
 
     private ClassTagProvider resolveClassTagProvider() {
         RegisteredServiceProvider<CoreApi> provider = Bukkit.getServicesManager().getRegistration(CoreApi.class);
-        if (provider == null) return null;
+        if (provider == null)
+            return null;
 
         CoreApi core = provider.getProvider();
         return core.services().get(ClassTagProvider.class);
@@ -126,67 +182,164 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
 
     private GuildTagProvider resolveGuildTagProvider() {
         RegisteredServiceProvider<CoreApi> provider = Bukkit.getServicesManager().getRegistration(CoreApi.class);
-        if (provider == null) return null;
+        if (provider == null)
+            return null;
 
         CoreApi core = provider.getProvider();
         return core.services().get(GuildTagProvider.class);
     }
 
+    private GuildChatBridge resolveGuildChatBridge() {
+        RegisteredServiceProvider<GuildChatBridge> provider = Bukkit.getServicesManager()
+                .getRegistration(GuildChatBridge.class);
+        if (provider == null)
+            return null;
+        return provider.getProvider();
+    }
+
     private Component buildClassTagComponent(Player player) {
-        ClassTagProvider provider = classTagProvider != null ? classTagProvider : resolveClassTagProvider();
+        ClassTagProvider provider = (classTagProvider != null) ? classTagProvider : resolveClassTagProvider();
 
-        if (provider != null) {
-            classTagProvider = provider;
+        // fallback из конфига (используем когда provider отсутствует или tag == null)
+        String fallback = getConfig().getString("chat.class-tag", "");
+        Component fallbackComponent = parseLegacy(fallback);
 
-            ClassTag tag = provider.getTag(player);
-            String stage = classRomanEnabled
-                    ? RomanNumerals.toRoman(tag.evolutionStage())
-                    : String.valueOf(tag.evolutionStage());
-
-            Component base = Component.text("[")
-                    .append(parseLegacy(tag.displayName()))
-                    .append(Component.text("-" + stage + "]"));
-
-            if (classHoverEnabled) {
-                Component hover = Component.text("Класс: ")
-                        .append(parseLegacy(tag.displayName()))
-                        .append(Component.newline())
-                        .append(Component.text("Этап: " + stage));
-                return base.hoverEvent(HoverEvent.showText(hover));
-            }
-            return base;
+        if (provider == null) {
+            if (debug)
+                getLogger().info("[debug] ClassTagProvider missing -> fallback");
+            return fallbackComponent;
         }
 
-        String classTag = getConfig().getString("chat.class-tag", "[Бродяга-I]");
-        return parseLegacy(classTag);
+        classTagProvider = provider;
+
+        ClassTag tag = provider.getTag(player);
+
+        if (debug) {
+            getLogger().info("[debug] classProvider=" + provider.getClass().getName()
+                    + " player=" + player.getName()
+                    + " tagNull=" + (tag == null)
+                    + (tag != null ? (" displayName='" + tag.displayName() + "' stage=" + tag.evolutionStage()) : ""));
+        }
+
+        if (tag == null) {
+            return fallbackComponent;
+        }
+
+        String stage = classRomanEnabled
+                ? RomanNumerals.toRoman(tag.evolutionStage())
+                : String.valueOf(tag.evolutionStage());
+
+        Component base = Component.text("[")
+                .append(parseLegacy(tag.displayName()))
+                .append(Component.text("-" + stage + "]"));
+
+        if (classHoverEnabled) {
+            Component hover = Component.text("Класс: ")
+                    .append(parseLegacy(tag.displayName()))
+                    .append(Component.newline())
+                    .append(Component.text("Этап: " + stage));
+            return base.hoverEvent(HoverEvent.showText(hover));
+        }
+
+        return base;
     }
 
     private Component buildGuildTagComponent(Player player) {
-        GuildTagProvider provider = guildTagProvider != null ? guildTagProvider : resolveGuildTagProvider();
+        GuildTagProvider provider = (guildTagProvider != null) ? guildTagProvider : resolveGuildTagProvider();
 
-        if (provider != null) {
-            guildTagProvider = provider;
-
-            Optional<Component> tag = provider.getTag(player);
-            if (tag.isEmpty()) return Component.empty();
-
-            Component base = tag.get();
-            if (guildHoverEnabled) {
-                Optional<Component> hover = provider.getHover(player);
-                if (hover.isPresent()) {
-                    base = base.hoverEvent(HoverEvent.showText(hover.get()));
-                }
-            }
-            return base;
+        if (provider == null) {
+            if (debug)
+                getLogger().info("[debug] GuildTagProvider missing");
+            return Component.empty();
         }
 
-        return Component.empty();
+        guildTagProvider = provider;
+
+        Optional<Component> tag = provider.getTag(player);
+        if (tag.isEmpty()) {
+            return Component.empty();
+        }
+
+        Component base = tag.get();
+        if (guildHoverEnabled) {
+            Optional<Component> hover = provider.getHover(player);
+            if (hover.isPresent()) {
+                base = base.hoverEvent(HoverEvent.showText(hover.get()));
+            }
+        }
+        return base;
+    }
+
+    GuildChatBridge getGuildChatBridge() {
+        return guildChatBridge;
+    }
+
+    /**
+     * /gc — гильдийский чат.
+     * Форматирование делаем здесь (RealiteChat), а RealiteGuilds даёт только
+     * доменную инфу и получателей.
+     */
+    void sendGuildChat(Player sender, Component message) {
+        GuildChatBridge bridge = guildChatBridge;
+        if (bridge == null) {
+            return;
+        }
+
+        if (!bridge.isEnabled()) {
+            sender.sendMessage(messages.get("chat.guild.no-permission"));
+            return;
+        }
+
+        if (!bridge.isMember(sender)) {
+            sender.sendMessage(messages.get("chat.guild.no-guild"));
+            return;
+        }
+
+        Component lpPrefix = prefixEnabled
+                ? prefixProvider.getPrefix(sender).orElse(Component.empty())
+                : Component.empty();
+
+        String rankStr = bridge.getGuildRank(sender);
+        Component guildRank = parseLegacy(rankStr == null || rankStr.isBlank() ? "" : (rankStr + " "));
+
+        Component name = Component.text(sender.getName());
+
+        ChatFormat fmt = (guildChatFormat != null)
+                ? guildChatFormat
+                : new ChatFormat(DEFAULT_GUILD_CHAT_FORMAT);
+
+        Component formatted = fmt.render(new ChatFormat.Context(
+                lpPrefix,
+                Component.empty(), // classTag не нужен в гильд-чате
+                Component.empty(), // guildTag не нужен в гильд-чате
+                guildRank, // ✅ только guildRank
+                name,
+                message,
+                "", // joiner не нужен
+                true // spaceBeforeName
+        ));
+
+        List<Player> recipients = bridge.getGuildRecipients(sender);
+        Set<UUID> sent = new HashSet<>();
+        for (Player recipient : recipients) {
+            sent.add(recipient.getUniqueId());
+            recipient.sendMessage(formatted);
+        }
+
+        for (Player spy : bridge.getSpyRecipients(sender)) {
+            if (sent.add(spy.getUniqueId())) {
+                spy.sendMessage(formatted);
+            }
+        }
     }
 
     public void reloadAll() {
         reloadConfig();
 
         String language = resolveLanguage();
+
+        // debug флаг
+        debug = getConfig().getBoolean("debug", false);
 
         tagsJoiner = getConfig().getString("chat.tags.joiner", "");
         spaceBeforeName = getConfig().getBoolean("chat.spaceBeforeName", true);
@@ -205,6 +358,36 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
         chatFormat = new ChatFormat(template);
 
         messages.reload(language);
+
+        // ✅ грузим формат гильд-чата из messages
+        String guildTemplate = messages.raw("chat.guild.format");
+        if (guildTemplate == null || guildTemplate.isBlank()) {
+            guildTemplate = DEFAULT_GUILD_CHAT_FORMAT;
+        }
+        guildChatFormat = new ChatFormat(guildTemplate);
+
+        if (debug) {
+            getLogger().info("[debug] chat.format = " + template);
+            getLogger().info("[debug] chat.guild.format = " + guildTemplate);
+            getLogger().info(
+                    "[debug] enabled: prefix=" + prefixEnabled + " class=" + classEnabled + " guild=" + guildEnabled);
+            logDependencyDebug();
+        }
+    }
+
+    private void logDependencyDebug() {
+        var coreReg = Bukkit.getServicesManager().getRegistration(CoreApi.class);
+        getLogger().info("[debug] CoreApi registered in Bukkit Services: " + (coreReg != null));
+        if (coreReg != null) {
+            CoreApi core = coreReg.getProvider();
+            getLogger().info(
+                    "[debug] Core services ClassTagProvider: " + (core.services().get(ClassTagProvider.class) != null));
+            getLogger().info(
+                    "[debug] Core services GuildTagProvider: " + (core.services().get(GuildTagProvider.class) != null));
+        }
+
+        var lpReg = Bukkit.getServicesManager().getRegistration(LuckPerms.class);
+        getLogger().info("[debug] LuckPerms registered in Bukkit Services: " + (lpReg != null));
     }
 
     private String resolveLanguage() {
@@ -230,10 +413,9 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
         }
     }
 
-    private Component parseLegacy(String text) {
-        if (text == null || text.isEmpty()) {
+    private static Component parseLegacy(String text) {
+        if (text == null || text.isEmpty())
             return Component.empty();
-        }
-        return LegacyComponentSerializer.legacyAmpersand().deserialize(text.replace('§', '&'));
+        return LEGACY.deserialize(text.replace('§', '&'));
     }
 }

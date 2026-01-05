@@ -1,5 +1,5 @@
 format:
-  prefix: "&6[Гильдии]&r "
+  prefix: "&6[Гильдия]&r "
 
 error:
   no_permission: "{prefix}&cНедостаточно прав."
@@ -16,6 +16,31 @@ error:
     disband-not-owner: "{prefix}&cТолько владелец может распустить гильдию."
 
 usage:
+  root: |-
+    &6&lRealiteGuilds &7— команды
+    &8────────────────────────
+    &a▸ Основные
+    &e/g create <tag> <name...> &7— создать гильдию
+    &e/g info &7— информация о гильдии
+    &e/g join &7— принять приглашение
+    &e/g leave &7— покинуть гильдию
+    &e/g disband &7— распустить гильдию
+
+    &a▸ Участники и роли
+    &e/g invite <player> &7— пригласить игрока
+    &e/g ranks &7— список рангов
+    &e/g setrank <player> <rank> &7— назначить ранг
+
+    &a▸ Территория и база
+    &e/g claim &7— занять территорию гильдии
+    &e/g home &7— телепорт на базу гильдии
+    &e/g sethome &7— установить базу
+    &e/g tp &7— телепорт к гильдейскому участнику
+
+    &a▸ Экономика и чат
+    &e/g salary &7— получить жалование
+    &e/g upgrades &7— список апгрейдов
+    &e/g upgrade buy <id> &7— купить апгрейд
   create: "{prefix}&eИспользование: /g create <tag> <name...>"
   info: "{prefix}&eИспользование: /g info [tag]"
   invite: "{prefix}&eИспользование: /g invite <player>"
@@ -25,7 +50,10 @@ usage:
   setrank: "{prefix}&eИспользование: /g setrank <player> <rankId>"
   tp: "{prefix}&eИспользование: /g tp <player>"
   claim: "{prefix}&eИспользование: /g claim <pos1|pos2|apply|clear>"
-  chat: "{prefix}&eИспользование: /g chat toggle или /gc <message>"
+  toggle: "{prefix}&eИспользование: /g toggle"
+  upgrades: "{prefix}&eИспользование: /g upgrades"
+  upgrade: "{prefix}&eИспользование: /g upgrade buy <id>"
+  help: "{prefix}&eКоманды:\n&6/g create <tag> <name...>\n&6/g info [tag]\n&6/g invite <player>\n&6/g join <tag>\n&6/g leave\n&6/g ranks\n&6/g setrank <player> <rankId>\n&6/g home|sethome\n&6/g tp <player>\n&6/g claim pos1|pos2|apply|clear\n&6/g salary\n&6/g upgrades\n&6/g upgrade buy <id>\n&6/g toggle"
 
 admin:
   addxp:
@@ -119,15 +147,26 @@ salary:
       start: "{prefix}&eЗапуск начисления зарплаты..."
       done: "{prefix}&aЗарплата начислена {count} игрок(ам) на сумму {total}."
 
+upgrade:
+  list:
+    header: "{prefix}&eАпгрейды гильдии:"
+    entry: "{prefix}&6{id} &7— &f{name} &7[{level}/{max}] &8| &eЦена: {cost} &8| &7{description}"
+    maxed: "макс"
+    unavailable: "-"
+  buy:
+    success: "{prefix}&aАпгрейд куплен."
+    insufficient_funds: "{prefix}&cНедостаточно средств."
+    max_level: "{prefix}&cУже максимальный уровень."
+    not_found: "{prefix}&cНеизвестный апгрейд."
+    requirements: "{prefix}&cТребования не выполнены."
+
 chat:
   guild:
-    format: "&7[&aG&7] &f{player}: &r{message}"
-  public:
-    prefix: "&7[{tag}] "
-  hover: "&aГильдия: &f[{tag}] {guild}\n&7Ранг: &f{rank}\n&7Участников: &f{members}\n&8Подсказки:\n&f{hintToggle}\n&f{hintChat}"
-  toggle:
-    on: "{prefix}&aЧат гильдии включен."
-    off: "{prefix}&eЧат гильдии выключен."
+    toggle:
+      enabled: "{prefix}&aГильдийский чат включен."
+      disabled: "{prefix}&eГильдийский чат выключен."
+      command_disabled: "{prefix}&cКоманда переключения чата отключена."
+      no_permission: "{prefix}&cНедостаточно прав для переключения чата."
 
 xp:
   added: "{prefix}&aГильдия &f[{tag}]&a получила &f{amount}&a XP. Всего: &f{total}&a, уровень: &f{level}&a. Причина: &f{reason}&a."

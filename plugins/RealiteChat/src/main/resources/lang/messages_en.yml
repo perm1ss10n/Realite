@@ -1,9 +1,16 @@
 chat:
+  guild:
+    usage: "&eUsage: &f/gc <message>"
+    no-permission: "&cYou do not have permission to use guild chat."
+    no-guild: "&cYou are not in a guild."
+    player-only: "&cThis command can only be used by a player."
+    # ✅ prefix + rank + name + message
+    format: "&7[&bGuild&7] [{prefix}] [{guildRank}] &f{name}: &r{message}"
   reload:
-    usage: "&eUsage: /realitechat reload"
-    no-permission: "&cYou don't have permission."
-    success: "&aRealiteChat config reloaded."
+    usage: "&eUsage: &f/realitechat reload"
+    no-permission: "&cYou do not have permission to use this command."
+    success: "&a&fRealiteChat &aconfiguration successfully reloaded."
   dependency:
     luckperms-missing: "&cLuckPerms not found. Prefixes are disabled."
   error:
-    generic: "&cSomething went wrong. Please try again later."
+    generic: "&cAn error occurred. Please try again later."

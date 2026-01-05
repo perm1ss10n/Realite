@@ -1,13 +1,16 @@
 name: RealiteChat
-version: 1.0.0
+version: 1.0.1
 main: ru.realite.chat.RealiteChatPlugin
 api-version: "1.21"
-softdepend: [RealiteCore, RealiteClasses]
+softdepend: [RealiteCore, RealiteClasses, LuckPerms, RealiteGuilds]
 commands:
   realitechat:
     description: Reload RealiteChat configuration
     usage: /realitechat reload
     permission: realite.chat.reload
+  gc:
+    description: Guild chat message
+    usage: /gc <message>
 permissions:
   realite.chat.admin:
     description: Allows full RealiteChat administration

@@ -52,9 +52,10 @@ public final class GuildRepository {
                     String normalizedTag = normalizeTag(tagKey);
                     GuildHome home = readHome(guildSection);
                     GuildClaim claim = readClaim(guildSection);
+                    Map<String, Integer> upgradeLevels = readUpgradeLevels(guildSection);
                     int level = Math.max(1, guildSection.getInt("level", 1));
                     long xp = Math.max(0L, guildSection.getLong("xp", 0L));
-                    guilds.put(normalizedTag, new Guild(normalizedTag, name, owner, home, claim, level, xp));
+                    guilds.put(normalizedTag, new Guild(normalizedTag, name, owner, home, claim, level, xp, upgradeLevels));
                 }
             }
         }
@@ -134,6 +135,38 @@ public final class GuildRepository {
         return count;
     }
 
+    public int getUpgradeLevel(String guildId, String upgradeId) {
+        Guild guild = getGuild(guildId);
+        if (guild == null) {
+            return 0;
+        }
+        Map<String, Integer> upgradeLevels = guild.upgradeLevels();
+        if (upgradeLevels == null) {
+            return 0;
+        }
+        return upgradeLevels.getOrDefault(normalizeUpgradeId(upgradeId), 0);
+    }
+
+    public void setUpgradeLevel(String guildId, String upgradeId, int level) {
+        Guild guild = getGuild(guildId);
+        if (guild == null) {
+            return;
+        }
+        String normalizedUpgradeId = normalizeUpgradeId(upgradeId);
+        Map<String, Integer> upgradeLevels = new HashMap<>();
+        if (guild.upgradeLevels() != null) {
+            upgradeLevels.putAll(guild.upgradeLevels());
+        }
+        if (level <= 0) {
+            upgradeLevels.remove(normalizedUpgradeId);
+        } else {
+            upgradeLevels.put(normalizedUpgradeId, level);
+        }
+        Guild updated = new Guild(guild.tag(), guild.name(), guild.owner(), guild.home(), guild.claim(),
+                guild.level(), guild.xp(), upgradeLevels);
+        saveGuild(updated);
+    }
+
     private void saveGuilds() {
         YamlConfiguration config = new YamlConfiguration();
         ConfigurationSection section = config.createSection("guilds");
@@ -143,6 +176,7 @@ public final class GuildRepository {
             guildSection.set("owner", guild.owner().toString());
             guildSection.set("level", guild.level());
             guildSection.set("xp", guild.xp());
+            writeUpgradeLevels(guildSection, guild.upgradeLevels());
             writeHome(guildSection, guild.home());
             writeClaim(guildSection, guild.claim());
         }
@@ -174,6 +208,13 @@ public final class GuildRepository {
             return "";
         }
         return tag.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private String normalizeUpgradeId(String upgradeId) {
+        if (upgradeId == null) {
+            return "";
+        }
+        return upgradeId.trim().toLowerCase(Locale.ROOT);
     }
 
     private GuildHome readHome(ConfigurationSection guildSection) {
@@ -216,6 +257,21 @@ public final class GuildRepository {
         return new GuildClaim(world, x1, y1, z1, x2, y2, z2);
     }
 
+    private Map<String, Integer> readUpgradeLevels(ConfigurationSection guildSection) {
+        Map<String, Integer> upgradeLevels = new HashMap<>();
+        ConfigurationSection upgradesSection = guildSection.getConfigurationSection("upgradeLevels");
+        if (upgradesSection == null) {
+            return upgradeLevels;
+        }
+        for (String key : upgradesSection.getKeys(false)) {
+            int level = upgradesSection.getInt(key, 0);
+            if (level > 0) {
+                upgradeLevels.put(normalizeUpgradeId(key), level);
+            }
+        }
+        return upgradeLevels;
+    }
+
     private void writeHome(ConfigurationSection guildSection, GuildHome home) {
         if (home == null) {
             return;
@@ -243,6 +299,18 @@ public final class GuildRepository {
         pos2.set("x", claim.x2());
         pos2.set("y", claim.y2());
         pos2.set("z", claim.z2());
+    }
+
+    private void writeUpgradeLevels(ConfigurationSection guildSection, Map<String, Integer> upgradeLevels) {
+        if (upgradeLevels == null || upgradeLevels.isEmpty()) {
+            return;
+        }
+        ConfigurationSection upgradesSection = guildSection.createSection("upgradeLevels");
+        for (Map.Entry<String, Integer> entry : upgradeLevels.entrySet()) {
+            if (entry.getValue() != null && entry.getValue() > 0) {
+                upgradesSection.set(entry.getKey(), entry.getValue());
+            }
+        }
     }
 
     private LocalDate readLastSalaryDate(ConfigurationSection memberSection) {

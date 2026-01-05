@@ -27,6 +27,7 @@ public final class GuildService {
     private final GuildRepository repository;
     private final GuildMessages messages;
     private final GuildRankService rankService;
+    private final GuildUpgradeEffectService upgradeEffectService;
     private final Map<UUID, GuildInvite> invites = new HashMap<>();
     private final Map<UUID, Long> leaveCooldowns = new HashMap<>();
     private final Map<UUID, ClaimSelection> claimSelections = new HashMap<>();
@@ -34,12 +35,13 @@ public final class GuildService {
     private final Map<UUID, Long> tpCooldowns = new HashMap<>();
 
     public GuildService(JavaPlugin plugin, FileConfiguration config, GuildRepository repository, GuildMessages messages,
-                        GuildRankService rankService) {
+                        GuildRankService rankService, GuildUpgradeEffectService upgradeEffectService) {
         this.plugin = plugin;
         this.config = config;
         this.repository = repository;
         this.messages = messages;
         this.rankService = rankService;
+        this.upgradeEffectService = upgradeEffectService;
     }
 
     public void create(Player player, String tagRaw, String nameRaw) {
@@ -76,7 +78,7 @@ public final class GuildService {
             return;
         }
         UUID ownerId = player.getUniqueId();
-        Guild guild = new Guild(tag, name, ownerId, null, null, 1, 0L);
+        Guild guild = new Guild(tag, name, ownerId, null, null, 1, 0L, new HashMap<>());
         repository.saveGuild(guild);
         repository.saveMember(new GuildMember(ownerId, tag, rankService.getLeaderId(), null));
         messages.send(player, "guild.created", "tag", tag, "name", name);
@@ -103,7 +105,7 @@ public final class GuildService {
         }
         GuildHome home = GuildHome.fromLocation(player.getLocation());
         repository.saveGuild(new Guild(guild.tag(), guild.name(), guild.owner(), home, guild.claim(),
-                guild.level(), guild.xp()));
+                guild.level(), guild.xp(), guild.upgradeLevels()));
         messages.send(player, "home.set");
     }
 
@@ -273,7 +275,7 @@ public final class GuildService {
                 pos2.getBlockY(),
                 pos2.getBlockZ());
         repository.saveGuild(new Guild(guild.tag(), guild.name(), guild.owner(), guild.home(), claim,
-                guild.level(), guild.xp()));
+                guild.level(), guild.xp(), guild.upgradeLevels()));
         messages.send(player, "claim.apply.success");
     }
 
@@ -297,7 +299,7 @@ public final class GuildService {
             return;
         }
         repository.saveGuild(new Guild(guild.tag(), guild.name(), guild.owner(), guild.home(), null,
-                guild.level(), guild.xp()));
+                guild.level(), guild.xp(), guild.upgradeLevels()));
         messages.send(player, "claim.clear");
     }
 
@@ -483,7 +485,7 @@ public final class GuildService {
             messages.send(player, "guild.not_found");
             return;
         }
-        int maxMembers = config.getInt("guild.members.max", 30);
+        int maxMembers = getMaxMembers(guild.tag());
         if (maxMembers > 0 && repository.countMembersByTag(guild.tag()) >= maxMembers) {
             messages.send(player, "join.denied.full");
             return;
@@ -634,6 +636,15 @@ public final class GuildService {
             }
         }
         return count;
+    }
+
+    public int getMaxMembers(String guildTag) {
+        int base = config.getInt("guild.members.max", 30);
+        if (base <= 0) {
+            return base;
+        }
+        int bonus = (int) Math.round(upgradeEffectService.resolveMemberSlotsBonus(guildTag));
+        return base + Math.max(0, bonus);
     }
 
     private record GuildInvite(String tag, UUID inviter, long expiresAt) {

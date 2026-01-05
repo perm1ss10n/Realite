@@ -107,7 +107,8 @@ public class ClassHudService {
     }
 
     private void showActionBar(Player p, String text) {
-        p.sendActionBar(Component.text(text.replace('§', '§'))); // оставляем цвет-коды как есть
+        //TODO: допилить хуйню эту
+        p.sendActionBar(LegacyComponentSerializer.legacySection().deserialize(text));
     }
 
     private void clearActionBar(Player p) {

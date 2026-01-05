@@ -11,8 +11,5 @@ softdepend:
 commands:
   g:
     description: Guild commands
-    usage: /g <create|info|invite|join|leave|disband|ranks|setrank|sethome|home|tp|claim|salary|chat|admin addxp>
+    usage: /g <create|info|invite|join|leave|disband|ranks|setrank|sethome|home|tp|claim|salary|toggle|admin addxp>
     aliases: [guild]
-  gc:
-    description: Guild chat
-    usage: /gc <message>

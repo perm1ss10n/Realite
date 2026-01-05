@@ -4,7 +4,7 @@ chat:
   tags:
     joiner: ""
   spaceBeforeName: true
-  class-tag: "[Бродяга-I]"
+  class-tag: "[Странник-I]"
 
 prefix:
   enabled: true
@@ -20,3 +20,5 @@ guild:
   enabled: true
   hover:
     enabled: true
+
+debug: false

@@ -22,6 +22,7 @@ import ru.realite.classes.service.HiddenClassGate;
 import ru.realite.classes.service.ProgressionService;
 
 import ru.realite.classes.storage.ClassConfigRepository;
+import ru.realite.classes.storage.TesterPresetRepository;
 import ru.realite.classes.storage.XpConfigRepository;
 import ru.realite.classes.storage.YamlProfileRepository;
 
@@ -46,6 +47,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
     private Messages messages;
     private ClassConfigRepository classConfig;
     private XpConfigRepository xpConfig;
+    private TesterPresetRepository testerPresets;
 
     // ===== services =====
     private YamlProfileRepository profiles;
@@ -66,16 +68,16 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
     private boolean initialized;
     private boolean shuttingDown;
 
-@Override
-public void onEnable() {
-    getLogger().info("RealiteClasses loaded. Waiting for module enable.");
+    @Override
+    public void onEnable() {
+        getLogger().info("RealiteClasses loaded. Waiting for module enable.");
 
-    try {
-        initialize(ru.realite.classes.core.CoreAccess.core());
-    } catch (Exception e) {
-        getLogger().warning("CoreApi not available yet. Waiting for module enable.");
+        try {
+            initialize(ru.realite.classes.core.CoreAccess.core());
+        } catch (Exception e) {
+            getLogger().warning("CoreApi not available yet. Waiting for module enable.");
+        }
     }
-}
 
     @Override
     public void onDisable() {
@@ -96,6 +98,7 @@ public void onEnable() {
         saveDefaultConfig();
         saveIfNotExists("classes.yml");
         saveIfNotExists("xp.yml");
+        saveIfNotExists("tester-presets.yml");
         saveIfNotExists("lang/messages_ru.yml");
         saveIfNotExists("lang/messages_en.yml");
 
@@ -161,6 +164,7 @@ public void onEnable() {
         // --- configs ---
         this.classConfig = new ClassConfigRepository(data);
         this.xpConfig = new XpConfigRepository(data, getLogger());
+        this.testerPresets = new TesterPresetRepository(data);
 
         // --- repositories ---
         this.profiles = new YamlProfileRepository(data);
@@ -234,6 +238,10 @@ public void onEnable() {
         return xpConfig;
     }
 
+    public TesterPresetRepository getTesterPresets() {
+        return testerPresets;
+    }
+
     public EconomyService getEconomyService() {
         return economyService;
     }
@@ -246,6 +254,10 @@ public void onEnable() {
         return progressionService;
     }
 
+    public ClassHudService getHudService() {
+        return hudService;
+    }
+
     @Override
     public ru.realite.core.api.Module module() {
         return entrypoint.module();
@@ -256,7 +268,8 @@ public void onEnable() {
     private void saveIfNotExists(String resourcePath) {
         try {
             File out = new File(getDataFolder(), resourcePath);
-            if (out.exists()) return;
+            if (out.exists())
+                return;
 
             out.getParentFile().mkdirs();
 

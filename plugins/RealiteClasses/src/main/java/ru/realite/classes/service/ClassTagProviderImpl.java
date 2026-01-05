@@ -33,7 +33,7 @@ public final class ClassTagProviderImpl implements ClassTagProvider {
     }
 
     private ClassId resolveClassId(PlayerProfile profile) {
-        if (profile != null && profile.hasClass()) {
+        if (profile != null && profile.hasClass()) { 
             return profile.getClassId();
         }
         return ClassId.WANDERER;
