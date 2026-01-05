@@ -1,0 +1,84 @@
+# Версия схемы (на будущее миграции)
+schema: 1
+
+settings:
+  # Разрешить покупку апгрейдов только лидеру/офицерам с правом
+  requirePermission: true
+  # Если казны не хватает — можно ли уходить в минус
+  allowNegative: false
+
+upgrades:
+
+  member_slots:
+    enabled: true
+    name: "Слоты участников"
+    description: "Увеличивает максимальное число участников гильдии."
+    maxLevel: 10
+
+    purchase:
+      # формула цены, на вход подаётся level (покупаемый уровень)
+      # Пример: level=1 => 1000, level=2 => 1750 ...
+      cost:
+        type: FORMULA
+        formula: "1000 + (level-1)*750"
+
+      # опционально: требования к уровню гильдии/проверки
+      requirements:
+        guildLevelAtLeast: 1
+
+    effects:
+      - type: MEMBER_SLOTS
+        # значение по уровню: базовое + шаг
+        value:
+          type: LINEAR
+          base: 20
+          perLevel: 5
+
+  pve_damage:
+    enabled: true
+    name: "Военная подготовка"
+    description: "Бонус к урону по мобам для членов гильдии."
+    maxLevel: 5
+
+    purchase:
+      cost:
+        type: TABLE
+        table:
+          1: 2000
+          2: 4500
+          3: 8000
+          4: 12500
+          5: 18000
+      requirements:
+        guildLevelAtLeast: 2
+
+    effects:
+      - type: PVE_DAMAGE_MULTIPLIER
+        value:
+          type: TABLE
+          table:
+            1: 1.03
+            2: 1.06
+            3: 1.09
+            4: 1.12
+            5: 1.15
+
+  territory_upkeep_discount:
+    enabled: false
+    name: "Скидка на содержание"
+    description: "Снижает ежедневную стоимость содержания городских владений."
+    maxLevel: 3
+
+    purchase:
+      cost:
+        type: FORMULA
+        formula: "5000 * level"
+      requirements:
+        guildLevelAtLeast: 3
+
+    effects:
+      - type: CITY_UPKEEP_MULTIPLIER
+        value:
+          type: LINEAR
+          base: 0.95
+          perLevel: -0.05
