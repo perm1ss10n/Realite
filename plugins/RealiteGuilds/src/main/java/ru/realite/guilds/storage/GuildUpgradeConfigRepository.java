@@ -75,7 +75,7 @@ public final class GuildUpgradeConfigRepository {
     private Optional<UpgradeDefinition> parseDefinition(String id, ConfigurationSection section) {
         if (!section.isBoolean("enabled")) {
             plugin.getLogger().severe("Upgrade '" + id + "' has invalid 'enabled' value, must be true/false.");
-            return Optional.empty();
+            return Optional.of(disabledDefinition(id, section, "Invalid enabled flag"));
         }
         boolean enabled = section.getBoolean("enabled");
         String name = section.getString("name", id);
@@ -83,26 +83,26 @@ public final class GuildUpgradeConfigRepository {
         int maxLevel = section.getInt("maxLevel", 0);
         if (maxLevel < 1) {
             plugin.getLogger().severe("Upgrade '" + id + "' has invalid maxLevel: " + maxLevel);
-            return Optional.empty();
+            return Optional.of(disabledDefinition(id, section, "Invalid maxLevel"));
         }
         ConfigurationSection purchaseSection = section.getConfigurationSection("purchase");
         if (purchaseSection == null) {
             plugin.getLogger().severe("Upgrade '" + id + "' missing purchase section.");
-            return Optional.empty();
+            return Optional.of(disabledDefinition(id, section, "Missing purchase section"));
         }
         ConfigurationSection costSection = purchaseSection.getConfigurationSection("cost");
         if (costSection == null) {
             plugin.getLogger().severe("Upgrade '" + id + "' missing purchase.cost section.");
-            return Optional.empty();
+            return Optional.of(disabledDefinition(id, section, "Missing cost section"));
         }
         UpgradeCost cost = parseCost(id, costSection, maxLevel).orElse(null);
         if (cost == null) {
-            return Optional.empty();
+            return Optional.of(disabledDefinition(id, section, "Invalid cost"));
         }
         Map<String, Integer> requirements = readRequirements(purchaseSection.getConfigurationSection("requirements"));
         List<UpgradeEffect> effects = readEffects(id, section.getMapList("effects"), maxLevel);
         if (effects == null) {
-            return Optional.empty();
+            return Optional.of(disabledDefinition(id, section, "Invalid effects"));
         }
         return Optional.of(new UpgradeDefinition(id, enabled, name, description, maxLevel, cost, requirements, effects));
     }
@@ -217,6 +217,16 @@ public final class GuildUpgradeConfigRepository {
             requirements.put(key, requirementsSection.getInt(key));
         }
         return requirements;
+    }
+
+    private UpgradeDefinition disabledDefinition(String id, ConfigurationSection section, String reason) {
+        String name = section.getString("name", id);
+        String description = section.getString("description", "");
+        plugin.getLogger().warning("Upgrade '" + id + "' disabled due to config error: " + reason);
+        return new UpgradeDefinition(id, false, name, description, 1,
+                new UpgradeCost.Table(Map.of(1, 0.0d)),
+                Collections.emptyMap(),
+                Collections.emptyList());
     }
 
     private Map<Integer, Double> parseLevelTable(String id, String context, Object rawTable, int maxLevel) {
