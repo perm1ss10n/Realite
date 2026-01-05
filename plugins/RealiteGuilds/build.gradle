@@ -25,6 +25,9 @@ dependencies {
     compileOnly "net.kyori:adventure-api:4.17.0"
     compileOnly "net.kyori:adventure-text-serializer-legacy:4.17.0"
     compileOnly "com.github.MilkBowl:VaultAPI:1.7"
+    testImplementation "io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+    testImplementation "org.mockito:mockito-core:5.11.0"
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -42,4 +45,8 @@ tasks.shadowJar {
 
 tasks.build {
     dependsOn tasks.shadowJar
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
