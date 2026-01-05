@@ -59,6 +59,15 @@ guild:
   members:
     max: 30
 
+# Настройки эффектов апгрейдов
+effects:
+  pveDamageMultiplier:
+    enabled: true
+    requireTerritory: false
+    requireWorld: false
+    allowedWorlds:
+      - "world"
+
 # Настройки приглашений
 invites:
   # Время жизни приглашения в секундах
