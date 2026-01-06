@@ -17,8 +17,6 @@ public final class ClassesModule implements Module {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.metadata = new ModuleMetadata(
                 new ModuleId("realite-classes"),
-                "RealiteClasses",
-                plugin.getPluginMeta().getVersion(),
                 Set.of());
     }
 

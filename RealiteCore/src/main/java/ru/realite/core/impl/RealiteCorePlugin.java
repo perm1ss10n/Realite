@@ -14,6 +14,7 @@ import ru.realite.core.api.Platform;
 import ru.realite.core.api.Scheduler;
 import ru.realite.core.api.Services;
 import ru.realite.core.api.StorageService;
+import ru.realite.core.api.logging.Banners;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,17 +22,8 @@ import java.util.List;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
-/**
- * Главный плагин ядра.
- *
- * Сейчас делает:
- * - инициализирует Platform
- * - поднимает CoreContext
- * - включает ModuleManager
- *
- * Дальше сюда добавим загрузку модулей из classpath/ServiceLoader
- * или ручную регистрацию.
- */
+
+
 public final class RealiteCorePlugin extends JavaPlugin {
 
     private CoreApi core;
@@ -45,6 +37,8 @@ public final class RealiteCorePlugin extends JavaPlugin {
         Scheduler scheduler = new BukkitSchedulerFacade(this);
         this.services = new ServicesImpl(scheduler);
         EventBus eventBus = new SimpleEventBus(platform);
+
+        Banners.REALITE_CORE(this);
 
         // 2) Data folder
         saveDefaultConfig(); // если нет config.yml, не упадёт, просто создаст папку
@@ -77,7 +71,6 @@ public final class RealiteCorePlugin extends JavaPlugin {
         getServer().getServicesManager()
                 .register(CoreApi.class, core, this, ServicePriority.Normal);
 
-        platform.info("RealiteCore enabled.");
 
         // 4) Modules
         this.modules = new ModuleManagerImpl(core);
@@ -160,7 +153,7 @@ public final class RealiteCorePlugin extends JavaPlugin {
 
     private void logProviders(Platform platform, List<ModuleProvider> providers) {
         if (providers.isEmpty()) {
-            platform.warn("No ModuleProvider found via ServiceLoader.");
+            platform.info("No ModuleProvider found via ServiceLoader.");
             return;
         }
         platform.info("ModuleProviders found: " + providers.size());

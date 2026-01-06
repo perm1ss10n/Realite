@@ -96,7 +96,7 @@ class ModuleManagerImplTest {
         }
 
         private TestModule(String id, Set<ModuleId> dependencies, List<String> enableOrder, List<String> disableOrder) {
-            this.metadata = new ModuleMetadata(new ModuleId(id), id, "1.0.0", dependencies);
+            this.metadata = new ModuleMetadata(new ModuleId(id), dependencies);
             this.enableOrder = enableOrder;
             this.disableOrder = disableOrder;
         }

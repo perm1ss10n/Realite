@@ -58,8 +58,6 @@ public final class QuestsModule implements Module {
     private ClassBackstoryConfig backstoryConfig;
     private final ModuleMetadata metadata = new ModuleMetadata(
             new ModuleId("realite-quests"),
-            "RealiteQuests",
-            "0.1.0",
             Set.of()
     );
 

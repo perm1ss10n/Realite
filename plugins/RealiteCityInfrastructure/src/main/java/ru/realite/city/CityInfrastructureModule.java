@@ -51,232 +51,233 @@ import java.nio.file.Path;
 import java.util.Set;
 
 public final class CityInfrastructureModule implements Module {
+        private static final ModuleMetadata METADATA = new ModuleMetadata(
+                        new ModuleId("realite-city"),
+                        Set.of() // deps
+        );
 
-    private final ModuleMetadata metadata = new ModuleMetadata(
-            new ModuleId("realite-city"),
-            "RealiteCityInfrastructure",
-            "0.1.0",
-            Set.of());
+        private Storage storage;
+        private CityConfig config;
+        private CityDatabase database;
 
-    private Storage storage;
-    private CityConfig config;
-    private CityDatabase database;
+        private CityMessages messages;
 
-    private CityMessages messages;
+        private CityAreaSelectionService selectionService;
+        private SqliteCityAreaRepository cityAreaRepository;
 
-    private CityAreaSelectionService selectionService;
-    private SqliteCityAreaRepository cityAreaRepository;
+        private SqlitePlotRepository plotRepository;
+        private SqlitePlotMemberRepository plotMemberRepository;
+        private SqliteShopPointRepository shopPointRepository;
+        private SqliteShopListingRepository shopListingRepository;
+        private PlotService plotService;
+        private PlotCleanupService plotCleanupService;
+        private EconomyService economyService;
+        private ShopPointService shopPointService;
+        private ShopRentService shopRentService;
+        private ShopMarkerService shopMarkerService;
+        private ShopDirectoryService shopDirectoryService;
+        private MarketService marketService;
+        private PlotBorderVisualizationService plotBorderVisualizationService;
+        private CityHooks cityHooks;
+        private GuildsApi guildsApi;
+        private GuiService guiService;
+        private ChatInputService chatInputService;
 
-    private SqlitePlotRepository plotRepository;
-    private SqlitePlotMemberRepository plotMemberRepository;
-    private SqliteShopPointRepository shopPointRepository;
-    private SqliteShopListingRepository shopListingRepository;
-    private PlotService plotService;
-    private PlotCleanupService plotCleanupService;
-    private EconomyService economyService;
-    private ShopPointService shopPointService;
-    private ShopRentService shopRentService;
-    private ShopMarkerService shopMarkerService;
-    private ShopDirectoryService shopDirectoryService;
-    private MarketService marketService;
-    private PlotBorderVisualizationService plotBorderVisualizationService;
-    private CityHooks cityHooks;
-    private GuildsApi guildsApi;
-    private GuiService guiService;
-    private ChatInputService chatInputService;
-
-    @Override
-    public ModuleMetadata metadata() {
-        return metadata;
-    }
-
-    @Override
-    public void onLoad(ModuleContext ctx) throws Exception {
-        Path dataFolder = ctx.dataFolder();
-        Files.createDirectories(dataFolder);
-
-        Config cfg = ctx.configs().loadOrCreateDefault(
-                dataFolder.resolve("config.yml"),
-                "config.yml",
-                getClass().getClassLoader());
-        config = CityConfig.from(cfg);
-
-        // Load localized messages (resources/lang/messages_*.yml)
-        String lang = config.language();
-        String fileName = (lang != null && lang.equalsIgnoreCase("en"))
-                ? "messages_en.yml"
-                : "messages_ru.yml";
-
-        Config msgCfg = ctx.configs().loadOrCreateDefault(
-                dataFolder.resolve(fileName), // disk: plugins/RealiteCityInfrastructure/...
-                "lang/" + fileName, // jar: resources/lang/...
-                getClass().getClassLoader());
-
-        messages = new CityMessages(msgCfg);
-        ctx.logger().info("[CityInfrastructure] Loaded language: " + (lang == null ? "ru" : lang));
-
-        ctx.logger().info("[CityInfrastructure] Loaded config: defaultPlotsPerPlayer="
-                + config.defaultPlotsPerPlayer()
-                + ", dbFile=" + config.sqliteFile());
-
-        storage = ctx.storage().openSqlite(dataFolder.resolve(config.sqliteFile()));
-        database = new CityDatabase(storage);
-        database.migrate();
-
-        ctx.logger().info("[CityInfrastructure] Database migration OK");
-        ctx.logger().info("[CityInfrastructure] CityInfrastructure loaded (db ready, config loaded)");
-    }
-
-    @Override
-    public void onEnable(ModuleContext ctx) {
-        // Services
-        selectionService = new CityAreaSelectionService();
-
-        // Repositories
-        cityAreaRepository = new SqliteCityAreaRepository(storage);
-        plotRepository = new SqlitePlotRepository(storage);
-        plotMemberRepository = new SqlitePlotMemberRepository(storage);
-        shopPointRepository = new SqliteShopPointRepository(storage);
-        shopListingRepository = new SqliteShopListingRepository(storage);
-
-        // Optional warm-up / cache load (if your repos implement it)
-        try {
-            cityAreaRepository.loadAll();
-            plotRepository.loadAll();
-            plotMemberRepository.loadAll();
-            shopPointRepository.loadAll();
-            shopListingRepository.loadAll();
-        } catch (Exception e) {
-            ctx.logger().error("[CityInfrastructure] Failed to load city data", e);
+        @Override
+        public ModuleMetadata metadata() {
+                return METADATA;
         }
 
-        // Bukkit plugin instance (must match name in plugin.yml)
-        Plugin p = Bukkit.getPluginManager().getPlugin("RealiteCityInfrastructure");
-        if (!(p instanceof JavaPlugin javaPlugin)) {
-            ctx.logger().warn("[CityInfrastructure] Plugin RealiteCityInfrastructure not found or not JavaPlugin; "
-                    + "commands/listeners were not registered.");
-            return;
+        @Override
+        public void onLoad(ModuleContext ctx) throws Exception {
+                Path dataFolder = ctx.dataFolder();
+                Files.createDirectories(dataFolder);
+
+                Config cfg = ctx.configs().loadOrCreateDefault(
+                                dataFolder.resolve("config.yml"),
+                                "config.yml",
+                                getClass().getClassLoader());
+                config = CityConfig.from(cfg);
+
+                // Load localized messages (resources/lang/messages_*.yml)
+                String lang = config.language();
+                String fileName = (lang != null && lang.equalsIgnoreCase("en"))
+                                ? "messages_en.yml"
+                                : "messages_ru.yml";
+
+                Config msgCfg = ctx.configs().loadOrCreateDefault(
+                                dataFolder.resolve(fileName), // disk: plugins/RealiteCityInfrastructure/...
+                                "lang/" + fileName, // jar: resources/lang/...
+                                getClass().getClassLoader());
+
+                messages = new CityMessages(msgCfg);
+                ctx.logger().info("Language: " + (lang == null ? "ru" : lang));
+
+                ctx.logger().info("Config: defaultPlotsPerPlayer=" + config.defaultPlotsPerPlayer()
+                                + ", dbFile=" + config.sqliteFile());
+
+                ctx.logger().info("Database: migration OK");
+                ctx.logger().info("Loaded: config OK, db ready");
+
         }
 
-        plotCleanupService = new PlotCleanupService(javaPlugin, config, messages);
-        economyService = new EconomyService(javaPlugin);
-        cityHooks = new DefaultCityHooks(config);
-        guildsApi = resolveGuildsApi(javaPlugin);
-        shopPointService = new ShopPointService(shopPointRepository);
-        shopMarkerService = new ShopMarkerService(config, shopPointService);
-        shopDirectoryService = new ShopDirectoryService(shopListingRepository, shopMarkerService);
-        shopRentService = new ShopRentService(
-                javaPlugin,
-                config,
-                messages,
-                plotRepository,
-                shopPointService,
-                economyService);
-        shopRentService.start();
-        plotBorderVisualizationService = new PlotBorderVisualizationService(javaPlugin, config, messages);
+        @Override
+        public void onEnable(ModuleContext ctx) {
+                // Services
+                selectionService = new CityAreaSelectionService();
 
-        // Domain service
-        plotService = new PlotService(
-                config,
-                cityAreaRepository,
-                plotRepository,
-                plotMemberRepository,
-                economyService,
-                cityHooks,
-                guildsApi);
-        ctx.services().registerIfAbsent(
-                CityAdapter.class,
-                new CityQuestAdapter(cityAreaRepository, plotService, plotRepository, plotMemberRepository));
-        marketService = new MarketService(config, economyService, cityHooks);
-        chatInputService = new ChatInputService(javaPlugin, config, messages, plotService);
-        CityAdminService adminService = new CityAdminService(selectionService, plotRepository);
-        MenuFactory menuFactory = new MenuFactory(javaPlugin, messages, selectionService, plotRepository);
-        GuiSessionStore guiSessionStore = new GuiSessionStore();
-        guiService = new GuiService(
-                config,
-                messages,
-                adminService,
-                chatInputService,
-                plotBorderVisualizationService,
-                guiSessionStore,
-                menuFactory,
-                plotRepository,
-                plotMemberRepository);
-        javaPlugin.getServer().getServicesManager().register(
-                CityAccessHook.class,
-                new CityInfrastructureAccessHook(plotService),
-                javaPlugin,
-                ServicePriority.Normal);
+                // Repositories
+                cityAreaRepository = new SqliteCityAreaRepository(storage);
+                plotRepository = new SqlitePlotRepository(storage);
+                plotMemberRepository = new SqlitePlotMemberRepository(storage);
+                shopPointRepository = new SqliteShopPointRepository(storage);
+                shopListingRepository = new SqliteShopListingRepository(storage);
 
-        // Listeners
-        Bukkit.getPluginManager().registerEvents(
-                new CityAreaSelectionListener(selectionService, messages),
-                javaPlugin);
-        Bukkit.getPluginManager().registerEvents(
-                new CityProtectionListener(plotService, messages, shopPointService),
-                javaPlugin);
-        Bukkit.getPluginManager().registerEvents(
-                new ShopPointListener(shopPointService, plotRepository, plotMemberRepository, messages, shopRentService),
-                javaPlugin);
-        Bukkit.getPluginManager().registerEvents(
-                new MenuListener(guiService, menuFactory),
-                javaPlugin);
-        Bukkit.getPluginManager().registerEvents(
-                new ChatInputListener(javaPlugin, config, chatInputService),
-                javaPlugin);
+                // Optional warm-up / cache load (if your repos implement it)
+                try {
+                        cityAreaRepository.loadAll();
+                        plotRepository.loadAll();
+                        plotMemberRepository.loadAll();
+                        shopPointRepository.loadAll();
+                        shopListingRepository.loadAll();
+                } catch (Exception e) {
+                        ctx.logger().warn("Warm-up: failed to preload some city data (will load lazily if supported).");
+                        ctx.logger().error("Warm-up error details", e);
+                }
 
-        // Command
-        var cmd = javaPlugin.getCommand("city");
-        if (cmd != null) {
-            cmd.setExecutor(new CityCommand(
-                    cityAreaRepository,
-                    plotRepository,
-                    plotMemberRepository,
-                    plotService,
-                    plotCleanupService,
-                    selectionService,
-                    messages,
-                    config,
-                    economyService,
-                    shopPointService,
-                    shopRentService,
-                    shopDirectoryService,
-                    shopMarkerService,
-                    marketService,
-                    guildsApi,
-                    guiService));
-        } else {
-            ctx.logger().warn("[CityInfrastructure] Command /city not found in plugin.yml; executor not registered.");
+                // Bukkit plugin instance (must match name in plugin.yml)
+                Plugin p = Bukkit.getPluginManager().getPlugin("RealiteCityInfrastructure");
+                if (!(p instanceof JavaPlugin javaPlugin)) {
+                        ctx.logger().error(
+                                        "Bukkit plugin instance not found (RealiteCityInfrastructure). Commands/listeners will not be registered.",
+                                        new IllegalStateException("Plugin instance missing"));
+                        return;
+
+                }
+
+                plotCleanupService = new PlotCleanupService(javaPlugin, config, messages);
+                economyService = new EconomyService(javaPlugin);
+                cityHooks = new DefaultCityHooks(config);
+                guildsApi = resolveGuildsApi(javaPlugin);
+                shopPointService = new ShopPointService(shopPointRepository);
+                shopMarkerService = new ShopMarkerService(config, shopPointService);
+                shopDirectoryService = new ShopDirectoryService(shopListingRepository, shopMarkerService);
+                shopRentService = new ShopRentService(
+                                javaPlugin,
+                                config,
+                                messages,
+                                plotRepository,
+                                shopPointService,
+                                economyService);
+                shopRentService.start();
+                plotBorderVisualizationService = new PlotBorderVisualizationService(javaPlugin, config, messages);
+
+                // Domain service
+                plotService = new PlotService(
+                                config,
+                                cityAreaRepository,
+                                plotRepository,
+                                plotMemberRepository,
+                                economyService,
+                                cityHooks,
+                                guildsApi);
+                ctx.services().registerIfAbsent(
+                                CityAdapter.class,
+                                new CityQuestAdapter(cityAreaRepository, plotService, plotRepository,
+                                                plotMemberRepository));
+                marketService = new MarketService(config, economyService, cityHooks);
+                chatInputService = new ChatInputService(javaPlugin, config, messages, plotService);
+                CityAdminService adminService = new CityAdminService(selectionService, plotRepository);
+                MenuFactory menuFactory = new MenuFactory(javaPlugin, messages, selectionService, plotRepository);
+                GuiSessionStore guiSessionStore = new GuiSessionStore();
+                guiService = new GuiService(
+                                config,
+                                messages,
+                                adminService,
+                                chatInputService,
+                                plotBorderVisualizationService,
+                                guiSessionStore,
+                                menuFactory,
+                                plotRepository,
+                                plotMemberRepository);
+                javaPlugin.getServer().getServicesManager().register(
+                                CityAccessHook.class,
+                                new CityInfrastructureAccessHook(plotService),
+                                javaPlugin,
+                                ServicePriority.Normal);
+
+                // Listeners
+                Bukkit.getPluginManager().registerEvents(
+                                new CityAreaSelectionListener(selectionService, messages),
+                                javaPlugin);
+                Bukkit.getPluginManager().registerEvents(
+                                new CityProtectionListener(plotService, messages, shopPointService),
+                                javaPlugin);
+                Bukkit.getPluginManager().registerEvents(
+                                new ShopPointListener(shopPointService, plotRepository, plotMemberRepository, messages,
+                                                shopRentService),
+                                javaPlugin);
+                Bukkit.getPluginManager().registerEvents(
+                                new MenuListener(guiService, menuFactory),
+                                javaPlugin);
+                Bukkit.getPluginManager().registerEvents(
+                                new ChatInputListener(javaPlugin, config, chatInputService),
+                                javaPlugin);
+
+                // Command
+                var cmd = javaPlugin.getCommand("city");
+                if (cmd != null) {
+                        cmd.setExecutor(new CityCommand(
+                                        cityAreaRepository,
+                                        plotRepository,
+                                        plotMemberRepository,
+                                        plotService,
+                                        plotCleanupService,
+                                        selectionService,
+                                        messages,
+                                        config,
+                                        economyService,
+                                        shopPointService,
+                                        shopRentService,
+                                        shopDirectoryService,
+                                        shopMarkerService,
+                                        marketService,
+                                        guildsApi,
+                                        guiService));
+                } else {
+                        ctx.logger().warn("Command /city not found in plugin.yml; executor not registered.");
+                }
+
+                var plotCmd = javaPlugin.getCommand("plot");
+                if (plotCmd != null) {
+                        plotCmd.setExecutor(new ru.realite.city.command.PlotCommand(guiService, messages));
+                } else {
+                        ctx.logger().warn("Command /plot not found in plugin.yml; executor not registered.");
+
+                }
+
+                ctx.logger().info("Hooks: CityAdapter=" + (ctx.services().get(CityAdapter.class) != null)
+                                + ", CityAccessHook=registered");
         }
 
-        var plotCmd = javaPlugin.getCommand("plot");
-        if (plotCmd != null) {
-            plotCmd.setExecutor(new ru.realite.city.command.PlotCommand(guiService, messages));
-        } else {
-            ctx.logger().warn("[CityInfrastructure] Command /plot not found in plugin.yml; executor not registered.");
+        private GuildsApi resolveGuildsApi(JavaPlugin plugin) {
+                if (plugin == null) {
+                        return new NoopGuildsApi();
+                }
+                var provider = plugin.getServer().getServicesManager().getRegistration(GuildsApi.class);
+                if (provider == null) {
+                        return new NoopGuildsApi();
+                }
+                GuildsApi api = provider.getProvider();
+                return api == null ? new NoopGuildsApi() : api;
         }
 
-        ctx.logger().info("[CityInfrastructure] CityInfrastructure enabled");
-    }
-
-    private GuildsApi resolveGuildsApi(JavaPlugin plugin) {
-        if (plugin == null) {
-            return new NoopGuildsApi();
+        @Override
+        public void onDisable(ModuleContext ctx) throws Exception {
+                if (storage != null) {
+                        storage.close();
+                        storage = null;
+                }
+                ctx.logger().info("Disabled");
         }
-        var provider = plugin.getServer().getServicesManager().getRegistration(GuildsApi.class);
-        if (provider == null) {
-            return new NoopGuildsApi();
-        }
-        GuildsApi api = provider.getProvider();
-        return api == null ? new NoopGuildsApi() : api;
-    }
-
-    @Override
-    public void onDisable(ModuleContext ctx) throws Exception {
-        if (storage != null) {
-            storage.close();
-            storage = null;
-        }
-        ctx.logger().info("[CityInfrastructure] CityInfrastructure disabled");
-    }
 }

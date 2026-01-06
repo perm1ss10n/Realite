@@ -3,6 +3,7 @@ package ru.realite.city;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.core.api.CoreModuleEntrypoint;
 import ru.realite.core.api.Module;
+import ru.realite.core.api.logging.Banners;
 
 public final class RealiteCityInfrastructurePlugin extends JavaPlugin implements CoreModuleEntrypoint {
 
@@ -10,7 +11,7 @@ public final class RealiteCityInfrastructurePlugin extends JavaPlugin implements
 
     @Override
     public void onEnable() {
-        getLogger().info("RealiteCityInfrastructure loaded. Waiting for module enable.");
+        Banners.REALITE_CITY_WAITING(this);
     }
 
     @Override

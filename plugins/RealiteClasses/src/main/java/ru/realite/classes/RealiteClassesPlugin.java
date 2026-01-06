@@ -33,6 +33,7 @@ import ru.realite.core.api.CoreModuleEntrypoint;
 import ru.realite.core.api.Platform;
 import ru.realite.core.api.classes.ClassTagProvider;
 import ru.realite.core.api.classes.ClassXpService;
+import ru.realite.core.api.logging.Banners;
 
 import java.io.File;
 import java.io.InputStream;
@@ -70,12 +71,19 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
 
     @Override
     public void onEnable() {
-        getLogger().info("RealiteClasses loaded. Waiting for module enable.");
+
+        Banners.REALITE_CLASSES_WAITING(this);
 
         try {
-            initialize(ru.realite.classes.core.CoreAccess.core());
+            CoreApi c = ru.realite.classes.core.CoreAccess.core();
+            if (c != null) {
+                initialize(c);
+            } else {
+                getLogger().info("CoreApi not available yet. Waiting for module enable.");
+            }
         } catch (Exception e) {
-            getLogger().warning("CoreApi not available yet. Waiting for module enable.");
+            getLogger().severe("Failed to initialize Classes plugin");
+            e.printStackTrace();
         }
     }
 
@@ -106,16 +114,20 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         reloadAll();
 
         // --- command ---
-        getCommand("class").setExecutor(
-                new ClassCommand(
-                        this,
-                        classService,
-                        evolutionService,
-                        classConfig,
-                        economyService,
-                        hiddenClassGate,
-                        messages,
-                        xpConfig));
+        var cmd = getCommand("class");
+        if (cmd != null) {
+            cmd.setExecutor(new ClassCommand(
+                    this,
+                    classService,
+                    evolutionService,
+                    classConfig,
+                    economyService,
+                    hiddenClassGate,
+                    messages,
+                    xpConfig));
+        } else {
+            getLogger().warning("Command /class not found in plugin.yml; executor not registered.");
+        }
 
         // --- listeners ---
         Bukkit.getPluginManager().registerEvents(
@@ -127,7 +139,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
                 this);
 
         initialized = true;
-        platform.info("[Classes] Enabled in " + (System.currentTimeMillis() - start) + "ms");
+        platform.info("Enabled in " + (System.currentTimeMillis() - start) + "ms");
     }
 
     public void shutdownModule() {
@@ -141,7 +153,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         unregisterClassTagProvider();
         unregisterClassXpService();
         if (platform != null) {
-            platform.info("[Classes] Disabled");
+            platform.info("Disabled");
         }
         initialized = false;
         shuttingDown = false;
@@ -201,7 +213,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         registerClassTagProvider();
         registerClassXpService();
 
-        platform.info("[Classes] reloadAll completed");
+        platform.info("reloadAll completed");
     }
 
     // ===== getters =====

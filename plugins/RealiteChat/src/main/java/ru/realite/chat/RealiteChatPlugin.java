@@ -25,6 +25,7 @@ import ru.realite.core.api.classes.ClassTag;
 import ru.realite.core.api.classes.ClassTagProvider;
 import ru.realite.core.api.guilds.GuildChatBridge;
 import ru.realite.core.api.guilds.GuildTagProvider;
+import ru.realite.core.api.logging.Banners;
 
 public final class RealiteChatPlugin extends JavaPlugin implements Listener {
 
@@ -95,7 +96,7 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
         saveIfNotExists("lang/messages_ru.yml");
         saveIfNotExists("lang/messages_en.yml");
 
-        reloadConfig();
+        Banners.REALITE_CHAT(this);
 
         String language = resolveLanguage();
         messages = new ChatMessages(this, language);
@@ -105,7 +106,7 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
         guildTagProvider = resolveGuildTagProvider();
         guildChatBridge = resolveGuildChatBridge();
 
-        reloadAll();
+        reloadAll(); // внутри сам reloadConfig + messages.reload
 
         getServer().getPluginManager().registerEvents(this, this);
 

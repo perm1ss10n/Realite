@@ -10,12 +10,13 @@ import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.integrations.CityAccessHook;
 import ru.realite.core.api.guilds.GuildChatBridge;
 import ru.realite.core.api.guilds.GuildTagProvider;
+import ru.realite.core.api.logging.Banners;
 import ru.realite.core.api.quests.GuildAdapter;
+import ru.realite.guilds.command.GuildCommand;
+import ru.realite.guilds.i18n.GuildMessages;
 import ru.realite.guilds.integration.CityGuildsApiAdapter;
 import ru.realite.guilds.integration.GuildQuestAdapter;
 import ru.realite.guilds.integration.NoopCityAccessHook;
-import ru.realite.guilds.command.GuildCommand;
-import ru.realite.guilds.i18n.GuildMessages;
 import ru.realite.guilds.listener.GuildAccessProtectionListener;
 import ru.realite.guilds.listener.GuildHomeWarmupListener;
 import ru.realite.guilds.listener.GuildPveDamageListener;
@@ -34,6 +35,10 @@ import ru.realite.guilds.service.GuildUpgradeService;
 import ru.realite.guilds.storage.GuildRepository;
 import ru.realite.guilds.storage.GuildUpgradeConfigRepository;
 
+import java.io.File;
+import java.io.InputStream;
+import java.util.function.Consumer;
+
 public final class RealiteGuildsPlugin extends JavaPlugin {
 
     private GuildMessages messages;
@@ -50,49 +55,81 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        // resources / config
         saveDefaultConfig();
-        saveResource("ranks.yml", false);
-        saveResource("upgrades.yml", false);
-        saveResource("lang/messages_ru.yml", false);
-        saveResource("lang/messages_en.yml", false);
+        saveIfNotExists("ranks.yml");
+        saveIfNotExists("upgrades.yml");
+        saveIfNotExists("lang/messages_ru.yml");
+        saveIfNotExists("lang/messages_en.yml");
 
+        Banners.REALITE_GUILDS(this);
+
+        // init
         messages = new GuildMessages(this);
         repository = new GuildRepository(this);
         rankService = new GuildRankService(this);
+
         EconomyService economyService = new EconomyService(this);
+
         upgradeConfigRepository = new GuildUpgradeConfigRepository(this);
         treasuryService = new GuildTreasuryService(this);
         upgradeEffectService = new GuildUpgradeEffectService(getConfig(), repository, upgradeConfigRepository);
+
         service = new GuildService(this, getConfig(), repository, messages, rankService, upgradeEffectService);
         salaryService = new GuildSalaryService(this, getConfig(), repository, messages, rankService, economyService);
         chatService = new GuildChatService(this, getConfig(), repository, messages, rankService);
         progressionService = new GuildProgressionService(this, getConfig(), repository, messages);
-        upgradeService = new GuildUpgradeService(this,
+
+        upgradeService = new GuildUpgradeService(
+                this,
                 repository,
                 rankService,
                 upgradeConfigRepository,
                 treasuryService,
-                () -> resolveCoreApi());
+                this::resolveCoreApi
+        );
 
+        // command
         PluginCommand command = getCommand("g");
         if (command != null) {
-            command.setExecutor(new GuildCommand(service, messages, salaryService, chatService, progressionService, upgradeService));
+            command.setExecutor(new GuildCommand(
+                    service,
+                    messages,
+                    salaryService,
+                    chatService,
+                    progressionService,
+                    upgradeService
+            ));
         } else {
-            getLogger().severe("Command 'g' not found in plugin.yml");
+            getLogger().severe("Command /g not found in plugin.yml; executor not registered.");
         }
-        getServer().getPluginManager().registerEvents(
-                new GuildHomeWarmupListener(service), this);
+
+        // listeners
+        getServer().getPluginManager().registerEvents(new GuildHomeWarmupListener(service), this);
+
         CityAccessHook cityAccessHook = resolveCityAccessHook();
         getServer().getPluginManager().registerEvents(
-                new GuildAccessProtectionListener(service, messages, getConfig(), cityAccessHook), this);
+                new GuildAccessProtectionListener(service, messages, getConfig(), cityAccessHook),
+                this
+        );
+
+        getServer().getPluginManager().registerEvents(new GuildSalaryJoinListener(salaryService), this);
         getServer().getPluginManager().registerEvents(
-                new GuildSalaryJoinListener(salaryService), this);
-        getServer().getPluginManager().registerEvents(
-                new GuildPveDamageListener(repository, service, upgradeEffectService), this);
+                new GuildPveDamageListener(repository, service, upgradeEffectService),
+                this
+        );
+
+        // services / adapters
         registerGuildChatBridge();
         registerGuildTagProvider();
         registerGuildQuestAdapter();
         registerCityGuildsApi();
+    }
+
+    @Override
+    public void onDisable() {
+        // важно для /reload и перезапусков: чтобы не оставлять старые провайдеры
+        Bukkit.getServicesManager().unregisterAll(this);
     }
 
     private void registerGuildChatBridge() {
@@ -100,49 +137,22 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
                 GuildChatBridge.class,
                 new GuildChatBridgeImpl(chatService),
                 this,
-                ServicePriority.Normal);
+                ServicePriority.Normal
+        );
     }
 
     private void registerGuildTagProvider() {
-        RegisteredServiceProvider<CoreApi> provider = getServer().getServicesManager()
-                .getRegistration(CoreApi.class);
-        if (provider == null) {
-            return;
-        }
-        CoreApi core = provider.getProvider();
-        core.services().registerIfAbsent(GuildTagProvider.class, new GuildChatTagProvider(repository, messages, rankService));
-    }
-
-    private CoreApi resolveCoreApi() {
-        RegisteredServiceProvider<CoreApi> provider = getServer().getServicesManager()
-                .getRegistration(CoreApi.class);
-        if (provider == null) {
-            return null;
-        }
-        return provider.getProvider();
+        withCore(core -> core.services().registerIfAbsent(
+                GuildTagProvider.class,
+                new GuildChatTagProvider(repository, messages, rankService)
+        ));
     }
 
     private void registerGuildQuestAdapter() {
-        RegisteredServiceProvider<CoreApi> provider = getServer().getServicesManager()
-                .getRegistration(CoreApi.class);
-        if (provider == null) {
-            return;
-        }
-        CoreApi core = provider.getProvider();
-        if (core == null) {
-            return;
-        }
-        core.services().registerIfAbsent(GuildAdapter.class, new GuildQuestAdapter(repository, rankService));
-    }
-
-    private CityAccessHook resolveCityAccessHook() {
-        RegisteredServiceProvider<CityAccessHook> provider = getServer().getServicesManager()
-                .getRegistration(CityAccessHook.class);
-        if (provider == null) {
-            return new NoopCityAccessHook();
-        }
-        CityAccessHook hook = provider.getProvider();
-        return hook == null ? new NoopCityAccessHook() : hook;
+        withCore(core -> core.services().registerIfAbsent(
+                GuildAdapter.class,
+                new GuildQuestAdapter(repository, rankService)
+        ));
     }
 
     private void registerCityGuildsApi() {
@@ -150,6 +160,60 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
                 GuildsApi.class,
                 new CityGuildsApiAdapter(repository),
                 this,
-                ServicePriority.Normal);
+                ServicePriority.Normal
+        );
+    }
+
+    private CoreApi resolveCoreApi() {
+        RegisteredServiceProvider<CoreApi> provider = getServer().getServicesManager().getRegistration(CoreApi.class);
+        if (provider == null) {
+            return null;
+        }
+        return provider.getProvider();
+    }
+
+    private void withCore(Consumer<CoreApi> action) {
+        CoreApi core = resolveCoreApi();
+        if (core != null) {
+            action.accept(core);
+        }
+    }
+
+    private CityAccessHook resolveCityAccessHook() {
+        RegisteredServiceProvider<CityAccessHook> provider =
+                getServer().getServicesManager().getRegistration(CityAccessHook.class);
+
+        if (provider == null) {
+            return new NoopCityAccessHook();
+        }
+
+        CityAccessHook hook = provider.getProvider();
+        return hook == null ? new NoopCityAccessHook() : hook;
+    }
+
+    private void saveIfNotExists(String resourcePath) {
+        try {
+            File out = new File(getDataFolder(), resourcePath);
+            if (out.exists()) {
+                return;
+            }
+
+            File parent = out.getParentFile();
+            if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                getLogger().warning("Failed to create folders for: " + out);
+                return;
+            }
+
+            try (InputStream in = getResource(resourcePath)) {
+                if (in == null) {
+                    getLogger().warning("Resource not found in jar: " + resourcePath);
+                    return;
+                }
+            }
+
+            saveResource(resourcePath, false);
+        } catch (Exception e) {
+            getLogger().warning("Failed to save resource: " + resourcePath + " (" + e.getMessage() + ")");
+        }
     }
 }
