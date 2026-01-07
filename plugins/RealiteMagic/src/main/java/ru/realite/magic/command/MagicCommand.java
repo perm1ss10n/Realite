@@ -43,7 +43,7 @@ public final class MagicCommand implements CommandExecutor {
             magicService.spellSelectMenu().open(player);
             return true;
         }
-        player.sendMessage(messages.msg("magic.command.usage"));
+        player.sendMessage(messages.msg("magic.command.usage.root"));
         return true;
     }
 
