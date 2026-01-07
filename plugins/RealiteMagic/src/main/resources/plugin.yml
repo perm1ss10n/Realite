@@ -1,0 +1,13 @@
+name: RealiteMagic
+version: 1.0.0
+main: ru.realite.magic.RealiteMagicPlugin
+api-version: "1.21"
+
+softdepend:
+  - RealiteItems
+  - RealiteCore
+
+permissions:
+  realite.magic.admin:
+    description: "Base permission for RealiteMagic admin commands"
+    default: op

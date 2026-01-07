@@ -1,0 +1,5 @@
+format:
+  prefix: "&6[Items]&r "
+
+items:
+  enabled: "{prefix}&aRealiteItems plugin enabled."
