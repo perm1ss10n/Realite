@@ -8,6 +8,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.items.command.ItemsCommand;
 import ru.realite.items.i18n.ItemMessages;
 import ru.realite.items.listener.ItemRefreshListener;
+import ru.realite.items.listener.ResourcePackListener;
 import ru.realite.items.service.ItemRegistry;
 import ru.realite.items.service.ItemService;
 
@@ -40,6 +41,7 @@ public final class RealiteItemsPlugin extends JavaPlugin {
         }
 
         Bukkit.getPluginManager().registerEvents(new ItemRefreshListener(this, itemService), this);
+        Bukkit.getPluginManager().registerEvents(new ResourcePackListener(this, messages), this);
         Bukkit.getServicesManager().register(ItemService.class, itemService, this, ServicePriority.Normal);
         messages.send(getServer().getConsoleSender(), "items.enabled", "");
     }
