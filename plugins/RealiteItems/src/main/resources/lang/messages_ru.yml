@@ -3,19 +3,3 @@ format:
 
 items:
   enabled: "{prefix}&aПлагин RealiteItems включён."
-  command:
-    usage: "{prefix}&eИспользование: /ritems give <player> <itemId> [amount]"
-    no-permission: "{prefix}&cНедостаточно прав."
-    player-not-found: "{prefix}&cИгрок не найден."
-    item-not-found: "{prefix}&cПредмет не найден: &f{itemId}"
-    invalid-amount: "{prefix}&cНеверное количество."
-    give-sender: "{prefix}&aВы выдали {amount}x &f{itemId}&a игроку &f{player}&a."
-    give-receiver: "{prefix}&aВы получили {amount}x &f{itemId}&a."
-
-  example_compass:
-    name: "&eКомпас проводника"
-    lore-1: "&7Помогает находить путь."
-    lore-2: "&7Технический предмет RealiteItems."
-
-resource-pack:
-  prompt: "{prefix}&eДля корректного отображения предметов требуется ресурспак."

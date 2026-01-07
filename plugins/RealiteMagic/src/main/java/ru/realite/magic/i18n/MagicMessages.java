@@ -58,11 +58,6 @@ public final class MagicMessages {
         return LEGACY.deserialize(raw);
     }
 
-    public String raw(String key) {
-        String raw = messages.getString(key, "&cMissing message: &f" + key);
-        return raw == null ? "" : raw;
-    }
-
     private Map<String, String> toMap(String... placeholders) {
         Map<String, String> map = new HashMap<>();
         if (placeholders == null) {
