@@ -152,6 +152,10 @@ public final class MagicService {
         state(player).selectedSpellId(spellId);
     }
 
+    public void clearSelectedSpell(Player player) {
+        state(player).selectedSpellId(null);
+    }
+
     public String getSelectedSpellId(Player player) {
         return state(player).selectedSpellId();
     }

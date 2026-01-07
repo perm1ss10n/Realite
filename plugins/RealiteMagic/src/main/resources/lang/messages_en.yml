@@ -15,7 +15,10 @@ magic:
       cleared_other: "&eYou cleared the selected spell for &f{player}&e."
       get_self: "&eCurrent spell: &f{spell}"
       get_other: "&eCurrent spell for &f{player}&e: &f{spell}"
+      get_empty_self: "&eNo spell selected."
+      get_empty_other: "&ePlayer &f{player}&e has no selected spell."
       unknown_spell: "&cUnknown spell: &f{spellId}"
+      locked: "&cUnavailable: &f{reason}"
     errors:
       no_permission: "&cNo permission."
       player_not_found: "&cPlayer not found: &f{player}"
