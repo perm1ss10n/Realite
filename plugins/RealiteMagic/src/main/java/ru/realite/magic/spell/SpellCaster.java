@@ -1,6 +1,9 @@
 package ru.realite.magic.spell;
 
 import java.util.Objects;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -27,6 +30,23 @@ public final class SpellCaster {
         if (spell == null) {
             return;
         }
+        double currentMana = magicService.getMana(player);
+        if (currentMana < spell.mana()) {
+            player.sendMessage(messages.msg("magic.error.not_enough_mana",
+                    "current", formatNumber(currentMana, "casting.manaFormat", "0.0"),
+                    "need", formatNumber(spell.mana(), "casting.manaFormat", "0.0")));
+            return;
+        }
+        long remainingGlobalTicks = magicService.remainingGlobalCooldownTicks(player);
+        long remainingSpellTicks = magicService.remainingCooldownTicks(player, spell.id());
+        long remainingTicks = Math.max(remainingGlobalTicks, remainingSpellTicks);
+        if (remainingTicks > 0) {
+            double seconds = remainingTicks / 20.0;
+            player.sendMessage(messages.msg("magic.error.on_cooldown",
+                    "seconds", formatNumber(seconds, "casting.cooldownFormat", "0.0")));
+            return;
+        }
+        magicService.consumeManaAndCooldowns(player, spell);
         switch (spell.type()) {
             case RAY_DAMAGE -> castRayDamage(player, spell);
         }
@@ -76,5 +96,16 @@ public final class SpellCaster {
             world.spawnParticle(Particle.END_ROD, point, 1, 0, 0, 0, 0);
             point.add(step);
         }
+    }
+
+    private String formatNumber(double value, String configKey, String fallbackPattern) {
+        String pattern = magicService.configString(configKey, fallbackPattern);
+        DecimalFormat format;
+        try {
+            format = new DecimalFormat(pattern, DecimalFormatSymbols.getInstance(Locale.US));
+        } catch (IllegalArgumentException ex) {
+            format = new DecimalFormat(fallbackPattern, DecimalFormatSymbols.getInstance(Locale.US));
+        }
+        return format.format(value);
     }
 }

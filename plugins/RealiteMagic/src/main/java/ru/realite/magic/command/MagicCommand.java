@@ -20,6 +20,7 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
 
     private static final String PERMISSION_SELECT = "realite.magic.spell.select";
     private static final String PERMISSION_ADMIN = "realite.magic.admin";
+    private static final String PERMISSION_MENU = "realite.magic.menu";
 
     private final MagicService magicService;
     private final MagicMessages messages;
@@ -71,6 +72,10 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
     private boolean openMenu(CommandSender sender) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(messages.msg("magic.command.only-player"));
+            return true;
+        }
+        if (!sender.hasPermission(PERMISSION_MENU)) {
+            sender.sendMessage(messages.msg("magic.command.errors.no_permission"));
             return true;
         }
         magicService.spellSelectMenu().open(player);
