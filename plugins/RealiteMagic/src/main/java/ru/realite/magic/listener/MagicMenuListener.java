@@ -4,7 +4,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.inventory.InventoryHolder;
 import ru.realite.magic.gui.SpellSelectMenu;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.service.MagicService;
@@ -26,8 +25,9 @@ public final class MagicMenuListener implements Listener {
             return;
         }
 
-        InventoryHolder holder = event.getView().getTopInventory().getHolder();
-        if (!(holder instanceof SpellSelectMenu menu)) {
+        SpellSelectMenu menu = magicService.spellSelectMenu();
+        boolean menuItem = menu.isMenuItem(event.getCurrentItem());
+        if (!menuItem && !menu.isMenuTitle(event.getView().title())) {
             return;
         }
         event.setCancelled(true);
@@ -59,15 +59,16 @@ public final class MagicMenuListener implements Listener {
 
         if (!magicService.meetsRequirements(player, spell)) {
             String reason = menu.requirementReason(spell);
-            if (reason != null && !reason.isBlank()) {
-                player.sendMessage(messages.msg("magic.error.cannot_select_spell", "reason", reason));
+            if (reason == null) {
+                reason = "";
             }
+            player.sendMessage(messages.msg("magic.menu.spell_select.locked", "reason", reason));
             return;
         }
 
-        magicService.setActiveSpell(player, spellId);
-        player.sendMessage(messages.msg("magic.spell.selected",
-                "name", messages.raw(spell.nameKey())));
+        magicService.setSelectedSpell(player, spellId);
+        player.sendMessage(messages.msg("magic.menu.spell_select.selected",
+                "spell", messages.raw(spell.nameKey())));
         if (menu.shouldCloseOnSelect()) {
             player.closeInventory();
         }

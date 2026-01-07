@@ -145,19 +145,19 @@ public final class MagicService {
         return spellSelectMenu;
     }
 
-    public void setActiveSpell(Player player, String spellId) {
+    public void setSelectedSpell(Player player, String spellId) {
         if (spellId == null || spellId.isBlank()) {
             return;
         }
-        state(player).activeSpellId(spellId);
+        state(player).selectedSpellId(spellId);
     }
 
-    public String getActiveSpellId(Player player) {
-        return state(player).activeSpellId();
+    public String getSelectedSpellId(Player player) {
+        return state(player).selectedSpellId();
     }
 
-    public SpellDefinition getActiveSpell(Player player) {
-        String spellId = getActiveSpellId(player);
+    public SpellDefinition getSelectedSpell(Player player) {
+        String spellId = getSelectedSpellId(player);
         if (spellId == null || spellId.isBlank()) {
             return null;
         }
