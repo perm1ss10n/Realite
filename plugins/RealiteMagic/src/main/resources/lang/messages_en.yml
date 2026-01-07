@@ -3,3 +3,12 @@ format:
 
 magic:
   enabled: "{prefix}&aRealiteMagic plugin enabled."
+  mana:
+    usage: "{prefix}&7Usage: &f/rmagic mana"
+    only-player: "{prefix}&cCommand is only for players."
+    actionbar: "{prefix}&dMana: &b{mana}&7/&b{max}"
+  spell:
+    cast: "{prefix}&dYou cast: &f{name}"
+    warlock_ray:
+      name: "&5Shadow Ray"
+      desc: "&7A piercing ray that deals magic damage."
