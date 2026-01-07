@@ -23,7 +23,8 @@ menu:
     defaultSpellIconMaterial: "PAPER"
     manaFormat: "0.0"
     cooldownFormat: "0.0"
-    showUnavailable: false
+    rangeFormat: "0.0"
+    damageFormat: "0.0"
     slots:
       - 10
       - 11
@@ -56,3 +57,5 @@ menu:
         slot: 49
         material: "BARRIER"
         nameKey: "magic.menu.common.close"
+    noSpells:
+      material: "PAPER"

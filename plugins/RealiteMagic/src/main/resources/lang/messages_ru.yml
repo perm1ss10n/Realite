@@ -53,6 +53,10 @@ magic:
       damage: "&cУрон: &f{damage}"
       selected: "&a✔ Выбрано"
       locked_reason: "&cТребуется: &f{reason}"
+      requirements:
+        class: "Класс: {class}"
+        evolution: "Эволюция: {evolution}"
+        separator: ", "
     cast: "{prefix}&dВы использовали: &f{name}"
     selected: "{prefix}&dАктивное заклинание: &f{name}"
     requirements:
