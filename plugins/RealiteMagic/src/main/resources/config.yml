@@ -1,2 +1,11 @@
 # Основной язык сообщений (ru/en)
 lang: "ru"
+
+mana:
+  maxDefault: 100.0
+  regenPerSecond: 2.0
+  regenInCombatMultiplier: 0.5
+  combatTimeoutSeconds: 10.0
+
+cooldowns:
+  globalCastTicks: 10

@@ -3,3 +3,12 @@ format:
 
 magic:
   enabled: "{prefix}&aПлагин RealiteMagic включён."
+  mana:
+    usage: "{prefix}&7Использование: &f/rmagic mana"
+    only-player: "{prefix}&cКоманда доступна только игрокам."
+    actionbar: "{prefix}&dМана: &b{mana}&7/&b{max}"
+  spell:
+    cast: "{prefix}&dВы использовали: &f{name}"
+    warlock_ray:
+      name: "&5Луч Тьмы"
+      desc: "&7Пронзающий луч наносит магический урон."

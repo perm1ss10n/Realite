@@ -1,7 +1,5 @@
 package ru.realite.magic.spell;
 
-import org.bukkit.Material;
-
 public record SpellDefinition(
         String id,
         SpellType type,
@@ -10,9 +8,5 @@ public record SpellDefinition(
         double mana,
         long cooldownTicks,
         double range,
-        double damage,
-        SpellRequirements requirements,
-        Material iconMaterial,
-        Integer iconCustomModelData,
-        Integer guiSlot
+        double damage
 ) {}
