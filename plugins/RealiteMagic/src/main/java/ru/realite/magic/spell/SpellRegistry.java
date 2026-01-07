@@ -69,6 +69,7 @@ public final class SpellRegistry {
         long cooldownTicks = section.getLong("cooldownTicks", -1);
         double range = section.getDouble("range", -1);
         double damage = section.getDouble("damage", -1);
+        SpellRequirements requirements = parseRequirements(section.getConfigurationSection("requirements"));
 
         if (id == null || id.isBlank()) {
             plugin.getLogger().warning("Spell file " + fileName + " has invalid id. Skipping.");
@@ -93,6 +94,21 @@ public final class SpellRegistry {
             plugin.getLogger().warning("Spell '" + id + "' has invalid numbers in " + fileName + ". Skipping.");
             return null;
         }
-        return new SpellDefinition(id, type, nameKey, descKey, mana, cooldownTicks, range, damage);
+        return new SpellDefinition(id, type, nameKey, descKey, mana, cooldownTicks, range, damage, requirements);
+    }
+
+    private SpellRequirements parseRequirements(ConfigurationSection section) {
+        if (section == null) {
+            return new SpellRequirements(null, null);
+        }
+        String classId = section.getString("class");
+        String evolutionId = section.getString("evolution");
+        if (classId != null && classId.isBlank()) {
+            classId = null;
+        }
+        if (evolutionId != null && evolutionId.isBlank()) {
+            evolutionId = null;
+        }
+        return new SpellRequirements(classId, evolutionId);
     }
 }

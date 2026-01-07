@@ -11,6 +11,7 @@ commands:
 softdepend:
   - RealiteItems
   - RealiteCore
+  - RealiteClasses
 
 permissions:
   realite.magic.admin:

@@ -7,3 +7,5 @@ spell:
   cooldownTicks: 60
   range: 20.0
   damage: 6.0
+  requirements:
+    class: "WARLOCK"
