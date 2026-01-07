@@ -9,3 +9,8 @@ mana:
 
 cooldowns:
   globalCastTicks: 10
+
+casting:
+  requireFocus: true
+  allowedFocusItemIds:
+    - "warlock_grimoire"

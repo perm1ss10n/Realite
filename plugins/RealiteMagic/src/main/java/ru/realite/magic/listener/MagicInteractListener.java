@@ -11,8 +11,6 @@ import ru.realite.magic.spell.SpellDefinition;
 
 public final class MagicInteractListener implements Listener {
 
-    private static final String PERMISSION_USE = "realite.magic.use";
-
     private final MagicService magicService;
     private final MagicMessages messages;
 
@@ -31,19 +29,13 @@ public final class MagicInteractListener implements Listener {
             return;
         }
 
-        if (!event.getPlayer().hasPermission(PERMISSION_USE)) {
-            event.getPlayer().sendMessage(messages.msg("magic.command.errors.no_permission"));
-            return;
-        }
-
-        SpellDefinition spell = magicService.getSelectedSpell(event.getPlayer());
+        SpellDefinition spell = magicService.getActiveSpell(event.getPlayer());
         if (spell == null) {
-            event.getPlayer().sendMessage(messages.msg("magic.error.no_selected_spell"));
             return;
         }
 
         if (!magicService.hasRequiredFocus(event.getPlayer())) {
-            event.getPlayer().sendMessage(messages.msg("magic.error.need_focus"));
+            event.getPlayer().sendMessage(messages.msg("magic.need-focus"));
             return;
         }
 
