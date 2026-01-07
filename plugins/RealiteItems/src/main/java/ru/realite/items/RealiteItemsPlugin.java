@@ -1,7 +1,7 @@
 package ru.realite.items;
 
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import ru.realite.items.command.ItemsCommand;
@@ -29,7 +29,7 @@ public final class RealiteItemsPlugin extends JavaPlugin {
 
         reloadAll();
 
-        Command command = getCommand("ritems");
+        PluginCommand command = getCommand("ritems");
         if (command != null) {
             ItemsCommand executor = new ItemsCommand(itemService, messages, registry);
             command.setExecutor(executor);
