@@ -29,5 +29,5 @@ public interface ClassBackstoryService {
     /**
      * Закрыть лор без отметки.
      */
-    void defer(Player player, String classId);
+    void later(Player player, String classId);
 }

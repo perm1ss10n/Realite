@@ -103,7 +103,7 @@ public final class ClassBackstoryServiceImpl implements ClassBackstoryService {
     }
 
     @Override
-    public void defer(Player player, String classId) {
+    public void later(Player player, String classId) {
         String normalized = normalize(classId);
         if (player == null || normalized == null) {
             return;

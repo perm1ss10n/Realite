@@ -859,7 +859,7 @@ public class ClassCommand implements CommandExecutor {
                 switch (action) {
                     case "accept" -> {
                         if (args.length < 3) {
-                            p.sendMessage(messages.get("usage"));
+                            p.sendMessage(messages.get("lore.accept"));
                             return true;
                         }
                         backstoryService.accept(p, args[2]);
@@ -867,7 +867,7 @@ public class ClassCommand implements CommandExecutor {
                     }
                     case "skip" -> {
                         if (args.length < 3) {
-                            p.sendMessage(messages.get("usage"));
+                            p.sendMessage(messages.get("lore.skip"));
                             return true;
                         }
                         backstoryService.skip(p, args[2]);
@@ -875,10 +875,10 @@ public class ClassCommand implements CommandExecutor {
                     }
                     case "later" -> {
                         if (args.length < 3) {
-                            p.sendMessage(messages.get("usage"));
+                            p.sendMessage(messages.get("lore.later"));
                             return true;
                         }
-                        backstoryService.defer(p, args[2]);
+                        backstoryService.later(p, args[2]);
                         return true;
                     }
                     default -> {
@@ -889,7 +889,7 @@ public class ClassCommand implements CommandExecutor {
             }
 
             default -> {
-                p.sendMessage(messages.get("usage"));
+                p.sendMessage(messages.get("lore.usage"));
                 return true;
             }
         }

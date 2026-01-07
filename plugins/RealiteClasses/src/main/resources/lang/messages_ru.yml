@@ -6,6 +6,11 @@ cant-change: "&cСменить класс можно только на фина�
 
 usage: "&eИспользование: &f/class&7, &f/class choose&7, &f/class change&7, &f/class info&7, &f/class evolve&7, &f/class lore&7, &f/class unlocks"
 
+lore.usage: "&eИспользование: &f/class lore <accept|later|skip>"
+lore.accept: "&aИспользование: /class accept."
+lore.skip: "&aТы пропустил предысторию класса."
+lore.later: "&aТы отложил чтение предыстории класса."
+
 class-help-header: "&6&lRealiteClasses &7— команды:"
 
 class-help:
