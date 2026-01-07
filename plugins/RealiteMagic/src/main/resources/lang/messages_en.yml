@@ -12,6 +12,7 @@ magic:
     mana-line: "&7Mana: &b{mana}"
     cooldown-line: "&7Cooldown: &b{cooldown}&7s"
     selected: "&aSelected"
+    unavailable: "&cUnavailable"
   mana:
     actionbar: "{prefix}&dMana: &b{mana}&7/&b{max}"
   spell:

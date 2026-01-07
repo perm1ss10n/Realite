@@ -1,13 +1,16 @@
 package ru.realite.magic.gui;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -30,12 +33,14 @@ public final class SpellSelectMenu implements InventoryHolder {
     private final MagicMessages messages;
     private final MagicService magicService;
     private final NamespacedKey spellIdKey;
+    private final JavaPlugin plugin;
     private Inventory inventory;
 
     public SpellSelectMenu(JavaPlugin plugin,
                            SpellRegistry spellRegistry,
                            MagicMessages messages,
                            MagicService magicService) {
+        this.plugin = plugin;
         this.spellRegistry = spellRegistry;
         this.messages = messages;
         this.magicService = magicService;
@@ -47,7 +52,7 @@ public final class SpellSelectMenu implements InventoryHolder {
     }
 
     public Inventory create(Player player) {
-        int size = menuSize(player);
+        int size = menuSize();
         String title = messages.raw("magic.menu.title");
         inventory = Bukkit.createInventory(this, size, LEGACY.deserialize(title));
         fill(player);
@@ -77,26 +82,49 @@ public final class SpellSelectMenu implements InventoryHolder {
         inventory.clear();
 
         String activeSpellId = magicService.getActiveSpellId(player);
+        boolean showUnavailable = plugin.getConfig().getBoolean("menu.spellSelect.showUnavailable", false);
         List<SpellDefinition> spells = new ArrayList<>(spellRegistry.all());
         spells.sort(Comparator.comparing(SpellDefinition::id));
 
-        int slot = 0;
+        List<Integer> autoSlots = menuSlots();
+        int autoIndex = 0;
         for (SpellDefinition spell : spells) {
-            if (!magicService.meetsRequirements(player, spell)) {
+            boolean available = magicService.meetsRequirements(player, spell);
+            if (!available && !showUnavailable) {
                 continue;
             }
-            if (slot >= inventory.getSize()) {
-                break;
+            Integer targetSlot = spell.guiSlot();
+            if (targetSlot == null) {
+                while (autoIndex < autoSlots.size()) {
+                    int candidate = autoSlots.get(autoIndex++);
+                    if (candidate < 0 || candidate >= inventory.getSize()) {
+                        continue;
+                    }
+                    if (inventory.getItem(candidate) != null) {
+                        continue;
+                    }
+                    targetSlot = candidate;
+                    break;
+                }
             }
-            inventory.setItem(slot++, createSpellItem(spell, activeSpellId));
+            if (targetSlot == null || targetSlot < 0 || targetSlot >= inventory.getSize()) {
+                continue;
+            }
+            if (inventory.getItem(targetSlot) != null) {
+                continue;
+            }
+            inventory.setItem(targetSlot, createSpellItem(spell, activeSpellId, available));
         }
     }
 
-    private ItemStack createSpellItem(SpellDefinition spell, String activeSpellId) {
-        ItemStack item = new ItemStack(Material.ENCHANTED_BOOK);
+    private ItemStack createSpellItem(SpellDefinition spell, String activeSpellId, boolean available) {
+        ItemStack item = new ItemStack(spell.iconMaterial());
         ItemMeta meta = item.getItemMeta();
         if (meta == null) {
             return item;
+        }
+        if (spell.iconCustomModelData() != null) {
+            meta.setCustomModelData(spell.iconCustomModelData());
         }
         meta.displayName(LEGACY.deserialize(messages.raw(spell.nameKey())));
 
@@ -107,11 +135,15 @@ public final class SpellSelectMenu implements InventoryHolder {
         }
         lore.add(Component.empty());
         lore.add(LEGACY.deserialize(messages.raw("magic.menu.mana-line")
-                .replace("{mana}", format(spell.mana()))));
+                .replace("{mana}", formatNumber(spell.mana(), "menu.spellSelect.manaFormat", "0.0"))));
         lore.add(LEGACY.deserialize(messages.raw("magic.menu.cooldown-line")
-                .replace("{cooldown}", formatCooldown(spell.cooldownTicks()))));
+                .replace("{cooldown}", formatNumber(spell.cooldownTicks() / 20.0,
+                        "menu.spellSelect.cooldownFormat", "0.0"))));
 
-        if (spell.id().equals(activeSpellId)) {
+        if (!available) {
+            lore.add(Component.empty());
+            lore.add(LEGACY.deserialize(messages.raw("magic.menu.unavailable")));
+        } else if (spell.id().equals(activeSpellId)) {
             lore.add(Component.empty());
             lore.add(LEGACY.deserialize(messages.raw("magic.menu.selected")));
         }
@@ -122,25 +154,62 @@ public final class SpellSelectMenu implements InventoryHolder {
         return item;
     }
 
-    private int menuSize(Player player) {
-        int count = 0;
-        for (SpellDefinition spell : spellRegistry.all()) {
-            if (magicService.meetsRequirements(player, spell)) {
-                count++;
-            }
+    private int menuSize() {
+        int size = plugin.getConfig().getInt("menu.spellSelect.size", 0);
+        if (size <= 0) {
+            size = 54;
         }
-        count = Math.max(1, count);
-        int rows = Math.max(1, (count + 8) / 9);
-        rows = Math.min(rows, 6);
-        return rows * 9;
+        int rows = Math.max(1, (size + 8) / 9);
+        return Math.min(rows, 6) * 9;
     }
 
-    private String format(double value) {
-        return String.format(Locale.US, "%.1f", value);
+    private List<Integer> menuSlots() {
+        List<Integer> slots = plugin.getConfig().getIntegerList("menu.spellSelect.slots");
+        if (slots == null || slots.isEmpty()) {
+            return fallbackSlots();
+        }
+        return filterSlots(slots);
     }
 
-    private String formatCooldown(long cooldownTicks) {
-        double seconds = cooldownTicks / 20.0;
-        return String.format(Locale.US, "%.1f", seconds);
+    private List<Integer> filterSlots(List<Integer> slots) {
+        List<Integer> filtered = new ArrayList<>();
+        Set<Integer> seen = new HashSet<>();
+        int size = inventory == null ? menuSize() : inventory.getSize();
+        for (Integer slot : slots) {
+            if (slot == null) {
+                continue;
+            }
+            if (slot < 0 || slot >= size) {
+                continue;
+            }
+            if (!seen.add(slot)) {
+                continue;
+            }
+            filtered.add(slot);
+        }
+        return filtered;
+    }
+
+    private List<Integer> fallbackSlots() {
+        List<Integer> slots = new ArrayList<>();
+        int size = inventory == null ? menuSize() : inventory.getSize();
+        for (int i = 0; i < size; i++) {
+            slots.add(i);
+        }
+        return slots;
+    }
+
+    private String formatNumber(double value, String configKey, String fallbackPattern) {
+        String pattern = plugin.getConfig().getString(configKey, fallbackPattern);
+        if (pattern == null || pattern.isBlank()) {
+            pattern = fallbackPattern;
+        }
+        DecimalFormat format;
+        try {
+            format = new DecimalFormat(pattern, DecimalFormatSymbols.getInstance(Locale.US));
+        } catch (IllegalArgumentException ex) {
+            format = new DecimalFormat(fallbackPattern, DecimalFormatSymbols.getInstance(Locale.US));
+        }
+        return format.format(value);
     }
 }

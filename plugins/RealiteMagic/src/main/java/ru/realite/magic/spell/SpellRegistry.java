@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -70,6 +71,10 @@ public final class SpellRegistry {
         double range = section.getDouble("range", -1);
         double damage = section.getDouble("damage", -1);
         SpellRequirements requirements = parseRequirements(section.getConfigurationSection("requirements"));
+        Material defaultIconMaterial = resolveDefaultIconMaterial();
+        Material iconMaterial = parseIconMaterial(section.getConfigurationSection("icon"), defaultIconMaterial, id, fileName);
+        Integer iconCustomModelData = parseIconCustomModelData(section.getConfigurationSection("icon"));
+        Integer guiSlot = parseGuiSlot(section.getConfigurationSection("gui"), id, fileName);
 
         if (id == null || id.isBlank()) {
             plugin.getLogger().warning("Spell file " + fileName + " has invalid id. Skipping.");
@@ -94,7 +99,8 @@ public final class SpellRegistry {
             plugin.getLogger().warning("Spell '" + id + "' has invalid numbers in " + fileName + ". Skipping.");
             return null;
         }
-        return new SpellDefinition(id, type, nameKey, descKey, mana, cooldownTicks, range, damage, requirements);
+        return new SpellDefinition(id, type, nameKey, descKey, mana, cooldownTicks, range, damage, requirements,
+                iconMaterial, iconCustomModelData, guiSlot);
     }
 
     private SpellRequirements parseRequirements(ConfigurationSection section) {
@@ -110,5 +116,62 @@ public final class SpellRegistry {
             evolutionId = null;
         }
         return new SpellRequirements(classId, evolutionId);
+    }
+
+    private Material resolveDefaultIconMaterial() {
+        String configured = plugin.getConfig().getString("menu.spellSelect.defaultSpellIconMaterial", "ENCHANTED_BOOK");
+        if (configured == null || configured.isBlank()) {
+            configured = "ENCHANTED_BOOK";
+        }
+        Material material = Material.matchMaterial(configured.trim());
+        if (material == null) {
+            plugin.getLogger().warning("Invalid defaultSpellIconMaterial '" + configured + "' in config.yml. Using ENCHANTED_BOOK.");
+            return Material.ENCHANTED_BOOK;
+        }
+        return material;
+    }
+
+    private Material parseIconMaterial(ConfigurationSection section,
+                                       Material defaultMaterial,
+                                       String spellId,
+                                       String fileName) {
+        if (section == null) {
+            return defaultMaterial;
+        }
+        String materialName = section.getString("material");
+        if (materialName == null || materialName.isBlank()) {
+            return defaultMaterial;
+        }
+        Material material = Material.matchMaterial(materialName.trim());
+        if (material == null) {
+            plugin.getLogger().warning("Spell '" + spellId + "' has invalid icon.material '" + materialName
+                    + "' in " + fileName + ". Using default.");
+            return defaultMaterial;
+        }
+        return material;
+    }
+
+    private Integer parseIconCustomModelData(ConfigurationSection section) {
+        if (section == null) {
+            return null;
+        }
+        if (!section.isSet("customModelData")) {
+            return null;
+        }
+        int value = section.getInt("customModelData");
+        return value >= 0 ? value : null;
+    }
+
+    private Integer parseGuiSlot(ConfigurationSection section, String spellId, String fileName) {
+        if (section == null || !section.isSet("slot")) {
+            return null;
+        }
+        int slot = section.getInt("slot");
+        if (slot < 0) {
+            plugin.getLogger().warning("Spell '" + spellId + "' has invalid gui.slot '" + slot
+                    + "' in " + fileName + ". Ignoring.");
+            return null;
+        }
+        return slot;
     }
 }
