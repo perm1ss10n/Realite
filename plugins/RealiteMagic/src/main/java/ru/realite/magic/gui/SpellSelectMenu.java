@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -24,16 +23,15 @@ import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.service.MagicService;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellRegistry;
+import ru.realite.magic.spell.SpellRequirements;
 
 public final class SpellSelectMenu implements InventoryHolder {
-
-    private static final LegacyComponentSerializer LEGACY =
-            LegacyComponentSerializer.legacyAmpersand();
 
     private final SpellRegistry spellRegistry;
     private final MagicMessages messages;
     private final MagicService magicService;
     private final NamespacedKey spellIdKey;
+    private final NamespacedKey menuKey;
     private final NamespacedKey menuActionKey;
     private final JavaPlugin plugin;
     private Inventory inventory;
@@ -46,18 +44,18 @@ public final class SpellSelectMenu implements InventoryHolder {
         this.spellRegistry = spellRegistry;
         this.messages = messages;
         this.magicService = magicService;
-        this.spellIdKey = new NamespacedKey(plugin, "spell_id");
+        this.spellIdKey = new NamespacedKey("realite", "spell_id");
+        this.menuKey = new NamespacedKey("realite", "menu");
         this.menuActionKey = new NamespacedKey(plugin, "menu_action");
     }
 
     public void open(Player player) {
-        player.openInventory(create(player));
+        player.openInventory(build(player));
     }
 
-    public Inventory create(Player player) {
+    public Inventory build(Player player) {
         int size = menuSize();
-        String title = messages.raw(menuTitleKey());
-        inventory = Bukkit.createInventory(this, size, LEGACY.deserialize(title));
+        inventory = Bukkit.createInventory(this, size, messages.msg(menuTitleKey()));
         fill(player);
         return inventory;
     }
@@ -73,6 +71,10 @@ public final class SpellSelectMenu implements InventoryHolder {
         }
         ItemMeta meta = item.getItemMeta();
         if (meta == null) {
+            return null;
+        }
+        String menuId = meta.getPersistentDataContainer().get(menuKey, PersistentDataType.STRING);
+        if (menuId == null || !menuId.equalsIgnoreCase("spell_select")) {
             return null;
         }
         return meta.getPersistentDataContainer().get(spellIdKey, PersistentDataType.STRING);
@@ -98,6 +100,13 @@ public final class SpellSelectMenu implements InventoryHolder {
         return plugin.getConfig().getBoolean("menu.spellSelect.closeOnSelect", true);
     }
 
+    public String requirementReason(SpellDefinition spell) {
+        if (spell == null) {
+            return null;
+        }
+        return buildRequirementReason(spell.requirements());
+    }
+
     private void fill(Player player) {
         if (inventory == null) {
             return;
@@ -105,17 +114,14 @@ public final class SpellSelectMenu implements InventoryHolder {
         inventory.clear();
 
         String activeSpellId = magicService.getActiveSpellId(player);
-        boolean showUnavailable = plugin.getConfig().getBoolean("menu.spellSelect.showUnavailable", false);
         List<SpellDefinition> spells = new ArrayList<>(spellRegistry.all());
         spells.sort(Comparator.comparing(SpellDefinition::id));
 
         List<Integer> autoSlots = menuSlots();
         int autoIndex = 0;
+        int placed = 0;
         for (SpellDefinition spell : spells) {
             boolean available = magicService.meetsRequirements(player, spell);
-            if (!available && !showUnavailable) {
-                continue;
-            }
             Integer targetSlot = spell.guiSlot();
             if (targetSlot == null) {
                 while (autoIndex < autoSlots.size()) {
@@ -137,8 +143,12 @@ public final class SpellSelectMenu implements InventoryHolder {
                 continue;
             }
             inventory.setItem(targetSlot, createSpellItem(spell, activeSpellId, available));
+            placed++;
         }
 
+        if (placed == 0) {
+            placeNoSpellsItem();
+        }
         applyFiller();
         applyButtons();
     }
@@ -152,30 +162,35 @@ public final class SpellSelectMenu implements InventoryHolder {
         if (spell.iconCustomModelData() != null) {
             meta.setCustomModelData(spell.iconCustomModelData());
         }
-        meta.displayName(LEGACY.deserialize(messages.raw(spell.nameKey())));
+        meta.displayName(messages.msg(spell.nameKey()));
 
         List<Component> lore = new ArrayList<>();
         String desc = messages.raw(spell.descKey());
         if (desc != null && !desc.isBlank()) {
-            lore.add(LEGACY.deserialize(desc));
+            lore.add(messages.msg("magic.spell.lore.description", "desc", desc));
         }
-        lore.add(Component.empty());
-        lore.add(LEGACY.deserialize(messages.raw("magic.menu.mana-line")
-                .replace("{mana}", formatNumber(spell.mana(), "menu.spellSelect.manaFormat", "0.0"))));
-        lore.add(LEGACY.deserialize(messages.raw("magic.menu.cooldown-line")
-                .replace("{cooldown}", formatNumber(spell.cooldownTicks() / 20.0,
-                        "menu.spellSelect.cooldownFormat", "0.0"))));
+        lore.add(messages.msg("magic.spell.lore.mana",
+                "mana", formatNumber(spell.mana(), "menu.spellSelect.manaFormat", "0.0")));
+        lore.add(messages.msg("magic.spell.lore.cooldown",
+                "seconds", formatNumber(spell.cooldownTicks() / 20.0, "menu.spellSelect.cooldownFormat", "0.0")));
+        lore.add(messages.msg("magic.spell.lore.range",
+                "range", formatNumber(spell.range(), "menu.spellSelect.rangeFormat", "0.0")));
+        lore.add(messages.msg("magic.spell.lore.damage",
+                "damage", formatNumber(spell.damage(), "menu.spellSelect.damageFormat", "0.0")));
 
+        if (spell.id().equals(activeSpellId)) {
+            lore.add(messages.msg("magic.spell.lore.selected"));
+        }
         if (!available) {
-            lore.add(Component.empty());
-            lore.add(LEGACY.deserialize(messages.raw("magic.menu.unavailable")));
-        } else if (spell.id().equals(activeSpellId)) {
-            lore.add(Component.empty());
-            lore.add(LEGACY.deserialize(messages.raw("magic.menu.selected")));
+            String reason = buildRequirementReason(spell.requirements());
+            if (reason != null && !reason.isBlank()) {
+                lore.add(messages.msg("magic.spell.lore.locked_reason", "reason", reason));
+            }
         }
 
         meta.lore(lore);
         meta.getPersistentDataContainer().set(spellIdKey, PersistentDataType.STRING, spell.id());
+        meta.getPersistentDataContainer().set(menuKey, PersistentDataType.STRING, "spell_select");
         item.setItemMeta(meta);
         return item;
     }
@@ -221,7 +236,7 @@ public final class SpellSelectMenu implements InventoryHolder {
             return item;
         }
         if (nameKey != null && !nameKey.isBlank()) {
-            meta.displayName(LEGACY.deserialize(messages.raw(nameKey)));
+            meta.displayName(messages.msg(nameKey));
         } else {
             meta.displayName(Component.empty());
         }
@@ -230,6 +245,21 @@ public final class SpellSelectMenu implements InventoryHolder {
         }
         item.setItemMeta(meta);
         return item;
+    }
+
+    private void placeNoSpellsItem() {
+        if (inventory == null) {
+            return;
+        }
+        int slot = inventory.getSize() / 2;
+        Material material = resolveMaterial("menu.spellSelect.noSpells.material", "PAPER");
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.displayName(messages.msg("magic.menu.spell_select.no_spells"));
+            item.setItemMeta(meta);
+        }
+        inventory.setItem(slot, item);
     }
 
     private int menuSize() {
@@ -309,5 +339,30 @@ public final class SpellSelectMenu implements InventoryHolder {
             format = new DecimalFormat(fallbackPattern, DecimalFormatSymbols.getInstance(Locale.US));
         }
         return format.format(value);
+    }
+
+    private String buildRequirementReason(SpellRequirements requirements) {
+        if (requirements == null || requirements.isEmpty()) {
+            return null;
+        }
+        List<String> parts = new ArrayList<>();
+        String classId = requirements.classId();
+        if (classId != null && !classId.isBlank()) {
+            String raw = messages.raw("magic.spell.lore.requirements.class");
+            parts.add(raw.replace("{class}", classId));
+        }
+        String evolutionId = requirements.evolutionId();
+        if (evolutionId != null && !evolutionId.isBlank()) {
+            String raw = messages.raw("magic.spell.lore.requirements.evolution");
+            parts.add(raw.replace("{evolution}", evolutionId));
+        }
+        if (parts.isEmpty()) {
+            return null;
+        }
+        String separator = messages.raw("magic.spell.lore.requirements.separator");
+        if (separator == null || separator.isBlank()) {
+            separator = " ";
+        }
+        return String.join(separator, parts);
     }
 }

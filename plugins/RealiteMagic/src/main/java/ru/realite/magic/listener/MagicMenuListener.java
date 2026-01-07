@@ -57,6 +57,14 @@ public final class MagicMenuListener implements Listener {
             return;
         }
 
+        if (!magicService.meetsRequirements(player, spell)) {
+            String reason = menu.requirementReason(spell);
+            if (reason != null && !reason.isBlank()) {
+                player.sendMessage(messages.msg("magic.error.cannot_select_spell", "reason", reason));
+            }
+            return;
+        }
+
         magicService.setActiveSpell(player, spellId);
         player.sendMessage(messages.msg("magic.spell.selected",
                 "name", messages.raw(spell.nameKey())));
