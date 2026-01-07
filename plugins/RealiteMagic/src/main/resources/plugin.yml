@@ -3,6 +3,11 @@ version: 1.0.0
 main: ru.realite.magic.RealiteMagicPlugin
 api-version: "1.21"
 
+commands:
+  rmagic:
+    description: "RealiteMagic command"
+    usage: "/rmagic"
+
 softdepend:
   - RealiteItems
   - RealiteCore
