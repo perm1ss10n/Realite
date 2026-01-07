@@ -119,14 +119,14 @@ public final class SpellRegistry {
     }
 
     private Material resolveDefaultIconMaterial() {
-        String configured = plugin.getConfig().getString("menu.spellSelect.defaultSpellIconMaterial", "ENCHANTED_BOOK");
+        String configured = plugin.getConfig().getString("menu.spellSelect.defaultSpellIconMaterial", "PAPER");
         if (configured == null || configured.isBlank()) {
-            configured = "ENCHANTED_BOOK";
+            configured = "PAPER";
         }
         Material material = Material.matchMaterial(configured.trim());
         if (material == null) {
-            plugin.getLogger().warning("Invalid defaultSpellIconMaterial '" + configured + "' in config.yml. Using ENCHANTED_BOOK.");
-            return Material.ENCHANTED_BOOK;
+            plugin.getLogger().warning("Invalid defaultSpellIconMaterial '" + configured + "' in config.yml. Using PAPER.");
+            return Material.PAPER;
         }
         return material;
     }

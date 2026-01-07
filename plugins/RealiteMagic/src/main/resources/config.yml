@@ -17,8 +17,10 @@ casting:
 
 menu:
   spellSelect:
+    titleKey: "magic.menu.spell_select.title"
     size: 54
-    defaultSpellIconMaterial: "ENCHANTED_BOOK"
+    closeOnSelect: true
+    defaultSpellIconMaterial: "PAPER"
     manaFormat: "0.0"
     cooldownFormat: "0.0"
     showUnavailable: false
@@ -44,10 +46,13 @@ menu:
       - 32
       - 33
       - 34
-      - 37
-      - 38
-      - 39
-      - 40
-      - 41
-      - 42
-      - 43
+    filler:
+      enabled: true
+      material: "BLACK_STAINED_GLASS_PANE"
+      nameKey: "magic.menu.common.filler"
+    buttons:
+      close:
+        enabled: true
+        slot: 49
+        material: "BARRIER"
+        nameKey: "magic.menu.common.close"
