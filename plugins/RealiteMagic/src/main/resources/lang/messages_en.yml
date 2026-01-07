@@ -9,10 +9,15 @@ magic:
   need-focus: "{prefix}&cYou need a focus item to cast."
   menu:
     title: "&5Select spell"
+    spell_select:
+      title: "&5Select spell"
     mana-line: "&7Mana: &b{mana}"
     cooldown-line: "&7Cooldown: &b{cooldown}&7s"
     selected: "&aSelected"
     unavailable: "&cUnavailable"
+    common:
+      filler: " "
+      close: "&cClose"
   mana:
     actionbar: "{prefix}&dMana: &b{mana}&7/&b{max}"
   spell:
