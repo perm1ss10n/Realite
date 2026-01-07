@@ -1,0 +1,21 @@
+format:
+  prefix: "&6[Items]&r "
+
+items:
+  enabled: "{prefix}&aRealiteItems plugin enabled."
+  command:
+    usage: "{prefix}&eUsage: /ritems give <player> <itemId> [amount]"
+    no-permission: "{prefix}&cYou do not have permission."
+    player-not-found: "{prefix}&cPlayer not found."
+    item-not-found: "{prefix}&cItem not found: &f{itemId}"
+    invalid-amount: "{prefix}&cInvalid amount."
+    give-sender: "{prefix}&aYou gave {amount}x &f{itemId}&a to &f{player}&a."
+    give-receiver: "{prefix}&aYou received {amount}x &f{itemId}&a."
+
+  example_compass:
+    name: "&eGuide Compass"
+    lore-1: "&7Helps you find the way."
+    lore-2: "&7Technical item from RealiteItems."
+
+resource-pack:
+  prompt: "{prefix}&eA resource pack is required to display items correctly."

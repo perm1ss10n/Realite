@@ -1,0 +1,70 @@
+format:
+  prefix: "&d[Magic]&r "
+
+magic:
+  enabled: "{prefix}&aRealiteMagic plugin enabled."
+  command:
+    usage:
+      root: "&eUsage: &f/rmagic <menu|spell|mana>"
+      spell: "&eUsage: &f/rmagic spell <select|clear|get> [player] [spellId]"
+    only-player: "{prefix}&cCommand is only for players."
+    spell:
+      selected_self: "&aYou selected a spell: &f{spell}"
+      selected_other: "&aPlayer &f{player}&a selected a spell: &f{spell}"
+      cleared_self: "&eYou cleared the selected spell."
+      cleared_other: "&eYou cleared the selected spell for &f{player}&e."
+      get_self: "&eCurrent spell: &f{spell}"
+      get_other: "&eCurrent spell for &f{player}&e: &f{spell}"
+      get_empty_self: "&eNo spell selected."
+      get_empty_other: "&ePlayer &f{player}&e has no selected spell."
+      unknown_spell: "&cUnknown spell: &f{spellId}"
+      locked: "&cUnavailable: &f{reason}"
+    errors:
+      no_permission: "&cNo permission."
+      player_not_found: "&cPlayer not found: &f{player}"
+      only_players: "&cCommand is only for players."
+  need-focus: "{prefix}&cYou need a focus item to cast."
+  menu:
+    title: "&5Select spell"
+    spell_select:
+      title: "&5Select spell"
+      no_spells: "&cNo spells available."
+      selected: "&aSelected: &f{spell}"
+      locked: "&cUnavailable: &f{reason}"
+    mana-line: "&7Mana: &b{mana}"
+    cooldown-line: "&7Cooldown: &b{cooldown}&7s"
+    selected: "&aSelected"
+    unavailable: "&cUnavailable"
+    common:
+      filler: " "
+      close: "&cClose"
+      back: "&eBack"
+  error:
+    no_selected_spell: "&cNo spell selected. Open &f/rmagic&c and choose one."
+    cannot_select_spell: "&cYou cannot select this spell: &f{reason}"
+    not_enough_mana: "&cNot enough mana: &f{current}&c/&f{need}"
+    on_cooldown: "&cCooldown: &f{seconds}&c s"
+    need_focus: "&cYou need a magic focus in hand."
+  mana:
+    actionbar: "{prefix}&dMana: &b{mana}&7/&b{max}"
+  spell:
+    lore:
+      description: "&7{desc}"
+      mana: "&bMana: &f{mana}"
+      cooldown: "&eCooldown: &f{seconds}s"
+      range: "&aRange: &f{range}"
+      damage: "&cDamage: &f{damage}"
+      selected: "&a✔ Selected"
+      locked_reason: "&cRequires: &f{reason}"
+      requirements:
+        class: "Class: {class}"
+        evolution: "Evolution: {evolution}"
+        separator: ", "
+    cast: "{prefix}&dYou cast: &f{name}"
+    selected: "{prefix}&dActive spell: &f{name}"
+    requirements:
+      class: "{prefix}&cRequired class: &f{class}"
+      evolution: "{prefix}&cRequired evolution: &f{evolution}"
+    warlock_ray:
+      name: "&5Shadow Ray"
+      desc: "&7A piercing ray that deals magic damage."

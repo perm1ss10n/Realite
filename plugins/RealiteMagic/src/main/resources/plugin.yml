@@ -1,0 +1,28 @@
+name: RealiteMagic
+version: 1.0.0
+main: ru.realite.magic.RealiteMagicPlugin
+api-version: "1.21"
+
+commands:
+  rmagic:
+    description: "RealiteMagic command"
+    usage: "/rmagic"
+
+softdepend:
+  - RealiteItems
+  - RealiteCore
+  - RealiteClasses
+
+permissions:
+  realite.magic.use:
+    description: "Allows casting spells"
+    default: true
+  realite.magic.menu:
+    description: "Allows opening the spell selection menu"
+    default: true
+  realite.magic.admin:
+    description: "Base permission for RealiteMagic admin commands"
+    default: op
+  realite.magic.spell.select:
+    description: "Allows selecting/clearing/getting own spell"
+    default: false

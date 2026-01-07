@@ -1,0 +1,63 @@
+# Основной язык сообщений (ru/en)
+lang: "ru"
+
+mana:
+  maxDefault: 100.0
+  regenPerSecond: 2.0
+  regenInCombatMultiplier: 0.5
+  combatTimeoutSeconds: 10.0
+
+cooldowns:
+  globalCastTicks: 10
+
+casting:
+  requireFocus: true
+  allowedFocusItemIds:
+    - "warlock_grimoire"
+  manaFormat: "0.0"
+  cooldownFormat: "0.0"
+
+menu:
+  spellSelect:
+    titleKey: "magic.menu.spell_select.title"
+    size: 54
+    closeOnSelect: true
+    defaultSpellIconMaterial: "PAPER"
+    manaFormat: "0.0"
+    cooldownFormat: "0.0"
+    rangeFormat: "0.0"
+    damageFormat: "0.0"
+    slots:
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+      - 16
+      - 19
+      - 20
+      - 21
+      - 22
+      - 23
+      - 24
+      - 25
+      - 28
+      - 29
+      - 30
+      - 31
+      - 32
+      - 33
+      - 34
+    filler:
+      enabled: true
+      material: "BLACK_STAINED_GLASS_PANE"
+      nameKey: "magic.menu.common.filler"
+    buttons:
+      close:
+        enabled: true
+        slot: 49
+        material: "BARRIER"
+        nameKey: "magic.menu.common.close"
+    noSpells:
+      material: "PAPER"

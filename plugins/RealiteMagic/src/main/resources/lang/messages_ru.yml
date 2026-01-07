@@ -1,0 +1,70 @@
+format:
+  prefix: "&d[Magic]&r "
+
+magic:
+  enabled: "{prefix}&aПлагин RealiteMagic включён."
+  command:
+    usage:
+      root: "&eИспользование: &f/rmagic <menu|spell|mana>"
+      spell: "&eИспользование: &f/rmagic spell <select|clear|get> [player] [spellId]"
+    only-player: "{prefix}&cКоманда доступна только игрокам."
+    spell:
+      selected_self: "&aВы выбрали заклинание: &f{spell}"
+      selected_other: "&aИгрок &f{player}&a выбрал заклинание: &f{spell}"
+      cleared_self: "&eВы сбросили выбранное заклинание."
+      cleared_other: "&eВы сбросили выбранное заклинание у &f{player}&e."
+      get_self: "&eТекущее заклинание: &f{spell}"
+      get_other: "&eТекущее заклинание у &f{player}&e: &f{spell}"
+      get_empty_self: "&eЗаклинание не выбрано."
+      get_empty_other: "&eУ &f{player}&e нет выбранного заклинания."
+      unknown_spell: "&cНеизвестное заклинание: &f{spellId}"
+      locked: "&cНедоступно: &f{reason}"
+    errors:
+      no_permission: "&cНет прав."
+      player_not_found: "&cИгрок не найден: &f{player}"
+      only_players: "&cКоманда доступна только игрокам."
+  need-focus: "{prefix}&cНужен фокус-предмет для каста."
+  menu:
+    title: "&5Выбор заклинания"
+    spell_select:
+      title: "&5Выбор заклинания"
+      no_spells: "&cНет доступных заклинаний."
+      selected: "&aВыбрано: &f{spell}"
+      locked: "&cНедоступно: &f{reason}"
+    mana-line: "&7Мана: &b{mana}"
+    cooldown-line: "&7КД: &b{cooldown}&7с"
+    selected: "&aВыбрано"
+    unavailable: "&cНедоступно"
+    common:
+      filler: " "
+      close: "&cЗакрыть"
+      back: "&eНазад"
+  error:
+    no_selected_spell: "&cЗаклинание не выбрано. Открой &f/rmagic&c и выбери."
+    cannot_select_spell: "&cТы не можешь выбрать это заклинание: &f{reason}"
+    not_enough_mana: "&cНедостаточно маны: &f{current}&c/&f{need}"
+    on_cooldown: "&cПерезарядка: &f{seconds}&cс"
+    need_focus: "&cНужен магический фокус в руке."
+  mana:
+    actionbar: "{prefix}&dМана: &b{mana}&7/&b{max}"
+  spell:
+    lore:
+      description: "&7{desc}"
+      mana: "&bМана: &f{mana}"
+      cooldown: "&eКД: &f{seconds}с"
+      range: "&aДальность: &f{range}"
+      damage: "&cУрон: &f{damage}"
+      selected: "&a✔ Выбрано"
+      locked_reason: "&cТребуется: &f{reason}"
+      requirements:
+        class: "Класс: {class}"
+        evolution: "Эволюция: {evolution}"
+        separator: ", "
+    cast: "{prefix}&dВы использовали: &f{name}"
+    selected: "{prefix}&dАктивное заклинание: &f{name}"
+    requirements:
+      class: "{prefix}&cТребуется класс: &f{class}"
+      evolution: "{prefix}&cТребуется эволюция: &f{evolution}"
+    warlock_ray:
+      name: "&5Луч Тьмы"
+      desc: "&7Пронзающий луч наносит магический урон."
