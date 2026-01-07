@@ -3,12 +3,16 @@ package ru.realite.magic.service;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.plugin.RegisteredServiceProvider;
+import ru.realite.core.api.CoreApi;
+import ru.realite.core.api.classes.ClassProfile;
+import ru.realite.core.api.classes.ClassProfileProvider;
 import ru.realite.items.service.ItemService;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.model.MageState;
@@ -16,6 +20,7 @@ import ru.realite.magic.gui.SpellSelectMenu;
 import ru.realite.magic.spell.SpellCaster;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellRegistry;
+import ru.realite.magic.spell.SpellRequirements;
 
 public final class MagicService {
 
@@ -76,6 +81,9 @@ public final class MagicService {
         if (spell == null) {
             return false;
         }
+        if (!meetsRequirements(player, spell)) {
+            return false;
+        }
         if (isOnCooldown(player, GLOBAL_COOLDOWN_KEY)) {
             return false;
         }
@@ -119,6 +127,10 @@ public final class MagicService {
     }
 
     public void cast(Player player, SpellDefinition spell) {
+        if (!meetsRequirements(player, spell)) {
+            sendRequirementMessage(player, spell);
+            return;
+        }
         if (!spendMana(player, spell)) {
             return;
         }
@@ -150,6 +162,38 @@ public final class MagicService {
             return null;
         }
         return spellRegistry.get(spellId);
+    }
+
+    public boolean meetsRequirements(Player player, SpellDefinition spell) {
+        if (spell == null) {
+            return false;
+        }
+        SpellRequirements requirements = spell.requirements();
+        if (requirements == null || requirements.isEmpty()) {
+            return true;
+        }
+        ClassProfileProvider provider = resolveClassProfileProvider();
+        if (provider == null) {
+            return true;
+        }
+        Optional<ClassProfile> profile = provider.getProfile(player);
+        if (profile.isEmpty()) {
+            return false;
+        }
+        ClassProfile info = profile.get();
+        String classId = requirements.classId();
+        if (classId != null && !classId.isBlank()) {
+            if (info.classId() == null || !info.classId().equalsIgnoreCase(classId)) {
+                return false;
+            }
+        }
+        String evolutionId = requirements.evolutionId();
+        if (evolutionId != null && !evolutionId.isBlank()) {
+            if (info.evolutionId() == null || !info.evolutionId().equalsIgnoreCase(evolutionId)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public boolean hasRequiredFocus(Player player) {
@@ -215,6 +259,40 @@ public final class MagicService {
         RegisteredServiceProvider<ItemService> provider =
                 Bukkit.getServicesManager().getRegistration(ItemService.class);
         return provider != null ? provider.getProvider() : null;
+    }
+
+    private ClassProfileProvider resolveClassProfileProvider() {
+        RegisteredServiceProvider<CoreApi> provider =
+                Bukkit.getServicesManager().getRegistration(CoreApi.class);
+        if (provider == null || provider.getProvider() == null) {
+            return null;
+        }
+        CoreApi core = provider.getProvider();
+        return core.services().get(ClassProfileProvider.class);
+    }
+
+    private void sendRequirementMessage(Player player, SpellDefinition spell) {
+        if (spell == null) {
+            return;
+        }
+        SpellRequirements requirements = spell.requirements();
+        if (requirements == null || requirements.isEmpty()) {
+            return;
+        }
+        ClassProfileProvider provider = resolveClassProfileProvider();
+        if (provider == null) {
+            return;
+        }
+        String classId = requirements.classId();
+        if (classId != null && !classId.isBlank()) {
+            player.sendMessage(messages.msg("magic.spell.requirements.class",
+                    "class", classId));
+        }
+        String evolutionId = requirements.evolutionId();
+        if (evolutionId != null && !evolutionId.isBlank()) {
+            player.sendMessage(messages.msg("magic.spell.requirements.evolution",
+                    "evolution", evolutionId));
+        }
     }
 
     private double clamp(double value, double min, double max) {

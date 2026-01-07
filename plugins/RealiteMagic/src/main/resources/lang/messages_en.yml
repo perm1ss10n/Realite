@@ -17,6 +17,9 @@ magic:
   spell:
     cast: "{prefix}&dYou cast: &f{name}"
     selected: "{prefix}&dActive spell: &f{name}"
+    requirements:
+      class: "{prefix}&cRequired class: &f{class}"
+      evolution: "{prefix}&cRequired evolution: &f{evolution}"
     warlock_ray:
       name: "&5Shadow Ray"
       desc: "&7A piercing ray that deals magic damage."

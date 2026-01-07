@@ -13,6 +13,7 @@ import ru.realite.classes.listener.PlayerQuitListener;
 
 import ru.realite.classes.service.ClassHudService;
 import ru.realite.classes.service.ClassService;
+import ru.realite.classes.service.ClassProfileProviderImpl;
 import ru.realite.classes.service.ClassTagProviderImpl;
 import ru.realite.classes.service.EconomyService;
 import ru.realite.classes.service.EffectService;
@@ -32,6 +33,7 @@ import ru.realite.classes.util.Messages;
 import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.CoreModuleEntrypoint;
 import ru.realite.core.api.Platform;
+import ru.realite.core.api.classes.ClassProfileProvider;
 import ru.realite.core.api.classes.ClassTagProvider;
 import ru.realite.core.api.classes.ClassXpService;
 import ru.realite.core.api.logging.Banners;
@@ -60,6 +62,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
     private ProgressionService progressionService;
     private EffectService effectService;
     private ClassHudService hudService;
+    private ClassProfileProvider classProfileProvider;
     private ClassTagProvider classTagProvider;
     private ClassXpService classXpService;
     private EvolutionRequirementAdapter evolutionRequirementAdapter;
@@ -153,6 +156,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         if (classService != null) {
             classService.saveAll();
         }
+        unregisterClassProfileProvider();
         unregisterClassTagProvider();
         unregisterClassXpService();
         if (platform != null) {
@@ -215,6 +219,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         this.menu = new ClassSelectMenu(this, classConfig, classLore, hiddenClassGate);
 
         registerClassTagProvider();
+        registerClassProfileProvider();
         registerClassXpService();
 
         platform.info("reloadAll completed");
@@ -310,6 +315,14 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         core.services().replace(ClassTagProvider.class, classTagProvider);
     }
 
+    private void registerClassProfileProvider() {
+        if (core == null || classService == null) {
+            return;
+        }
+        classProfileProvider = new ClassProfileProviderImpl(classService);
+        core.services().replace(ClassProfileProvider.class, classProfileProvider);
+    }
+
     private void unregisterClassTagProvider() {
         if (core == null || classTagProvider == null) {
             return;
@@ -319,6 +332,17 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
             core.services().unregister(ClassTagProvider.class);
         }
         classTagProvider = null;
+    }
+
+    private void unregisterClassProfileProvider() {
+        if (core == null || classProfileProvider == null) {
+            return;
+        }
+        ClassProfileProvider registered = core.services().get(ClassProfileProvider.class);
+        if (registered == classProfileProvider) {
+            core.services().unregister(ClassProfileProvider.class);
+        }
+        classProfileProvider = null;
     }
 
     private void registerClassXpService() {
