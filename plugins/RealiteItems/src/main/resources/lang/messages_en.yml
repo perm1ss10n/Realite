@@ -16,3 +16,6 @@ items:
     name: "&eGuide Compass"
     lore-1: "&7Helps you find the way."
     lore-2: "&7Technical item from RealiteItems."
+
+resource-pack:
+  prompt: "{prefix}&eA resource pack is required to display items correctly."
