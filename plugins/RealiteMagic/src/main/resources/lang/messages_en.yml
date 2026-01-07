@@ -1,0 +1,5 @@
+format:
+  prefix: "&d[Magic]&r "
+
+magic:
+  enabled: "{prefix}&aRealiteMagic plugin enabled."

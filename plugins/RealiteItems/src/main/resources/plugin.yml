@@ -1,0 +1,9 @@
+name: RealiteItems
+version: 1.0.0
+main: ru.realite.items.RealiteItemsPlugin
+api-version: "1.21"
+
+permissions:
+  realite.items.admin:
+    description: "Base permission for RealiteItems admin commands"
+    default: op
