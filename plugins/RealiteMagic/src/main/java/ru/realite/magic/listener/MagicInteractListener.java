@@ -29,7 +29,7 @@ public final class MagicInteractListener implements Listener {
             return;
         }
 
-        SpellDefinition spell = magicService.getActiveSpell(event.getPlayer());
+        SpellDefinition spell = magicService.getSelectedSpell(event.getPlayer());
         if (spell == null) {
             return;
         }

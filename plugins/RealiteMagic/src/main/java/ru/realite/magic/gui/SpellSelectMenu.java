@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Locale;
 import java.util.Set;
 import net.kyori.adventure.text.Component;
@@ -91,6 +92,22 @@ public final class SpellSelectMenu implements InventoryHolder {
         return meta.getPersistentDataContainer().get(menuActionKey, PersistentDataType.STRING);
     }
 
+    public boolean isMenuItem(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return false;
+        }
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) {
+            return false;
+        }
+        String menuId = meta.getPersistentDataContainer().get(menuKey, PersistentDataType.STRING);
+        return menuId != null && menuId.equalsIgnoreCase("spell_select");
+    }
+
+    public boolean isMenuTitle(Component title) {
+        return Objects.equals(title, messages.msg(menuTitleKey()));
+    }
+
     public boolean isCloseButton(ItemStack item) {
         String action = extractMenuAction(item);
         return action != null && action.equalsIgnoreCase("close");
@@ -113,7 +130,7 @@ public final class SpellSelectMenu implements InventoryHolder {
         }
         inventory.clear();
 
-        String activeSpellId = magicService.getActiveSpellId(player);
+        String selectedSpellId = magicService.getSelectedSpellId(player);
         List<SpellDefinition> spells = new ArrayList<>(spellRegistry.all());
         spells.sort(Comparator.comparing(SpellDefinition::id));
 
@@ -142,7 +159,7 @@ public final class SpellSelectMenu implements InventoryHolder {
             if (inventory.getItem(targetSlot) != null) {
                 continue;
             }
-            inventory.setItem(targetSlot, createSpellItem(spell, activeSpellId, available));
+            inventory.setItem(targetSlot, createSpellItem(spell, selectedSpellId, available));
             placed++;
         }
 
@@ -153,7 +170,7 @@ public final class SpellSelectMenu implements InventoryHolder {
         applyButtons();
     }
 
-    private ItemStack createSpellItem(SpellDefinition spell, String activeSpellId, boolean available) {
+    private ItemStack createSpellItem(SpellDefinition spell, String selectedSpellId, boolean available) {
         ItemStack item = new ItemStack(spell.iconMaterial());
         ItemMeta meta = item.getItemMeta();
         if (meta == null) {
@@ -178,7 +195,7 @@ public final class SpellSelectMenu implements InventoryHolder {
         lore.add(messages.msg("magic.spell.lore.damage",
                 "damage", formatNumber(spell.damage(), "menu.spellSelect.damageFormat", "0.0")));
 
-        if (spell.id().equals(activeSpellId)) {
+        if (spell.id().equals(selectedSpellId)) {
             lore.add(messages.msg("magic.spell.lore.selected"));
         }
         if (!available) {
@@ -243,6 +260,7 @@ public final class SpellSelectMenu implements InventoryHolder {
         if (action != null && !action.isBlank()) {
             meta.getPersistentDataContainer().set(menuActionKey, PersistentDataType.STRING, action);
         }
+        meta.getPersistentDataContainer().set(menuKey, PersistentDataType.STRING, "spell_select");
         item.setItemMeta(meta);
         return item;
     }
@@ -257,6 +275,7 @@ public final class SpellSelectMenu implements InventoryHolder {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.displayName(messages.msg("magic.menu.spell_select.no_spells"));
+            meta.getPersistentDataContainer().set(menuKey, PersistentDataType.STRING, "spell_select");
             item.setItemMeta(meta);
         }
         inventory.setItem(slot, item);
