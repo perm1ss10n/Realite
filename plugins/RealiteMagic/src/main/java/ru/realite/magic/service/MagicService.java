@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -109,6 +110,10 @@ public final class MagicService {
         return until != null && until > System.currentTimeMillis();
     }
 
+    public boolean isOnGlobalCooldown(Player player) {
+        return isOnCooldown(player, GLOBAL_COOLDOWN_KEY);
+    }
+
     public void setCooldown(Player player, String key, long ticks) {
         if (ticks <= 0) {
             return;
@@ -116,6 +121,23 @@ public final class MagicService {
         MageState state = state(player);
         long until = System.currentTimeMillis() + ticks * 50L;
         state.cooldowns().put(key, until);
+    }
+
+    public long remainingCooldownTicks(Player player, String key) {
+        MageState state = state(player);
+        Long until = state.cooldowns().get(key);
+        if (until == null) {
+            return 0;
+        }
+        long remainingMs = until - System.currentTimeMillis();
+        if (remainingMs <= 0) {
+            return 0;
+        }
+        return (long) Math.ceil(remainingMs / 50.0);
+    }
+
+    public long remainingGlobalCooldownTicks(Player player) {
+        return remainingCooldownTicks(player, GLOBAL_COOLDOWN_KEY);
     }
 
     public void markCombat(Player player) {
@@ -129,9 +151,6 @@ public final class MagicService {
     public void cast(Player player, SpellDefinition spell) {
         if (!meetsRequirements(player, spell)) {
             sendRequirementMessage(player, spell);
-            return;
-        }
-        if (!spendMana(player, spell)) {
             return;
         }
         caster.cast(player, spell);
@@ -257,6 +276,27 @@ public final class MagicService {
 
     private long globalCastTicks() {
         return plugin.getConfig().getLong("cooldowns.globalCastTicks", 10);
+    }
+
+    public void consumeManaAndCooldowns(Player player, SpellDefinition spell) {
+        if (spell == null) {
+            return;
+        }
+        addMana(player, -spell.mana());
+        setCooldown(player, GLOBAL_COOLDOWN_KEY, globalCastTicks());
+        setCooldown(player, spell.id(), spell.cooldownTicks());
+    }
+
+    public String configString(String path, String fallback) {
+        FileConfiguration config = plugin.getConfig();
+        if (config == null) {
+            return fallback;
+        }
+        String value = config.getString(path);
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        return value;
     }
 
     private ItemService resolveItemService() {

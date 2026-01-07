@@ -11,6 +11,9 @@ import ru.realite.magic.spell.SpellDefinition;
 
 public final class MagicMenuListener implements Listener {
 
+    private static final String PERMISSION_SELECT = "realite.magic.spell.select";
+    private static final String PERMISSION_ADMIN = "realite.magic.admin";
+
     private final MagicService magicService;
     private final MagicMessages messages;
 
@@ -57,6 +60,11 @@ public final class MagicMenuListener implements Listener {
             return;
         }
 
+        if (!hasSelectPermission(player)) {
+            player.sendMessage(messages.msg("magic.command.errors.no_permission"));
+            return;
+        }
+
         if (!magicService.meetsRequirements(player, spell)) {
             String reason = menu.requirementReason(spell);
             if (reason == null) {
@@ -72,5 +80,9 @@ public final class MagicMenuListener implements Listener {
         if (menu.shouldCloseOnSelect()) {
             player.closeInventory();
         }
+    }
+
+    private boolean hasSelectPermission(Player player) {
+        return player.hasPermission(PERMISSION_SELECT) || player.hasPermission(PERMISSION_ADMIN);
     }
 }

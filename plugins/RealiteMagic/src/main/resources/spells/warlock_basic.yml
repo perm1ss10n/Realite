@@ -7,5 +7,10 @@ spell:
   cooldownTicks: 60
   range: 20.0
   damage: 6.0
+  icon:
+    material: "BOOK"
+    customModelData: 10001
+  gui:
+    slot: 11
   requirements:
     class: "WARLOCK"
