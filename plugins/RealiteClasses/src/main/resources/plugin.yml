@@ -21,6 +21,10 @@ permissions:
     description: "Access to tester-mode admin commands"
     default: op
 
+  realite.classes.admin.lore:
+    description: "Allows using /class lore admin command"
+    default: op
+
   realiteclass.choose:
     description: "Разрешает выбрать класс (если ещё не выбран)"
     default: true

@@ -1,7 +1,5 @@
 package ru.realite.classes.gui;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -16,7 +14,7 @@ import ru.realite.classes.model.ClassId;
 import ru.realite.classes.service.HiddenClassGate;
 import ru.realite.classes.service.HiddenClassGateResult;
 import ru.realite.classes.storage.ClassConfigRepository;
-import ru.realite.classes.util.Messages;
+import ru.realite.classes.storage.ClassLoreRepository;
 
 import java.util.List;
 
@@ -25,36 +23,32 @@ public class ClassSelectMenu implements InventoryHolder {
     public static final int SIZE = 27;
 
     private final ClassConfigRepository classConfig;
+    private final ClassLoreRepository classLore;
     private final HiddenClassGate hiddenClassGate;
-    private final Messages messages;
     private Inventory inventory;
     private final NamespacedKey classIdKey;
-    private final LegacyComponentSerializer legacySection = LegacyComponentSerializer.legacySection();
 
-    public ClassSelectMenu(JavaPlugin plugin, ClassConfigRepository classConfig, HiddenClassGate hiddenClassGate, Messages messages) {
+    public ClassSelectMenu(JavaPlugin plugin,
+                           ClassConfigRepository classConfig,
+                           ClassLoreRepository classLore,
+                           HiddenClassGate hiddenClassGate) {
         this.classConfig = classConfig;
+        this.classLore = classLore;
         this.hiddenClassGate = hiddenClassGate;
-        this.messages = messages;
         this.classIdKey = new NamespacedKey(plugin, "class_id");
         this.inventory = Bukkit.createInventory(
                 this,
                 SIZE,
-                Component.text("Выбор класса"));
+                ru.realite.classes.util.Components.c("&6Классы"));
     }
 
     private void fill(Player player) {
         inventory.clear();
 
         // стабильный порядок по enum
-        var defs = new java.util.ArrayList<ClassConfigRepository.ClassDef>();
-        for (ru.realite.classes.model.ClassId id : ru.realite.classes.model.ClassId.values()) {
-            var def = classConfig.get(id);
-            if (def != null)
-                defs.add(def);
-        }
-
+        var ids = ru.realite.classes.model.ClassId.values();
         int index = 0;
-        int total = defs.size();
+        int total = ids.length;
         int rows = SIZE / 9;
 
         for (int row = 0; row < rows && index < total; row++) {
@@ -67,32 +61,61 @@ public class ClassSelectMenu implements InventoryHolder {
             int startSlot = rowStart + (9 - countInRow) / 2;
 
             for (int i = 0; i < countInRow; i++) {
-                var def = defs.get(index++);
+                ClassId id = ids[index++];
+                var def = classConfig.get(id);
+                var loreDef = classLore != null ? classLore.get(id) : null;
 
                 boolean hiddenLocked = false;
                 HiddenClassGateResult gateResult = null;
-                if (def.hidden) {
-                    gateResult = hiddenClassGate != null ? hiddenClassGate.check(player, def.id) : null;
+                boolean hidden = (def != null && def.hidden) || (loreDef != null && loreDef.hiddenEnabled);
+                if (hidden) {
+                    gateResult = hiddenClassGate != null ? hiddenClassGate.check(player, id) : null;
                     hiddenLocked = gateResult != null && !gateResult.available();
                 }
 
+                Material icon = loreDef != null ? loreDef.icon : null;
+                if (icon == null && def != null) {
+                    icon = def.icon;
+                }
+
                 ItemStack item = new ItemStack(hiddenLocked
-                        ? Material.BARRIER
-                        : (def.icon != null ? def.icon : Material.PAPER));
+                        ? (loreDef != null && loreDef.lockedIcon != null ? loreDef.lockedIcon : Material.BARRIER)
+                        : (icon != null ? icon : Material.PAPER));
                 ItemMeta meta = item.getItemMeta();
                 if (meta != null) {
                     if (hiddenLocked) {
-                        meta.displayName(ru.realite.classes.util.Components.c("&6???"));
+                        String lockedName = loreDef != null ? loreDef.lockedName : null;
+                        if (lockedName == null || lockedName.isBlank()) {
+                            lockedName = "&8???";
+                        }
+                        meta.displayName(ru.realite.classes.util.Components.c(lockedName));
                     } else {
-                        meta.displayName(ru.realite.classes.util.Components.c("&6" + def.name));
+                        String displayName = loreDef != null ? loreDef.displayName : null;
+                        if (displayName == null || displayName.isBlank()) {
+                            displayName = def != null ? def.name : id.name();
+                        }
+                        meta.displayName(ru.realite.classes.util.Components.c(displayName));
                     }
 
                     List<net.kyori.adventure.text.Component> lore = new java.util.ArrayList<>();
                     if (hiddenLocked) {
-                        appendLockedLore(def.id, lore, gateResult);
-                    } else if (def.lore != null) {
-                        for (String line : def.lore) {
-                            lore.add(ru.realite.classes.util.Components.c("&7" + line));
+                        List<String> lockedLore = loreDef != null ? loreDef.lockedLore : List.of();
+                        if (lockedLore.isEmpty()) {
+                            lore.add(ru.realite.classes.util.Components.c("&7..."));
+                        } else {
+                            for (String line : lockedLore) {
+                                lore.add(ru.realite.classes.util.Components.c(line));
+                            }
+                        }
+                    } else {
+                        List<String> lines = loreDef != null ? loreDef.lore : List.of();
+                        if ((lines == null || lines.isEmpty()) && def != null) {
+                            lines = def.lore;
+                        }
+                        if (lines != null) {
+                            for (String line : lines) {
+                                lore.add(ru.realite.classes.util.Components.c(line));
+                            }
                         }
                     }
                     meta.lore(lore);
@@ -100,7 +123,7 @@ public class ClassSelectMenu implements InventoryHolder {
                     meta.getPersistentDataContainer().set(
                             classIdKey,
                             PersistentDataType.STRING,
-                            def.id.name());
+                            id.name());
 
                     item.setItemMeta(meta);
                 }
@@ -115,7 +138,7 @@ public class ClassSelectMenu implements InventoryHolder {
         this.inventory = Bukkit.createInventory(
                 this,
                 SIZE,
-                Component.text("Выбор класса"));
+                ru.realite.classes.util.Components.c("&6Классы"));
         fill(player);
         return inventory;
     }
@@ -136,30 +159,4 @@ public class ClassSelectMenu implements InventoryHolder {
         return ClassId.fromString(raw);
     }
 
-    private void appendLockedLore(ClassId classId, List<Component> lore, HiddenClassGateResult gateResult) {
-        lore.add(legacySection.deserialize(messages.get("class-locked")));
-        if (gateResult == null || gateResult.reasonKey() == null) {
-            return;
-        }
-
-        String reasonKey = gateResult.reasonKey();
-        if (reasonKey.equals("class-locked-quest")) {
-            String questId = hiddenClassGate != null ? hiddenClassGate.requiredQuestId(classId) : null;
-            String questLabel = questId != null ? questId : "-";
-            lore.add(legacySection.deserialize(messages.format("class-locked-quest", java.util.Map.of(
-                    "quest", questLabel))));
-        } else if (reasonKey.equals("class-locked-evolution")) {
-            lore.add(legacySection.deserialize(messages.get("class-locked-evolution")));
-            lore.add(legacySection.deserialize(messages.format("class-locked-requirements", java.util.Map.of(
-                    "req", hiddenClassGate != null ? hiddenClassGate.describeEvolutionRequirement(classId) : "-"))));
-        } else if (reasonKey.equals("class-locked-both")) {
-            lore.add(legacySection.deserialize(messages.get("class-locked-both")));
-            String questId = hiddenClassGate != null ? hiddenClassGate.requiredQuestId(classId) : null;
-            String questLabel = questId != null ? questId : "-";
-            lore.add(legacySection.deserialize(messages.format("class-locked-quest", java.util.Map.of(
-                    "quest", questLabel))));
-            lore.add(legacySection.deserialize(messages.format("class-locked-requirements", java.util.Map.of(
-                    "req", hiddenClassGate != null ? hiddenClassGate.describeEvolutionRequirement(classId) : "-"))));
-        }
-    }
 }

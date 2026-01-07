@@ -22,6 +22,7 @@ import ru.realite.classes.service.HiddenClassGate;
 import ru.realite.classes.service.ProgressionService;
 
 import ru.realite.classes.storage.ClassConfigRepository;
+import ru.realite.classes.storage.ClassLoreRepository;
 import ru.realite.classes.storage.TesterPresetRepository;
 import ru.realite.classes.storage.XpConfigRepository;
 import ru.realite.classes.storage.YamlProfileRepository;
@@ -47,6 +48,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
     // ===== configs / util =====
     private Messages messages;
     private ClassConfigRepository classConfig;
+    private ClassLoreRepository classLore;
     private XpConfigRepository xpConfig;
     private TesterPresetRepository testerPresets;
 
@@ -105,6 +107,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         // --- resources ---
         saveDefaultConfig();
         saveIfNotExists("classes.yml");
+        saveIfNotExists("classes_lore.yml");
         saveIfNotExists("xp.yml");
         saveIfNotExists("tester-presets.yml");
         saveIfNotExists("lang/messages_ru.yml");
@@ -175,6 +178,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
 
         // --- configs ---
         this.classConfig = new ClassConfigRepository(data);
+        this.classLore = new ClassLoreRepository(data);
         this.xpConfig = new XpConfigRepository(data, getLogger());
         this.testerPresets = new TesterPresetRepository(data);
 
@@ -208,7 +212,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
                 () -> core.services().get(ru.realite.core.api.quests.QuestUnlockService.class));
 
         // --- menu ---
-        this.menu = new ClassSelectMenu(this, classConfig, hiddenClassGate, messages);
+        this.menu = new ClassSelectMenu(this, classConfig, classLore, hiddenClassGate);
 
         registerClassTagProvider();
         registerClassXpService();
