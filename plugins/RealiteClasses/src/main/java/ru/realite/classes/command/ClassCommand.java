@@ -21,7 +21,6 @@ import ru.realite.classes.storage.XpConfigRepository;
 import ru.realite.classes.util.ChatTemplate;
 import ru.realite.classes.util.ItemComponents;
 import ru.realite.classes.util.Messages;
-import ru.realite.classes.core.CoreAccess;
 import ru.realite.core.api.quests.ClassBackstoryService;
 
 import java.util.Map;

@@ -58,3 +58,23 @@ classes:
     postIntroQuests:
       - "common_gear_up"
       - "common_settle_in_city"
+
+  WARLOCK:
+    title: "Путь чернокнижника"
+    pages:
+      - "&6Чернокнижник&7 слышит шёпоты, за которые другие платят рассудком."
+      - "&7Сила приходит не бесплатно — и не всегда к тебе."
+    introQuestId: "warlock_initiation"
+    postIntroQuests:
+      - "common_gear_up"
+      - "common_settle_in_city"
+
+  MERCENARY:
+    title: "Путь наёмника"
+    pages:
+      - "&6Наёмник&7 выбирает выживание, когда честь становится роскошью."
+      - "&7Контракт важнее имён и последствий."
+    introQuestId: "mercenary_initiation"
+    postIntroQuests:
+      - "common_gear_up"
+      - "common_settle_in_city"
