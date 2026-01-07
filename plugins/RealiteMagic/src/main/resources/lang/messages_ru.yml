@@ -12,6 +12,7 @@ magic:
     mana-line: "&7Мана: &b{mana}"
     cooldown-line: "&7КД: &b{cooldown}&7с"
     selected: "&aВыбрано"
+    unavailable: "&cНедоступно"
   mana:
     actionbar: "{prefix}&dМана: &b{mana}&7/&b{max}"
   spell:
