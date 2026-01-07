@@ -17,3 +17,6 @@ permissions:
   realite.magic.admin:
     description: "Base permission for RealiteMagic admin commands"
     default: op
+  realite.magic.spell.select:
+    description: "Allows selecting/clearing/getting own spell"
+    default: op
