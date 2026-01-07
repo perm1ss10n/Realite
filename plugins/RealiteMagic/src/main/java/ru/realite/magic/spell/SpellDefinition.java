@@ -8,5 +8,6 @@ public record SpellDefinition(
         double mana,
         long cooldownTicks,
         double range,
-        double damage
+        double damage,
+        SpellRequirements requirements
 ) {}

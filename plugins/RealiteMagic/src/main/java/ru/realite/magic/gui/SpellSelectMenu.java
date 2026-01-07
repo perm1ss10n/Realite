@@ -47,7 +47,7 @@ public final class SpellSelectMenu implements InventoryHolder {
     }
 
     public Inventory create(Player player) {
-        int size = menuSize();
+        int size = menuSize(player);
         String title = messages.raw("magic.menu.title");
         inventory = Bukkit.createInventory(this, size, LEGACY.deserialize(title));
         fill(player);
@@ -82,6 +82,9 @@ public final class SpellSelectMenu implements InventoryHolder {
 
         int slot = 0;
         for (SpellDefinition spell : spells) {
+            if (!magicService.meetsRequirements(player, spell)) {
+                continue;
+            }
             if (slot >= inventory.getSize()) {
                 break;
             }
@@ -119,8 +122,14 @@ public final class SpellSelectMenu implements InventoryHolder {
         return item;
     }
 
-    private int menuSize() {
-        int count = spellRegistry.all().size();
+    private int menuSize(Player player) {
+        int count = 0;
+        for (SpellDefinition spell : spellRegistry.all()) {
+            if (magicService.meetsRequirements(player, spell)) {
+                count++;
+            }
+        }
+        count = Math.max(1, count);
         int rows = Math.max(1, (count + 8) / 9);
         rows = Math.min(rows, 6);
         return rows * 9;

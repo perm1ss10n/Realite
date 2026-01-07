@@ -17,6 +17,9 @@ magic:
   spell:
     cast: "{prefix}&dВы использовали: &f{name}"
     selected: "{prefix}&dАктивное заклинание: &f{name}"
+    requirements:
+      class: "{prefix}&cТребуется класс: &f{class}"
+      evolution: "{prefix}&cТребуется эволюция: &f{evolution}"
     warlock_ray:
       name: "&5Луч Тьмы"
       desc: "&7Пронзающий луч наносит магический урон."
