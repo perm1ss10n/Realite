@@ -201,14 +201,14 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         // --- HUD ---
         this.hudService = new ClassHudService(classService, classConfig, evolutionService);
 
-        // --- menu ---
-        this.menu = new ClassSelectMenu(this, classConfig);
-
         this.evolutionRequirementAdapter = new EvolutionRequirementAdapter(classService);
         this.hiddenClassGate = new HiddenClassGate(
                 classConfig,
                 evolutionRequirementAdapter,
                 () -> core.services().get(ru.realite.core.api.quests.QuestUnlockService.class));
+
+        // --- menu ---
+        this.menu = new ClassSelectMenu(this, classConfig, hiddenClassGate, messages);
 
         registerClassTagProvider();
         registerClassXpService();

@@ -690,7 +690,7 @@ public class ClassCommand implements CommandExecutor {
                     return true;
                 }
 
-                p.openInventory(plugin.getMenu().create());
+                p.openInventory(plugin.getMenu().create(p));
                 return true;
             }
 
@@ -699,7 +699,7 @@ public class ClassCommand implements CommandExecutor {
                     p.sendMessage(messages.get("cant-change"));
                     return true;
                 }
-                p.openInventory(plugin.getMenu().create());
+                p.openInventory(plugin.getMenu().create(p));
                 return true;
             }
 
