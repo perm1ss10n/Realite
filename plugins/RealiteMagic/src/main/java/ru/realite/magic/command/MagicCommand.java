@@ -22,11 +22,11 @@ public final class MagicCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messages.msg("magic.mana.only-player"));
+            sender.sendMessage(messages.msg("magic.command.only-player"));
             return true;
         }
         if (args.length == 0) {
-            player.sendMessage(messages.msg("magic.mana.usage"));
+            magicService.spellSelectMenu().open(player);
             return true;
         }
         String sub = args[0].toLowerCase(Locale.ROOT);
@@ -39,7 +39,11 @@ public final class MagicCommand implements CommandExecutor {
             player.sendActionBar(msg);
             return true;
         }
-        player.sendMessage(messages.msg("magic.mana.usage"));
+        if ("menu".equals(sub)) {
+            magicService.spellSelectMenu().open(player);
+            return true;
+        }
+        player.sendMessage(messages.msg("magic.command.usage"));
         return true;
     }
 
