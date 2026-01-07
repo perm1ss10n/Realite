@@ -5,6 +5,7 @@ api-version: "1.21"
 
 depend:
   - RealiteCore
+  - RealiteClasses
 
 commands:
   quest:

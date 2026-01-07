@@ -11,4 +11,4 @@ quests:
     countOwner: true
     countMember: true
 
-lang: "ru"
+lang: "ru" # Language code for localization (e.g., "en" for English, "ru" for Russian)
