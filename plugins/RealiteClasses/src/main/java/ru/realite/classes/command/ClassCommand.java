@@ -117,18 +117,7 @@ public class ClassCommand implements CommandExecutor {
             return true;
 
         if (args.length == 0) {
-            p.sendMessage(messages.get("class-help-header"));
-
-            for (String line : messages.getList("class-help")) {
-                p.sendMessage(line);
-            }
-
-            // админские подсказки показываем тем, у кого есть админ-права (а не reload)
-            if (p.hasPermission("realiteclass.admin") || p.hasPermission("realiteclass.reload")) {
-                for (String line : messages.getList("class-help-admin")) {
-                    p.sendMessage(line);
-                }
-            }
+            p.openInventory(plugin.getMenu().create(p));
             return true;
         }
 
@@ -839,6 +828,10 @@ public class ClassCommand implements CommandExecutor {
             }
 
             case "lore" -> {
+                if (!p.hasPermission("realite.classes.admin.lore")) {
+                    p.sendMessage(messages.get("no-permission"));
+                    return true;
+                }
                 ClassBackstoryService backstoryService =
                         CoreAccess.core().services().get(ClassBackstoryService.class);
 
