@@ -2,6 +2,7 @@ package ru.realite.items;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import ru.realite.items.command.ItemsCommand;
@@ -39,7 +40,13 @@ public final class RealiteItemsPlugin extends JavaPlugin {
         }
 
         Bukkit.getPluginManager().registerEvents(new ItemRefreshListener(this, itemService), this);
+        Bukkit.getServicesManager().register(ItemService.class, itemService, this, ServicePriority.Normal);
         messages.send(getServer().getConsoleSender(), "items.enabled", "");
+    }
+
+    @Override
+    public void onDisable() {
+        Bukkit.getServicesManager().unregisterAll(this);
     }
 
     public void reloadAll() {

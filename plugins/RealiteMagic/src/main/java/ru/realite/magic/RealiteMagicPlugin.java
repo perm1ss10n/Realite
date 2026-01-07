@@ -5,6 +5,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.listener.CombatListener;
+import ru.realite.magic.listener.MagicInteractListener;
+import ru.realite.magic.listener.MagicMenuListener;
 import ru.realite.magic.listener.PlayerCleanupListener;
 import ru.realite.magic.command.MagicCommand;
 import ru.realite.magic.service.MagicService;
@@ -62,6 +64,8 @@ public final class RealiteMagicPlugin extends JavaPlugin {
     private void registerListeners() {
         Bukkit.getPluginManager().registerEvents(new CombatListener(magicService), this);
         Bukkit.getPluginManager().registerEvents(new PlayerCleanupListener(magicService), this);
+        Bukkit.getPluginManager().registerEvents(new MagicMenuListener(magicService, messages), this);
+        Bukkit.getPluginManager().registerEvents(new MagicInteractListener(magicService, messages), this);
     }
 
     private void saveIfNotExists(String resourcePath) {

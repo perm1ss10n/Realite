@@ -3,12 +3,20 @@ format:
 
 magic:
   enabled: "{prefix}&aПлагин RealiteMagic включён."
-  mana:
-    usage: "{prefix}&7Использование: &f/rmagic mana"
+  command:
+    usage: "{prefix}&7Использование: &f/rmagic &7[&fmana&7]"
     only-player: "{prefix}&cКоманда доступна только игрокам."
+  need-focus: "{prefix}&cНужен фокус-предмет для каста."
+  menu:
+    title: "&5Выбор заклинания"
+    mana-line: "&7Мана: &b{mana}"
+    cooldown-line: "&7КД: &b{cooldown}&7с"
+    selected: "&aВыбрано"
+  mana:
     actionbar: "{prefix}&dМана: &b{mana}&7/&b{max}"
   spell:
     cast: "{prefix}&dВы использовали: &f{name}"
+    selected: "{prefix}&dАктивное заклинание: &f{name}"
     warlock_ray:
       name: "&5Луч Тьмы"
       desc: "&7Пронзающий луч наносит магический урон."

@@ -9,6 +9,7 @@ public final class MageState {
     private double maxMana;
     private final Map<String, Long> cooldowns = new HashMap<>();
     private long lastCombatTime;
+    private String activeSpellId;
 
     public MageState(double mana, double maxMana) {
         this.mana = mana;
@@ -41,5 +42,13 @@ public final class MageState {
 
     public void lastCombatTime(long lastCombatTime) {
         this.lastCombatTime = lastCombatTime;
+    }
+
+    public String activeSpellId() {
+        return activeSpellId;
+    }
+
+    public void activeSpellId(String activeSpellId) {
+        this.activeSpellId = activeSpellId;
     }
 }

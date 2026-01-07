@@ -8,8 +8,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.plugin.RegisteredServiceProvider;
+import ru.realite.items.service.ItemService;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.model.MageState;
+import ru.realite.magic.gui.SpellSelectMenu;
 import ru.realite.magic.spell.SpellCaster;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellRegistry;
@@ -23,6 +26,7 @@ public final class MagicService {
     private final SpellRegistry spellRegistry;
     private final SpellCaster caster;
     private final Map<UUID, MageState> states = new HashMap<>();
+    private final SpellSelectMenu spellSelectMenu;
     private BukkitTask regenTask;
 
     public MagicService(JavaPlugin plugin, MagicMessages messages, SpellRegistry spellRegistry) {
@@ -30,6 +34,7 @@ public final class MagicService {
         this.messages = Objects.requireNonNull(messages, "messages");
         this.spellRegistry = Objects.requireNonNull(spellRegistry, "spellRegistry");
         this.caster = new SpellCaster(this, messages);
+        this.spellSelectMenu = new SpellSelectMenu(plugin, spellRegistry, messages, this);
     }
 
     public void start() {
@@ -124,6 +129,52 @@ public final class MagicService {
         return messages;
     }
 
+    public SpellSelectMenu spellSelectMenu() {
+        return spellSelectMenu;
+    }
+
+    public void setActiveSpell(Player player, String spellId) {
+        if (spellId == null || spellId.isBlank()) {
+            return;
+        }
+        state(player).activeSpellId(spellId);
+    }
+
+    public String getActiveSpellId(Player player) {
+        return state(player).activeSpellId();
+    }
+
+    public SpellDefinition getActiveSpell(Player player) {
+        String spellId = getActiveSpellId(player);
+        if (spellId == null || spellId.isBlank()) {
+            return null;
+        }
+        return spellRegistry.get(spellId);
+    }
+
+    public boolean hasRequiredFocus(Player player) {
+        if (!plugin.getConfig().getBoolean("casting.requireFocus", false)) {
+            return true;
+        }
+        ItemService itemService = resolveItemService();
+        if (itemService == null) {
+            return false;
+        }
+        var allowed = plugin.getConfig().getStringList("casting.allowedFocusItemIds");
+        if (allowed == null || allowed.isEmpty()) {
+            return false;
+        }
+        var inventory = player.getInventory();
+        var mainHand = inventory.getItemInMainHand();
+        var offHand = inventory.getItemInOffHand();
+        for (String allowedId : allowed) {
+            if (itemService.isItem(mainHand, allowedId) || itemService.isItem(offHand, allowedId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void tickRegen() {
         double regenPerSecond = plugin.getConfig().getDouble("mana.regenPerSecond", 0);
         if (regenPerSecond <= 0) {
@@ -158,6 +209,12 @@ public final class MagicService {
 
     private long globalCastTicks() {
         return plugin.getConfig().getLong("cooldowns.globalCastTicks", 10);
+    }
+
+    private ItemService resolveItemService() {
+        RegisteredServiceProvider<ItemService> provider =
+                Bukkit.getServicesManager().getRegistration(ItemService.class);
+        return provider != null ? provider.getProvider() : null;
     }
 
     private double clamp(double value, double min, double max) {
