@@ -58,7 +58,9 @@ public final class RealiteMagicPlugin extends JavaPlugin {
             getLogger().warning("Command /rmagic missing in plugin.yml");
             return;
         }
-        command.setExecutor(new MagicCommand(magicService, messages));
+        MagicCommand magicCommand = new MagicCommand(magicService, messages);
+        command.setExecutor(magicCommand);
+        command.setTabCompleter(magicCommand);
     }
 
     private void registerListeners() {

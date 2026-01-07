@@ -15,7 +15,10 @@ magic:
       cleared_other: "&eВы сбросили выбранное заклинание у &f{player}&e."
       get_self: "&eТекущее заклинание: &f{spell}"
       get_other: "&eТекущее заклинание у &f{player}&e: &f{spell}"
+      get_empty_self: "&eЗаклинание не выбрано."
+      get_empty_other: "&eУ &f{player}&e нет выбранного заклинания."
       unknown_spell: "&cНеизвестное заклинание: &f{spellId}"
+      locked: "&cНедоступно: &f{reason}"
     errors:
       no_permission: "&cНет прав."
       player_not_found: "&cИгрок не найден: &f{player}"
