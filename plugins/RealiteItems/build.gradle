@@ -27,7 +27,8 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 tasks.jar {
-    enabled = false
+    enabled = true
+    archiveClassifier.set("plain") // чтобы не конфликтовать с shadowJar
 }
 
 tasks.shadowJar {
