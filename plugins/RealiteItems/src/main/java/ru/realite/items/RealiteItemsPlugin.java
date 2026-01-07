@@ -1,37 +1,88 @@
 package ru.realite.items;
 
-import java.io.File;
+import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
 import org.bukkit.plugin.java.JavaPlugin;
-import ru.realite.items.i18n.ItemsMessages;
+
+import ru.realite.items.command.ItemsCommand;
+import ru.realite.items.i18n.ItemMessages;
+import ru.realite.items.listener.ItemRefreshListener;
+import ru.realite.items.service.ItemRegistry;
+import ru.realite.items.service.ItemService;
+
+import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Files;
 
 public final class RealiteItemsPlugin extends JavaPlugin {
 
-    private ItemsMessages messages;
+    private ItemMessages messages;
+    private ItemRegistry registry;
+    private ItemService itemService;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
         saveIfNotExists("lang/messages_ru.yml");
         saveIfNotExists("lang/messages_en.yml");
-        messages = new ItemsMessages(this);
+        saveIfNotExists("items/example_items.yml");
+
+        reloadAll();
+
+        Command command = getCommand("ritems");
+        if (command != null) {
+            ItemsCommand executor = new ItemsCommand(itemService, messages, registry);
+            command.setExecutor(executor);
+            command.setTabCompleter(executor);
+        } else {
+            getLogger().warning("Command /ritems not found in plugin.yml; executor not registered.");
+        }
+
+        Bukkit.getPluginManager().registerEvents(new ItemRefreshListener(this, itemService), this);
+        messages.send(getServer().getConsoleSender(), "items.enabled", "");
     }
 
-    public ItemsMessages getMessages() {
+    public void reloadAll() {
+        reloadConfig();
+        String lang = getConfig().getString("lang", "ru");
+        this.messages = new ItemMessages(this, lang);
+        this.registry = new ItemRegistry(this);
+        this.registry.reload();
+        this.itemService = new ItemService(this, registry, messages);
+    }
+
+    public ItemMessages messages() {
         return messages;
     }
 
+    public ItemRegistry registry() {
+        return registry;
+    }
+
+    public ItemService itemService() {
+        return itemService;
+    }
+
+    public boolean isRefreshOnJoin() {
+        return getConfig().getBoolean("items.refreshOnJoin", false);
+    }
+
     private void saveIfNotExists(String resourcePath) {
-        if (!getDataFolder().exists() && !getDataFolder().mkdirs()) {
-            getLogger().warning("Failed to create plugin data folder: " + getDataFolder());
+        File outFile = new File(getDataFolder(), resourcePath);
+        if (outFile.exists()) {
             return;
         }
+        outFile.getParentFile().mkdirs();
 
-        if (getResource(resourcePath) == null) {
-            return;
-        }
-
-        if (!new File(getDataFolder(), resourcePath).exists()) {
-            saveResource(resourcePath, false);
+        try (InputStream in = getResource(resourcePath)) {
+            if (in == null) {
+                getLogger().warning("Resource not found: " + resourcePath);
+                return;
+            }
+            Files.copy(in, outFile.toPath());
+        } catch (Exception e) {
+            getLogger().severe("Failed to save resource: " + resourcePath);
+            e.printStackTrace();
         }
     }
 }

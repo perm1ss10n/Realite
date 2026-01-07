@@ -3,6 +3,11 @@ version: 1.0.0
 main: ru.realite.items.RealiteItemsPlugin
 api-version: "1.21"
 
+commands:
+  ritems:
+    description: "RealiteItems admin commands"
+    permission: realite.items.admin
+
 permissions:
   realite.items.admin:
     description: "Base permission for RealiteItems admin commands"

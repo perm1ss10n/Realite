@@ -1,0 +1,11 @@
+items:
+  example_compass:
+    id: "example_compass"
+    material: "COMPASS"
+    customModelData: 1001
+    nameKey: "items.example_compass.name"
+    loreKeys:
+      - "items.example_compass.lore-1"
+      - "items.example_compass.lore-2"
+    glow: true
+    unstackable: true
