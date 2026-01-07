@@ -11,6 +11,7 @@ import java.util.Set;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -33,6 +34,7 @@ public final class SpellSelectMenu implements InventoryHolder {
     private final MagicMessages messages;
     private final MagicService magicService;
     private final NamespacedKey spellIdKey;
+    private final NamespacedKey menuActionKey;
     private final JavaPlugin plugin;
     private Inventory inventory;
 
@@ -45,6 +47,7 @@ public final class SpellSelectMenu implements InventoryHolder {
         this.messages = messages;
         this.magicService = magicService;
         this.spellIdKey = new NamespacedKey(plugin, "spell_id");
+        this.menuActionKey = new NamespacedKey(plugin, "menu_action");
     }
 
     public void open(Player player) {
@@ -53,7 +56,7 @@ public final class SpellSelectMenu implements InventoryHolder {
 
     public Inventory create(Player player) {
         int size = menuSize();
-        String title = messages.raw("magic.menu.title");
+        String title = messages.raw(menuTitleKey());
         inventory = Bukkit.createInventory(this, size, LEGACY.deserialize(title));
         fill(player);
         return inventory;
@@ -73,6 +76,26 @@ public final class SpellSelectMenu implements InventoryHolder {
             return null;
         }
         return meta.getPersistentDataContainer().get(spellIdKey, PersistentDataType.STRING);
+    }
+
+    public String extractMenuAction(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return null;
+        }
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) {
+            return null;
+        }
+        return meta.getPersistentDataContainer().get(menuActionKey, PersistentDataType.STRING);
+    }
+
+    public boolean isCloseButton(ItemStack item) {
+        String action = extractMenuAction(item);
+        return action != null && action.equalsIgnoreCase("close");
+    }
+
+    public boolean shouldCloseOnSelect() {
+        return plugin.getConfig().getBoolean("menu.spellSelect.closeOnSelect", true);
     }
 
     private void fill(Player player) {
@@ -115,6 +138,9 @@ public final class SpellSelectMenu implements InventoryHolder {
             }
             inventory.setItem(targetSlot, createSpellItem(spell, activeSpellId, available));
         }
+
+        applyFiller();
+        applyButtons();
     }
 
     private ItemStack createSpellItem(SpellDefinition spell, String activeSpellId, boolean available) {
@@ -150,6 +176,58 @@ public final class SpellSelectMenu implements InventoryHolder {
 
         meta.lore(lore);
         meta.getPersistentDataContainer().set(spellIdKey, PersistentDataType.STRING, spell.id());
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    private void applyFiller() {
+        if (inventory == null) {
+            return;
+        }
+        if (!plugin.getConfig().getBoolean("menu.spellSelect.filler.enabled", false)) {
+            return;
+        }
+        Material material = resolveMaterial("menu.spellSelect.filler.material", "BLACK_STAINED_GLASS_PANE");
+        String nameKey = plugin.getConfig().getString("menu.spellSelect.filler.nameKey", "");
+        ItemStack filler = createMenuItem(material, nameKey, null);
+        for (int slot = 0; slot < inventory.getSize(); slot++) {
+            if (inventory.getItem(slot) == null) {
+                inventory.setItem(slot, filler);
+            }
+        }
+    }
+
+    private void applyButtons() {
+        if (inventory == null) {
+            return;
+        }
+        if (!plugin.getConfig().getBoolean("menu.spellSelect.buttons.close.enabled", false)) {
+            return;
+        }
+        int slot = plugin.getConfig().getInt("menu.spellSelect.buttons.close.slot", -1);
+        if (slot < 0 || slot >= inventory.getSize()) {
+            return;
+        }
+        Material material = resolveMaterial("menu.spellSelect.buttons.close.material", "BARRIER");
+        String nameKey = plugin.getConfig().getString("menu.spellSelect.buttons.close.nameKey", "");
+        ItemStack item = createMenuItem(material, nameKey, "close");
+        inventory.setItem(slot, item);
+    }
+
+    private ItemStack createMenuItem(Material material, String nameKey, String action) {
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) {
+            return item;
+        }
+        if (nameKey != null && !nameKey.isBlank()) {
+            meta.displayName(LEGACY.deserialize(messages.raw(nameKey)));
+        } else {
+            meta.displayName(Component.empty());
+        }
+        if (action != null && !action.isBlank()) {
+            meta.getPersistentDataContainer().set(menuActionKey, PersistentDataType.STRING, action);
+        }
         item.setItemMeta(meta);
         return item;
     }
@@ -197,6 +275,26 @@ public final class SpellSelectMenu implements InventoryHolder {
             slots.add(i);
         }
         return slots;
+    }
+
+    private String menuTitleKey() {
+        String key = plugin.getConfig().getString("menu.spellSelect.titleKey");
+        if (key == null || key.isBlank()) {
+            key = "magic.menu.spell_select.title";
+        }
+        return key;
+    }
+
+    private Material resolveMaterial(String configKey, String fallbackName) {
+        String name = plugin.getConfig().getString(configKey, fallbackName);
+        if (name == null || name.isBlank()) {
+            name = fallbackName;
+        }
+        Material material = Material.matchMaterial(name.trim());
+        if (material == null) {
+            material = Material.matchMaterial(fallbackName);
+        }
+        return material == null ? Material.PAPER : material;
     }
 
     private String formatNumber(double value, String configKey, String fallbackPattern) {

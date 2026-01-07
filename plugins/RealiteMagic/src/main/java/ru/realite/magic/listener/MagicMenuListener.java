@@ -42,6 +42,11 @@ public final class MagicMenuListener implements Listener {
             return;
         }
 
+        if (menu.isCloseButton(event.getCurrentItem())) {
+            player.closeInventory();
+            return;
+        }
+
         String spellId = menu.extractSpellId(event.getCurrentItem());
         if (spellId == null) {
             return;
@@ -55,6 +60,8 @@ public final class MagicMenuListener implements Listener {
         magicService.setActiveSpell(player, spellId);
         player.sendMessage(messages.msg("magic.spell.selected",
                 "name", messages.raw(spell.nameKey())));
-        player.closeInventory();
+        if (menu.shouldCloseOnSelect()) {
+            player.closeInventory();
+        }
     }
 }

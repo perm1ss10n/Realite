@@ -9,10 +9,15 @@ magic:
   need-focus: "{prefix}&cНужен фокус-предмет для каста."
   menu:
     title: "&5Выбор заклинания"
+    spell_select:
+      title: "&5Выбор заклинания"
     mana-line: "&7Мана: &b{mana}"
     cooldown-line: "&7КД: &b{cooldown}&7с"
     selected: "&aВыбрано"
     unavailable: "&cНедоступно"
+    common:
+      filler: " "
+      close: "&cЗакрыть"
   mana:
     actionbar: "{prefix}&dМана: &b{mana}&7/&b{max}"
   spell:
