@@ -53,6 +53,10 @@ magic:
       damage: "&cDamage: &f{damage}"
       selected: "&a✔ Selected"
       locked_reason: "&cRequires: &f{reason}"
+      requirements:
+        class: "Class: {class}"
+        evolution: "Evolution: {evolution}"
+        separator: ", "
     cast: "{prefix}&dYou cast: &f{name}"
     selected: "{prefix}&dActive spell: &f{name}"
     requirements:
