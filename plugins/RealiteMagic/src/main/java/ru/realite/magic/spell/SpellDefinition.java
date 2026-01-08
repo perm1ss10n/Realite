@@ -12,6 +12,7 @@ public record SpellDefinition(
         double range,
         double damage,
         SpellRequirements requirements,
+        String castItemId,
         Material iconMaterial,
         Integer iconCustomModelData,
         Integer guiSlot
