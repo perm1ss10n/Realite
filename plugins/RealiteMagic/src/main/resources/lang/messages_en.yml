@@ -45,6 +45,9 @@ magic:
     not_enough_mana: "&cNot enough mana: &f{current}&c/&f{need}"
     on_cooldown: "&cCooldown: &f{seconds}&c s"
     need_focus: "&cYou need a magic focus in hand."
+  storage:
+    load_fail: "&cFailed to load spell data."
+    save_fail: "&cFailed to save spell data."
   mana:
     actionbar: "{prefix}&dMana: &b{mana}&7/&b{max}"
   spell:
