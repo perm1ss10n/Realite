@@ -7,17 +7,26 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.service.MagicService;
+import ru.realite.magic.service.PlayerSpellService;
 import ru.realite.magic.spell.SpellDefinition;
+import ru.realite.magic.spell.SpellRegistry;
 
 public final class MagicInteractListener implements Listener {
 
     private static final String PERMISSION_USE = "realite.magic.use";
 
     private final MagicService magicService;
+    private final PlayerSpellService playerSpellService;
+    private final SpellRegistry spellRegistry;
     private final MagicMessages messages;
 
-    public MagicInteractListener(MagicService magicService, MagicMessages messages) {
+    public MagicInteractListener(MagicService magicService,
+                                 PlayerSpellService playerSpellService,
+                                 SpellRegistry spellRegistry,
+                                 MagicMessages messages) {
         this.magicService = magicService;
+        this.playerSpellService = playerSpellService;
+        this.spellRegistry = spellRegistry;
         this.messages = messages;
     }
 
@@ -36,9 +45,16 @@ public final class MagicInteractListener implements Listener {
             return;
         }
 
-        SpellDefinition spell = magicService.getSelectedSpell(event.getPlayer());
+        var playerId = event.getPlayer().getUniqueId();
+        var selectedSpellId = playerSpellService.getSelected(playerId).orElse(null);
+        if (selectedSpellId == null) {
+            event.getPlayer().sendMessage(messages.msg("magic.cast.no_selected"));
+            return;
+        }
+        SpellDefinition spell = spellRegistry.find(selectedSpellId).orElse(null);
         if (spell == null) {
-            event.getPlayer().sendMessage(messages.msg("magic.error.no_selected_spell"));
+            playerSpellService.clearSelected(playerId);
+            event.getPlayer().sendMessage(messages.msg("magic.spell.unknown", "spell", selectedSpellId));
             return;
         }
 

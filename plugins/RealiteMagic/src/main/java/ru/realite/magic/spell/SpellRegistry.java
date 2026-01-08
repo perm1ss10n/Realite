@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -59,6 +60,13 @@ public final class SpellRegistry {
 
     public SpellDefinition get(String id) {
         return spells.get(id);
+    }
+
+    public Optional<SpellDefinition> find(String id) {
+        if (id == null || id.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(spells.get(id));
     }
 
     private SpellDefinition parseSpell(String fileName, ConfigurationSection section) {

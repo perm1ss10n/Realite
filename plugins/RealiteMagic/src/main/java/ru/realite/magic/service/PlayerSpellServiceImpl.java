@@ -103,6 +103,16 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
     }
 
     @Override
+    public void clearSelected(UUID playerId) {
+        PlayerSpellData data = data(playerId);
+        if (data.selected().isEmpty()) {
+            return;
+        }
+        data.selected(null);
+        markDirty(playerId);
+    }
+
+    @Override
     public void flush(UUID playerId) {
         if (!dirty.contains(playerId)) {
             return;
