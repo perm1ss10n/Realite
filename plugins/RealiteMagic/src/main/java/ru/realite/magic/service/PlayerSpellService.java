@@ -17,4 +17,10 @@ public interface PlayerSpellService {
     Optional<String> getSelected(UUID playerId);
 
     SelectResult select(UUID playerId, String spellId);
+
+    void flush(UUID playerId);
+
+    void flushAll();
+
+    void evict(UUID playerId);
 }
