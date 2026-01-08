@@ -1,284 +1,261 @@
-# 🧩 Realite — Minecraft RPG Platform
+🌍 **Language:** English \| [Русский](README.ru.md)
 
-**Realite** — модульная RPG-платформа для Minecraft (Paper), построенная как набор взаимосвязанных плагинов, объединённых общим ядром.
+# 🧩 Realite --- Minecraft RPG Platform
 
-Проект ориентирован на:
+**Realite** is a modular RPG platform for Minecraft (Paper), built as a
+set of interconnected plugins unified by a shared core.
 
-* долгосрочный прогресс игроков
-* глубокую RPG-логику (классы, эволюции, экономика, города, гильдии, квесты)
-* масштабируемость без переписывания кода
-* чистую архитектуру и удобную разработку
-* единый CI и монорепозиторий
+The project focuses on:
 
-Репозиторий использует **монорепо-подход**: все плагины разрабатываются и версионируются вместе.
+-   long-term player progression
+-   deep RPG systems (classes, evolutions, economy, cities, guilds,
+    quests, items, magic)
+-   scalability without constant refactoring
+-   clean architecture and developer-friendly design
+-   unified CI and monorepo workflow
 
----
+The repository uses a **monorepo approach**: all plugins are developed
+and versioned together.
 
-## 🧠 Архитектура проекта
+------------------------------------------------------------------------
 
-```
-Realite/
-├── RealiteCore/        # Ядро платформы (API/сервисы/интеграции)
-├── plugins/            # Все игровые модули (плагины)
-│   ├── RealiteClasses/             # RPG-классы и прогрессия
-│   ├── RealiteChat/                # Форматирование чата и теги
-│   ├── RealiteGuilds/              # Гильдии игроков
-│   ├── RealiteCityInfrastructure/  # Городская инфраструктура (участки/магазины/рынок)
-│   └── RealiteQuests/              # Квесты и лор
-├── build.gradle
-├── settings.gradle
-└── README.md
-```
+## 🧠 Project Architecture
 
-### 🔑 Ключевая идея
+    Realite/
+    ├── RealiteCore/        # Platform core (API / services / integrations)
+    ├── plugins/            # Gameplay modules (plugins)
+    │   ├── RealiteClasses/             # RPG classes and progression
+    │   ├── RealiteChat/                # Chat formatting and tags
+    │   ├── RealiteGuilds/              # Player guilds
+    │   ├── RealiteCityInfrastructure/  # Cities, plots, shops, market
+    │   ├── RealiteQuests/              # Quests and lore
+    │   ├── RealiteItems/               # Custom items & item API
+    │   └── RealiteMagic/               # Magic system and spells
+    ├── build.gradle
+    ├── settings.gradle
+    └── README.md
 
-* **RealiteCore** — единая точка входа, API и сервисы
-* игровые модули лежат в `plugins/*` и **не зависят друг от друга напрямую**
-* взаимодействие осуществляется через Core-API/сервисы
-* каждый модуль можно развивать независимо
+### 🔑 Core Idea
 
----
+-   **RealiteCore** is the single source of truth (API & services)
+-   gameplay modules live in `plugins/*` and **do not depend on each
+    other directly**
+-   interaction happens strictly through Core APIs
+-   each module can evolve independently
 
-## 🧱 Модули
+------------------------------------------------------------------------
+
+## 🧱 Modules
 
 ### ⚙ RealiteCore
 
-Ядро всей системы.
+The heart of the platform.
 
-Функции:
+Responsibilities:
 
-* сервисы и API (единая точка входа)
-* общие утилиты и контракты
-* интеграции (Vault, PlaceholderAPI и т.д.)
-* управление жизненным циклом модулей
-* единая модель локализации сообщений
+-   shared services and APIs
+-   common utilities and contracts
+-   integrations (Vault, PlaceholderAPI, etc.)
+-   module lifecycle management
+-   unified localization system
+-   base gameplay contracts (Items, Magic, Quests, Guilds)
 
----
+------------------------------------------------------------------------
 
 ### 🧬 plugins/RealiteClasses
 
-Полноценная RPG-система классов.
+A full-featured RPG class system.
 
-Возможности:
+Features:
 
-* выбор класса
-* XP и уровни
-* эволюции и ветки развития
-* классовые эффекты и пассивы
-* HUD / хотбар
-* GUI-настройки
-* интеграция с экономикой
-* события для интеграций (квесты, города, гильдии)
+-   class selection via GUI
+-   XP and leveling
+-   evolutions and progression branches
+-   class passives and effects
+-   HUD / hotbar integration
+-   GUI settings
+-   economy integration
+-   events and hooks for quests, magic, items, cities, and guilds
 
-Конфигурация:
+Configuration:
 
-* `classes.yml`
-* `xp.yml`
+-   `classes.yml`
+-   `xp.yml`
 
----
+------------------------------------------------------------------------
+
+### 🎒 plugins/RealiteItems
+
+Custom item system and shared item API.
+
+Features:
+
+-   YAML-based custom item definitions
+-   CustomModelData, glow, unstackable items
+-   localized names and lore
+-   integration with quests, classes, and magic
+-   API for item validation and granting
+-   unified item format across all modules
+
+Configuration:
+
+-   `items/*.yml`
+-   `items_locale.yml`
+
+------------------------------------------------------------------------
+
+### ✨ plugins/RealiteMagic
+
+Spellcasting and magic system.
+
+Features:
+
+-   spell system (spells)
+-   cooldowns and costs
+-   class and evolution requirements
+-   usage conditions
+-   effects (particles, damage, buffs, debuffs)
+-   GUI-based spell selection for players
+-   admin commands for testing and management
+-   deep integration with RealiteItems and RealiteClasses
+
+Configuration:
+
+-   `spells/*.yml`
+-   `magic.yml`
+
+------------------------------------------------------------------------
 
 ### 💬 plugins/RealiteChat
 
-Форматирование игрового чата, префиксы (LuckPerms), классовые и гильдейские теги.
+Chat formatting and social tags.
 
-Возможности:
+Features:
 
-* глобальный чат
-* гильдейский чат
-* режим **guild spy** для администраторов
-* hover-подсказки для классов и гильдий
-* полная локализация сообщений
+-   global chat
+-   guild chat
+-   **guild spy** mode for administrators
+-   hover tooltips for classes and guilds
+-   full message localization
 
-Пример конфигурации:
-
-```yaml
-language: "ru" # ru / en
-chat:
-  format: "{prefix}{class}{guild}{name}: {message}"
-  tags:
-    joiner: ""
-  spaceBeforeName: true
-
-prefix:
-  enabled: true
-
-class:
-  enabled: true
-  hover:
-    enabled: true
-  roman:
-    enabled: true
-
-guild:
-  enabled: true
-  hover:
-    enabled: true
-```
-
----
+------------------------------------------------------------------------
 
 ### 🛡 plugins/RealiteGuilds
 
-Система гильдий игроков и социального прогресса.
+Player guild and social progression system.
 
-Возможности:
+Features:
 
-* создание и управление гильдиями (название, тег)
-* ранги и права внутри гильдии
-* приглашения, выход, роспуск
-* гильдейский чат с hover-подсказками
-* режим **spy** для администраторов
-* прогрессия гильдии по уровням
-* начисление XP гильдии
+-   guild creation and management
+-   internal ranks and permissions
+-   guild chat
+-   guild progression and leveling
+-   guild XP rewards
+-   groundwork for treasury and quest integration
 
-Администрирование:
-
-* `/g admin addxp <tag> <amount> [reason]`
-* просмотр информации о гильдии
-
-Нововведения:
-
-* таблица прогрессии через `progression.levels`
-* расширенные hover-подсказки
-* причины начисления XP
-* подготовка под казну гильдии и квестовую интеграцию
-
----
+------------------------------------------------------------------------
 
 ### 📜 plugins/RealiteQuests
 
-MVP-система квестов и лора.
+MVP quest and lore system.
 
-Реализовано:
+Implemented:
 
-* базовый движок квестов
-* YAML-конфигурации квестов
-* цели (objectives):
+-   YAML-based quest definitions
+-   objectives: items, crafting, mobs, blocks, NPCs
+-   quest lifecycle (start → progress → completion)
+-   localization
+-   hooks for classes, guilds, magic, and items
 
-  * сбор предметов
-  * крафт
-  * убийства мобов
-  * ломание блоков
-  * взаимодействие с NPC/сущностями
-* жизненный цикл квеста: старт → прогресс → завершение
-* сохранение прогресса игрока
-* локализация названий, описаний и сообщений
-* хуки для интеграции с классами, гильдиями и городами
-  * начальные общие квесты вне зависимости от классов
+Planned:
 
-Планируется:
+-   dialogs and NPCs
+-   story-driven quest chains
+-   rewards and access conditions
+-   guild and city quests
 
-* диалоги и NPC
-* сюжетные цепочки
-* награды и условия доступа
-* гильдейские и городские квесты
-
----
+------------------------------------------------------------------------
 
 ### 🏙 plugins/RealiteCityInfrastructure
 
-Городская и социальная инфраструктура: **участки, магазины и рынок**.
+City and social infrastructure.
 
-Возможности:
+Features:
 
-* городские зоны и регионы
-* участки (Plots) с типами
-* покупка, продажа и передача участков
-* управление доступом (`member`, `trusted`)
-* магазины на участках типа SHOP
-* городской рынок с поиском и телепортацией
-* визуальные маркеры магазинов
+-   cities and regions
+-   plots with types
+-   shops and market
+-   access control
+-   plot transactions and teleportation
 
-Нововведения:
+------------------------------------------------------------------------
 
-* сделки с участками (`transfer`, `sell`, `accept`)
-* поиск ближайших свободных участков
-* телепорт к магазину (`goto`)
-* опциональная аренда SHOP-участков
+## 🛠 Technology Stack
 
----
+-   Java 21
+-   Gradle (monorepo)
+-   Paper API
+-   Vault
+-   YAML-based configuration
+-   GitHub Actions (CI)
 
-## 🔮 Планируемые модули
+------------------------------------------------------------------------
 
-### 🐾 RealiteFamiliars (planned)
+## 📦 Build
 
-Система боевых и вспомогательных питомцев.
-
-* привязка к классам и прогрессу
-* способности и роли
-* интеграция с квестами и гильдиями
-
----
-
-## 🛠 Технологии
-
-* Java 21
-* Gradle (монорепо)
-* Paper API
-* Vault
-* YAML-конфигурация
-* GitHub Actions (CI)
-
----
-
-## 📦 Сборка
-
-```bash
+``` bash
 ./gradlew build
 ```
 
-Готовые `.jar` файлы:
+Built `.jar` files:
 
-```
-/plugins/**/build/libs/
-```
+    /plugins/**/build/libs/
 
----
+------------------------------------------------------------------------
 
-## 🚀 Быстрый старт
+## 🚀 Quick Start
 
-1. Установите **Java 21** и **Paper**.
-2. Склонируйте репозиторий и выполните сборку:
+1.  Install **Java 21** and **Paper**.
+2.  Clone the repository and build the project:
 
-```bash
+``` bash
 ./gradlew build
 ```
 
-3. Скопируйте нужные `.jar` файлы в папку `plugins/` сервера.
+3.  Copy the required `.jar` files into your server's `plugins/`
+    directory.
 
----
+------------------------------------------------------------------------
 
-## 🧩 Принципы проекта
+## 🧩 Project Principles
 
-* модульность > монолит
-* расширяемость > костыли
-* конфигурация > хардкод
-* Core — единый источник истины
-* плагины не знают реализацию друг друга
-* локализация из коробки
+-   modularity \> monolith
+-   extensibility \> hacks
+-   configuration \> hardcode
+-   Core as the single source of truth
+-   plugins do not depend on implementations of each other
+-   localization by default
 
----
+------------------------------------------------------------------------
 
-## 📌 Статус
+## 📌 Status
 
-Проект находится в активной разработке.
-Архитектура и API могут изменяться до стабилизации Core.
+The project is under active development.\
+Architecture and APIs may change until Core stabilization.
 
----
+------------------------------------------------------------------------
 
-## 👤 Разработчики
+## 👤 Team
 
-**perm1ss10n** — автор и ведущий разработчик
-Архитектура платформы, RealiteCore, игровые системы, плагины и интеграции.
+**perm1ss10n** --- author & lead developer\
+Platform architecture, RealiteCore, gameplay systems.
 
-**satanidea** — тестирование и QA
-Проверка игровых механик, баги и стабильность.
+**satanidea** --- testing & QA
 
-**mbutovsky** — лор и сюжет
-Лор мира и квестовый контент (RealiteQuests).
+**mbutovsky** --- lore & narrative design
 
----
+------------------------------------------------------------------------
 
-## 📄 Лицензия
+## 📄 License
 
 TBD
