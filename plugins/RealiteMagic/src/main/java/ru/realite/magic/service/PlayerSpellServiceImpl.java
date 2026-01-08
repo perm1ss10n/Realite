@@ -102,6 +102,7 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
         return new SelectResult.Ok();
     }
 
+    @Override
     public void flush(UUID playerId) {
         if (!dirty.contains(playerId)) {
             return;
@@ -115,11 +116,18 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
         dirty.remove(playerId);
     }
 
+    @Override
     public void flushAll() {
         Set<UUID> pending = new HashSet<>(dirty);
         for (UUID playerId : pending) {
             flush(playerId);
         }
+    }
+
+    @Override
+    public void evict(UUID playerId) {
+        cache.remove(playerId);
+        dirty.remove(playerId);
     }
 
     private PlayerSpellData data(UUID playerId) {

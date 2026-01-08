@@ -61,8 +61,8 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         if (magicService != null) {
             magicService.stop();
         }
-        if (playerSpellService instanceof PlayerSpellServiceImpl service) {
-            service.flushAll();
+        if (playerSpellService != null) {
+            playerSpellService.flushAll();
         }
     }
 
@@ -79,7 +79,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
 
     private void registerListeners() {
         Bukkit.getPluginManager().registerEvents(new CombatListener(magicService), this);
-        Bukkit.getPluginManager().registerEvents(new PlayerCleanupListener(magicService), this);
+        Bukkit.getPluginManager().registerEvents(new PlayerCleanupListener(magicService, playerSpellService), this);
         Bukkit.getPluginManager().registerEvents(new MagicMenuListener(magicService, messages), this);
         Bukkit.getPluginManager().registerEvents(new MagicInteractListener(magicService, messages), this);
     }
