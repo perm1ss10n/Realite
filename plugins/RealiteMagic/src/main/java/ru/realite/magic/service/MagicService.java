@@ -5,20 +5,18 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.classes.ClassProfile;
 import ru.realite.core.api.classes.ClassProfileProvider;
-import ru.realite.items.service.ItemService;
+import ru.realite.magic.integration.items.ItemsBridge;
+import ru.realite.magic.integration.items.NoopItemsBridge;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.model.MageState;
 import ru.realite.magic.gui.SpellSelectMenu;
@@ -37,6 +35,7 @@ public final class MagicService {
     private final MagicMessages messages;
     private final SpellRegistry spellRegistry;
     private final SpellCaster caster;
+    private final ItemsBridge itemsBridge;
     private final Map<UUID, MageState> states = new HashMap<>();
     private final SpellSelectMenu spellSelectMenu;
     private BukkitTask regenTask;
@@ -45,10 +44,12 @@ public final class MagicService {
     public MagicService(JavaPlugin plugin,
                         MagicMessages messages,
                         SpellRegistry spellRegistry,
-                        PlayerSpellService playerSpellService) {
+                        PlayerSpellService playerSpellService,
+                        ItemsBridge itemsBridge) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.messages = Objects.requireNonNull(messages, "messages");
         this.spellRegistry = Objects.requireNonNull(spellRegistry, "spellRegistry");
+        this.itemsBridge = Objects.requireNonNull(itemsBridge, "itemsBridge");
         this.caster = new SpellCaster(this, messages);
         this.spellSelectMenu = new SpellSelectMenu(plugin, spellRegistry, playerSpellService, messages);
     }
@@ -174,6 +175,10 @@ public final class MagicService {
         return spellSelectMenu;
     }
 
+    public ItemsBridge itemsBridge() {
+        return itemsBridge;
+    }
+
     public void setSelectedSpell(Player player, String spellId) {
         if (spellId == null || spellId.isBlank()) {
             return;
@@ -239,8 +244,7 @@ public final class MagicService {
         if (!plugin.getConfig().getBoolean("casting.requireFocus", false)) {
             return true;
         }
-        ItemService itemService = resolveItemService();
-        if (itemService == null) {
+        if (itemsBridge instanceof NoopItemsBridge) {
             return false;
         }
         var allowed = plugin.getConfig().getStringList("casting.allowedFocusItemIds");
@@ -251,7 +255,7 @@ public final class MagicService {
         var mainHand = inventory.getItemInMainHand();
         var offHand = inventory.getItemInOffHand();
         for (String allowedId : allowed) {
-            if (itemService.isItem(mainHand, allowedId) || itemService.isItem(offHand, allowedId)) {
+            if (itemsBridge.isItem(mainHand, allowedId) || itemsBridge.isItem(offHand, allowedId)) {
                 return true;
             }
         }
@@ -304,6 +308,28 @@ public final class MagicService {
         setCooldown(player, spell.id(), spell.cooldownTicks());
     }
 
+    public void handleCastRewards(Player player, SpellDefinition spell) {
+        if (spell == null) {
+            return;
+        }
+        String giveItemId = spell.giveItemId();
+        if (giveItemId == null || giveItemId.isBlank()) {
+            return;
+        }
+        int amount = Math.max(1, spell.giveItemAmount());
+        if (itemsBridge instanceof NoopItemsBridge) {
+            warnMissingItemBridge();
+            return;
+        }
+        itemsBridge.give(player, giveItemId, amount);
+        if (plugin.getConfig().getBoolean("casting.giveItemMessage", true)) {
+            String itemName = LEGACY.serialize(itemsBridge.displayName(giveItemId));
+            player.sendMessage(messages.msg("magic.cast.give_item",
+                    "item", itemName,
+                    "amount", String.valueOf(amount)));
+        }
+    }
+
     public String configString(String path, String fallback) {
         FileConfiguration config = plugin.getConfig();
         if (config == null) {
@@ -314,12 +340,6 @@ public final class MagicService {
             return fallback;
         }
         return value;
-    }
-
-    private ItemService resolveItemService() {
-        RegisteredServiceProvider<ItemService> provider =
-                Bukkit.getServicesManager().getRegistration(ItemService.class);
-        return provider != null ? provider.getProvider() : null;
     }
 
     private ClassProfileProvider resolveClassProfileProvider() {
@@ -343,8 +363,7 @@ public final class MagicService {
         String requiredItemId = requirements.requiredItemId();
         if (requiredItemId != null && !requiredItemId.isBlank()) {
             if (!hasRequiredItem(player, requiredItemId)) {
-                ItemService itemService = resolveItemService();
-                String itemName = resolveRequiredItemName(itemService, requiredItemId);
+                String itemName = resolveRequiredItemName(requiredItemId);
                 player.sendMessage(messages.msg("magic.cast.missing_item", "item", itemName));
             }
         }
@@ -365,19 +384,11 @@ public final class MagicService {
     }
 
     private boolean hasRequiredItem(Player player, String requiredItemId) {
-        ItemService itemService = resolveItemService();
-        if (itemService == null) {
+        if (itemsBridge instanceof NoopItemsBridge) {
             warnMissingItemBridge();
             return true;
         }
-        var inventory = player.getInventory();
-        for (ItemStack stack : inventory.getStorageContents()) {
-            if (itemService.isItem(stack, requiredItemId)) {
-                return true;
-            }
-        }
-        ItemStack offHand = inventory.getItemInOffHand();
-        return itemService.isItem(offHand, requiredItemId);
+        return itemsBridge.hasItem(player, requiredItemId, 1);
     }
 
     private void consumeRequiredItemOnCast(Player player, SpellDefinition spell) {
@@ -389,64 +400,19 @@ public final class MagicService {
         if (requiredItemId == null || requiredItemId.isBlank() || !requirements.consumeOnCast()) {
             return;
         }
-        ItemService itemService = resolveItemService();
-        if (itemService == null) {
+        if (itemsBridge instanceof NoopItemsBridge) {
             warnMissingItemBridge();
             return;
         }
-        removeRequiredItem(player, itemService, requiredItemId);
+        itemsBridge.removeItem(player, requiredItemId, 1);
     }
 
-    private boolean removeRequiredItem(Player player, ItemService itemService, String requiredItemId) {
-        var inventory = player.getInventory();
-        ItemStack[] contents = inventory.getStorageContents();
-        for (int i = 0; i < contents.length; i++) {
-            ItemStack stack = contents[i];
-            if (!itemService.isItem(stack, requiredItemId)) {
-                continue;
-            }
-            int amount = stack.getAmount();
-            if (amount > 1) {
-                stack.setAmount(amount - 1);
-                contents[i] = stack;
-            } else {
-                contents[i] = null;
-            }
-            inventory.setStorageContents(contents);
-            return true;
-        }
-        ItemStack offHand = inventory.getItemInOffHand();
-        if (!itemService.isItem(offHand, requiredItemId)) {
-            return false;
-        }
-        int amount = offHand.getAmount();
-        if (amount > 1) {
-            offHand.setAmount(amount - 1);
-            inventory.setItemInOffHand(offHand);
-        } else {
-            inventory.setItemInOffHand(null);
-        }
-        return true;
-    }
-
-    private String resolveRequiredItemName(ItemService itemService, String requiredItemId) {
-        if (itemService == null) {
+    private String resolveRequiredItemName(String requiredItemId) {
+        if (itemsBridge instanceof NoopItemsBridge) {
             warnMissingItemBridge();
             return requiredItemId;
         }
-        try {
-            ItemStack stack = itemService.create(requiredItemId, 1);
-            ItemMeta meta = stack.getItemMeta();
-            if (meta != null) {
-                Component displayName = meta.displayName();
-                if (displayName != null && !displayName.equals(Component.empty())) {
-                    return LEGACY.serialize(displayName);
-                }
-            }
-        } catch (IllegalArgumentException ex) {
-            return requiredItemId;
-        }
-        return requiredItemId;
+        return LEGACY.serialize(itemsBridge.displayName(requiredItemId));
     }
 
     private void warnMissingItemBridge() {

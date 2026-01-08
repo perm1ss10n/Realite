@@ -70,6 +70,7 @@ magic:
     no_selected: "&cYou have not selected a spell."
     missing_item: "&cRequired item: &f{item}"
     wrong_item: "&cThis spell requires item: &f{item}"
+    give_item: "&aReceived: &f{item}&a x{amount}"
     items_bridge_missing: "RealiteItems is not connected, requiredItemId is not checked."
   storage:
     load_fail: "&cFailed to load spell data."
