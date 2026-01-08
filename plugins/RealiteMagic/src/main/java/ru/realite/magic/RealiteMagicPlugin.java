@@ -10,13 +10,18 @@ import ru.realite.magic.listener.MagicMenuListener;
 import ru.realite.magic.listener.PlayerCleanupListener;
 import ru.realite.magic.command.MagicCommand;
 import ru.realite.magic.service.MagicService;
+import ru.realite.magic.service.PlayerSpellService;
+import ru.realite.magic.service.PlayerSpellServiceImpl;
 import ru.realite.magic.spell.SpellRegistry;
+import ru.realite.magic.storage.PlayerSpellStorage;
+import ru.realite.magic.storage.YamlPlayerSpellStorage;
 
 public final class RealiteMagicPlugin extends JavaPlugin {
 
     private MagicMessages messages;
     private MagicService magicService;
     private SpellRegistry spellRegistry;
+    private PlayerSpellService playerSpellService;
 
     @Override
     public void onEnable() {
@@ -27,6 +32,8 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         messages = new MagicMessages(this);
         spellRegistry = new SpellRegistry(this);
         spellRegistry.load();
+        PlayerSpellStorage storage = new YamlPlayerSpellStorage(this, messages);
+        playerSpellService = new PlayerSpellServiceImpl(storage, spellRegistry, messages);
         magicService = new MagicService(this, messages, spellRegistry);
         magicService.start();
         registerCommand();
@@ -45,10 +52,17 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         return spellRegistry;
     }
 
+    public PlayerSpellService getPlayerSpellService() {
+        return playerSpellService;
+    }
+
     @Override
     public void onDisable() {
         if (magicService != null) {
             magicService.stop();
+        }
+        if (playerSpellService instanceof PlayerSpellServiceImpl service) {
+            service.flushAll();
         }
     }
 

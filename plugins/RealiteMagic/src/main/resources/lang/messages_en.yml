@@ -51,6 +51,15 @@ magic:
   mana:
     actionbar: "{prefix}&dMana: &b{mana}&7/&b{max}"
   spell:
+    unknown: "{prefix}&cUnknown spell: &f{spell}"
+    unlock:
+      ok: "{prefix}&aYou learned a spell: &f{spell}"
+      already: "{prefix}&eSpell already learned: &f{spell}"
+    select:
+      ok: "{prefix}&aSelected spell: &f{spell}"
+      not_learned: "{prefix}&cYou haven't learned this spell: &f{spell}"
+    revoke:
+      ok: "{prefix}&eSpell revoked: &f{spell}"
     lore:
       description: "&7{desc}"
       mana: "&bMana: &f{mana}"
