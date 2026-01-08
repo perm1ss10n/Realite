@@ -45,6 +45,9 @@ magic:
     not_enough_mana: "&cНедостаточно маны: &f{current}&c/&f{need}"
     on_cooldown: "&cПерезарядка: &f{seconds}&cс"
     need_focus: "&cНужен магический фокус в руке."
+  storage:
+    load_fail: "&cНе удалось загрузить данные заклинаний."
+    save_fail: "&cНе удалось сохранить данные заклинаний."
   mana:
     actionbar: "{prefix}&dМана: &b{mana}&7/&b{max}"
   spell:
