@@ -13,20 +13,26 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.service.MagicService;
+import ru.realite.magic.service.PlayerSpellService;
+import ru.realite.magic.service.RevokeResult;
+import ru.realite.magic.service.SelectResult;
+import ru.realite.magic.service.SpellActionReason;
+import ru.realite.magic.service.UnlockCause;
+import ru.realite.magic.service.UnlockResult;
 import ru.realite.magic.spell.SpellDefinition;
-import ru.realite.magic.spell.SpellRegistry;
 
 public final class MagicCommand implements CommandExecutor, TabCompleter {
 
-    private static final String PERMISSION_SELECT = "realite.magic.spell.select";
     private static final String PERMISSION_ADMIN = "realite.magic.admin";
     private static final String PERMISSION_MENU = "realite.magic.menu";
 
     private final MagicService magicService;
+    private final PlayerSpellService playerSpellService;
     private final MagicMessages messages;
 
-    public MagicCommand(MagicService magicService, MagicMessages messages) {
+    public MagicCommand(MagicService magicService, PlayerSpellService playerSpellService, MagicMessages messages) {
         this.magicService = magicService;
+        this.playerSpellService = playerSpellService;
         this.messages = messages;
     }
 
@@ -45,7 +51,7 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
         if ("spell".equals(sub)) {
             return handleSpell(sender, args);
         }
-        sender.sendMessage(messages.msg("magic.command.usage.root"));
+        sender.sendMessage(messages.msg("magic.cmd.usage"));
         return true;
     }
 
@@ -57,14 +63,18 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
         if (args.length >= 2 && !args[0].equalsIgnoreCase("spell")) {
             return Collections.emptyList();
         }
+        if (!sender.hasPermission(PERMISSION_ADMIN)) {
+            return Collections.emptyList();
+        }
         if (args.length == 2) {
-            return List.of("select", "clear", "get");
+            return List.of("give", "remove", "list", "select", "clear");
         }
-        if (args[1].equalsIgnoreCase("select")) {
-            return tabCompleteSelect(sender, args);
+        String action = args[1].toLowerCase(Locale.ROOT);
+        if (args.length == 3) {
+            return tabCompletePlayers();
         }
-        if (args[1].equalsIgnoreCase("clear") || args[1].equalsIgnoreCase("get")) {
-            return tabCompletePlayer(sender, args.length);
+        if (args.length == 4 && ("give".equals(action) || "remove".equals(action) || "select".equals(action))) {
+            return spellIds();
         }
         return Collections.emptyList();
     }
@@ -97,208 +107,162 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleSpell(CommandSender sender, String[] args) {
+        if (!sender.hasPermission(PERMISSION_ADMIN)) {
+            sender.sendMessage(messages.msg("magic.command.errors.no_permission"));
+            return true;
+        }
         if (args.length < 2) {
-            sender.sendMessage(messages.msg("magic.command.usage.spell"));
+            sender.sendMessage(messages.msg("magic.cmd.spell.usage"));
             return true;
         }
         String action = args[1].toLowerCase(Locale.ROOT);
         return switch (action) {
+            case "give" -> handleSpellGive(sender, args);
+            case "remove" -> handleSpellRemove(sender, args);
+            case "list" -> handleSpellList(sender, args);
             case "select" -> handleSpellSelect(sender, args);
             case "clear" -> handleSpellClear(sender, args);
-            case "get" -> handleSpellGet(sender, args);
             default -> {
-                sender.sendMessage(messages.msg("magic.command.usage.spell"));
+                sender.sendMessage(messages.msg("magic.cmd.spell.usage"));
                 yield true;
             }
         };
     }
 
-    private boolean handleSpellSelect(CommandSender sender, String[] args) {
-        if (args.length == 3) {
-            if (!(sender instanceof Player player)) {
-                sender.sendMessage(messages.msg("magic.command.only-player"));
-                return true;
-            }
-            if (!hasSelectPermission(sender)) {
-                sender.sendMessage(messages.msg("magic.command.errors.no_permission"));
-                return true;
-            }
-            return selectSpell(sender, player, args[2], false);
+    private boolean handleSpellGive(CommandSender sender, String[] args) {
+        if (args.length != 4) {
+            sender.sendMessage(messages.msg("magic.cmd.spell.usage"));
+            return true;
         }
-        if (args.length == 4) {
-            if (!sender.hasPermission(PERMISSION_ADMIN)) {
-                sender.sendMessage(messages.msg("magic.command.errors.no_permission"));
-                return true;
-            }
-            Player target = Bukkit.getPlayerExact(args[2]);
-            if (target == null) {
-                sender.sendMessage(messages.msg("magic.command.errors.player_not_found",
-                        "player", args[2]));
-                return true;
-            }
-            return selectSpell(sender, target, args[3], true);
+        Player target = Bukkit.getPlayerExact(args[2]);
+        if (target == null) {
+            sender.sendMessage(messages.msg("magic.cmd.player_not_found",
+                    "player", args[2]));
+            return true;
         }
-        sender.sendMessage(messages.msg("magic.command.usage.spell"));
+        SpellDefinition spell = magicService.spellRegistry().get(args[3]);
+        if (spell == null) {
+            sender.sendMessage(messages.msg("magic.command.spell.unknown_spell",
+                    "spellId", args[3]));
+            return true;
+        }
+        UnlockResult result = playerSpellService.unlock(target.getUniqueId(), spell.id(), UnlockCause.COMMAND);
+        if (result instanceof UnlockResult.Fail fail) {
+            return handleSpellActionFailure(sender, fail.reason(), spell.id());
+        }
+        sender.sendMessage(messages.msg("magic.cmd.spell.give.ok",
+                "player", target.getName(),
+                "spell", displaySpellName(spell.id())));
         return true;
     }
 
-    private boolean selectSpell(CommandSender sender, Player target, String spellId, boolean adminMode) {
-        SpellRegistry registry = magicService.spellRegistry();
-        SpellDefinition spell = registry.get(spellId);
+    private boolean handleSpellRemove(CommandSender sender, String[] args) {
+        if (args.length != 4) {
+            sender.sendMessage(messages.msg("magic.cmd.spell.usage"));
+            return true;
+        }
+        Player target = Bukkit.getPlayerExact(args[2]);
+        if (target == null) {
+            sender.sendMessage(messages.msg("magic.cmd.player_not_found",
+                    "player", args[2]));
+            return true;
+        }
+        SpellDefinition spell = magicService.spellRegistry().get(args[3]);
         if (spell == null) {
             sender.sendMessage(messages.msg("magic.command.spell.unknown_spell",
-                    "spellId", spellId));
+                    "spellId", args[3]));
             return true;
         }
-        if (!magicService.meetsRequirements(target, spell)) {
-            String reason = magicService.spellSelectMenu().requirementReason(spell);
-            if (reason == null) {
-                reason = "";
-            }
-            sender.sendMessage(messages.msg("magic.command.spell.locked",
-                    "reason", reason));
+        RevokeResult result = playerSpellService.revoke(target.getUniqueId(), spell.id(), UnlockCause.COMMAND);
+        if (result instanceof RevokeResult.Fail fail) {
+            return handleSpellActionFailure(sender, fail.reason(), spell.id());
+        }
+        sender.sendMessage(messages.msg("magic.cmd.spell.remove.ok",
+                "player", target.getName(),
+                "spell", displaySpellName(spell.id())));
+        return true;
+    }
+
+    private boolean handleSpellList(CommandSender sender, String[] args) {
+        if (args.length != 3) {
+            sender.sendMessage(messages.msg("magic.cmd.spell.usage"));
             return true;
         }
-        magicService.setSelectedSpell(target, spell.id());
-        String spellName = messages.raw(spell.nameKey());
-        if (adminMode) {
-            sender.sendMessage(messages.msg("magic.command.spell.selected_other",
-                    "player", target.getName(),
-                    "spell", spellName));
-            if (!(sender instanceof Player senderPlayer) || !senderPlayer.getUniqueId().equals(target.getUniqueId())) {
-                target.sendMessage(messages.msg("magic.command.spell.selected_self",
-                        "spell", spellName));
-            }
-        } else {
-            sender.sendMessage(messages.msg("magic.command.spell.selected_self",
-                    "spell", spellName));
+        Player target = Bukkit.getPlayerExact(args[2]);
+        if (target == null) {
+            sender.sendMessage(messages.msg("magic.cmd.player_not_found",
+                    "player", args[2]));
+            return true;
         }
+        sender.sendMessage(messages.msg("magic.cmd.spell.list.header",
+                "player", target.getName()));
+        for (String spellId : playerSpellService.listLearned(target.getUniqueId())) {
+            sender.sendMessage(messages.msg("magic.cmd.spell.list.entry",
+                    "spell", displaySpellName(spellId),
+                    "id", spellId));
+        }
+        return true;
+    }
+
+    private boolean handleSpellSelect(CommandSender sender, String[] args) {
+        if (args.length != 4) {
+            sender.sendMessage(messages.msg("magic.cmd.spell.usage"));
+            return true;
+        }
+        Player target = Bukkit.getPlayerExact(args[2]);
+        if (target == null) {
+            sender.sendMessage(messages.msg("magic.cmd.player_not_found",
+                    "player", args[2]));
+            return true;
+        }
+        SelectResult result = playerSpellService.select(target.getUniqueId(), args[3]);
+        if (result instanceof SelectResult.Fail fail) {
+            return handleSpellActionFailure(sender, fail.reason(), args[3]);
+        }
+        sender.sendMessage(messages.msg("magic.cmd.spell.select.ok",
+                "player", target.getName(),
+                "spell", displaySpellName(args[3])));
         return true;
     }
 
     private boolean handleSpellClear(CommandSender sender, String[] args) {
-        if (args.length == 2) {
-            if (!(sender instanceof Player player)) {
-                sender.sendMessage(messages.msg("magic.command.only-player"));
-                return true;
-            }
-            if (!hasSelectPermission(sender)) {
-                sender.sendMessage(messages.msg("magic.command.errors.no_permission"));
-                return true;
-            }
-            magicService.clearSelectedSpell(player);
-            sender.sendMessage(messages.msg("magic.command.spell.cleared_self"));
+        if (args.length != 3) {
+            sender.sendMessage(messages.msg("magic.cmd.spell.usage"));
             return true;
         }
-        if (args.length == 3) {
-            if (!sender.hasPermission(PERMISSION_ADMIN)) {
-                sender.sendMessage(messages.msg("magic.command.errors.no_permission"));
-                return true;
-            }
-            Player target = Bukkit.getPlayerExact(args[2]);
-            if (target == null) {
-                sender.sendMessage(messages.msg("magic.command.errors.player_not_found",
-                        "player", args[2]));
-                return true;
-            }
-            magicService.clearSelectedSpell(target);
-            sender.sendMessage(messages.msg("magic.command.spell.cleared_other",
-                    "player", target.getName()));
-            if (!(sender instanceof Player senderPlayer) || !senderPlayer.getUniqueId().equals(target.getUniqueId())) {
-                target.sendMessage(messages.msg("magic.command.spell.cleared_self"));
-            }
+        Player target = Bukkit.getPlayerExact(args[2]);
+        if (target == null) {
+            sender.sendMessage(messages.msg("magic.cmd.player_not_found",
+                    "player", args[2]));
             return true;
         }
-        sender.sendMessage(messages.msg("magic.command.usage.spell"));
+        playerSpellService.clearSelected(target.getUniqueId());
+        sender.sendMessage(messages.msg("magic.command.spell.cleared_other",
+                "player", target.getName()));
         return true;
     }
 
-    private boolean handleSpellGet(CommandSender sender, String[] args) {
-        if (args.length == 2) {
-            if (!(sender instanceof Player player)) {
-                sender.sendMessage(messages.msg("magic.command.only-player"));
-                return true;
-            }
-            if (!hasSelectPermission(sender)) {
-                sender.sendMessage(messages.msg("magic.command.errors.no_permission"));
-                return true;
-            }
-            return sendSelectedSpell(sender, player, false);
-        }
-        if (args.length == 3) {
-            if (!sender.hasPermission(PERMISSION_ADMIN)) {
-                sender.sendMessage(messages.msg("magic.command.errors.no_permission"));
-                return true;
-            }
-            Player target = Bukkit.getPlayerExact(args[2]);
-            if (target == null) {
-                sender.sendMessage(messages.msg("magic.command.errors.player_not_found",
-                        "player", args[2]));
-                return true;
-            }
-            return sendSelectedSpell(sender, target, true);
-        }
-        sender.sendMessage(messages.msg("magic.command.usage.spell"));
-        return true;
-    }
-
-    private boolean sendSelectedSpell(CommandSender sender, Player target, boolean adminMode) {
-        String spellId = magicService.getSelectedSpellId(target);
-        if (spellId == null || spellId.isBlank()) {
-            if (adminMode) {
-                sender.sendMessage(messages.msg("magic.command.spell.get_empty_other",
-                        "player", target.getName()));
-            } else {
-                sender.sendMessage(messages.msg("magic.command.spell.get_empty_self"));
-            }
-            return true;
-        }
-        SpellDefinition spell = magicService.spellRegistry().get(spellId);
-        if (spell == null) {
-            magicService.clearSelectedSpell(target);
+    private boolean handleSpellActionFailure(CommandSender sender, SpellActionReason reason, String spellId) {
+        if (reason == SpellActionReason.UNKNOWN_SPELL) {
             sender.sendMessage(messages.msg("magic.command.spell.unknown_spell",
                     "spellId", spellId));
             return true;
         }
-        String spellName = messages.raw(spell.nameKey());
-        if (adminMode) {
-            sender.sendMessage(messages.msg("magic.command.spell.get_other",
-                    "player", target.getName(),
-                    "spell", spellName));
-        } else {
-            sender.sendMessage(messages.msg("magic.command.spell.get_self",
-                    "spell", spellName));
+        if (reason == SpellActionReason.NOT_LEARNED) {
+            sender.sendMessage(messages.msg("magic.spell.select.not_learned",
+                    "spell", displaySpellName(spellId)));
+            return true;
         }
+        sender.sendMessage(messages.msg("magic.command.errors.no_permission"));
         return true;
     }
 
-    private List<String> tabCompleteSelect(CommandSender sender, String[] args) {
-        if (args.length == 3) {
-            List<String> suggestions = new ArrayList<>();
-            if (!sender.hasPermission(PERMISSION_ADMIN)) {
-                return spellIds();
-            }
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                suggestions.add(player.getName());
-            }
-            suggestions.addAll(spellIds());
-            return suggestions;
+    private List<String> tabCompletePlayers() {
+        List<String> names = new ArrayList<>();
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            names.add(player.getName());
         }
-        if (args.length == 4) {
-            return spellIds();
-        }
-        return Collections.emptyList();
-    }
-
-    private List<String> tabCompletePlayer(CommandSender sender, int argsLength) {
-        if (argsLength == 3 && sender.hasPermission(PERMISSION_ADMIN)) {
-            List<String> names = new ArrayList<>();
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                names.add(player.getName());
-            }
-            return names;
-        }
-        return Collections.emptyList();
+        return names;
     }
 
     private List<String> spellIds() {
@@ -309,8 +273,16 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
         return ids;
     }
 
-    private boolean hasSelectPermission(CommandSender sender) {
-        return sender.hasPermission(PERMISSION_SELECT) || sender.hasPermission(PERMISSION_ADMIN);
+    private String displaySpellName(String spellId) {
+        SpellDefinition spell = magicService.spellRegistry().get(spellId);
+        if (spell == null) {
+            return spellId;
+        }
+        String nameKey = spell.nameKey();
+        if (nameKey == null || nameKey.isBlank()) {
+            return spell.id();
+        }
+        return messages.raw(nameKey);
     }
 
     private String format(double value) {
