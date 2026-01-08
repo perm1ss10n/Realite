@@ -39,6 +39,13 @@ magic:
       filler: " "
       close: "&cClose"
       back: "&eBack"
+  gui:
+    title: "&5Spellbook"
+    spell:
+      selected: "&aSelected"
+      locked: "&cNot learned"
+    hint:
+      select: "&7LMB: select"
   error:
     no_selected_spell: "&cNo spell selected. Open &f/rmagic&c and choose one."
     cannot_select_spell: "&cYou cannot select this spell: &f{reason}"

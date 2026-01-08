@@ -19,7 +19,7 @@ casting:
 
 menu:
   spellSelect:
-    titleKey: "magic.menu.spell_select.title"
+    titleKey: "magic.gui.title"
     size: 54
     closeOnSelect: true
     defaultSpellIconMaterial: "PAPER"

@@ -34,7 +34,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         spellRegistry.load();
         PlayerSpellStorage storage = new YamlPlayerSpellStorage(this, messages);
         playerSpellService = new PlayerSpellServiceImpl(storage, spellRegistry, messages);
-        magicService = new MagicService(this, messages, spellRegistry);
+        magicService = new MagicService(this, messages, spellRegistry, playerSpellService);
         magicService.start();
         registerCommand();
         registerListeners();
@@ -80,7 +80,8 @@ public final class RealiteMagicPlugin extends JavaPlugin {
     private void registerListeners() {
         Bukkit.getPluginManager().registerEvents(new CombatListener(magicService), this);
         Bukkit.getPluginManager().registerEvents(new PlayerCleanupListener(magicService, playerSpellService), this);
-        Bukkit.getPluginManager().registerEvents(new MagicMenuListener(magicService, messages), this);
+        Bukkit.getPluginManager().registerEvents(
+                new MagicMenuListener(magicService.spellSelectMenu(), spellRegistry, playerSpellService, messages), this);
         Bukkit.getPluginManager().registerEvents(new MagicInteractListener(magicService, messages), this);
     }
 
