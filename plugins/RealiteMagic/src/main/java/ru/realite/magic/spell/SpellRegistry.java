@@ -79,6 +79,7 @@ public final class SpellRegistry {
         double range = section.getDouble("range", -1);
         double damage = section.getDouble("damage", -1);
         SpellRequirements requirements = parseRequirements(section.getConfigurationSection("requirements"));
+        String castItemId = parseCastItemId(section.getConfigurationSection("cast"));
         Material defaultIconMaterial = resolveDefaultIconMaterial();
         Material iconMaterial = parseIconMaterial(section.getConfigurationSection("icon"), defaultIconMaterial, id, fileName);
         Integer iconCustomModelData = parseIconCustomModelData(section.getConfigurationSection("icon"));
@@ -108,7 +109,7 @@ public final class SpellRegistry {
             return null;
         }
         return new SpellDefinition(id, type, nameKey, descKey, mana, cooldownTicks, range, damage, requirements,
-                iconMaterial, iconCustomModelData, guiSlot);
+                castItemId, iconMaterial, iconCustomModelData, guiSlot);
     }
 
     private SpellRequirements parseRequirements(ConfigurationSection section) {
@@ -129,6 +130,17 @@ public final class SpellRegistry {
             requiredItemId = null;
         }
         return new SpellRequirements(classId, evolutionId, requiredItemId, consumeOnCast);
+    }
+
+    private String parseCastItemId(ConfigurationSection section) {
+        if (section == null) {
+            return null;
+        }
+        String castItemId = section.getString("itemId");
+        if (castItemId != null && castItemId.isBlank()) {
+            return null;
+        }
+        return castItemId;
     }
 
     private Material resolveDefaultIconMaterial() {
