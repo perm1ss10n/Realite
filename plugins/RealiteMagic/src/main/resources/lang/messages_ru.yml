@@ -3,6 +3,20 @@ format:
 
 magic:
   enabled: "{prefix}&aПлагин RealiteMagic включён."
+  cmd:
+    usage: "&eИспользование: &f/rmagic <menu|spell|mana>"
+    player_not_found: "&cИгрок не найден: &f{player}"
+    spell:
+      usage: "&eИспользование: &f/rmagic spell <give|remove|list|select|clear> <player> [spellId]"
+      give:
+        ok: "&aВыдали заклинание &f{spell}&a игроку &f{player}&a."
+      remove:
+        ok: "&eУдалили заклинание &f{spell}&e у &f{player}&e."
+      select:
+        ok: "&aВыбрали заклинание &f{spell}&a для &f{player}&a."
+      list:
+        header: "&eЗаклинания игрока &f{player}&e:"
+        entry: "&7- {spell} &8({id})"
   command:
     usage:
       root: "&eИспользование: &f/rmagic <menu|spell|mana>"

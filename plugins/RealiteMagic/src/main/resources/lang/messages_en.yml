@@ -3,6 +3,20 @@ format:
 
 magic:
   enabled: "{prefix}&aRealiteMagic plugin enabled."
+  cmd:
+    usage: "&eUsage: &f/rmagic <menu|spell|mana>"
+    player_not_found: "&cPlayer not found: &f{player}"
+    spell:
+      usage: "&eUsage: &f/rmagic spell <give|remove|list|select|clear> <player> [spellId]"
+      give:
+        ok: "&aGave spell &f{spell}&a to &f{player}&a."
+      remove:
+        ok: "&eRemoved spell &f{spell}&e from &f{player}&e."
+      select:
+        ok: "&aSelected spell &f{spell}&a for &f{player}&a."
+      list:
+        header: "&eSpells for &f{player}&e:"
+        entry: "&7- {spell} &8({id})"
   command:
     usage:
       root: "&eUsage: &f/rmagic <menu|spell|mana>"
