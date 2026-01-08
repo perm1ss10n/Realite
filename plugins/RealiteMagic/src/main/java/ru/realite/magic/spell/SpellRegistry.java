@@ -113,17 +113,22 @@ public final class SpellRegistry {
 
     private SpellRequirements parseRequirements(ConfigurationSection section) {
         if (section == null) {
-            return new SpellRequirements(null, null);
+            return new SpellRequirements(null, null, null, false);
         }
         String classId = section.getString("class");
         String evolutionId = section.getString("evolution");
+        String requiredItemId = section.getString("requiredItemId");
+        boolean consumeOnCast = section.getBoolean("consumeOnCast", false);
         if (classId != null && classId.isBlank()) {
             classId = null;
         }
         if (evolutionId != null && evolutionId.isBlank()) {
             evolutionId = null;
         }
-        return new SpellRequirements(classId, evolutionId);
+        if (requiredItemId != null && requiredItemId.isBlank()) {
+            requiredItemId = null;
+        }
+        return new SpellRequirements(classId, evolutionId, requiredItemId, consumeOnCast);
     }
 
     private Material resolveDefaultIconMaterial() {

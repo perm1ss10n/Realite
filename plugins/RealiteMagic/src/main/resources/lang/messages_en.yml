@@ -68,6 +68,8 @@ magic:
     need_focus: "&cYou need a magic focus in hand."
   cast:
     no_selected: "&cYou have not selected a spell."
+    missing_item: "&cRequired item: &f{item}"
+    items_bridge_missing: "RealiteItems is not connected, requiredItemId is not checked."
   storage:
     load_fail: "&cFailed to load spell data."
     save_fail: "&cFailed to save spell data."
