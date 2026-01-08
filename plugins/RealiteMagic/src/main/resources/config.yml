@@ -16,6 +16,7 @@ casting:
     - "warlock_grimoire"
   manaFormat: "0.0"
   cooldownFormat: "0.0"
+  giveItemMessage: true
 
 menu:
   spellSelect:

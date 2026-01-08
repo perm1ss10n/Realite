@@ -13,6 +13,8 @@ public record SpellDefinition(
         double damage,
         SpellRequirements requirements,
         String castItemId,
+        String giveItemId,
+        int giveItemAmount,
         Material iconMaterial,
         Integer iconCustomModelData,
         Integer guiSlot

@@ -70,6 +70,7 @@ magic:
     no_selected: "&cТы не выбрал заклинание."
     missing_item: "&cНужен предмет: &f{item}"
     wrong_item: "&cДля этого заклинания нужен предмет: &f{item}"
+    give_item: "&aПолучено: &f{item}&a x{amount}"
     items_bridge_missing: "RealiteItems не подключен, requiredItemId не проверяется."
   storage:
     load_fail: "&cНе удалось загрузить данные заклинаний."

@@ -4,6 +4,8 @@ import java.io.File;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.magic.i18n.MagicMessages;
+import ru.realite.magic.integration.items.ItemsBridge;
+import ru.realite.magic.integration.items.ItemsBridgeFactory;
 import ru.realite.magic.listener.CombatListener;
 import ru.realite.magic.listener.MagicInteractListener;
 import ru.realite.magic.listener.MagicMenuListener;
@@ -34,7 +36,8 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         spellRegistry.load();
         PlayerSpellStorage storage = new YamlPlayerSpellStorage(this, messages);
         playerSpellService = new PlayerSpellServiceImpl(storage, spellRegistry, messages);
-        magicService = new MagicService(this, messages, spellRegistry, playerSpellService);
+        ItemsBridge itemsBridge = ItemsBridgeFactory.create();
+        magicService = new MagicService(this, messages, spellRegistry, playerSpellService, itemsBridge);
         magicService.start();
         registerCommand();
         registerListeners();
