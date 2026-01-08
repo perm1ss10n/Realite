@@ -51,6 +51,15 @@ magic:
   mana:
     actionbar: "{prefix}&dМана: &b{mana}&7/&b{max}"
   spell:
+    unknown: "{prefix}&cНеизвестное заклинание: &f{spell}"
+    unlock:
+      ok: "{prefix}&aВы изучили заклинание: &f{spell}"
+      already: "{prefix}&eЗаклинание уже изучено: &f{spell}"
+    select:
+      ok: "{prefix}&aВы выбрали заклинание: &f{spell}"
+      not_learned: "{prefix}&cЗаклинание не изучено: &f{spell}"
+    revoke:
+      ok: "{prefix}&eЗаклинание забыто: &f{spell}"
     lore:
       description: "&7{desc}"
       mana: "&bМана: &f{mana}"
