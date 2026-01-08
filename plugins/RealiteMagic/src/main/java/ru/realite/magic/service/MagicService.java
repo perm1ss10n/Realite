@@ -5,12 +5,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import org.bukkit.configuration.file.FileConfiguration;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.classes.ClassProfile;
 import ru.realite.core.api.classes.ClassProfileProvider;
@@ -26,6 +30,8 @@ import ru.realite.magic.spell.SpellRequirements;
 public final class MagicService {
 
     private static final String GLOBAL_COOLDOWN_KEY = "global";
+    private static final LegacyComponentSerializer LEGACY =
+            LegacyComponentSerializer.legacyAmpersand();
 
     private final JavaPlugin plugin;
     private final MagicMessages messages;
@@ -34,6 +40,7 @@ public final class MagicService {
     private final Map<UUID, MageState> states = new HashMap<>();
     private final SpellSelectMenu spellSelectMenu;
     private BukkitTask regenTask;
+    private boolean itemBridgeWarned;
 
     public MagicService(JavaPlugin plugin,
                         MagicMessages messages,
@@ -198,6 +205,12 @@ public final class MagicService {
         if (requirements == null || requirements.isEmpty()) {
             return true;
         }
+        String requiredItemId = requirements.requiredItemId();
+        if (requiredItemId != null && !requiredItemId.isBlank()) {
+            if (!hasRequiredItem(player, requiredItemId)) {
+                return false;
+            }
+        }
         ClassProfileProvider provider = resolveClassProfileProvider();
         if (provider == null) {
             return true;
@@ -285,6 +298,7 @@ public final class MagicService {
         if (spell == null) {
             return;
         }
+        consumeRequiredItemOnCast(player, spell);
         addMana(player, -spell.mana());
         setCooldown(player, GLOBAL_COOLDOWN_KEY, globalCastTicks());
         setCooldown(player, spell.id(), spell.cooldownTicks());
@@ -326,6 +340,14 @@ public final class MagicService {
         if (requirements == null || requirements.isEmpty()) {
             return;
         }
+        String requiredItemId = requirements.requiredItemId();
+        if (requiredItemId != null && !requiredItemId.isBlank()) {
+            if (!hasRequiredItem(player, requiredItemId)) {
+                ItemService itemService = resolveItemService();
+                String itemName = resolveRequiredItemName(itemService, requiredItemId);
+                player.sendMessage(messages.msg("magic.cast.missing_item", "item", itemName));
+            }
+        }
         ClassProfileProvider provider = resolveClassProfileProvider();
         if (provider == null) {
             return;
@@ -340,6 +362,99 @@ public final class MagicService {
             player.sendMessage(messages.msg("magic.spell.requirements.evolution",
                     "evolution", evolutionId));
         }
+    }
+
+    private boolean hasRequiredItem(Player player, String requiredItemId) {
+        ItemService itemService = resolveItemService();
+        if (itemService == null) {
+            warnMissingItemBridge();
+            return true;
+        }
+        var inventory = player.getInventory();
+        for (ItemStack stack : inventory.getStorageContents()) {
+            if (itemService.isItem(stack, requiredItemId)) {
+                return true;
+            }
+        }
+        ItemStack offHand = inventory.getItemInOffHand();
+        return itemService.isItem(offHand, requiredItemId);
+    }
+
+    private void consumeRequiredItemOnCast(Player player, SpellDefinition spell) {
+        SpellRequirements requirements = spell.requirements();
+        if (requirements == null || requirements.isEmpty()) {
+            return;
+        }
+        String requiredItemId = requirements.requiredItemId();
+        if (requiredItemId == null || requiredItemId.isBlank() || !requirements.consumeOnCast()) {
+            return;
+        }
+        ItemService itemService = resolveItemService();
+        if (itemService == null) {
+            warnMissingItemBridge();
+            return;
+        }
+        removeRequiredItem(player, itemService, requiredItemId);
+    }
+
+    private boolean removeRequiredItem(Player player, ItemService itemService, String requiredItemId) {
+        var inventory = player.getInventory();
+        ItemStack[] contents = inventory.getStorageContents();
+        for (int i = 0; i < contents.length; i++) {
+            ItemStack stack = contents[i];
+            if (!itemService.isItem(stack, requiredItemId)) {
+                continue;
+            }
+            int amount = stack.getAmount();
+            if (amount > 1) {
+                stack.setAmount(amount - 1);
+                contents[i] = stack;
+            } else {
+                contents[i] = null;
+            }
+            inventory.setStorageContents(contents);
+            return true;
+        }
+        ItemStack offHand = inventory.getItemInOffHand();
+        if (!itemService.isItem(offHand, requiredItemId)) {
+            return false;
+        }
+        int amount = offHand.getAmount();
+        if (amount > 1) {
+            offHand.setAmount(amount - 1);
+            inventory.setItemInOffHand(offHand);
+        } else {
+            inventory.setItemInOffHand(null);
+        }
+        return true;
+    }
+
+    private String resolveRequiredItemName(ItemService itemService, String requiredItemId) {
+        if (itemService == null) {
+            warnMissingItemBridge();
+            return requiredItemId;
+        }
+        try {
+            ItemStack stack = itemService.create(requiredItemId, 1);
+            ItemMeta meta = stack.getItemMeta();
+            if (meta != null) {
+                Component displayName = meta.displayName();
+                if (displayName != null && !displayName.equals(Component.empty())) {
+                    return LEGACY.serialize(displayName);
+                }
+            }
+        } catch (IllegalArgumentException ex) {
+            return requiredItemId;
+        }
+        return requiredItemId;
+    }
+
+    private void warnMissingItemBridge() {
+        if (itemBridgeWarned) {
+            return;
+        }
+        itemBridgeWarned = true;
+        plugin.getLogger().warning(messages.raw("magic.cast.items_bridge_missing"));
     }
 
     private double clamp(double value, double min, double max) {
