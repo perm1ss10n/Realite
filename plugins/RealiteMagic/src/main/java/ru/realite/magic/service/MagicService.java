@@ -35,12 +35,15 @@ public final class MagicService {
     private final SpellSelectMenu spellSelectMenu;
     private BukkitTask regenTask;
 
-    public MagicService(JavaPlugin plugin, MagicMessages messages, SpellRegistry spellRegistry) {
+    public MagicService(JavaPlugin plugin,
+                        MagicMessages messages,
+                        SpellRegistry spellRegistry,
+                        PlayerSpellService playerSpellService) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.messages = Objects.requireNonNull(messages, "messages");
         this.spellRegistry = Objects.requireNonNull(spellRegistry, "spellRegistry");
         this.caster = new SpellCaster(this, messages);
-        this.spellSelectMenu = new SpellSelectMenu(plugin, spellRegistry, messages, this);
+        this.spellSelectMenu = new SpellSelectMenu(plugin, spellRegistry, playerSpellService, messages);
     }
 
     public void start() {
