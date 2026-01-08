@@ -80,6 +80,7 @@ public final class SpellRegistry {
         double damage = section.getDouble("damage", -1);
         SpellRequirements requirements = parseRequirements(section.getConfigurationSection("requirements"));
         String castItemId = parseCastItemId(section.getConfigurationSection("cast"));
+        SpellGiveItem giveItem = parseGiveItem(section.getConfigurationSection("effects"));
         Material defaultIconMaterial = resolveDefaultIconMaterial();
         Material iconMaterial = parseIconMaterial(section.getConfigurationSection("icon"), defaultIconMaterial, id, fileName);
         Integer iconCustomModelData = parseIconCustomModelData(section.getConfigurationSection("icon"));
@@ -109,7 +110,7 @@ public final class SpellRegistry {
             return null;
         }
         return new SpellDefinition(id, type, nameKey, descKey, mana, cooldownTicks, range, damage, requirements,
-                castItemId, iconMaterial, iconCustomModelData, guiSlot);
+                castItemId, giveItem.id(), giveItem.amount(), iconMaterial, iconCustomModelData, guiSlot);
     }
 
     private SpellRequirements parseRequirements(ConfigurationSection section) {
@@ -141,6 +142,25 @@ public final class SpellRegistry {
             return null;
         }
         return castItemId;
+    }
+
+    private SpellGiveItem parseGiveItem(ConfigurationSection section) {
+        if (section == null) {
+            return new SpellGiveItem(null, 1);
+        }
+        ConfigurationSection giveItemSection = section.getConfigurationSection("giveItem");
+        if (giveItemSection == null) {
+            return new SpellGiveItem(null, 1);
+        }
+        String id = giveItemSection.getString("id");
+        if (id != null && id.isBlank()) {
+            id = null;
+        }
+        int amount = giveItemSection.getInt("amount", 1);
+        if (amount <= 0) {
+            amount = 1;
+        }
+        return new SpellGiveItem(id, amount);
     }
 
     private Material resolveDefaultIconMaterial() {
@@ -198,5 +218,8 @@ public final class SpellRegistry {
             return null;
         }
         return slot;
+    }
+
+    private record SpellGiveItem(String id, int amount) {
     }
 }

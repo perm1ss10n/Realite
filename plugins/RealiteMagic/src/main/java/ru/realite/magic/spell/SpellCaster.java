@@ -50,6 +50,7 @@ public final class SpellCaster {
         switch (spell.type()) {
             case RAY_DAMAGE -> castRayDamage(player, spell);
         }
+        magicService.handleCastRewards(player, spell);
     }
 
     private void castRayDamage(Player player, SpellDefinition spell) {
