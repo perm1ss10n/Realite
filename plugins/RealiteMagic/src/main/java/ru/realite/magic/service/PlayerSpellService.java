@@ -18,6 +18,8 @@ public interface PlayerSpellService {
 
     SelectResult select(UUID playerId, String spellId);
 
+    void clearSelected(UUID playerId);
+
     void flush(UUID playerId);
 
     void flushAll();
