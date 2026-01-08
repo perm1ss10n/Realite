@@ -39,6 +39,13 @@ magic:
       filler: " "
       close: "&cЗакрыть"
       back: "&eНазад"
+  gui:
+    title: "&5Книга заклинаний"
+    spell:
+      selected: "&aВыбрано"
+      locked: "&cНе изучено"
+    hint:
+      select: "&7ЛКМ: выбрать"
   error:
     no_selected_spell: "&cЗаклинание не выбрано. Открой &f/rmagic&c и выбери."
     cannot_select_spell: "&cТы не можешь выбрать это заклинание: &f{reason}"
