@@ -2,6 +2,7 @@ package ru.realite.magic.integration.items;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -115,6 +116,15 @@ public final class CoreItemsBridge implements ItemsBridge {
             return false;
         }
         return itemService.isItem(stack, itemId);
+    }
+
+    @Override
+    public Optional<String> getItemId(ItemStack stack) {
+        ItemService itemService = itemServiceSupplier.get();
+        if (itemService == null) {
+            return Optional.empty();
+        }
+        return itemService.getItemId(stack);
     }
 
     @Override

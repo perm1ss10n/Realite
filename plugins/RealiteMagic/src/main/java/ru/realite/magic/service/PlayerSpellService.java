@@ -8,9 +8,9 @@ public interface PlayerSpellService {
 
     boolean hasSpell(UUID playerId, String spellId);
 
-    UnlockResult unlock(UUID playerId, String spellId, UnlockCause cause);
+    UnlockResult unlock(UUID playerId, String spellId, SpellUnlockSource source);
 
-    RevokeResult revoke(UUID playerId, String spellId, UnlockCause cause);
+    RevokeResult revoke(UUID playerId, String spellId, SpellUnlockSource source);
 
     List<String> listLearned(UUID playerId);
 

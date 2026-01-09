@@ -38,7 +38,7 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
     }
 
     @Override
-    public UnlockResult unlock(UUID playerId, String spellId, UnlockCause cause) {
+    public UnlockResult unlock(UUID playerId, String spellId, SpellUnlockSource source) {
         String normalized = normalize(spellId);
         SpellDefinition spell = resolveSpell(normalized);
         if (spell == null) {
@@ -54,7 +54,7 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
     }
 
     @Override
-    public RevokeResult revoke(UUID playerId, String spellId, UnlockCause cause) {
+    public RevokeResult revoke(UUID playerId, String spellId, SpellUnlockSource source) {
         String normalized = normalize(spellId);
         SpellDefinition spell = resolveSpell(normalized);
         if (spell == null) {

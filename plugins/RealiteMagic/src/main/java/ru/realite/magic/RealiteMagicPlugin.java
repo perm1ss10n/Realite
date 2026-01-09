@@ -13,6 +13,7 @@ import ru.realite.magic.listener.CombatListener;
 import ru.realite.magic.listener.MagicInteractListener;
 import ru.realite.magic.listener.MagicMenuListener;
 import ru.realite.magic.listener.PlayerCleanupListener;
+import ru.realite.magic.listener.SpellUnlockListener;
 import ru.realite.magic.command.MagicCommand;
 import ru.realite.magic.service.MagicService;
 import ru.realite.magic.service.PlayerSpellService;
@@ -98,6 +99,8 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new CombatListener(magicService), this);
         MagicInteractListener interactListener =
                 new MagicInteractListener(magicService, messages);
+        Bukkit.getPluginManager().registerEvents(
+                new SpellUnlockListener(magicService, playerSpellService, messages), this);
         Bukkit.getPluginManager().registerEvents(
                 new PlayerCleanupListener(magicService, playerSpellService), this);
         Bukkit.getPluginManager().registerEvents(
