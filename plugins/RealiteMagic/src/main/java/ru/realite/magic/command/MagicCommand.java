@@ -18,7 +18,7 @@ import ru.realite.magic.service.PlayerSpellService;
 import ru.realite.magic.service.RevokeResult;
 import ru.realite.magic.service.SelectResult;
 import ru.realite.magic.service.SpellActionReason;
-import ru.realite.magic.service.UnlockCause;
+import ru.realite.magic.service.SpellUnlockSource;
 import ru.realite.magic.service.UnlockResult;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellLoadError;
@@ -233,7 +233,7 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
                     "spellId", args[3]));
             return true;
         }
-        UnlockResult result = playerSpellService.unlock(target.getUniqueId(), spell.id(), UnlockCause.COMMAND);
+        UnlockResult result = playerSpellService.unlock(target.getUniqueId(), spell.id(), SpellUnlockSource.COMMAND);
         if (result instanceof UnlockResult.Fail fail) {
             return handleSpellActionFailure(sender, fail.reason(), spell.id());
         }
@@ -260,7 +260,7 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
                     "spellId", args[3]));
             return true;
         }
-        RevokeResult result = playerSpellService.revoke(target.getUniqueId(), spell.id(), UnlockCause.COMMAND);
+        RevokeResult result = playerSpellService.revoke(target.getUniqueId(), spell.id(), SpellUnlockSource.COMMAND);
         if (result instanceof RevokeResult.Fail fail) {
             return handleSpellActionFailure(sender, fail.reason(), spell.id());
         }
