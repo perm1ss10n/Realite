@@ -53,11 +53,14 @@ public final class MagicService {
         this.spellRegistry = Objects.requireNonNull(spellRegistry, "spellRegistry");
         this.itemsBridge = Objects.requireNonNull(itemsBridge, "itemsBridge");
         this.classesBridge = Objects.requireNonNull(classesBridge, "classesBridge");
+        boolean failWhenItemsUnavailable = plugin.getConfig()
+                .getBoolean("requirements.failWhenItemsUnavailable", true);
         this.requirementChecker = new DefaultSpellRequirementChecker(
                 this.itemsBridge,
                 this.classesBridge,
                 this.messages,
-                this::warnMissingItemBridge);
+                this::warnMissingItemBridge,
+                failWhenItemsUnavailable);
         this.caster = new SpellCaster(this, messages);
         this.spellSelectMenu = new SpellSelectMenu(plugin, spellRegistry, playerSpellService, requirementChecker, messages);
     }

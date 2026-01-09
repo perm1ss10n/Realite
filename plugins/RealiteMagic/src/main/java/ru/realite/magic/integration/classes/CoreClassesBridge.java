@@ -29,6 +29,7 @@ public final class CoreClassesBridge implements ClassesBridge {
         this.classProfileProviderSupplier = Objects.requireNonNull(classProfileProviderSupplier, "classProfileProviderSupplier");
     }
 
+    @Override
     public boolean isAvailable() {
         return classProfileProvider() != null;
     }
@@ -76,18 +77,29 @@ public final class CoreClassesBridge implements ClassesBridge {
     }
 
     private ClassProfileProvider classProfileProvider() {
-        ClassProfileProvider provider = classProfileProviderSupplier.get();
+        ClassProfileProvider provider;
+        try {
+            provider = classProfileProviderSupplier.get();
+        } catch (Exception ex) {
+            warnMissingService(ex);
+            return null;
+        }
         if (provider == null) {
-            warnMissingService();
+            warnMissingService(null);
         }
         return provider;
     }
 
-    private void warnMissingService() {
+    private void warnMissingService(Throwable throwable) {
         if (!warned.compareAndSet(false, true)) {
             return;
         }
-        logger.warning("Classes module service not available; falling back to no-op bridge.");
+        String message = "ClassProfileProvider not available (yet). Requirements by class/evolution cannot be validated.";
+        if (throwable == null) {
+            logger.warning(message);
+            return;
+        }
+        logger.log(java.util.logging.Level.WARNING, message, throwable);
     }
 
     private static ClassProfileProvider resolveClassProfileProvider() {
