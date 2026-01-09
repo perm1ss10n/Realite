@@ -56,6 +56,7 @@ public final class MagicService {
         this.requirementChecker = new DefaultSpellRequirementChecker(
                 this.itemsBridge,
                 this.classesBridge,
+                this.messages,
                 this::warnMissingItemBridge);
         this.caster = new SpellCaster(this, messages);
         this.spellSelectMenu = new SpellSelectMenu(plugin, spellRegistry, playerSpellService, requirementChecker, messages);
@@ -218,6 +219,13 @@ public final class MagicService {
             return false;
         }
         return requirementChecker.check(player, spell) instanceof CheckResult.Ok;
+    }
+
+    public CheckResult checkRequirements(Player player, SpellDefinition spell) {
+        if (spell == null) {
+            return new CheckResult.Ok();
+        }
+        return requirementChecker.check(player, spell);
     }
 
     public boolean hasRequiredFocus(Player player) {
