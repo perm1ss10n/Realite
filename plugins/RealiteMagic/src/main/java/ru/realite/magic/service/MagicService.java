@@ -17,6 +17,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.Nullable;
 import ru.realite.magic.cast.CastAttemptResult;
+import ru.realite.magic.cast.CastDeliveryType;
+import ru.realite.magic.cast.CastEngine;
+import ru.realite.magic.cast.CastExecutionPlan;
 import ru.realite.magic.cast.WarnLimiter;
 import ru.realite.magic.debug.DebugService;
 import ru.realite.magic.balance.ItemModifiers;
@@ -84,6 +87,7 @@ public final class MagicService {
     private final WarnLimiter warnLimiter = new WarnLimiter();
     private final SpellSelectMenu spellSelectMenu;
     private final TargetResolver targetResolver = new TargetResolver();
+    private final CastEngine castEngine;
     private BukkitTask regenTask;
     private boolean itemBridgeWarned;
     private final boolean failWhenItemsUnavailable;
@@ -115,6 +119,7 @@ public final class MagicService {
         this.masteryService = Objects.requireNonNull(masteryService, "masteryService");
         this.regionRuleService = Objects.requireNonNull(regionRuleService, "regionRuleService");
         this.guildBonusService = Objects.requireNonNull(guildBonusService, "guildBonusService");
+        this.castEngine = new CastEngine(plugin);
         this.failWhenItemsUnavailable = plugin.getConfig()
                 .getBoolean("requirements.failWhenItemsUnavailable", true);
         this.requirementChecker = new DefaultSpellRequirementChecker(
@@ -351,7 +356,15 @@ public final class MagicService {
         if (spell == null || player == null || target == null) {
             return;
         }
-        EffectContext context = new EffectContext(player, spell, target, modifiers, ThreadLocalRandom.current(), this);
+        CastExecutionPlan plan = castEngine.execute(player, spell, target);
+        if (plan == null) {
+            return;
+        }
+        if (requiresTargets(spell) && plan.targets().isEmpty()) {
+            hudService.showCastFail(player, "magic.cast.no_targets", Map.of());
+            return;
+        }
+        EffectContext context = new EffectContext(player, spell, plan, modifiers, ThreadLocalRandom.current(), this);
         for (SpellEffectDefinition effect : spell.effects()) {
             SpellEffectExecutor executor = effectRegistry.find(effect.type()).orElse(null);
             if (executor == null) {
@@ -361,6 +374,14 @@ public final class MagicService {
             executor.execute(context, effect);
         }
         handleCastRewards(player, spell);
+    }
+
+    private boolean requiresTargets(SpellDefinition spell) {
+        CastDeliveryType deliveryType = spell.castDelivery();
+        if (deliveryType == CastDeliveryType.AOE || deliveryType == CastDeliveryType.CHAIN) {
+            return spell.target() != null && spell.target().type() == SpellTargetType.ENTITY;
+        }
+        return false;
     }
 
     public MagicMessages messages() {

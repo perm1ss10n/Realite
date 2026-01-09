@@ -46,14 +46,17 @@ public final class PotionEffectExecutor implements SpellEffectExecutor {
                     Map.of("type", def.type(), "param", "amplifier", "value", String.valueOf(amplifierRaw)));
         }
         Object targetRaw = params.get("target");
-        EffectTargetType targetType = EffectTargetType.from(targetRaw);
-        if (targetRaw == null) {
-            return EffectValidationResult.fail("magic.cmd.spells.errors.effect_missing_param",
-                    Map.of("type", def.type(), "param", "target"));
+        if (targetRaw != null) {
+            EffectTargetType targetType = EffectTargetType.from(targetRaw);
+            if (targetType != EffectTargetType.ENTITY) {
+                return EffectValidationResult.fail("magic.cmd.spells.errors.effect_invalid_param",
+                        Map.of("type", def.type(), "param", "target", "value", String.valueOf(targetRaw)));
+            }
         }
-        if (targetType != EffectTargetType.ENTITY) {
+        Object modeRaw = params.get("mode");
+        if (modeRaw != null && EffectApplyMode.from(modeRaw) == null) {
             return EffectValidationResult.fail("magic.cmd.spells.errors.effect_invalid_param",
-                    Map.of("type", def.type(), "param", "target", "value", String.valueOf(targetRaw)));
+                    Map.of("type", def.type(), "param", "mode", "value", String.valueOf(modeRaw)));
         }
         return EffectValidationResult.ok();
     }
@@ -68,10 +71,12 @@ public final class PotionEffectExecutor implements SpellEffectExecutor {
         if (type == null || duration == null || amplifier == null || duration <= 0 || amplifier < 0) {
             return;
         }
-        LivingEntity target = EffectTargetResolver.resolveEntity(ctx.target());
-        if (target == null) {
-            return;
+        EffectApplyMode mode = EffectApplyMode.from(params.get("mode"));
+        if (mode == null) {
+            mode = EffectApplyMode.PRIMARY;
         }
-        target.addPotionEffect(new PotionEffect(type, duration, amplifier));
+        for (LivingEntity target : EffectTargetResolver.resolveTargets(ctx.plan(), mode)) {
+            target.addPotionEffect(new PotionEffect(type, duration, amplifier));
+        }
     }
 }

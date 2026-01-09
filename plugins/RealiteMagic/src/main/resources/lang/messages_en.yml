@@ -144,10 +144,13 @@ magic:
     cooldown: "&cWait {time}s."
     no_mana: "&cNot enough mana: &f{mana}"
     no_target: "&cNo valid target."
+    no_targets: "&cNo targets found."
     missing_item: "&cRequired item: &f{item}"
     wrong_item: "&cThis spell requires item: &f{item}"
     give_item: "&aReceived: &f{item}&a x{amount}"
     items_bridge_missing: "RealiteItems is not connected, requiredItemId is not checked."
+  teleport:
+    failed: "&cSafe teleport failed."
   region:
     denied:
       default: "You cannot use magic here."
