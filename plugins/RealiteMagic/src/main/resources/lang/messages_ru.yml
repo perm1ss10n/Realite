@@ -4,7 +4,7 @@ format:
 magic:
   enabled: "{prefix}&aПлагин RealiteMagic включён."
   cmd:
-    usage: "&eИспользование: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery>"
+    usage: "&eИспользование: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery|admin|reload>"
     player_not_found: "&cИгрок не найден: &f{player}"
     debug:
       usage: "&eИспользование: &f/rmagic debug <on|off|cast|stats> [player]"
@@ -67,6 +67,41 @@ magic:
       line_level: "&7Уровень: &f{level}"
       line_xp: "&7XP: &f{xp}&7/&f{next}"
       line_bonus: "&7Бонус: &f{damage} урона, {mana} маны, {cooldown} кд"
+    admin:
+      usage: "&eИспользование: &f/rmagic admin <stats|log|inspect|bypass|export>"
+      stats:
+        header: "&eДиагностика топ {count}:"
+        casts: "&6Топ кастов:"
+        fails: "&6Топ фейлов:"
+        pve_immune: "&6Топ PVE иммунитетов:"
+        pve_resist: "&6Топ PVE резистов:"
+        empty: "&7Нет данных."
+      log:
+        header: "&eПоследние {count} кастов:"
+      inspect:
+        usage: "&eИспользование: &f/rmagic admin inspect <player>"
+        header: "&eИнспект: &f{player}"
+        slot: "&7Слот {slot}: &f{spell}"
+        school: "&7Школа: &f{school}"
+        mana: "&7Мана: &f{current}&7/&f{max}"
+        cooldown: "&7Кулдаун: &f{time}&7s"
+        staff: "&7Заряды посоха: &f{staff}"
+        reagents_none: "&7Реагенты: &fнет"
+        reagents_ok: "&7Реагенты: &aok"
+        reagents_missing: "&7Не хватает реагентов: &c{list}"
+        mastery: "&7Мастерство: &f{level}&7 (опыт {xp})"
+        talents: "&7Таланты: &f{list}"
+        talents_none: "&7Таланты: &fнет"
+        region_allow: "&7Регион: &aразрешено"
+        region_deny: "&7Регион: &cзапрещено ({reason})"
+        guild: "&7Бонус гильдии: &f{damage} урон, {mana} мана, {cooldown} кд"
+        guild_none: "&7Бонус гильдии: &fнет"
+      export:
+        ok: "&aОтчет сохранен: &f{file}&a."
+        fail: "&cНе удалось сохранить отчет."
+    reload:
+      ok: "&aКонфиг перезагружен: &f{section}&a."
+      section_unknown: "&cНеизвестная секция: &f{section}"
     status:
       header: "&eСтатус магии:"
       slot: "&7Слот: &f{slot}"
@@ -76,7 +111,7 @@ magic:
       cooldown: "&7КД: &f{time}&7с"
   command:
     usage:
-      root: "&eИспользование: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery>"
+      root: "&eИспользование: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery|admin|reload>"
       spell: "&eИспользование: &f/rmagic spell <select|clear|get> [player] [spellId]"
     only-player: "{prefix}&cКоманда доступна только игрокам."
     spell:
@@ -166,6 +201,13 @@ magic:
     no_charges: "Посох разряжен."
     charges: "Заряды: {current}/{max}"
     recharged: "Посох перезаряжен: +{add}"
+  admin:
+    bypass:
+      enabled: "&aBypass включен для &f{player}&a ({what}, {ttl}m)."
+      disabled: "&eBypass выключен для &f{player}&e ({what})."
+      usage: "&eИспользование: &f/rmagic admin bypass <player> <on|off> [what] [ttlMinutes]"
+      list:
+        header: "&eСписок bypass ({count}):"
   rune:
     school_mismatch: "Школа руны не совпадает со школой заклинания."
   school:

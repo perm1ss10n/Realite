@@ -115,6 +115,14 @@ public final class TalentMagicService {
         return effects;
     }
 
+    public Set<String> activeTalents(Player player) {
+        if (player == null) {
+            return Set.of();
+        }
+        Set<String> activeTalents = talentsBridge.activeTalents(player);
+        return activeTalents == null ? Set.of() : Set.copyOf(activeTalents);
+    }
+
     private SpellEffectDefinition buildOnDamageEffect(String talentId, TalentMagicOnDamage onDamage) {
         double chance = onDamage.chance();
         if (!Double.isFinite(chance) || chance <= 0.0) {
