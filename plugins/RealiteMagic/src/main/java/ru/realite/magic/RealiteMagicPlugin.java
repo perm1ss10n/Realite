@@ -4,6 +4,9 @@ import java.io.File;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.magic.i18n.MagicMessages;
+import ru.realite.magic.integration.classes.ClassesBridge;
+import ru.realite.magic.integration.classes.CoreClassesBridge;
+import ru.realite.magic.integration.classes.NoopClassesBridge;
 import ru.realite.magic.integration.items.ItemsBridge;
 import ru.realite.magic.integration.items.ItemsBridgeFactory;
 import ru.realite.magic.listener.CombatListener;
@@ -37,7 +40,8 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         PlayerSpellStorage storage = new YamlPlayerSpellStorage(this, messages);
         playerSpellService = new PlayerSpellServiceImpl(storage, spellRegistry, messages);
         ItemsBridge itemsBridge = ItemsBridgeFactory.create();
-        magicService = new MagicService(this, messages, spellRegistry, playerSpellService, itemsBridge);
+        ClassesBridge classesBridge = resolveClassesBridge();
+        magicService = new MagicService(this, messages, spellRegistry, playerSpellService, itemsBridge, classesBridge);
         magicService.start();
         registerCommand();
         registerListeners();
@@ -102,5 +106,13 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         if (!new File(getDataFolder(), resourcePath).exists()) {
             saveResource(resourcePath, false);
         }
+    }
+
+    private ClassesBridge resolveClassesBridge() {
+        CoreClassesBridge coreBridge = new CoreClassesBridge(getLogger());
+        if (coreBridge.isAvailable()) {
+            return coreBridge;
+        }
+        return new NoopClassesBridge();
     }
 }
