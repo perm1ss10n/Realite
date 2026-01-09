@@ -216,8 +216,68 @@ magic:
       class: "{prefix}&cRequired class: &f{class}"
       evolution: "{prefix}&cRequired evolution: &f{evolution}"
     warlock_ray:
-      name: "&5Shadow Ray"
-      desc: "&7A piercing ray that deals magic damage."
+      name: "&5Warlock Ray"
+      desc: "&7Focused beam of shadow energy."
+    warlock_curse:
+      name: "&5Warlock Curse"
+      desc: "&7Weakens and slows the target."
+    warlock_drain:
+      name: "&5Warping Drain"
+      desc: "&7Heavy damage with lingering decay."
+    warlock_nova:
+      name: "&5Warp Nova"
+      desc: "&7Shadow burst that slows nearby foes."
+    warlock_chain:
+      name: "&5Chain of Ruin"
+      desc: "&7Leaps between targets with dark pain."
+
+    firebolt:
+      name: "&cFirebolt"
+      desc: "&7Quick bolt of flame."
+    fireball:
+      name: "&cFireball"
+      desc: "&7Explodes in a small fiery blast."
+    flame_wall:
+      name: "&cFlame Wall"
+      desc: "&7Scorching beam that chars targets."
+    ignite:
+      name: "&cIgnite"
+      desc: "&7Instantly sears a single target."
+    inferno_nova:
+      name: "&cInferno Nova"
+      desc: "&7Large burst of blazing heat."
+
+    frost_shard:
+      name: "&bFrost Shard"
+      desc: "&7Shard of ice that chills on hit."
+    frost_slow:
+      name: "&bFrost Slow"
+      desc: "&7Freezing projectile that hinders."
+    ice_nova:
+      name: "&bIce Nova"
+      desc: "&7Cold wave that slows enemies."
+    frost_barrier:
+      name: "&bFrost Barrier"
+      desc: "&7Protective chill that hardens skin."
+    chain_frost:
+      name: "&bChain Frost"
+      desc: "&7Icy chain that spreads slowdown."
+
+    holy_heal:
+      name: "&fHoly Heal"
+      desc: "&7Restores health with light."
+    holy_smite:
+      name: "&fHoly Smite"
+      desc: "&7Beam of radiance strikes the wicked."
+    cleanse:
+      name: "&fCleanse"
+      desc: "&7Removes harmful effects from a target."
+    sanctuary:
+      name: "&fSanctuary"
+      desc: "&7Area blessing that heals allies."
+    holy_banish:
+      name: "&fHoly Banish"
+      desc: "&7Radiant knockback against foes."
   slot:
     set:
       ok: "{prefix}&aSpell bound to slot."
