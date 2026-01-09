@@ -12,19 +12,24 @@ import ru.realite.magic.spell.SpellDefinition;
 
 public final class PveService {
 
-    private final boolean enabled;
-    private final EntityMagicProfileResolver resolver;
+    private final JavaPlugin plugin;
+    private boolean enabled;
+    private EntityMagicProfileResolver resolver;
     private final MagicHitLimiter hitLimiter = new MagicHitLimiter();
 
     public PveService(JavaPlugin plugin) {
-        Objects.requireNonNull(plugin, "plugin");
-        FileConfiguration config = plugin.getConfig();
-        this.enabled = config.getBoolean("pve.enabled", false);
-        this.resolver = new EntityMagicProfileResolver(plugin, config, enabled);
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
+        reload(plugin.getConfig());
     }
 
     public boolean enabled() {
         return enabled;
+    }
+
+    public void reload(FileConfiguration config) {
+        Objects.requireNonNull(config, "config");
+        this.enabled = config.getBoolean("pve.enabled", false);
+        this.resolver = new EntityMagicProfileResolver(plugin, config, enabled);
     }
 
     public double damageTakenMultiplier(@Nullable SpellDefinition spell, LivingEntity target) {

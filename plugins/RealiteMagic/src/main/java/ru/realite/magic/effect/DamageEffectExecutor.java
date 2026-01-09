@@ -64,12 +64,16 @@ public final class DamageEffectExecutor implements SpellEffectExecutor {
         PveService pveService = ctx.magicService().pveService();
         for (LivingEntity target : EffectTargetResolver.resolveTargets(ctx.plan(), mode)) {
             if (pveService.isEffectImmune(def, ctx.spell(), target)) {
+                ctx.magicService().diagnosticsService().recordPveImmune(def.type());
                 continue;
             }
             if (!pveService.allowHit(ctx.caster().getUniqueId(), target.getUniqueId(), target)) {
                 continue;
             }
             double targetMultiplier = pveService.damageTakenMultiplier(ctx.spell(), target);
+            if (Double.compare(targetMultiplier, 1.0) != 0) {
+                ctx.magicService().diagnosticsService().recordPveResistHit(ctx.spell().school());
+            }
             double finalDamage = baseDamage * targetMultiplier;
             if (finalDamage <= 0) {
                 continue;

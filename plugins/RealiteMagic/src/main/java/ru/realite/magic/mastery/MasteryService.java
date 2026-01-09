@@ -99,6 +99,10 @@ public final class MasteryService {
         return xpToNextLevel(progress.level(), progress.xp());
     }
 
+    public void reloadConfig() {
+        validateConfig();
+    }
+
     public int xpForSource(MasteryXpSource source) {
         FileConfiguration config = plugin.getConfig();
         return switch (source) {

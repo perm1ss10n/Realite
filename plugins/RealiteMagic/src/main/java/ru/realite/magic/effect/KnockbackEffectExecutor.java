@@ -56,9 +56,11 @@ public final class KnockbackEffectExecutor implements SpellEffectExecutor {
         for (LivingEntity target : EffectTargetResolver.resolveTargets(ctx.plan(), mode)) {
             if (pull) {
                 if (pveService.isPullImmune(target)) {
+                    ctx.magicService().diagnosticsService().recordPveImmune("pull");
                     continue;
                 }
             } else if (pveService.isKnockbackImmune(target)) {
+                ctx.magicService().diagnosticsService().recordPveImmune("knockback");
                 continue;
             }
             Location targetLocation = target.getLocation();

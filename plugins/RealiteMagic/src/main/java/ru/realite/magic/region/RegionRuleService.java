@@ -43,6 +43,14 @@ public final class RegionRuleService {
         return CastPolicy.allow();
     }
 
+    public String regionId(Location location) {
+        if (!regionsEnabled()) {
+            return null;
+        }
+        RegionContext context = context(location);
+        return context.regionId();
+    }
+
     public BalanceModifiers regionModifiers(Player player, SpellDefinition spell, Location location) {
         if (!regionsEnabled()) {
             return BalanceModifiers.identity();
