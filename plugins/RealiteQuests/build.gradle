@@ -22,6 +22,7 @@ dependencies {
 
     // Core only for compile
     compileOnly project(":RealiteCore")
+    compileOnly project(":plugins:RealiteMagic")
 }
 
 tasks.withType(JavaCompile).configureEach {
