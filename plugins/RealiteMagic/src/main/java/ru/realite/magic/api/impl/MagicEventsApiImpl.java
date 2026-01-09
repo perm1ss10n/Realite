@@ -6,6 +6,7 @@ import org.bukkit.event.Event;
 import ru.realite.magic.api.MagicEventsApi;
 import ru.realite.magic.api.event.SpellCastAttemptEvent;
 import ru.realite.magic.api.event.SpellCastSuccessEvent;
+import ru.realite.magic.api.event.SpellMasteryLevelUpEvent;
 import ru.realite.magic.api.event.SpellSelectedEvent;
 import ru.realite.magic.api.event.SpellUnlockedEvent;
 
@@ -14,6 +15,7 @@ public final class MagicEventsApiImpl implements MagicEventsApi {
     private static final List<Class<? extends Event>> EVENTS = List.of(
             SpellCastAttemptEvent.class,
             SpellCastSuccessEvent.class,
+            SpellMasteryLevelUpEvent.class,
             SpellSelectedEvent.class,
             SpellUnlockedEvent.class
     );

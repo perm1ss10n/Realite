@@ -7,5 +7,8 @@ public enum ObjectiveType {
     PLACE_BLOCK,
     BREAK_BLOCK,
     HOLD_ITEM,
-    CITY_PLOT_RESIDENCY
+    CITY_PLOT_RESIDENCY,
+    UNLOCK_SPELL,
+    CAST_SPELL,
+    MASTERY_LEVEL
 }

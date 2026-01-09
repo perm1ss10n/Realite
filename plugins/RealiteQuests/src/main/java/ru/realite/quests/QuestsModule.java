@@ -23,6 +23,8 @@ import ru.realite.core.api.quests.GuildAdapter;
 import ru.realite.quests.backstory.BackstoryProgressRepository;
 import ru.realite.quests.backstory.ClassBackstoryConfig;
 import ru.realite.quests.backstory.ClassBackstoryServiceImpl;
+import ru.realite.quests.integration.magic.BukkitMagicQuestBridge;
+import ru.realite.quests.integration.magic.MagicQuestBridge;
 import ru.realite.quests.i18n.QuestsMessages;
 import ru.realite.quests.service.QuestLoader;
 import ru.realite.quests.service.QuestProgressRepository;
@@ -136,10 +138,17 @@ public final class QuestsModule implements Module {
             ctx.services().register(QuestUnlockService.class, questUnlockService);
         }
 
+        MagicQuestBridge magicBridge = ctx.services().get(MagicQuestBridge.class);
+        if (magicBridge == null) {
+            magicBridge = new BukkitMagicQuestBridge();
+            ctx.services().register(MagicQuestBridge.class, magicBridge);
+        }
+        magicBridge.refresh();
+
         questService = ctx.services().get(QuestService.class);
         if (questService == null) {
             java.nio.file.Path questsDir = ctx.dataFolder().resolve("quests");
-            QuestRepository repository = new QuestLoader(questsDir, ctx.logger()).load();
+            QuestRepository repository = new QuestLoader(questsDir, ctx.logger(), magicBridge).load();
             QuestProgressRepository progressRepository = new QuestProgressRepository(ctx.dataFolder());
             CityAdapter cityAdapter = ctx.services().get(CityAdapter.class);
             GuildAdapter guildAdapter = ctx.services().get(GuildAdapter.class);
@@ -149,7 +158,7 @@ public final class QuestsModule implements Module {
             boolean countMember = config.getBoolean("quests.residency.countMember", true);
             questService = new QuestServiceImpl(ctx.logger(), ctx.events(), questsDir, repository,
                     progressRepository, questUnlockService, cityAdapter, guildAdapter, classXpService,
-                    mustBeInsideCity, countOwner, countMember);
+                    mustBeInsideCity, countOwner, countMember, magicBridge);
             ctx.services().register(QuestService.class, questService);
         }
 

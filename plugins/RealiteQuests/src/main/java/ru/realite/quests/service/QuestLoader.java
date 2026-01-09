@@ -4,6 +4,7 @@ import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
 import ru.realite.core.api.Platform;
+import ru.realite.quests.integration.magic.MagicQuestBridge;
 import ru.realite.quests.model.ObjectiveDefinition;
 import ru.realite.quests.model.ObjectiveType;
 import ru.realite.quests.model.QuestConditions;
@@ -24,10 +25,12 @@ public final class QuestLoader {
 
     private final File questsDir;
     private final Platform logger;
+    private final MagicQuestBridge magicBridge;
 
-    public QuestLoader(Path questsDir, Platform logger) {
+    public QuestLoader(Path questsDir, Platform logger, MagicQuestBridge magicBridge) {
         this.questsDir = questsDir.toFile();
         this.logger = logger;
+        this.magicBridge = magicBridge;
         if (!this.questsDir.exists()) {
             // noinspection ResultOfMethodCallIgnored
             this.questsDir.mkdirs();
@@ -120,6 +123,9 @@ public final class QuestLoader {
                 case BREAK_BLOCK -> parseBreakBlock(fileName, id, map, objectiveConditions);
                 case HOLD_ITEM -> parseHoldItem(fileName, id, map, objectiveConditions);
                 case CITY_PLOT_RESIDENCY -> parseCityPlotResidency(id, objectiveConditions);
+                case UNLOCK_SPELL -> parseUnlockSpell(fileName, id, map, objectiveConditions);
+                case CAST_SPELL -> parseCastSpell(fileName, id, map, objectiveConditions);
+                case MASTERY_LEVEL -> parseMasteryLevel(fileName, id, map, objectiveConditions);
             };
             if (definition != null) {
                 objectives.add(definition);
@@ -136,7 +142,7 @@ public final class QuestLoader {
             logger.warn("[Quests] INTERACT_NPC objective missing npcId in " + fileName);
             return null;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.INTERACT_NPC, npcId.trim(), null, null, 1,
+        return new ObjectiveDefinition(id, ObjectiveType.INTERACT_NPC, null, npcId.trim(), null, null, 1,
                 null, 0, 0, 0, 0, conditions);
     }
 
@@ -155,7 +161,7 @@ public final class QuestLoader {
         if (amount <= 0) {
             amount = 1;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.KILL, null, type, null, amount,
+        return new ObjectiveDefinition(id, ObjectiveType.KILL, null, null, type, null, amount,
                 null, 0, 0, 0, 0, conditions);
     }
 
@@ -173,7 +179,7 @@ public final class QuestLoader {
         if (radius <= 0) {
             radius = 2.0;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.GO_TO_LOCATION, null, null, null, 1,
+        return new ObjectiveDefinition(id, ObjectiveType.GO_TO_LOCATION, null, null, null, null, 1,
                 world.trim(), x, y, z, radius, conditions);
     }
 
@@ -188,7 +194,7 @@ public final class QuestLoader {
         if (amount <= 0) {
             amount = 1;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.PLACE_BLOCK, null, null, materials, amount,
+        return new ObjectiveDefinition(id, ObjectiveType.PLACE_BLOCK, null, null, null, materials, amount,
                 null, 0, 0, 0, 0, conditions);
     }
 
@@ -203,7 +209,7 @@ public final class QuestLoader {
         if (amount <= 0) {
             amount = 1;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.BREAK_BLOCK, null, null, materials, amount,
+        return new ObjectiveDefinition(id, ObjectiveType.BREAK_BLOCK, null, null, null, materials, amount,
                 null, 0, 0, 0, 0, conditions);
     }
 
@@ -218,13 +224,105 @@ public final class QuestLoader {
         if (amount <= 0) {
             amount = 1;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.HOLD_ITEM, null, null, materials, amount,
+        return new ObjectiveDefinition(id, ObjectiveType.HOLD_ITEM, null, null, null, materials, amount,
                 null, 0, 0, 0, 0, conditions);
     }
 
     private ObjectiveDefinition parseCityPlotResidency(String id, QuestConditions conditions) {
-        return new ObjectiveDefinition(id, ObjectiveType.CITY_PLOT_RESIDENCY, null, null, null, 1,
+        return new ObjectiveDefinition(id, ObjectiveType.CITY_PLOT_RESIDENCY, null, null, null, null, 1,
                 null, 0, 0, 0, 0, conditions);
+    }
+
+    private ObjectiveDefinition parseUnlockSpell(String fileName, String id, Map<?, ?> map,
+                                                 QuestConditions conditions) {
+        String spellId = asString(map.get("spellId"));
+        if (spellId == null || spellId.isBlank()) {
+            logger.warn("[Quests] (" + magicUnknownSpellKey() + ") UNLOCK_SPELL objective missing spellId in "
+                    + fileName);
+            return null;
+        }
+        String normalized = spellId.trim();
+        if (!validateMagicSpell(fileName, normalized)) {
+            return null;
+        }
+        return new ObjectiveDefinition(id, ObjectiveType.UNLOCK_SPELL, normalized, null, null, null, 1,
+                null, 0, 0, 0, 0, conditions);
+    }
+
+    private ObjectiveDefinition parseCastSpell(String fileName, String id, Map<?, ?> map,
+                                               QuestConditions conditions) {
+        String spellId = asString(map.get("spellId"));
+        if (spellId == null || spellId.isBlank()) {
+            logger.warn("[Quests] (" + magicUnknownSpellKey() + ") CAST_SPELL objective missing spellId in "
+                    + fileName);
+            return null;
+        }
+        int amount = asInt(map.get("amount"), 1);
+        if (amount <= 0) {
+            logger.warn("[Quests] (" + magicInvalidAmountKey() + ") CAST_SPELL objective invalid amount in "
+                    + fileName);
+            return null;
+        }
+        String normalized = spellId.trim();
+        if (!validateMagicSpell(fileName, normalized)) {
+            return null;
+        }
+        return new ObjectiveDefinition(id, ObjectiveType.CAST_SPELL, normalized, null, null, null, amount,
+                null, 0, 0, 0, 0, conditions);
+    }
+
+    private ObjectiveDefinition parseMasteryLevel(String fileName, String id, Map<?, ?> map,
+                                                  QuestConditions conditions) {
+        String spellId = asString(map.get("spellId"));
+        if (spellId == null || spellId.isBlank()) {
+            logger.warn("[Quests] (" + magicUnknownSpellKey() + ") MASTERY_LEVEL objective missing spellId in "
+                    + fileName);
+            return null;
+        }
+        int level = asInt(map.get("level"), 1);
+        if (level <= 0) {
+            logger.warn("[Quests] (" + magicInvalidAmountKey() + ") MASTERY_LEVEL objective invalid level in "
+                    + fileName);
+            return null;
+        }
+        String normalized = spellId.trim();
+        if (!validateMagicSpell(fileName, normalized)) {
+            return null;
+        }
+        return new ObjectiveDefinition(id, ObjectiveType.MASTERY_LEVEL, normalized, null, null, null, level,
+                null, 0, 0, 0, 0, conditions);
+    }
+
+    private boolean validateMagicSpell(String fileName, String spellId) {
+        if (magicBridge == null || !magicBridge.isAvailable()) {
+            logger.warn("[Quests] (" + magicMissingKey() + ") Magic module required for magic objectives in "
+                    + fileName);
+            return true;
+        }
+        var api = magicBridge.api().orElse(null);
+        if (api == null) {
+            logger.warn("[Quests] (" + magicMissingKey() + ") Magic module required for magic objectives in "
+                    + fileName);
+            return true;
+        }
+        if (api.spellRegistry().find(spellId).isEmpty()) {
+            logger.warn("[Quests] (" + magicUnknownSpellKey() + ") Unknown spellId '" + spellId
+                    + "' in " + fileName);
+            return false;
+        }
+        return true;
+    }
+
+    private String magicMissingKey() {
+        return "quests.validation.magic_missing";
+    }
+
+    private String magicUnknownSpellKey() {
+        return "quests.validation.magic_unknown_spell";
+    }
+
+    private String magicInvalidAmountKey() {
+        return "quests.validation.magic_invalid_amount";
     }
 
     private List<RewardDefinition> loadRewards(String fileName, YamlConfiguration yml) {

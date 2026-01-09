@@ -8,6 +8,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import ru.realite.magic.api.event.SpellMasteryLevelUpEvent;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellRegistry;
@@ -168,6 +169,7 @@ public final class MasteryService {
     }
 
     private void notifyLevelUp(UUID playerId, String spellId, int level) {
+        Bukkit.getPluginManager().callEvent(new SpellMasteryLevelUpEvent(playerId, spellId, level));
         Player player = Bukkit.getPlayer(playerId);
         if (player == null) {
             return;

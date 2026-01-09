@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -26,6 +27,7 @@ import ru.realite.quests.model.QuestDefinition;
 import ru.realite.quests.model.QuestType;
 import ru.realite.quests.model.RewardDefinition;
 import ru.realite.quests.model.RewardType;
+import ru.realite.quests.integration.magic.MagicQuestBridge;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +50,7 @@ public final class QuestServiceImpl implements QuestService {
     private final boolean residencyMustBeInsideCity;
     private final boolean residencyCountOwner;
     private final boolean residencyCountMember;
+    private final MagicQuestBridge magicBridge;
 
     private static final String FEATURE_UNAVAILABLE_REASON = "feature unavailable";
 
@@ -62,7 +65,8 @@ public final class QuestServiceImpl implements QuestService {
             ClassXpService classXpService,
             boolean residencyMustBeInsideCity,
             boolean residencyCountOwner,
-            boolean residencyCountMember) {
+            boolean residencyCountMember,
+            MagicQuestBridge magicBridge) {
         this.logger = Objects.requireNonNull(logger, "logger");
         this.eventBus = Objects.requireNonNull(eventBus, "eventBus");
         this.questsDir = Objects.requireNonNull(questsDir, "questsDir");
@@ -75,6 +79,7 @@ public final class QuestServiceImpl implements QuestService {
         this.residencyMustBeInsideCity = residencyMustBeInsideCity;
         this.residencyCountOwner = residencyCountOwner;
         this.residencyCountMember = residencyCountMember;
+        this.magicBridge = magicBridge;
     }
 
     @Override
@@ -102,6 +107,7 @@ public final class QuestServiceImpl implements QuestService {
         }
         QuestProgressData fresh = new QuestProgressData(QuestState.ACTIVE, false, Set.of(), Map.of());
         progressRepository.save(player.getUniqueId(), quest.id(), fresh);
+        applyMagicInitialProgress(player, quest, fresh);
         eventBus.publish(new QuestStartedEvent(player.getUniqueId(), quest.id(), trigger));
         logger.info("[Quests] Started quest " + quest.id() + " for " + player.getName());
     }
@@ -139,7 +145,7 @@ public final class QuestServiceImpl implements QuestService {
     }
 
     public boolean reloadQuests() {
-        QuestRepository loaded = new QuestLoader(questsDir, logger).load();
+        QuestRepository loaded = new QuestLoader(questsDir, logger, magicBridge).load();
         this.repository = loaded;
         return true;
     }
@@ -375,6 +381,156 @@ public final class QuestServiceImpl implements QuestService {
         }
     }
 
+    private void applyMagicInitialProgress(Player player, QuestDefinition quest, QuestProgressData progress) {
+        if (magicBridge == null || !magicBridge.isAvailable()) {
+            return;
+        }
+        var api = magicBridge.api().orElse(null);
+        if (api == null) {
+            return;
+        }
+        boolean updated = false;
+        for (ObjectiveDefinition objective : quest.objectives()) {
+            if (progress.completedObjectives().contains(objective.id())) {
+                continue;
+            }
+            if (!canProgressObjective(player, player.getLocation(), quest, objective)) {
+                continue;
+            }
+            if (objective.type() == ObjectiveType.UNLOCK_SPELL) {
+                if (objective.spellId() != null && api.playerSpells()
+                        .hasSpell(player.getUniqueId(), objective.spellId())) {
+                    progress.completedObjectivesMutable().add(objective.id());
+                    notifyObjectiveCompleted(player, objective);
+                    updated = true;
+                }
+            } else if (objective.type() == ObjectiveType.MASTERY_LEVEL) {
+                if (objective.spellId() != null
+                        && api.masteryLevel(player.getUniqueId(), objective.spellId()) >= objective.amount()) {
+                    progress.completedObjectivesMutable().add(objective.id());
+                    notifyObjectiveCompleted(player, objective);
+                    updated = true;
+                }
+            }
+        }
+        if (updated) {
+            progressRepository.save(player.getUniqueId(), quest.id(), progress);
+            tryCompleteQuest(player, quest, progress);
+        }
+    }
+
+    public void handleSpellUnlocked(java.util.UUID playerId, String spellId) {
+        Player player = Bukkit.getPlayer(playerId);
+        if (player == null || spellId == null) {
+            return;
+        }
+        for (QuestDefinition quest : repository.all()) {
+            QuestProgressData progress = progressRepository.getProgress(player.getUniqueId(), quest.id());
+            if (progress == null || progress.state() != QuestState.ACTIVE) {
+                continue;
+            }
+            boolean updated = false;
+            for (ObjectiveDefinition objective : quest.objectives()) {
+                if (objective.type() != ObjectiveType.UNLOCK_SPELL) {
+                    continue;
+                }
+                if (progress.completedObjectives().contains(objective.id())) {
+                    continue;
+                }
+                if (!canProgressObjective(player, player.getLocation(), quest, objective)) {
+                    continue;
+                }
+                if (matchesSpell(objective, spellId)) {
+                    progress.completedObjectivesMutable().add(objective.id());
+                    notifyObjectiveCompleted(player, objective);
+                    updated = true;
+                }
+            }
+            if (updated) {
+                progressRepository.save(player.getUniqueId(), quest.id(), progress);
+                tryCompleteQuest(player, quest, progress);
+            }
+        }
+    }
+
+    public void handleSpellCastSuccess(java.util.UUID playerId, String spellId) {
+        Player player = Bukkit.getPlayer(playerId);
+        if (player == null || spellId == null) {
+            return;
+        }
+        for (QuestDefinition quest : repository.all()) {
+            QuestProgressData progress = progressRepository.getProgress(player.getUniqueId(), quest.id());
+            if (progress == null || progress.state() != QuestState.ACTIVE) {
+                continue;
+            }
+            boolean updated = false;
+            for (ObjectiveDefinition objective : quest.objectives()) {
+                if (objective.type() != ObjectiveType.CAST_SPELL) {
+                    continue;
+                }
+                if (progress.completedObjectives().contains(objective.id())) {
+                    continue;
+                }
+                if (!canProgressObjective(player, player.getLocation(), quest, objective)) {
+                    continue;
+                }
+                if (!matchesSpell(objective, spellId)) {
+                    continue;
+                }
+                int current = progress.objectiveCountsMutable().getOrDefault(objective.id(), 0) + 1;
+                if (current >= objective.amount()) {
+                    progress.completedObjectivesMutable().add(objective.id());
+                    progress.objectiveCountsMutable().remove(objective.id());
+                    notifyObjectiveCompleted(player, objective);
+                } else {
+                    progress.objectiveCountsMutable().put(objective.id(), current);
+                }
+                updated = true;
+            }
+            if (updated) {
+                progressRepository.save(player.getUniqueId(), quest.id(), progress);
+                tryCompleteQuest(player, quest, progress);
+            }
+        }
+    }
+
+    public void handleSpellMasteryLevelUp(java.util.UUID playerId, String spellId, int newLevel) {
+        Player player = Bukkit.getPlayer(playerId);
+        if (player == null || spellId == null) {
+            return;
+        }
+        for (QuestDefinition quest : repository.all()) {
+            QuestProgressData progress = progressRepository.getProgress(player.getUniqueId(), quest.id());
+            if (progress == null || progress.state() != QuestState.ACTIVE) {
+                continue;
+            }
+            boolean updated = false;
+            for (ObjectiveDefinition objective : quest.objectives()) {
+                if (objective.type() != ObjectiveType.MASTERY_LEVEL) {
+                    continue;
+                }
+                if (progress.completedObjectives().contains(objective.id())) {
+                    continue;
+                }
+                if (!canProgressObjective(player, player.getLocation(), quest, objective)) {
+                    continue;
+                }
+                if (!matchesSpell(objective, spellId)) {
+                    continue;
+                }
+                if (newLevel >= objective.amount()) {
+                    progress.completedObjectivesMutable().add(objective.id());
+                    notifyObjectiveCompleted(player, objective);
+                    updated = true;
+                }
+            }
+            if (updated) {
+                progressRepository.save(player.getUniqueId(), quest.id(), progress);
+                tryCompleteQuest(player, quest, progress);
+            }
+        }
+    }
+
     private void tryCompleteQuest(Player player, QuestDefinition quest, QuestProgressData progress) {
         if (progress.state() != QuestState.ACTIVE) {
             return;
@@ -438,6 +594,13 @@ public final class QuestServiceImpl implements QuestService {
             return true;
         }
         return npcName != null && normalizedTarget.equals(npcName.toLowerCase(Locale.ROOT));
+    }
+
+    private boolean matchesSpell(ObjectiveDefinition objective, String spellId) {
+        if (objective.spellId() == null || spellId == null) {
+            return false;
+        }
+        return objective.spellId().trim().equalsIgnoreCase(spellId.trim());
     }
 
     private boolean matchesLocation(ObjectiveDefinition objective, Location location) {
@@ -541,9 +704,12 @@ public final class QuestServiceImpl implements QuestService {
             return 0;
         }
         return switch (objective.type()) {
-            case KILL, PLACE_BLOCK, BREAK_BLOCK -> progress.objectiveCounts().getOrDefault(objective.id(), 0);
+            case KILL, PLACE_BLOCK, BREAK_BLOCK, CAST_SPELL ->
+                    progress.objectiveCounts().getOrDefault(objective.id(), 0);
             case HOLD_ITEM -> countInventory(player, objective);
             case CITY_PLOT_RESIDENCY -> progress.completedObjectives().contains(objective.id()) ? 1 : 0;
+            case UNLOCK_SPELL -> isSpellUnlocked(player, objective) ? 1 : 0;
+            case MASTERY_LEVEL -> getMagicMasteryLevel(player, objective);
             default -> 0;
         };
     }
@@ -560,6 +726,9 @@ public final class QuestServiceImpl implements QuestService {
             case BREAK_BLOCK -> "Break " + objective.amount() + " " + formatMaterials(objective.materials());
             case HOLD_ITEM -> "Hold " + objective.amount() + " " + formatMaterials(objective.materials());
             case CITY_PLOT_RESIDENCY -> "Become a city plot resident";
+            case UNLOCK_SPELL -> "Learn spell " + formatSpellId(objective.spellId());
+            case CAST_SPELL -> "Cast " + formatSpellId(objective.spellId()) + " " + objective.amount() + " times";
+            case MASTERY_LEVEL -> "Master " + formatSpellId(objective.spellId()) + " to level " + objective.amount();
         };
     }
 
@@ -578,6 +747,34 @@ public final class QuestServiceImpl implements QuestService {
                 residencyCountOwner,
                 residencyCountMember,
                 residencyMustBeInsideCity);
+    }
+
+    private boolean isSpellUnlocked(Player player, ObjectiveDefinition objective) {
+        if (magicBridge == null || !magicBridge.isAvailable()) {
+            return false;
+        }
+        if (objective.spellId() == null || player == null) {
+            return false;
+        }
+        var api = magicBridge.api().orElse(null);
+        if (api == null) {
+            return false;
+        }
+        return api.playerSpells().hasSpell(player.getUniqueId(), objective.spellId());
+    }
+
+    private int getMagicMasteryLevel(Player player, ObjectiveDefinition objective) {
+        if (magicBridge == null || !magicBridge.isAvailable()) {
+            return 0;
+        }
+        if (objective.spellId() == null || player == null) {
+            return 0;
+        }
+        var api = magicBridge.api().orElse(null);
+        if (api == null) {
+            return 0;
+        }
+        return api.masteryLevel(player.getUniqueId(), objective.spellId());
     }
 
     private void notifyObjectiveCompleted(Player player, ObjectiveDefinition objective) {
@@ -619,6 +816,13 @@ public final class QuestServiceImpl implements QuestService {
 
     private String formatEnum(String raw) {
         return raw.toLowerCase(Locale.ROOT).replace('_', ' ');
+    }
+
+    private String formatSpellId(String spellId) {
+        if (spellId == null || spellId.isBlank()) {
+            return "spell";
+        }
+        return spellId.trim();
     }
 
     public QuestDefinition getQuestDefinition(String questId) {
