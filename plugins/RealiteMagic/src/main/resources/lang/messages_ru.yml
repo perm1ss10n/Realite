@@ -111,4 +111,5 @@ magic:
     missing_class_module: "&cМодуль классов недоступен."
     class_mismatch: "&cТребуется класс: &f{class}"
     evolution_missing: "&cТребуется эволюция: &f{evolution}"
+    evolution_mismatch: "&cТребуется эволюция: &f{evolution}"
     item_missing: "&cНужен предмет: &f{item}"

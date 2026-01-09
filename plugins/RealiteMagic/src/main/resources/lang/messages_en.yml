@@ -111,4 +111,5 @@ magic:
     missing_class_module: "&cClass module is unavailable."
     class_mismatch: "&cRequired class: &f{class}"
     evolution_missing: "&cRequired evolution: &f{evolution}"
+    evolution_mismatch: "&cRequired evolution: &f{evolution}"
     item_missing: "&cRequired item: &f{item}"
