@@ -7,6 +7,11 @@ import org.jetbrains.annotations.Nullable;
 public final class NoopClassesBridge implements ClassesBridge {
 
     @Override
+    public boolean isAvailable() {
+        return false;
+    }
+
+    @Override
     public @Nullable String getActiveClassId(Player player) {
         return null;
     }

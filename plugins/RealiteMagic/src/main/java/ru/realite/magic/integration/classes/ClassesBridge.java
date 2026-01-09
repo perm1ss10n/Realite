@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 public interface ClassesBridge {
 
+    boolean isAvailable();
+
     @Nullable String getActiveClassId(Player player);
 
     @Nullable String getActiveEvolutionId(Player player);

@@ -109,7 +109,9 @@ magic:
       desc: "&7A piercing ray that deals magic damage."
   require:
     missing_class_module: "&cClass module is unavailable."
+    no_class_selected: "&cYou have no class selected."
     class_mismatch: "&cRequired class: &f{class}"
-    evolution_missing: "&cRequired evolution: &f{evolution}"
+    no_evolution: "&cRequired evolution: &f{evolution}"
     evolution_mismatch: "&cRequired evolution: &f{evolution}"
     item_missing: "&cRequired item: &f{item}"
+    missing_items_module: "&cItems module is unavailable."

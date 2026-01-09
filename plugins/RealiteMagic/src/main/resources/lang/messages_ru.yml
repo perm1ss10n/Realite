@@ -109,7 +109,9 @@ magic:
       desc: "&7Пронзающий луч наносит магический урон."
   require:
     missing_class_module: "&cМодуль классов недоступен."
+    no_class_selected: "&cКласс не выбран."
     class_mismatch: "&cТребуется класс: &f{class}"
-    evolution_missing: "&cТребуется эволюция: &f{evolution}"
+    no_evolution: "&cТребуется эволюция: &f{evolution}"
     evolution_mismatch: "&cТребуется эволюция: &f{evolution}"
     item_missing: "&cНужен предмет: &f{item}"
+    missing_items_module: "&cМодуль предметов недоступен."

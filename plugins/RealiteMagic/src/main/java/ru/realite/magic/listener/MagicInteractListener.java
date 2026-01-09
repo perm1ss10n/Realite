@@ -44,6 +44,10 @@ public final class MagicInteractListener implements Listener {
         this.itemsBridge = magicService.itemsBridge();
     }
 
+    public void clearWarnings(UUID playerId) {
+        wrongItemWarns.remove(playerId);
+    }
+
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         if (event.getHand() != EquipmentSlot.HAND) {
