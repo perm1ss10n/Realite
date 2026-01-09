@@ -4,6 +4,9 @@ import java.util.UUID;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
+/**
+ * Fired when a player's mastery level increases for a spell.
+ */
 public final class SpellMasteryLevelUpEvent extends Event {
 
     private static final HandlerList HANDLERS = new HandlerList();

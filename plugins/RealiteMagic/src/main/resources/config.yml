@@ -1,6 +1,15 @@
 # Основной язык сообщений (ru/en)
 lang: "ru"
 
+release:
+  strictValidation: true
+  logConfigWarnings: true
+  debug: false
+
+magic:
+  debug:
+    smokeTests: false
+
 mana:
   maxDefault: 100.0
   regenPerSecond: 2.0

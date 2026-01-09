@@ -5,6 +5,9 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import ru.realite.magic.service.SpellUnlockSource;
 
+/**
+ * Fired when a player unlocks a spell.
+ */
 public final class SpellUnlockedEvent extends Event {
 
     private static final HandlerList HANDLERS = new HandlerList();

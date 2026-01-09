@@ -6,6 +6,11 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Fired for every cast attempt, both success and failure.
+ * <p>
+ * Placeholders are immutable and can be safely cached by listeners.
+ */
 public final class SpellCastAttemptEvent extends Event {
 
     private static final HandlerList HANDLERS = new HandlerList();

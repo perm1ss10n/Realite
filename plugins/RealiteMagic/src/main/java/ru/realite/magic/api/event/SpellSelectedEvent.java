@@ -5,6 +5,9 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Fired when a player changes the selected spell.
+ */
 public final class SpellSelectedEvent extends Event {
 
     private static final HandlerList HANDLERS = new HandlerList();

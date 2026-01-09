@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Level;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -61,9 +62,11 @@ import ru.realite.magic.region.RegionRuleService;
 import ru.realite.magic.school.MagicSchool;
 import ru.realite.magic.spell.ReagentCost;
 import ru.realite.magic.spell.ReagentItem;
+import ru.realite.magic.spell.SpellCastTrigger;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellRegistry;
 import ru.realite.magic.spell.SpellRequirements;
+import ru.realite.magic.spell.SpellType;
 import ru.realite.magic.talent.TalentMagicService;
 import ru.realite.magic.target.SpellTarget;
 import ru.realite.magic.target.SpellTargetDefinition;
@@ -172,6 +175,7 @@ public final class MagicService {
         }
         warnStaffConfiguration();
         regenTask = Bukkit.getScheduler().runTaskTimer(plugin, this::tickRegen, 20L, 20L);
+        runSmokeTestsIfEnabled();
     }
 
     public void stop() {
@@ -1000,13 +1004,171 @@ public final class MagicService {
         if (effects == null) {
             return;
         }
+        int index = 0;
         for (SpellEffectDefinition effect : effects) {
+            if (effect == null) {
+                index++;
+                continue;
+            }
             SpellEffectExecutor executor = effectRegistry.find(effect.type()).orElse(null);
             if (executor == null) {
                 plugin.getLogger().warning("Unknown effect executor: " + effect.type());
+                index++;
                 continue;
             }
-            executor.execute(context, effect);
+            try {
+                executor.execute(context, effect);
+            } catch (Exception ex) {
+                String spellId = context.spell() == null ? "unknown" : context.spell().id();
+                plugin.getLogger().log(Level.SEVERE,
+                        "Failed to execute effect for spell '" + spellId + "' at index " + index, ex);
+            }
+            index++;
+        }
+    }
+
+    private void runSmokeTestsIfEnabled() {
+        if (!plugin.getConfig().getBoolean("magic.debug.smokeTests", false)) {
+            return;
+        }
+        Bukkit.getScheduler().runTask(plugin, this::runSmokeTests);
+    }
+
+    private void runSmokeTests() {
+        Player player = Bukkit.getOnlinePlayers().stream().findFirst().orElse(null);
+        if (player == null) {
+            plugin.getLogger().warning("[Magic] Smoke tests enabled but no online players found.");
+            return;
+        }
+        if (!player.hasPermission(PERMISSION_USE)) {
+            plugin.getLogger().warning("[Magic] Smoke tests skipped: player lacks permission realite.magic.use.");
+            return;
+        }
+        UUID playerId = player.getUniqueId();
+        overrideService.setBypass(playerId, MagicOverrideService.BypassType.REQUIREMENTS, true, null);
+        overrideService.setBypass(playerId, MagicOverrideService.BypassType.MANA, true, null);
+        overrideService.setBypass(playerId, MagicOverrideService.BypassType.ECONOMY, true, null);
+        overrideService.setBypass(playerId, MagicOverrideService.BypassType.STAFF, true, null);
+        try {
+            SpellDefinition successSpell = SmokeTestSpells.successSpell();
+            CastAttemptResult success = tryCast(player, successSpell);
+            if (!(success instanceof CastAttemptResult.Success)) {
+                plugin.getLogger().warning("[Magic] Smoke test failed: success cast did not succeed.");
+                return;
+            }
+            SpellDefinition cooldownSpell = SmokeTestSpells.cooldownSpell();
+            CastAttemptResult firstCooldown = tryCast(player, cooldownSpell);
+            CastAttemptResult secondCooldown = tryCast(player, cooldownSpell);
+            if (firstCooldown instanceof CastAttemptResult.Success
+                    && secondCooldown instanceof CastAttemptResult.Fail fail
+                    && !"magic.cast.cooldown".equals(fail.reasonKey())) {
+                plugin.getLogger().warning("[Magic] Smoke test warning: cooldown failure returned " + fail.reasonKey());
+            }
+            SpellDefinition reagentsSpell = SmokeTestSpells.reagentsSpell();
+            CastAttemptResult reagentsResult = tryCast(player, reagentsSpell);
+            if (reagentsResult instanceof CastAttemptResult.Success) {
+                plugin.getLogger().warning("[Magic] Smoke test warning: reagents failure did not trigger.");
+            }
+            runPveSmokeTest(player);
+        } finally {
+            overrideService.clearBypass(playerId, MagicOverrideService.BypassType.REQUIREMENTS);
+            overrideService.clearBypass(playerId, MagicOverrideService.BypassType.MANA);
+            overrideService.clearBypass(playerId, MagicOverrideService.BypassType.ECONOMY);
+            overrideService.clearBypass(playerId, MagicOverrideService.BypassType.STAFF);
+        }
+    }
+
+    private void runPveSmokeTest(Player player) {
+        if (!pveService.enabled()) {
+            plugin.getLogger().warning("[Magic] Smoke test skipped: PVE is disabled.");
+            return;
+        }
+        var world = player.getWorld();
+        var location = player.getLocation().add(1, 0, 1);
+        var entity = world.spawn(location, org.bukkit.entity.Zombie.class, spawned -> spawned.addScoreboardTag("boss"));
+        try {
+            SpellDefinition pveSpell = SmokeTestSpells.pveResistSpell();
+            CastExecutionPlan plan = new CastExecutionPlan(
+                    pveSpell,
+                    player,
+                    List.of(entity),
+                    player.getLocation(),
+                    entity.getLocation(),
+                    entity,
+                    Map.of());
+            EffectContext context = new EffectContext(player, pveSpell, plan, BalanceModifiers.identity(),
+                    ThreadLocalRandom.current(), this);
+            executeEffects(context, pveSpell.effects());
+        } finally {
+            entity.remove();
+        }
+    }
+
+    private static final class SmokeTestSpells {
+        private static SpellDefinition successSpell() {
+            return baseSpell("smoke_success", 0, 0);
+        }
+
+        private static SpellDefinition cooldownSpell() {
+            return baseSpell("smoke_cooldown", 0, 40);
+        }
+
+        private static SpellDefinition reagentsSpell() {
+            ReagentCost reagents = new ReagentCost(true, List.of(new ReagentItem("missing_item", 99)));
+            return baseSpell("smoke_reagents", reagents, 0, 0);
+        }
+
+        private static SpellDefinition pveResistSpell() {
+            return baseSpell("smoke_pve", 0, 0,
+                    List.of(new SpellEffectDefinition("knockback", Map.of("strength", 1, "mode", "PRIMARY"))));
+        }
+
+        private static SpellDefinition baseSpell(String id, long cooldownTicks, double mana) {
+            return baseSpell(id, null, cooldownTicks, mana);
+        }
+
+        private static SpellDefinition baseSpell(String id, ReagentCost reagents, long cooldownTicks, double mana) {
+            return baseSpell(id, reagents, cooldownTicks, mana,
+                    List.of(new SpellEffectDefinition("particles", Map.of(
+                            "particle", "SPELL_INSTANT",
+                            "count", 1,
+                            "spread", 0.1,
+                            "target", "ORIGIN"))));
+        }
+
+        private static SpellDefinition baseSpell(String id,
+                                                 ReagentCost reagents,
+                                                 long cooldownTicks,
+                                                 double mana,
+                                                 List<SpellEffectDefinition> effects) {
+            return new SpellDefinition(
+                    id,
+                    SpellType.UTILITY,
+                    id,
+                    id,
+                    MagicSchool.NONE,
+                    mana,
+                    cooldownTicks,
+                    0,
+                    0,
+                    new SpellRequirements(null, null, null, false),
+                    SpellTargetDefinition.none(),
+                    CastDeliveryType.INSTANT,
+                    null,
+                    null,
+                    null,
+                    null,
+                    effects,
+                    SpellCastTrigger.INSTANT,
+                    null,
+                    null,
+                    reagents,
+                    0,
+                    null,
+                    0,
+                    null,
+                    null,
+                    null);
         }
     }
 

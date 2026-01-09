@@ -41,6 +41,9 @@ public final class KnockbackEffectExecutor implements SpellEffectExecutor {
 
     @Override
     public void execute(EffectContext ctx, SpellEffectDefinition def) {
+        if (ctx == null || def == null) {
+            return;
+        }
         Map<String, Object> params = def.params();
         Double strength = EffectParamUtils.doubleParam(params, "strength");
         if (strength == null || strength <= 0) {
@@ -54,6 +57,9 @@ public final class KnockbackEffectExecutor implements SpellEffectExecutor {
         Location casterLocation = ctx.caster().getLocation();
         PveService pveService = ctx.magicService().pveService();
         for (LivingEntity target : EffectTargetResolver.resolveTargets(ctx.plan(), mode)) {
+            if (target == null) {
+                continue;
+            }
             if (pull) {
                 if (pveService.isPullImmune(target)) {
                     ctx.magicService().diagnosticsService().recordPveImmune("pull");
