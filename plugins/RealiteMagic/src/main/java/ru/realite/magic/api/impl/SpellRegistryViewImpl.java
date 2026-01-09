@@ -36,6 +36,7 @@ public final class SpellRegistryViewImpl implements SpellRegistryView {
                 definition.nameKey(),
                 definition.descKey(),
                 definition.type(),
+                definition.school(),
                 definition.requirements(),
                 definition.target(),
                 List.copyOf(definition.effects()));

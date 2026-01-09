@@ -51,6 +51,10 @@ public final class DamageEffectExecutor implements SpellEffectExecutor {
         if (amount == null || amount <= 0) {
             return;
         }
+        double multiplier = ctx.modifiers().damageMultiplier();
+        if (multiplier != 1.0) {
+            amount *= multiplier;
+        }
         LivingEntity target = EffectTargetResolver.resolveEntity(ctx.target());
         if (target == null) {
             return;

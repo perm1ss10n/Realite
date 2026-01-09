@@ -32,6 +32,8 @@ import ru.realite.magic.integration.items.ItemsBridge;
 import ru.realite.magic.integration.items.NoopItemsBridge;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.model.MageState;
+import ru.realite.magic.school.SchoolModifiers;
+import ru.realite.magic.school.SchoolService;
 import ru.realite.magic.gui.SpellSelectMenu;
 import ru.realite.magic.requirements.CheckResult;
 import ru.realite.magic.requirements.DefaultSpellRequirementChecker;
@@ -63,6 +65,7 @@ public final class MagicService {
     private final EffectExecutorRegistry effectRegistry;
     private final DebugService debugService;
     private final MagicHudService hudService;
+    private final SchoolService schoolService;
     private final Map<UUID, MageState> states = new HashMap<>();
     private final WarnLimiter warnLimiter = new WarnLimiter();
     private final SpellSelectMenu spellSelectMenu;
@@ -90,6 +93,7 @@ public final class MagicService {
         this.effectRegistry = Objects.requireNonNull(effectRegistry, "effectRegistry");
         this.debugService = Objects.requireNonNull(debugService, "debugService");
         this.hudService = Objects.requireNonNull(hudService, "hudService");
+        this.schoolService = new SchoolService(plugin, classesBridge, messages, this::state);
         boolean failWhenItemsUnavailable = plugin.getConfig()
                 .getBoolean("requirements.failWhenItemsUnavailable", true);
         this.requirementChecker = new DefaultSpellRequirementChecker(
@@ -247,6 +251,10 @@ public final class MagicService {
         if (requirementResult instanceof CheckResult.Fail fail) {
             return fail(player, spell, null, targetType(spell), fail.reasonKey(), fail.placeholders(), false, 0L);
         }
+        CheckResult conflictResult = schoolService.conflictReason(player, spell);
+        if (conflictResult instanceof CheckResult.Fail fail) {
+            return fail(player, spell, null, targetType(spell), fail.reasonKey(), fail.placeholders(), false, 0L);
+        }
         if (!hasRequiredFocus(player)) {
             return fail(player, spell, null, targetType(spell), "magic.error.need_focus", Map.of(),
                     warnLimited(player, "no_focus"), WARN_WINDOW_MS);
@@ -258,9 +266,11 @@ public final class MagicService {
             return fail(player, spell, null, targetType(spell), "magic.cast.cooldown", Map.of("time", time),
                     warnLimited(player, "cooldown"), WARN_WINDOW_MS);
         }
+        SchoolModifiers modifiers = schoolService.modifiersFor(player, spell);
+        double effectiveMana = effectiveManaCost(spell, modifiers);
         double currentMana = getMana(player);
-        if (currentMana < spell.mana()) {
-            String needed = formatNumber(spell.mana() - currentMana, "casting.manaFormat", "0.0");
+        if (currentMana < effectiveMana) {
+            String needed = formatNumber(effectiveMana - currentMana, "casting.manaFormat", "0.0");
             return fail(player, spell, null, targetType(spell), "magic.cast.no_mana", Map.of("mana", needed),
                     warnLimited(player, "no_mana"), WARN_WINDOW_MS);
         }
@@ -271,10 +281,13 @@ public final class MagicService {
         }
         SpellTarget target = resolvedTarget.orElseGet(() -> new SpellTarget.Self(player));
         consumeRequiredItemOnCast(player, spell);
-        addMana(player, -spell.mana());
+        addMana(player, -effectiveMana);
         setCooldown(player, GLOBAL_COOLDOWN_KEY, globalCastTicks());
-        setCooldown(player, spell.id(), spell.cooldownTicks());
-        cast(player, spell, target);
+        setCooldown(player, spell.id(), effectiveCooldownTicks(spell, modifiers));
+        cast(player, spell, target, modifiers);
+        MageState state = state(player);
+        state.lastSchool(spell.school());
+        state.lastSchoolTime(System.currentTimeMillis());
         debugService.recordSuccess(spell.id());
         debugService.logCast(player,
                 spell.id(),
@@ -289,10 +302,15 @@ public final class MagicService {
     }
 
     public void cast(Player player, SpellDefinition spell, SpellTarget target) {
+        SchoolModifiers modifiers = schoolService.modifiersFor(player, spell);
+        cast(player, spell, target, modifiers);
+    }
+
+    private void cast(Player player, SpellDefinition spell, SpellTarget target, SchoolModifiers modifiers) {
         if (spell == null || player == null || target == null) {
             return;
         }
-        EffectContext context = new EffectContext(player, spell, target, ThreadLocalRandom.current(), this);
+        EffectContext context = new EffectContext(player, spell, target, modifiers, ThreadLocalRandom.current(), this);
         for (SpellEffectDefinition effect : spell.effects()) {
             SpellEffectExecutor executor = effectRegistry.find(effect.type()).orElse(null);
             if (executor == null) {
@@ -433,10 +451,11 @@ public final class MagicService {
         if (spell == null) {
             return;
         }
+        SchoolModifiers modifiers = schoolService.modifiersFor(player, spell);
         consumeRequiredItemOnCast(player, spell);
-        addMana(player, -spell.mana());
+        addMana(player, -effectiveManaCost(spell, modifiers));
         setCooldown(player, GLOBAL_COOLDOWN_KEY, globalCastTicks());
-        setCooldown(player, spell.id(), spell.cooldownTicks());
+        setCooldown(player, spell.id(), effectiveCooldownTicks(spell, modifiers));
     }
 
     public void handleCastRewards(Player player, SpellDefinition spell) {
@@ -499,6 +518,22 @@ public final class MagicService {
 
     private double clamp(double value, double min, double max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    private double effectiveManaCost(SpellDefinition spell, SchoolModifiers modifiers) {
+        if (spell == null) {
+            return 0;
+        }
+        double multiplier = modifiers == null ? 1.0 : modifiers.manaMultiplier();
+        return Math.max(0, spell.mana() * multiplier);
+    }
+
+    private long effectiveCooldownTicks(SpellDefinition spell, SchoolModifiers modifiers) {
+        if (spell == null) {
+            return 0;
+        }
+        double multiplier = modifiers == null ? 1.0 : modifiers.cooldownMultiplier();
+        return Math.max(0, Math.round(spell.cooldownTicks() * multiplier));
     }
 
     private CastAttemptResult checkCastItem(Player player, SpellDefinition spell) {

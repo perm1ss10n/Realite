@@ -3,6 +3,7 @@ package ru.realite.magic.spell;
 import java.util.List;
 import org.bukkit.Material;
 import ru.realite.magic.effect.SpellEffectDefinition;
+import ru.realite.magic.school.MagicSchool;
 import ru.realite.magic.target.SpellTargetDefinition;
 
 public record SpellDefinition(
@@ -10,6 +11,7 @@ public record SpellDefinition(
         SpellType type,
         String nameKey,
         String descKey,
+        MagicSchool school,
         double mana,
         long cooldownTicks,
         double range,

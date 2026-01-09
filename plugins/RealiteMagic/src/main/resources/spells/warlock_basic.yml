@@ -3,6 +3,7 @@ spell:
   type: "RAY_DAMAGE"
   nameKey: "magic.spell.warlock_ray.name"
   descKey: "magic.spell.warlock_ray.desc"
+  school: "WARLOCK"
   mana: 25.0
   cooldownTicks: 60
   range: 20.0
