@@ -4,7 +4,7 @@ format:
 magic:
   enabled: "{prefix}&aRealiteMagic plugin enabled."
   cmd:
-    usage: "&eUsage: &f/rmagic <menu|spell|mana>"
+    usage: "&eUsage: &f/rmagic <menu|spell|spells|mana>"
     player_not_found: "&cPlayer not found: &f{player}"
     spell:
       usage: "&eUsage: &f/rmagic spell <give|remove|list|select|clear> <player> [spellId]"
@@ -17,9 +17,31 @@ magic:
       list:
         header: "&eSpells for &f{player}&e:"
         entry: "&7- {spell} &8({id})"
+    spells:
+      usage: "&eUsage: &f/rmagic spells <reload|validate>"
+      reload:
+        ok: "&aLoaded &f{count}&a, errors &f{errors}&a."
+      validate:
+        ok: "&aValidated &f{count}&a, errors &f{errors}&a."
+      errors:
+        header: "&eSpell load errors:"
+        entry: "&7- {file}: {error}"
+        missing_section: "&cMissing spell section."
+        invalid_id: "&cInvalid id."
+        missing_type: "&cMissing type."
+        unknown_type: "&cUnknown type: &f{type}"
+        missing_name_desc: "&cMissing nameKey/descKey."
+        invalid_numbers: "&cInvalid numeric values."
+        duplicate_id: "&cDuplicate id: &f{id}"
+        invalid_icon_material: "&eInvalid icon.material: &f{material}"
+        invalid_gui_slot: "&eInvalid gui.slot: &f{slot}"
+        invalid_default_icon_material: "&eInvalid defaultSpellIconMaterial: &f{material}"
+        folder_create_failed: "&cFailed to create folder: &f{path}"
+        unknown: "&cUnknown error."
+      no_errors: "&aNo errors found."
   command:
     usage:
-      root: "&eUsage: &f/rmagic <menu|spell|mana>"
+      root: "&eUsage: &f/rmagic <menu|spell|spells|mana>"
       spell: "&eUsage: &f/rmagic spell <select|clear|get> [player] [spellId]"
     only-player: "{prefix}&cCommand is only for players."
     spell:
