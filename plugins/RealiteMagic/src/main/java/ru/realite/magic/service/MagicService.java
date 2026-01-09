@@ -19,47 +19,47 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.Nullable;
+import ru.realite.magic.admin.MagicDiagnosticsService;
+import ru.realite.magic.admin.MagicDiagnosticsService.CastLogEntry;
+import ru.realite.magic.admin.override.MagicOverrideService;
+import ru.realite.magic.api.event.SpellCastAttemptEvent;
+import ru.realite.magic.api.event.SpellCastSuccessEvent;
+import ru.realite.magic.balance.ItemModifiers;
+import ru.realite.magic.balance.ItemModifiersService;
 import ru.realite.magic.cast.CastAttemptResult;
 import ru.realite.magic.cast.CastDeliveryType;
 import ru.realite.magic.cast.CastEngine;
 import ru.realite.magic.cast.CastExecutionPlan;
 import ru.realite.magic.cast.WarnLimiter;
-import ru.realite.magic.admin.MagicDiagnosticsService;
-import ru.realite.magic.admin.MagicDiagnosticsService.CastLogEntry;
-import ru.realite.magic.admin.override.MagicOverrideService;
 import ru.realite.magic.debug.DebugService;
-import ru.realite.magic.balance.ItemModifiers;
-import ru.realite.magic.balance.ItemModifiersService;
 import ru.realite.magic.effect.BalanceModifiers;
 import ru.realite.magic.effect.EffectContext;
 import ru.realite.magic.effect.EffectExecutorRegistry;
 import ru.realite.magic.effect.SpellEffectDefinition;
 import ru.realite.magic.effect.SpellEffectExecutor;
-import ru.realite.magic.api.event.SpellCastAttemptEvent;
-import ru.realite.magic.api.event.SpellCastSuccessEvent;
+import ru.realite.magic.gui.SpellSelectMenu;
 import ru.realite.magic.hud.MagicHudService;
+import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.integration.classes.ClassesBridge;
 import ru.realite.magic.integration.economy.EconomyBridge;
 import ru.realite.magic.integration.events.MagicEventPublisher;
 import ru.realite.magic.integration.items.ItemsBridge;
 import ru.realite.magic.integration.items.NoopItemsBridge;
 import ru.realite.magic.integration.talents.TalentsBridge;
-import ru.realite.magic.i18n.MagicMessages;
-import ru.realite.magic.model.MageState;
 import ru.realite.magic.mastery.MasteryModifiers;
 import ru.realite.magic.mastery.MasteryService;
+import ru.realite.magic.model.MageState;
+import ru.realite.magic.pve.PveService;
+import ru.realite.magic.region.CastPolicy;
+import ru.realite.magic.region.RegionRuleService;
+import ru.realite.magic.requirements.CheckResult;
+import ru.realite.magic.requirements.DefaultSpellRequirementChecker;
+import ru.realite.magic.requirements.SpellRequirementChecker;
+import ru.realite.magic.school.MagicSchool;
 import ru.realite.magic.school.SchoolModifiers;
 import ru.realite.magic.school.SchoolService;
 import ru.realite.magic.service.StaffChargeService.StaffCharges;
 import ru.realite.magic.service.StaffChargeService.StaffItem;
-import ru.realite.magic.gui.SpellSelectMenu;
-import ru.realite.magic.pve.PveService;
-import ru.realite.magic.requirements.CheckResult;
-import ru.realite.magic.requirements.DefaultSpellRequirementChecker;
-import ru.realite.magic.requirements.SpellRequirementChecker;
-import ru.realite.magic.region.CastPolicy;
-import ru.realite.magic.region.RegionRuleService;
-import ru.realite.magic.school.MagicSchool;
 import ru.realite.magic.spell.ReagentCost;
 import ru.realite.magic.spell.ReagentItem;
 import ru.realite.magic.spell.SpellCastTrigger;
@@ -78,8 +78,7 @@ public final class MagicService {
     private static final String GLOBAL_COOLDOWN_KEY = "global";
     private static final String PERMISSION_USE = "realite.magic.use";
     private static final long WARN_WINDOW_MS = 2000L;
-    private static final LegacyComponentSerializer LEGACY =
-            LegacyComponentSerializer.legacyAmpersand();
+    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
 
     private final JavaPlugin plugin;
     private final MagicMessages messages;
@@ -117,20 +116,20 @@ public final class MagicService {
     private Map<MagicSchool, List<ReagentItem>> defaultReagentsBySchool;
 
     public MagicService(JavaPlugin plugin,
-                        MagicMessages messages,
-                        SpellRegistry spellRegistry,
-                        PlayerSpellService playerSpellService,
-                        ItemsBridge itemsBridge,
-                        ClassesBridge classesBridge,
-                        EconomyBridge economyBridge,
-                        TalentsBridge talentsBridge,
-                        MagicEventPublisher eventPublisher,
-                        EffectExecutorRegistry effectRegistry,
-                        DebugService debugService,
-                        MagicHudService hudService,
-                        MasteryService masteryService,
-                        RegionRuleService regionRuleService,
-                        GuildBonusService guildBonusService) {
+            MagicMessages messages,
+            SpellRegistry spellRegistry,
+            PlayerSpellService playerSpellService,
+            ItemsBridge itemsBridge,
+            ClassesBridge classesBridge,
+            EconomyBridge economyBridge,
+            TalentsBridge talentsBridge,
+            MagicEventPublisher eventPublisher,
+            EffectExecutorRegistry effectRegistry,
+            DebugService debugService,
+            MagicHudService hudService,
+            MasteryService masteryService,
+            RegionRuleService regionRuleService,
+            GuildBonusService guildBonusService) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.messages = Objects.requireNonNull(messages, "messages");
         this.spellRegistry = Objects.requireNonNull(spellRegistry, "spellRegistry");
@@ -164,7 +163,8 @@ public final class MagicService {
                 this.messages,
                 this::warnMissingItemBridge,
                 this.failWhenItemsUnavailable);
-        this.spellSelectMenu = new SpellSelectMenu(plugin, spellRegistry, playerSpellService, requirementChecker, messages);
+        this.spellSelectMenu = new SpellSelectMenu(plugin, spellRegistry, playerSpellService, requirementChecker,
+                messages);
         this.itemModifiersService = new ItemModifiersService(plugin, itemsBridge);
         this.staffChargeService = new StaffChargeService(itemsBridge);
     }
@@ -328,6 +328,7 @@ public final class MagicService {
         boolean bypassReagents = overrideService.bypassReagents(playerId);
         boolean bypassEconomy = overrideService.bypassEconomy(playerId);
         boolean bypassStaff = overrideService.bypassStaffCharges(playerId);
+
         if (!bypassRequirements) {
             CastAttemptResult castItemResult = checkCastItem(player, spell);
             if (castItemResult instanceof CastAttemptResult.Fail) {
@@ -342,6 +343,7 @@ public final class MagicService {
                 return fail(player, spell, null, targetType(spell), fail.reasonKey(), fail.placeholders(), false, 0L);
             }
         }
+
         CastPolicy regionPolicy = regionRuleService.castPolicy(player, spell, player.getLocation());
         if (!regionPolicy.allowed()) {
             String reasonKey = regionPolicy.denyReasonKey() == null
@@ -349,12 +351,14 @@ public final class MagicService {
                     : regionPolicy.denyReasonKey();
             return fail(player, spell, null, targetType(spell), reasonKey, regionPolicy.placeholders(), false, 0L);
         }
+
         if (!bypassRequirements) {
             if (!hasRequiredFocus(player)) {
                 return fail(player, spell, null, targetType(spell), "magic.error.need_focus", Map.of(),
                         warnLimited(player, "no_focus"), WARN_WINDOW_MS);
             }
         }
+
         long remainingTicks = Math.max(remainingGlobalCooldownTicks(player),
                 remainingCooldownTicks(player, spell.id()));
         if (!bypassCooldown && remainingTicks > 0) {
@@ -362,12 +366,14 @@ public final class MagicService {
             return fail(player, spell, null, targetType(spell), "magic.cast.cooldown", Map.of("time", time),
                     warnLimited(player, "cooldown"), WARN_WINDOW_MS);
         }
+
         if (!bypassRequirements) {
             CheckResult runeCheck = itemModifiersService.checkRuneSchool(player, spell);
             if (runeCheck instanceof CheckResult.Fail fail) {
                 return fail(player, spell, null, targetType(spell), fail.reasonKey(), fail.placeholders(), false, 0L);
             }
         }
+
         ReagentCost effectiveReagents = resolveEffectiveReagents(spell);
         if (!bypassReagents && effectiveReagents != null && !effectiveReagents.isEmpty()) {
             if (itemsBridge instanceof NoopItemsBridge) {
@@ -384,6 +390,7 @@ public final class MagicService {
                 }
             }
         }
+
         boolean shouldPay = !bypassEconomy && economyEnabled && spell.moneyCost() > 0;
         if (shouldPay) {
             if (!economyBridge.isAvailable()) {
@@ -396,28 +403,35 @@ public final class MagicService {
                 return fail(player, spell, null, targetType(spell), "magic.economy.not_enough", Map.of(), false, 0L);
             }
         }
+
         BalanceModifiers modifiers = balanceModifiers(player, spell, null);
         double effectiveMana = effectiveManaCost(spell, modifiers);
         double currentMana = getMana(player);
+
         if (!bypassMana && currentMana < effectiveMana) {
             String needed = formatNumber(effectiveMana - currentMana, "casting.manaFormat", "0.0");
             return fail(player, spell, null, targetType(spell), "magic.cast.no_mana", Map.of("mana", needed),
                     warnLimited(player, "no_mana"), WARN_WINDOW_MS);
         }
+
         StaffCastResult staffResult = bypassStaff ? StaffCastResult.ok() : checkStaffForCast(player, spell);
         if (staffResult.reasonKey() != null) {
             return fail(player, spell, null, targetType(spell), staffResult.reasonKey(),
                     staffResult.placeholders(), warnLimited(player, "staff_fail"), WARN_WINDOW_MS);
         }
+
         Optional<SpellTarget> resolvedTarget = targetResolver.resolve(player, spell);
         if (isTargetRequired(spell) && resolvedTarget.isEmpty()) {
             return fail(player, spell, null, targetType(spell), "magic.cast.no_target", Map.of(),
                     warnLimited(player, "no_target"), WARN_WINDOW_MS);
         }
+
         SpellTarget target = resolvedTarget.orElseGet(() -> new SpellTarget.Self(player));
+
         if (shouldPay && !economyBridge.withdraw(player.getUniqueId(), spell.moneyCost())) {
             return fail(player, spell, null, targetType(spell), "magic.economy.not_enough", Map.of(), false, 0L);
         }
+
         if (!bypassReagents && effectiveReagents != null && effectiveReagents.consumeOnCast()) {
             CastAttemptResult consumeResult = consumeReagents(player, spell, effectiveReagents);
             if (consumeResult != null) {
@@ -427,6 +441,7 @@ public final class MagicService {
                 return consumeResult;
             }
         }
+
         if (!bypassStaff) {
             consumeStaffChargesOnCast(player, staffResult);
         }
@@ -436,15 +451,19 @@ public final class MagicService {
         if (!bypassMana) {
             addMana(player, -effectiveMana);
         }
+
         long cooldownTicks = effectiveCooldownTicks(spell, modifiers);
         if (!bypassCooldown) {
             setCooldown(player, GLOBAL_COOLDOWN_KEY, globalCastTicks());
             setCooldown(player, spell.id(), cooldownTicks);
         }
+
         cast(player, spell, target, modifiers);
+
         MageState state = state(player);
         state.lastSchool(spell.school());
         state.lastSchoolTime(System.currentTimeMillis());
+
         debugService.recordSuccess(spell.id());
         debugService.logCast(player,
                 spell.id(),
@@ -453,8 +472,10 @@ public final class MagicService {
                 remainingGlobalCooldownTicks(player),
                 remainingCooldownTicks(player, spell.id()),
                 null);
+
         publishCastAttempt(player.getUniqueId(), spell.id(), true, null, Map.of());
         eventPublisher.publish(new SpellCastSuccessEvent(player.getUniqueId(), spell.id()));
+
         diagnosticsService.recordSuccess(new CastLogEntry(
                 Instant.now(),
                 player.getName(),
@@ -471,6 +492,7 @@ public final class MagicService {
                         ? effectiveReagents.items()
                         : List.of(),
                 shouldPay ? spell.moneyCost() : 0.0));
+
         return new CastAttemptResult.Success(spell);
     }
 
@@ -842,10 +864,10 @@ public final class MagicService {
     }
 
     private record StaffCastResult(@Nullable String reasonKey,
-                                   Map<String, String> placeholders,
-                                   @Nullable StaffItem staffItem,
-                                   @Nullable StaffCharges charges,
-                                   int cost) {
+            Map<String, String> placeholders,
+            @Nullable StaffItem staffItem,
+            @Nullable StaffCharges charges,
+            int cost) {
         private static StaffCastResult ok() {
             return new StaffCastResult(null, Map.of(), null, null, 0);
         }
@@ -1113,6 +1135,13 @@ public final class MagicService {
             return baseSpell("smoke_cooldown", 0, 40);
         }
 
+        private static SpellDefinition baseSpell(String id,
+                long cooldownTicks,
+                double mana,
+                List<SpellEffectDefinition> effects) {
+            return baseSpell(id, null, cooldownTicks, mana, effects);
+        }
+
         private static SpellDefinition reagentsSpell() {
             ReagentCost reagents = new ReagentCost(true, List.of(new ReagentItem("missing_item", 99)));
             return baseSpell("smoke_reagents", reagents, 0, 0);
@@ -1137,13 +1166,21 @@ public final class MagicService {
         }
 
         private static SpellDefinition baseSpell(String id,
-                                                 ReagentCost reagents,
-                                                 long cooldownTicks,
-                                                 double mana,
-                                                 List<SpellEffectDefinition> effects) {
+                ReagentCost reagents,
+                long cooldownTicks,
+                double mana,
+                List<SpellEffectDefinition> effects) {
+
+            // У тебя триггер только RIGHT_CLICK, поэтому выбираем его.
+            SpellCastTrigger trigger = SpellCastTrigger.RIGHT_CLICK;
+
+            // Эти энумы могут меняться у тебя в проекте — берём безопасно первый элемент.
+            SpellType type = SpellType.values().length == 0 ? null : SpellType.values()[0];
+            CastDeliveryType delivery = CastDeliveryType.values().length == 0 ? null : CastDeliveryType.values()[0];
+
             return new SpellDefinition(
                     id,
-                    SpellType.UTILITY,
+                    type,
                     id,
                     id,
                     MagicSchool.NONE,
@@ -1153,13 +1190,13 @@ public final class MagicService {
                     0,
                     new SpellRequirements(null, null, null, false),
                     SpellTargetDefinition.none(),
-                    CastDeliveryType.INSTANT,
+                    delivery,
                     null,
                     null,
                     null,
                     null,
                     effects,
-                    SpellCastTrigger.INSTANT,
+                    trigger,
                     null,
                     null,
                     reagents,
@@ -1200,13 +1237,13 @@ public final class MagicService {
     }
 
     private CastAttemptResult.Fail fail(Player player,
-                                        @Nullable SpellDefinition spell,
-                                        @Nullable String spellIdOverride,
-                                        SpellTargetType targetType,
-                                        String reasonKey,
-                                        Map<String, String> placeholders,
-                                        boolean silent,
-                                        long cooldownMsForSpam) {
+            @Nullable SpellDefinition spell,
+            @Nullable String spellIdOverride,
+            SpellTargetType targetType,
+            String reasonKey,
+            Map<String, String> placeholders,
+            boolean silent,
+            long cooldownMsForSpam) {
         String spellId = spell != null ? spell.id() : spellIdOverride;
         if (spellId != null) {
             publishCastAttempt(player.getUniqueId(), spellId, false, reasonKey, placeholders);
@@ -1266,10 +1303,10 @@ public final class MagicService {
     }
 
     private void publishCastAttempt(UUID playerId,
-                                    String spellId,
-                                    boolean success,
-                                    @Nullable String reasonKey,
-                                    Map<String, String> placeholders) {
+            String spellId,
+            boolean success,
+            @Nullable String reasonKey,
+            Map<String, String> placeholders) {
         eventPublisher.publish(new SpellCastAttemptEvent(playerId, spellId, success, reasonKey, placeholders));
     }
 
@@ -1319,5 +1356,4 @@ public final class MagicService {
         }
         return SpellTargetType.NONE;
     }
-
 }
