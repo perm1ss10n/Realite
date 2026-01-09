@@ -76,7 +76,7 @@ public final class ParticlesEffectExecutor implements SpellEffectExecutor {
         if (world == null) {
             return;
         }
-        world.spawnParticle(particle, location, count, spread, spread, spread, 0);
+        world.spawnParticle(particle, location, count, spread, spread, spread, (Object) null);
     }
 
     private Particle parseParticle(String raw) {
