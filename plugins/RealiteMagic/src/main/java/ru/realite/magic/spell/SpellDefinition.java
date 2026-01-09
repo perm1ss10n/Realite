@@ -2,6 +2,11 @@ package ru.realite.magic.spell;
 
 import java.util.List;
 import org.bukkit.Material;
+import ru.realite.magic.cast.AoeCastDefinition;
+import ru.realite.magic.cast.BeamCastDefinition;
+import ru.realite.magic.cast.CastDeliveryType;
+import ru.realite.magic.cast.ChainCastDefinition;
+import ru.realite.magic.cast.ProjectileCastDefinition;
 import ru.realite.magic.effect.SpellEffectDefinition;
 import ru.realite.magic.school.MagicSchool;
 import ru.realite.magic.target.SpellTargetDefinition;
@@ -18,6 +23,11 @@ public record SpellDefinition(
         double damage,
         SpellRequirements requirements,
         SpellTargetDefinition target,
+        CastDeliveryType castDelivery,
+        ProjectileCastDefinition projectileCast,
+        BeamCastDefinition beamCast,
+        AoeCastDefinition aoeCast,
+        ChainCastDefinition chainCast,
         List<SpellEffectDefinition> effects,
         SpellCastTrigger castTrigger,
         String castItemId,

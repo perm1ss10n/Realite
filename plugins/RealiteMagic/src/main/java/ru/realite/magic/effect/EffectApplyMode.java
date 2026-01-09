@@ -2,14 +2,11 @@ package ru.realite.magic.effect;
 
 import java.util.Locale;
 
-public enum EffectTargetType {
-    ENTITY,
-    LOCATION,
-    ORIGIN,
-    IMPACT,
-    PRIMARY;
+public enum EffectApplyMode {
+    PRIMARY,
+    ALL;
 
-    public static EffectTargetType from(Object raw) {
+    public static EffectApplyMode from(Object raw) {
         if (raw == null) {
             return null;
         }
@@ -18,7 +15,7 @@ public enum EffectTargetType {
             return null;
         }
         try {
-            return EffectTargetType.valueOf(value.toUpperCase(Locale.ROOT));
+            return EffectApplyMode.valueOf(value.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
             return null;
         }

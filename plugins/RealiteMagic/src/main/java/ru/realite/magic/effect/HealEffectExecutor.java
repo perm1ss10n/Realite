@@ -1,14 +1,15 @@
 package ru.realite.magic.effect;
 
 import java.util.Map;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
-public final class DamageEffectExecutor implements SpellEffectExecutor {
+public final class HealEffectExecutor implements SpellEffectExecutor {
 
     @Override
     public String type() {
-        return "damage";
+        return "heal";
     }
 
     @Override
@@ -20,29 +21,14 @@ public final class DamageEffectExecutor implements SpellEffectExecutor {
             return EffectValidationResult.fail("magic.cmd.spells.errors.effect_missing_param",
                     Map.of("type", def.type(), "param", "amount"));
         }
-        if (amount == null || amount < 0) {
+        if (amount == null || amount <= 0) {
             return EffectValidationResult.fail("magic.cmd.spells.errors.effect_invalid_param",
                     Map.of("type", def.type(), "param", "amount", "value", String.valueOf(amountRaw)));
-        }
-        Object targetRaw = params.get("target");
-        if (targetRaw != null) {
-            EffectTargetType targetType = EffectTargetType.from(targetRaw);
-            if (targetType != EffectTargetType.ENTITY) {
-                return EffectValidationResult.fail("magic.cmd.spells.errors.effect_invalid_param",
-                        Map.of("type", def.type(), "param", "target", "value", String.valueOf(targetRaw)));
-            }
         }
         Object modeRaw = params.get("mode");
         if (modeRaw != null && EffectApplyMode.from(modeRaw) == null) {
             return EffectValidationResult.fail("magic.cmd.spells.errors.effect_invalid_param",
                     Map.of("type", def.type(), "param", "mode", "value", String.valueOf(modeRaw)));
-        }
-        Object causeRaw = params.get("cause");
-        if (causeRaw != null) {
-            if (parseDamageCause(String.valueOf(causeRaw)) == null) {
-                return EffectValidationResult.fail("magic.cmd.spells.errors.effect_invalid_param",
-                        Map.of("type", def.type(), "param", "cause", "value", String.valueOf(causeRaw)));
-            }
         }
         return EffectValidationResult.ok();
     }
@@ -54,27 +40,19 @@ public final class DamageEffectExecutor implements SpellEffectExecutor {
         if (amount == null || amount <= 0) {
             return;
         }
-        double multiplier = ctx.modifiers().damageMultiplier();
-        if (multiplier != 1.0) {
-            amount *= multiplier;
-        }
         EffectApplyMode mode = EffectApplyMode.from(params.get("mode"));
         if (mode == null) {
             mode = EffectApplyMode.PRIMARY;
         }
         for (LivingEntity target : EffectTargetResolver.resolveTargets(ctx.plan(), mode)) {
-            target.damage(amount, ctx.caster());
+            double maxHealth = maxHealth(target);
+            double next = Math.min(maxHealth, target.getHealth() + amount);
+            target.setHealth(next);
         }
     }
 
-    private DamageCause parseDamageCause(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return null;
-        }
-        try {
-            return DamageCause.valueOf(raw.trim().toUpperCase());
-        } catch (IllegalArgumentException ex) {
-            return null;
-        }
+    private double maxHealth(LivingEntity target) {
+        AttributeInstance attribute = target.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        return attribute != null ? attribute.getValue() : 0.0;
     }
 }

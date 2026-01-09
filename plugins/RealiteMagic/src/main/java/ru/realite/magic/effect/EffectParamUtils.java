@@ -56,4 +56,25 @@ public final class EffectParamUtils {
             return null;
         }
     }
+
+    public static Boolean booleanParam(Map<String, Object> params, String key) {
+        Object raw = params.get(key);
+        if (raw == null) {
+            return null;
+        }
+        if (raw instanceof Boolean bool) {
+            return bool;
+        }
+        String value = String.valueOf(raw).trim();
+        if (value.isBlank()) {
+            return null;
+        }
+        if ("true".equalsIgnoreCase(value)) {
+            return Boolean.TRUE;
+        }
+        if ("false".equalsIgnoreCase(value)) {
+            return Boolean.FALSE;
+        }
+        return null;
+    }
 }

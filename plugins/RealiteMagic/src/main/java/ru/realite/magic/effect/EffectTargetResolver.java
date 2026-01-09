@@ -1,41 +1,46 @@
 package ru.realite.magic.effect;
 
+import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import ru.realite.magic.target.SpellTarget;
+import ru.realite.magic.cast.CastExecutionPlan;
 
 public final class EffectTargetResolver {
 
     private EffectTargetResolver() {
     }
 
-    public static LivingEntity resolveEntity(SpellTarget target) {
-        if (target instanceof SpellTarget.EntityTarget entityTarget) {
-            return entityTarget.entity();
+    public static List<LivingEntity> resolveTargets(CastExecutionPlan plan, EffectApplyMode mode) {
+        if (plan == null) {
+            return List.of();
         }
-        if (target instanceof SpellTarget.Self self) {
-            return self.player();
+        if (mode == EffectApplyMode.ALL) {
+            return plan.targets();
         }
-        return null;
+        LivingEntity primary = plan.primaryTarget();
+        return primary == null ? List.of() : List.of(primary);
     }
 
-    public static Location resolveLocation(SpellTarget target, Player caster) {
-        if (target instanceof SpellTarget.LocationTarget locationTarget) {
-            return locationTarget.location();
+    public static Location resolveLocation(CastExecutionPlan plan, EffectTargetType targetType, Player caster) {
+        if (plan == null) {
+            return caster == null ? null : caster.getLocation();
         }
-        if (target instanceof SpellTarget.BlockTarget blockTarget) {
-            return blockTarget.location();
-        }
-        if (target instanceof SpellTarget.EntityTarget entityTarget) {
-            return entityTarget.entity().getLocation();
-        }
-        if (target instanceof SpellTarget.Self self) {
-            return self.player().getLocation();
-        }
-        if (caster != null) {
-            return caster.getLocation();
-        }
-        return null;
+        EffectTargetType resolved = targetType == null ? EffectTargetType.LOCATION : targetType;
+        return switch (resolved) {
+            case ORIGIN -> plan.origin();
+            case IMPACT -> plan.impactLocation() != null ? plan.impactLocation() : plan.origin();
+            case PRIMARY -> plan.primaryTarget() != null ? plan.primaryTarget().getLocation() : plan.origin();
+            case LOCATION -> {
+                if (plan.impactLocation() != null) {
+                    yield plan.impactLocation();
+                }
+                if (plan.primaryTarget() != null) {
+                    yield plan.primaryTarget().getLocation();
+                }
+                yield plan.origin();
+            }
+            case ENTITY -> plan.primaryTarget() != null ? plan.primaryTarget().getLocation() : plan.origin();
+        };
     }
 }
