@@ -12,6 +12,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import ru.realite.magic.debug.DebugService;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.service.MagicService;
 import ru.realite.magic.service.PlayerSpellService;
@@ -32,11 +33,16 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
     private final MagicService magicService;
     private final PlayerSpellService playerSpellService;
     private final MagicMessages messages;
+    private final DebugService debugService;
 
-    public MagicCommand(MagicService magicService, PlayerSpellService playerSpellService, MagicMessages messages) {
+    public MagicCommand(MagicService magicService,
+                        PlayerSpellService playerSpellService,
+                        MagicMessages messages,
+                        DebugService debugService) {
         this.magicService = magicService;
         this.playerSpellService = playerSpellService;
         this.messages = messages;
+        this.debugService = debugService;
     }
 
     @Override
@@ -57,6 +63,9 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
         if ("spells".equals(sub)) {
             return handleSpells(sender, args);
         }
+        if ("debug".equals(sub)) {
+            return handleDebug(sender, args);
+        }
         sender.sendMessage(messages.msg("magic.cmd.usage"));
         return true;
     }
@@ -64,13 +73,19 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return List.of("menu", "spell", "spells", "mana");
+            return List.of("menu", "spell", "spells", "mana", "debug");
         }
-        if (args.length >= 2 && !args[0].equalsIgnoreCase("spell") && !args[0].equalsIgnoreCase("spells")) {
+        if (args.length >= 2
+                && !args[0].equalsIgnoreCase("spell")
+                && !args[0].equalsIgnoreCase("spells")
+                && !args[0].equalsIgnoreCase("debug")) {
             return Collections.emptyList();
         }
         if (!sender.hasPermission(PERMISSION_ADMIN)) {
             return Collections.emptyList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("debug")) {
+            return List.of("on", "off", "cast", "stats");
         }
         if (args.length == 2) {
             if (args[0].equalsIgnoreCase("spells")) {
@@ -82,6 +97,12 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
             return Collections.emptyList();
         }
         String action = args[1].toLowerCase(Locale.ROOT);
+        if (args[0].equalsIgnoreCase("debug")) {
+            if ("cast".equals(action) && args.length == 3) {
+                return tabCompletePlayers();
+            }
+            return Collections.emptyList();
+        }
         if (args.length == 3) {
             return tabCompletePlayers();
         }
@@ -159,6 +180,74 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
                 yield true;
             }
         };
+    }
+
+    private boolean handleDebug(CommandSender sender, String[] args) {
+        if (!sender.hasPermission(PERMISSION_ADMIN)) {
+            sender.sendMessage(messages.msg("magic.command.errors.no_permission"));
+            return true;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(messages.msg("magic.cmd.debug.usage"));
+            return true;
+        }
+        String action = args[1].toLowerCase(Locale.ROOT);
+        return switch (action) {
+            case "on" -> handleDebugOn(sender);
+            case "off" -> handleDebugOff(sender);
+            case "cast" -> handleDebugCast(sender, args);
+            case "stats" -> handleDebugStats(sender);
+            default -> {
+                sender.sendMessage(messages.msg("magic.cmd.debug.usage"));
+                yield true;
+            }
+        };
+    }
+
+    private boolean handleDebugOn(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messages.msg("magic.command.only-player"));
+            return true;
+        }
+        debugService.enableGlobal(player);
+        sender.sendMessage(messages.msg("magic.cmd.debug.on"));
+        return true;
+    }
+
+    private boolean handleDebugOff(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messages.msg("magic.command.only-player"));
+            return true;
+        }
+        debugService.disableGlobal(player);
+        sender.sendMessage(messages.msg("magic.cmd.debug.off"));
+        return true;
+    }
+
+    private boolean handleDebugCast(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messages.msg("magic.command.only-player"));
+            return true;
+        }
+        if (args.length < 3) {
+            sender.sendMessage(messages.msg("magic.cmd.debug.usage"));
+            return true;
+        }
+        Player target = Bukkit.getPlayerExact(args[2]);
+        if (target == null) {
+            sender.sendMessage(messages.msg("magic.cmd.player_not_found",
+                    "player", args[2]));
+            return true;
+        }
+        boolean enabled = debugService.togglePlayer(player, target.getUniqueId());
+        sender.sendMessage(messages.msg(enabled ? "magic.cmd.debug.player_on" : "magic.cmd.debug.player_off",
+                "player", target.getName()));
+        return true;
+    }
+
+    private boolean handleDebugStats(CommandSender sender) {
+        debugService.sendStats(sender);
+        return true;
     }
 
     private boolean handleSpellsReload(CommandSender sender) {

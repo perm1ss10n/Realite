@@ -4,8 +4,18 @@ format:
 magic:
   enabled: "{prefix}&aПлагин RealiteMagic включён."
   cmd:
-    usage: "&eИспользование: &f/rmagic <menu|spell|spells|mana>"
+    usage: "&eИспользование: &f/rmagic <menu|spell|spells|mana|debug>"
     player_not_found: "&cИгрок не найден: &f{player}"
+    debug:
+      usage: "&eИспользование: &f/rmagic debug <on|off|cast|stats> [player]"
+      on: "&aDebug включён."
+      off: "&eDebug выключен."
+      player_on: "&aDebug каста включён для &f{player}&a."
+      player_off: "&eDebug каста выключен для &f{player}&e."
+      cast: "&7[Debug] {player} spell={spell} target={target} mana={mana} gcd={globalCooldown} cd={spellCooldown} reason={reason}"
+      stats:
+        header: "&eСтатистика debug ({type}):"
+        entry: "&7- {key}: {value}"
     spell:
       usage: "&eИспользование: &f/rmagic spell <give|remove|list|select|clear> <player> [spellId]"
       give:
@@ -37,11 +47,17 @@ magic:
         invalid_gui_slot: "&eНеверный gui.slot: &f{slot}"
         invalid_default_icon_material: "&eНеверный defaultSpellIconMaterial: &f{material}"
         folder_create_failed: "&cНе удалось создать папку: &f{path}"
+        effect_invalid_entry: "&cЭффект #{index}: некорректная запись."
+        effect_missing_type: "&cЭффект #{index}: не указан type."
+        effect_unknown_type: "&cЭффект #{index}: неизвестный тип {type}."
+        effect_missing_param: "&cЭффект #{index} ({type}): отсутствует параметр {param}."
+        effect_invalid_param: "&cЭффект #{index} ({type}): неверный {param} = {value}."
+        effect_target_mismatch: "&cЭффект #{index} ({type}): target {target} не совместим с target заклинания {spellTarget}."
         unknown: "&cНеизвестная ошибка."
       no_errors: "&aОшибок не найдено."
   command:
     usage:
-      root: "&eИспользование: &f/rmagic <menu|spell|spells|mana>"
+      root: "&eИспользование: &f/rmagic <menu|spell|spells|mana|debug>"
       spell: "&eИспользование: &f/rmagic spell <select|clear|get> [player] [spellId]"
     only-player: "{prefix}&cКоманда доступна только игрокам."
     spell:

@@ -13,16 +13,23 @@ import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import ru.realite.magic.effect.EffectExecutorRegistry;
+import ru.realite.magic.effect.EffectTargetType;
+import ru.realite.magic.effect.EffectValidationResult;
+import ru.realite.magic.effect.SpellEffectDefinition;
+import ru.realite.magic.effect.SpellEffectExecutor;
 import ru.realite.magic.target.SpellTargetDefinition;
 import ru.realite.magic.target.SpellTargetType;
 
 public final class SpellRegistry {
 
     private final JavaPlugin plugin;
+    private final EffectExecutorRegistry effectRegistry;
     private final Map<String, SpellDefinition> spells = new HashMap<>();
 
-    public SpellRegistry(JavaPlugin plugin) {
+    public SpellRegistry(JavaPlugin plugin, EffectExecutorRegistry effectRegistry) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
+        this.effectRegistry = Objects.requireNonNull(effectRegistry, "effectRegistry");
     }
 
     public SpellLoadReport load() {
@@ -164,6 +171,7 @@ public final class SpellRegistry {
 
         SpellRequirements requirements = parseRequirements(section.getConfigurationSection("requirements"));
         SpellTargetDefinition target = parseTarget(section.getConfigurationSection("target"), range);
+        List<SpellEffectDefinition> effects = parseEffects(section, target, fileName, id, errors);
         String castItemId = parseCastItemId(section.getConfigurationSection("cast"));
         SpellGiveItem giveItem = parseGiveItem(section.getConfigurationSection("effects"));
         Material iconMaterial = parseIconMaterial(section.getConfigurationSection("icon"),
@@ -174,7 +182,115 @@ public final class SpellRegistry {
         Integer iconCustomModelData = parseIconCustomModelData(section.getConfigurationSection("icon"));
         Integer guiSlot = parseGuiSlot(section.getConfigurationSection("gui"), id, fileName, errors);
         return new SpellDefinition(id, type, nameKey, descKey, mana, cooldownTicks, range, damage, requirements,
-                target, castItemId, giveItem.id(), giveItem.amount(), iconMaterial, iconCustomModelData, guiSlot);
+                target, effects, castItemId, giveItem.id(), giveItem.amount(), iconMaterial, iconCustomModelData, guiSlot);
+    }
+
+    private List<SpellEffectDefinition> parseEffects(ConfigurationSection section,
+                                                     SpellTargetDefinition target,
+                                                     String fileName,
+                                                     String spellId,
+                                                     List<SpellLoadError> errors) {
+        List<Map<?, ?>> rawEffects = section.getMapList("effects");
+        if (rawEffects == null || rawEffects.isEmpty()) {
+            return List.of();
+        }
+        List<SpellEffectDefinition> effects = new ArrayList<>();
+        int index = 0;
+        for (Object raw : rawEffects) {
+            int effectIndex = ++index;
+            if (!(raw instanceof Map<?, ?> effectMap)) {
+                errors.add(SpellLoadError.ofKey(
+                        fileName,
+                        spellId,
+                        "magic.cmd.spells.errors.effect_invalid_entry",
+                        Map.of("index", String.valueOf(effectIndex))));
+                continue;
+            }
+            Object typeRaw = effectMap.get("type");
+            if (typeRaw == null || String.valueOf(typeRaw).isBlank()) {
+                errors.add(SpellLoadError.ofKey(
+                        fileName,
+                        spellId,
+                        "magic.cmd.spells.errors.effect_missing_type",
+                        Map.of("index", String.valueOf(effectIndex))));
+                continue;
+            }
+            String type = String.valueOf(typeRaw);
+            Map<String, Object> params = new HashMap<>();
+            for (Map.Entry<?, ?> entry : effectMap.entrySet()) {
+                if (entry.getKey() == null) {
+                    continue;
+                }
+                String key = String.valueOf(entry.getKey());
+                if ("type".equalsIgnoreCase(key)) {
+                    continue;
+                }
+                params.put(key, entry.getValue());
+            }
+            SpellEffectDefinition definition;
+            try {
+                definition = new SpellEffectDefinition(type, params);
+            } catch (IllegalArgumentException ex) {
+                errors.add(SpellLoadError.ofKey(
+                        fileName,
+                        spellId,
+                        "magic.cmd.spells.errors.effect_missing_type",
+                        Map.of("index", String.valueOf(effectIndex))));
+                continue;
+            }
+            SpellEffectExecutor executor = effectRegistry.find(definition.type()).orElse(null);
+            if (executor == null) {
+                errors.add(SpellLoadError.ofKey(
+                        fileName,
+                        spellId,
+                        "magic.cmd.spells.errors.effect_unknown_type",
+                        Map.of("index", String.valueOf(effectIndex), "type", definition.type())));
+                continue;
+            }
+            EffectValidationResult validation = executor.validate(definition);
+            if (!validation.isValid()) {
+                Map<String, String> placeholders = new HashMap<>(validation.placeholders());
+                placeholders.putIfAbsent("index", String.valueOf(effectIndex));
+                errors.add(SpellLoadError.ofKey(
+                        fileName,
+                        spellId,
+                        validation.messageKey(),
+                        placeholders));
+                continue;
+            }
+            EffectTargetType effectTarget = EffectTargetType.from(definition.params().get("target"));
+            if (!isTargetCompatible(target, effectTarget)) {
+                errors.add(SpellLoadError.ofKey(
+                        fileName,
+                        spellId,
+                        "magic.cmd.spells.errors.effect_target_mismatch",
+                        Map.of("index", String.valueOf(effectIndex),
+                                "type", definition.type(),
+                                "target", String.valueOf(effectTarget),
+                                "spellTarget", String.valueOf(target.type()))));
+                continue;
+            }
+            effects.add(definition);
+        }
+        return List.copyOf(effects);
+    }
+
+    private boolean isTargetCompatible(SpellTargetDefinition target, EffectTargetType effectTarget) {
+        if (target == null || effectTarget == null) {
+            return false;
+        }
+        SpellTargetType spellTargetType = target.type();
+        if (spellTargetType == null) {
+            return false;
+        }
+        return switch (effectTarget) {
+            case ENTITY -> spellTargetType == SpellTargetType.ENTITY || spellTargetType == SpellTargetType.SELF;
+            case LOCATION -> spellTargetType == SpellTargetType.LOCATION
+                    || spellTargetType == SpellTargetType.BLOCK
+                    || spellTargetType == SpellTargetType.ENTITY
+                    || spellTargetType == SpellTargetType.SELF
+                    || spellTargetType == SpellTargetType.NONE;
+        };
     }
 
     private SpellRequirements parseRequirements(ConfigurationSection section) {

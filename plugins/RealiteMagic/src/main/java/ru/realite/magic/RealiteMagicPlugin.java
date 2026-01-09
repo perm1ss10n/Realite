@@ -5,6 +5,12 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.core.api.CoreApi;
+import ru.realite.magic.debug.DebugService;
+import ru.realite.magic.effect.DamageEffectExecutor;
+import ru.realite.magic.effect.EffectExecutorRegistry;
+import ru.realite.magic.effect.ParticlesEffectExecutor;
+import ru.realite.magic.effect.PotionEffectExecutor;
+import ru.realite.magic.effect.SoundEffectExecutor;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.integration.classes.ClassesBridge;
 import ru.realite.magic.integration.classes.CoreClassesBridge;
@@ -33,6 +39,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
     private MagicService magicService;
     private SpellRegistry spellRegistry;
     private PlayerSpellService playerSpellService;
+    private DebugService debugService;
 
     @Override
     public void onEnable() {
@@ -41,7 +48,8 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         saveIfNotExists("lang/messages_en.yml");
         saveIfNotExists("spells/warlock_basic.yml");
         messages = new MagicMessages(this);
-        spellRegistry = new SpellRegistry(this);
+        EffectExecutorRegistry effectRegistry = buildEffectRegistry();
+        spellRegistry = new SpellRegistry(this, effectRegistry);
         var report = spellRegistry.load();
         if (report.hasErrors()) {
             getLogger().warning(messages.raw("magic.cmd.spells.errors.header"));
@@ -58,13 +66,16 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         playerSpellService = new PlayerSpellServiceImpl(storage, spellRegistry, messages, eventPublisher);
         ItemsBridge itemsBridge = ItemsBridgeFactory.create();
         ClassesBridge classesBridge = resolveClassesBridge();
+        debugService = new DebugService(messages);
         magicService = new MagicService(this,
                 messages,
                 spellRegistry,
                 playerSpellService,
                 itemsBridge,
                 classesBridge,
-                eventPublisher);
+                eventPublisher,
+                effectRegistry,
+                debugService);
         magicService.start();
         registerCommand();
         registerListeners();
@@ -102,7 +113,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
             getLogger().warning("Command /rmagic missing in plugin.yml");
             return;
         }
-        MagicCommand magicCommand = new MagicCommand(magicService, playerSpellService, messages);
+        MagicCommand magicCommand = new MagicCommand(magicService, playerSpellService, messages, debugService);
         command.setExecutor(magicCommand);
         command.setTabCompleter(magicCommand);
     }
@@ -150,5 +161,14 @@ public final class RealiteMagicPlugin extends JavaPlugin {
             return new CoreEventPublisher(provider.getProvider().events());
         }
         return new BukkitEventPublisher();
+    }
+
+    private EffectExecutorRegistry buildEffectRegistry() {
+        EffectExecutorRegistry registry = new EffectExecutorRegistry();
+        registry.register(new DamageEffectExecutor());
+        registry.register(new PotionEffectExecutor());
+        registry.register(new ParticlesEffectExecutor());
+        registry.register(new SoundEffectExecutor());
+        return registry;
     }
 }
