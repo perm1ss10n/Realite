@@ -1,6 +1,9 @@
 package ru.realite.magic.service;
 
 import java.util.HashMap;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -10,6 +13,8 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
+import ru.realite.magic.cast.CastAttemptResult;
+import ru.realite.magic.cast.WarnLimiter;
 import ru.realite.magic.integration.classes.ClassesBridge;
 import ru.realite.magic.integration.items.ItemsBridge;
 import ru.realite.magic.integration.items.NoopItemsBridge;
@@ -27,6 +32,8 @@ import ru.realite.magic.spell.SpellRequirements;
 public final class MagicService {
 
     private static final String GLOBAL_COOLDOWN_KEY = "global";
+    private static final String PERMISSION_USE = "realite.magic.use";
+    private static final long WARN_WINDOW_MS = 2000L;
     private static final LegacyComponentSerializer LEGACY =
             LegacyComponentSerializer.legacyAmpersand();
 
@@ -36,8 +43,10 @@ public final class MagicService {
     private final SpellCaster caster;
     private final ItemsBridge itemsBridge;
     private final ClassesBridge classesBridge;
+    private final PlayerSpellService playerSpellService;
     private final SpellRequirementChecker requirementChecker;
     private final Map<UUID, MageState> states = new HashMap<>();
+    private final WarnLimiter warnLimiter = new WarnLimiter();
     private final SpellSelectMenu spellSelectMenu;
     private BukkitTask regenTask;
     private boolean itemBridgeWarned;
@@ -53,6 +62,7 @@ public final class MagicService {
         this.spellRegistry = Objects.requireNonNull(spellRegistry, "spellRegistry");
         this.itemsBridge = Objects.requireNonNull(itemsBridge, "itemsBridge");
         this.classesBridge = Objects.requireNonNull(classesBridge, "classesBridge");
+        this.playerSpellService = Objects.requireNonNull(playerSpellService, "playerSpellService");
         boolean failWhenItemsUnavailable = plugin.getConfig()
                 .getBoolean("requirements.failWhenItemsUnavailable", true);
         this.requirementChecker = new DefaultSpellRequirementChecker(
@@ -168,13 +178,60 @@ public final class MagicService {
 
     public void cleanup(Player player) {
         states.remove(player.getUniqueId());
+        warnLimiter.clear(player.getUniqueId());
+    }
+
+    public CastAttemptResult tryCastSelected(Player player) {
+        String selectedSpellId = playerSpellService.getSelected(player.getUniqueId()).orElse(null);
+        if (selectedSpellId == null) {
+            return fail("magic.cast.no_selected", Map.of(), warnLimited(player, "no_selected"), WARN_WINDOW_MS);
+        }
+        SpellDefinition spell = spellRegistry.find(selectedSpellId).orElse(null);
+        if (spell == null) {
+            playerSpellService.clearSelected(player.getUniqueId());
+            return fail("magic.spell.unknown", Map.of("spell", selectedSpellId), false, 0L);
+        }
+        return tryCast(player, spell);
+    }
+
+    public CastAttemptResult tryCast(Player player, SpellDefinition spell) {
+        if (spell == null) {
+            return fail("magic.spell.unknown", Map.of("spell", "null"), false, 0L);
+        }
+        if (!player.hasPermission(PERMISSION_USE)) {
+            return fail("magic.command.errors.no_permission", Map.of(), false, 0L);
+        }
+        CastAttemptResult castItemResult = checkCastItem(player, spell);
+        if (castItemResult instanceof CastAttemptResult.Fail) {
+            return castItemResult;
+        }
+        CheckResult requirementResult = checkRequirements(player, spell);
+        if (requirementResult instanceof CheckResult.Fail fail) {
+            return fail(fail.reasonKey(), fail.placeholders(), false, 0L);
+        }
+        if (!hasRequiredFocus(player)) {
+            return fail("magic.error.need_focus", Map.of(), warnLimited(player, "no_focus"), WARN_WINDOW_MS);
+        }
+        long remainingTicks = Math.max(remainingGlobalCooldownTicks(player),
+                remainingCooldownTicks(player, spell.id()));
+        if (remainingTicks > 0) {
+            String time = formatCooldownSeconds(remainingTicks / 20.0);
+            return fail("magic.cast.cooldown", Map.of("time", time), warnLimited(player, "cooldown"), WARN_WINDOW_MS);
+        }
+        double currentMana = getMana(player);
+        if (currentMana < spell.mana()) {
+            String needed = formatNumber(spell.mana() - currentMana, "casting.manaFormat", "0.0");
+            return fail("magic.cast.no_mana", Map.of("mana", needed), warnLimited(player, "no_mana"), WARN_WINDOW_MS);
+        }
+        consumeRequiredItemOnCast(player, spell);
+        addMana(player, -spell.mana());
+        setCooldown(player, GLOBAL_COOLDOWN_KEY, globalCastTicks());
+        setCooldown(player, spell.id(), spell.cooldownTicks());
+        cast(player, spell);
+        return new CastAttemptResult.Success(spell);
     }
 
     public void cast(Player player, SpellDefinition spell) {
-        if (!meetsRequirements(player, spell)) {
-            sendRequirementMessage(player, spell);
-            return;
-        }
         caster.cast(player, spell);
     }
 
@@ -333,16 +390,6 @@ public final class MagicService {
         return value;
     }
 
-    private void sendRequirementMessage(Player player, SpellDefinition spell) {
-        if (spell == null) {
-            return;
-        }
-        CheckResult result = requirementChecker.check(player, spell);
-        if (result instanceof CheckResult.Fail fail) {
-            player.sendMessage(messages.msg(fail.reasonKey(), fail.placeholders()));
-        }
-    }
-
     private void consumeRequiredItemOnCast(Player player, SpellDefinition spell) {
         SpellRequirements requirements = spell.requirements();
         if (requirements == null || requirements.isEmpty()) {
@@ -370,4 +417,51 @@ public final class MagicService {
     private double clamp(double value, double min, double max) {
         return Math.max(min, Math.min(max, value));
     }
+
+    private CastAttemptResult checkCastItem(Player player, SpellDefinition spell) {
+        String castItemId = spell.castItemId();
+        if (castItemId == null || castItemId.isBlank()) {
+            return new CastAttemptResult.Success(spell);
+        }
+        if (itemsBridge instanceof NoopItemsBridge) {
+            return new CastAttemptResult.Success(spell);
+        }
+        var inHand = player.getInventory().getItemInMainHand();
+        if (itemsBridge.isItem(inHand, castItemId)) {
+            return new CastAttemptResult.Success(spell);
+        }
+        String itemName = LEGACY.serialize(itemsBridge.displayName(castItemId));
+        return fail("magic.cast.wrong_item",
+                Map.of("item", itemName),
+                warnLimited(player, "wrong_item"),
+                WARN_WINDOW_MS);
+    }
+
+    private boolean warnLimited(Player player, String key) {
+        return !warnLimiter.canWarn(player.getUniqueId(), key, WARN_WINDOW_MS);
+    }
+
+    private CastAttemptResult.Fail fail(String reasonKey,
+                                        Map<String, String> placeholders,
+                                        boolean silent,
+                                        long cooldownMsForSpam) {
+        return new CastAttemptResult.Fail(reasonKey, Map.copyOf(placeholders), silent, cooldownMsForSpam);
+    }
+
+    private String formatCooldownSeconds(double seconds) {
+        double rounded = Math.ceil(seconds * 10.0) / 10.0;
+        return formatNumber(rounded, "casting.cooldownFormat", "0.0");
+    }
+
+    private String formatNumber(double value, String configKey, String fallbackPattern) {
+        String pattern = configString(configKey, fallbackPattern);
+        DecimalFormat format;
+        try {
+            format = new DecimalFormat(pattern, DecimalFormatSymbols.getInstance(Locale.US));
+        } catch (IllegalArgumentException ex) {
+            format = new DecimalFormat(fallbackPattern, DecimalFormatSymbols.getInstance(Locale.US));
+        }
+        return format.format(value);
+    }
+
 }

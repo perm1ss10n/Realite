@@ -67,7 +67,9 @@ magic:
     on_cooldown: "&cCooldown: &f{seconds}&c s"
     need_focus: "&cYou need a magic focus in hand."
   cast:
-    no_selected: "&cYou have not selected a spell."
+    no_selected: "&cNo spell selected."
+    cooldown: "&cWait {time}s."
+    no_mana: "&cNot enough mana: &f{mana}"
     missing_item: "&cRequired item: &f{item}"
     wrong_item: "&cThis spell requires item: &f{item}"
     give_item: "&aReceived: &f{item}&a x{amount}"
