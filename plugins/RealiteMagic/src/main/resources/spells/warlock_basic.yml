@@ -7,6 +7,8 @@ spell:
   cooldownTicks: 60
   range: 20.0
   damage: 6.0
+  cast:
+    trigger: "RIGHT_CLICK"
   target:
     type: "ENTITY"
     maxDistance: 20.0

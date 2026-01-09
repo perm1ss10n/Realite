@@ -17,6 +17,7 @@ public record SpellDefinition(
         SpellRequirements requirements,
         SpellTargetDefinition target,
         List<SpellEffectDefinition> effects,
+        SpellCastTrigger castTrigger,
         String castItemId,
         String giveItemId,
         int giveItemAmount,

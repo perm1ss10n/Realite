@@ -1,6 +1,7 @@
 package ru.realite.magic.spell;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -11,15 +12,16 @@ import java.util.Objects;
 import java.util.Optional;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.magic.effect.EffectExecutorRegistry;
-import ru.realite.magic.effect.EffectTargetType;
-import ru.realite.magic.effect.EffectValidationResult;
 import ru.realite.magic.effect.SpellEffectDefinition;
-import ru.realite.magic.effect.SpellEffectExecutor;
 import ru.realite.magic.target.SpellTargetDefinition;
 import ru.realite.magic.target.SpellTargetType;
+import ru.realite.magic.validation.SchemaError;
+import ru.realite.magic.validation.SchemaReport;
+import ru.realite.magic.validation.SpellSchemaValidator;
 
 public final class SpellRegistry {
 
@@ -65,29 +67,37 @@ public final class SpellRegistry {
         }
 
         Material defaultIconMaterial = resolveDefaultIconMaterial(errors);
+        SpellSchemaValidator validator = new SpellSchemaValidator(effectRegistry);
         for (File file : files) {
-            YamlConfiguration cfg = YamlConfiguration.loadConfiguration(file);
-            ConfigurationSection root = cfg.getConfigurationSection("spell");
-            if (root == null) {
-                errors.add(SpellLoadError.ofKey(
-                        file.getName(),
-                        null,
-                        "magic.cmd.spells.errors.missing_section",
-                        Map.of()));
+            YamlConfiguration cfg = new YamlConfiguration();
+            try {
+                cfg.load(file);
+            } catch (IOException | InvalidConfigurationException ex) {
+                addSchemaError(errors, file.getName(), null, "yaml",
+                        "magic.cmd.spells.errors.invalid_value",
+                        Map.of("field", "yaml", "value", String.valueOf(ex.getMessage())));
                 continue;
             }
-            SpellDefinition def = parseSpell(file.getName(), root, defaultIconMaterial, errors);
-            if (def != null) {
-                if (loaded.containsKey(def.id())) {
-                    errors.add(SpellLoadError.ofKey(
-                            file.getName(),
-                            def.id(),
-                            "magic.cmd.spells.errors.duplicate_id",
-                            Map.of("id", def.id())));
-                    continue;
-                }
-                loaded.put(def.id(), def);
+            ConfigurationSection root = cfg.getConfigurationSection("spell");
+            if (root == null) {
+                addSchemaError(errors, file.getName(), null, "spell",
+                        "magic.cmd.spells.errors.missing_field",
+                        Map.of("field", "spell"));
+                continue;
             }
+            SpellDefinition def = parseSpell(root, defaultIconMaterial);
+            SchemaReport schemaReport = validator.validate(def, file.getName());
+            addSchemaErrors(errors, schemaReport);
+            if (!schemaReport.ok()) {
+                continue;
+            }
+            if (loaded.containsKey(def.id())) {
+                addSchemaError(errors, file.getName(), def.id(), "id",
+                        "magic.cmd.spells.errors.duplicate_id",
+                        Map.of("id", def.id()));
+                continue;
+            }
+            loaded.put(def.id(), def);
         }
 
         if (applyChanges) {
@@ -113,109 +123,46 @@ public final class SpellRegistry {
         return Optional.ofNullable(spells.get(id));
     }
 
-    private SpellDefinition parseSpell(String fileName,
-                                       ConfigurationSection section,
-                                       Material defaultIconMaterial,
-                                       List<SpellLoadError> errors) {
+    private SpellDefinition parseSpell(ConfigurationSection section,
+                                       Material defaultIconMaterial) {
         String id = section.getString("id");
-        if (id == null || id.isBlank()) {
-            errors.add(SpellLoadError.ofKey(
-                    fileName,
-                    null,
-                    "magic.cmd.spells.errors.invalid_id",
-                    Map.of()));
-            return null;
-        }
         String typeRaw = section.getString("type");
-        if (typeRaw == null || typeRaw.isBlank()) {
-            errors.add(SpellLoadError.ofKey(
-                    fileName,
-                    id,
-                    "magic.cmd.spells.errors.missing_type",
-                    Map.of()));
-            return null;
-        }
-        SpellType type;
-        try {
-            type = SpellType.valueOf(typeRaw.trim().toUpperCase());
-        } catch (IllegalArgumentException ex) {
-            errors.add(SpellLoadError.ofKey(
-                    fileName,
-                    id,
-                    "magic.cmd.spells.errors.unknown_type",
-                    Map.of("type", typeRaw)));
-            return null;
-        }
+        SpellType type = parseSpellType(typeRaw);
         String nameKey = section.getString("nameKey");
         String descKey = section.getString("descKey");
         double mana = section.getDouble("mana", -1);
         long cooldownTicks = section.getLong("cooldownTicks", -1);
         double range = section.getDouble("range", -1);
         double damage = section.getDouble("damage", -1);
-        if (nameKey == null || nameKey.isBlank() || descKey == null || descKey.isBlank()) {
-            errors.add(SpellLoadError.ofKey(
-                    fileName,
-                    id,
-                    "magic.cmd.spells.errors.missing_name_desc",
-                    Map.of()));
-            return null;
-        }
-        if (mana < 0 || cooldownTicks < 0 || range <= 0 || damage < 0) {
-            errors.add(SpellLoadError.ofKey(
-                    fileName,
-                    id,
-                    "magic.cmd.spells.errors.invalid_numbers",
-                    Map.of()));
-            return null;
-        }
 
         SpellRequirements requirements = parseRequirements(section.getConfigurationSection("requirements"));
         SpellTargetDefinition target = parseTarget(section.getConfigurationSection("target"), range);
-        List<SpellEffectDefinition> effects = parseEffects(section, target, fileName, id, errors);
+        List<SpellEffectDefinition> effects = parseEffects(section);
+        SpellCastTrigger castTrigger = parseCastTrigger(section.getConfigurationSection("cast"));
         String castItemId = parseCastItemId(section.getConfigurationSection("cast"));
         SpellGiveItem giveItem = parseGiveItem(section.getConfigurationSection("effects"));
         Material iconMaterial = parseIconMaterial(section.getConfigurationSection("icon"),
-                defaultIconMaterial,
-                id,
-                fileName,
-                errors);
+                defaultIconMaterial);
         Integer iconCustomModelData = parseIconCustomModelData(section.getConfigurationSection("icon"));
-        Integer guiSlot = parseGuiSlot(section.getConfigurationSection("gui"), id, fileName, errors);
+        Integer guiSlot = parseGuiSlot(section.getConfigurationSection("gui"));
         return new SpellDefinition(id, type, nameKey, descKey, mana, cooldownTicks, range, damage, requirements,
-                target, effects, castItemId, giveItem.id(), giveItem.amount(), iconMaterial, iconCustomModelData, guiSlot);
+                target, effects, castTrigger, castItemId, giveItem.id(), giveItem.amount(), iconMaterial,
+                iconCustomModelData, guiSlot);
     }
 
-    private List<SpellEffectDefinition> parseEffects(ConfigurationSection section,
-                                                     SpellTargetDefinition target,
-                                                     String fileName,
-                                                     String spellId,
-                                                     List<SpellLoadError> errors) {
+    private List<SpellEffectDefinition> parseEffects(ConfigurationSection section) {
         List<Map<?, ?>> rawEffects = section.getMapList("effects");
         if (rawEffects == null || rawEffects.isEmpty()) {
             return List.of();
         }
         List<SpellEffectDefinition> effects = new ArrayList<>();
-        int index = 0;
         for (Object raw : rawEffects) {
-            int effectIndex = ++index;
             if (!(raw instanceof Map<?, ?> effectMap)) {
-                errors.add(SpellLoadError.ofKey(
-                        fileName,
-                        spellId,
-                        "magic.cmd.spells.errors.effect_invalid_entry",
-                        Map.of("index", String.valueOf(effectIndex))));
+                effects.add(null);
                 continue;
             }
             Object typeRaw = effectMap.get("type");
-            if (typeRaw == null || String.valueOf(typeRaw).isBlank()) {
-                errors.add(SpellLoadError.ofKey(
-                        fileName,
-                        spellId,
-                        "magic.cmd.spells.errors.effect_missing_type",
-                        Map.of("index", String.valueOf(effectIndex))));
-                continue;
-            }
-            String type = String.valueOf(typeRaw);
+            String type = typeRaw == null ? "" : String.valueOf(typeRaw);
             Map<String, Object> params = new HashMap<>();
             for (Map.Entry<?, ?> entry : effectMap.entrySet()) {
                 if (entry.getKey() == null) {
@@ -227,70 +174,9 @@ public final class SpellRegistry {
                 }
                 params.put(key, entry.getValue());
             }
-            SpellEffectDefinition definition;
-            try {
-                definition = new SpellEffectDefinition(type, params);
-            } catch (IllegalArgumentException ex) {
-                errors.add(SpellLoadError.ofKey(
-                        fileName,
-                        spellId,
-                        "magic.cmd.spells.errors.effect_missing_type",
-                        Map.of("index", String.valueOf(effectIndex))));
-                continue;
-            }
-            SpellEffectExecutor executor = effectRegistry.find(definition.type()).orElse(null);
-            if (executor == null) {
-                errors.add(SpellLoadError.ofKey(
-                        fileName,
-                        spellId,
-                        "magic.cmd.spells.errors.effect_unknown_type",
-                        Map.of("index", String.valueOf(effectIndex), "type", definition.type())));
-                continue;
-            }
-            EffectValidationResult validation = executor.validate(definition);
-            if (!validation.isValid()) {
-                Map<String, String> placeholders = new HashMap<>(validation.placeholders());
-                placeholders.putIfAbsent("index", String.valueOf(effectIndex));
-                errors.add(SpellLoadError.ofKey(
-                        fileName,
-                        spellId,
-                        validation.messageKey(),
-                        placeholders));
-                continue;
-            }
-            EffectTargetType effectTarget = EffectTargetType.from(definition.params().get("target"));
-            if (!isTargetCompatible(target, effectTarget)) {
-                errors.add(SpellLoadError.ofKey(
-                        fileName,
-                        spellId,
-                        "magic.cmd.spells.errors.effect_target_mismatch",
-                        Map.of("index", String.valueOf(effectIndex),
-                                "type", definition.type(),
-                                "target", String.valueOf(effectTarget),
-                                "spellTarget", String.valueOf(target.type()))));
-                continue;
-            }
-            effects.add(definition);
+            effects.add(new SpellEffectDefinition(type, params));
         }
         return List.copyOf(effects);
-    }
-
-    private boolean isTargetCompatible(SpellTargetDefinition target, EffectTargetType effectTarget) {
-        if (target == null || effectTarget == null) {
-            return false;
-        }
-        SpellTargetType spellTargetType = target.type();
-        if (spellTargetType == null) {
-            return false;
-        }
-        return switch (effectTarget) {
-            case ENTITY -> spellTargetType == SpellTargetType.ENTITY || spellTargetType == SpellTargetType.SELF;
-            case LOCATION -> spellTargetType == SpellTargetType.LOCATION
-                    || spellTargetType == SpellTargetType.BLOCK
-                    || spellTargetType == SpellTargetType.ENTITY
-                    || spellTargetType == SpellTargetType.SELF
-                    || spellTargetType == SpellTargetType.NONE;
-        };
     }
 
     private SpellRequirements parseRequirements(ConfigurationSection section) {
@@ -311,6 +197,21 @@ public final class SpellRegistry {
             requiredItemId = null;
         }
         return new SpellRequirements(classId, evolutionId, requiredItemId, consumeOnCast);
+    }
+
+    private SpellCastTrigger parseCastTrigger(ConfigurationSection section) {
+        if (section == null) {
+            return null;
+        }
+        String triggerRaw = section.getString("trigger");
+        if (triggerRaw == null || triggerRaw.isBlank()) {
+            return null;
+        }
+        try {
+            return SpellCastTrigger.valueOf(triggerRaw.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
     }
 
     private String parseCastItemId(ConfigurationSection section) {
@@ -345,15 +246,15 @@ public final class SpellRegistry {
 
     private SpellTargetDefinition parseTarget(ConfigurationSection section, double range) {
         if (section == null) {
-            return SpellTargetDefinition.none();
+            return null;
         }
         String typeRaw = section.getString("type");
-        SpellTargetType type = SpellTargetType.NONE;
+        SpellTargetType type = null;
         if (typeRaw != null && !typeRaw.isBlank()) {
             try {
                 type = SpellTargetType.valueOf(typeRaw.trim().toUpperCase());
             } catch (IllegalArgumentException ignored) {
-                type = SpellTargetType.NONE;
+                type = null;
             }
         }
         double maxDistance = section.getDouble("maxDistance", range);
@@ -381,10 +282,7 @@ public final class SpellRegistry {
     }
 
     private Material parseIconMaterial(ConfigurationSection section,
-                                       Material defaultMaterial,
-                                       String spellId,
-                                       String fileName,
-                                       List<SpellLoadError> errors) {
+                                       Material defaultMaterial) {
         if (section == null) {
             return defaultMaterial;
         }
@@ -393,15 +291,7 @@ public final class SpellRegistry {
             return defaultMaterial;
         }
         Material material = Material.matchMaterial(materialName.trim());
-        if (material == null) {
-            errors.add(SpellLoadError.ofKey(
-                    fileName,
-                    spellId,
-                    "magic.cmd.spells.errors.invalid_icon_material",
-                    Map.of("material", materialName)));
-            return defaultMaterial;
-        }
-        return material;
+        return material == null ? defaultMaterial : material;
     }
 
     private Integer parseIconCustomModelData(ConfigurationSection section) {
@@ -415,25 +305,44 @@ public final class SpellRegistry {
         return value >= 0 ? value : null;
     }
 
-    private Integer parseGuiSlot(ConfigurationSection section,
-                                 String spellId,
-                                 String fileName,
-                                 List<SpellLoadError> errors) {
+    private Integer parseGuiSlot(ConfigurationSection section) {
         if (section == null || !section.isSet("slot")) {
             return null;
         }
         int slot = section.getInt("slot");
-        if (slot < 0) {
-            errors.add(SpellLoadError.ofKey(
-                    fileName,
-                    spellId,
-                    "magic.cmd.spells.errors.invalid_gui_slot",
-                    Map.of("slot", String.valueOf(slot))));
-            return null;
-        }
-        return slot;
+        return slot < 0 ? null : slot;
     }
 
     private record SpellGiveItem(String id, int amount) {
+    }
+
+    private SpellType parseSpellType(String typeRaw) {
+        if (typeRaw == null || typeRaw.isBlank()) {
+            return null;
+        }
+        try {
+            return SpellType.valueOf(typeRaw.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    private void addSchemaErrors(List<SpellLoadError> errors, SchemaReport report) {
+        for (SchemaError error : report.errors()) {
+            addSchemaError(errors, error.file(), error.spellId(), error.path(), error.messageKey(), error.placeholders());
+        }
+    }
+
+    private void addSchemaError(List<SpellLoadError> errors,
+                                String fileName,
+                                String spellId,
+                                String path,
+                                String messageKey,
+                                Map<String, String> placeholders) {
+        Map<String, String> merged = new HashMap<>(placeholders == null ? Map.of() : placeholders);
+        if (path != null) {
+            merged.put("path", path);
+        }
+        errors.add(SpellLoadError.ofKey(fileName, spellId, messageKey, merged));
     }
 }

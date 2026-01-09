@@ -36,6 +36,10 @@ magic:
       errors:
         header: "&eОшибки загрузки заклинаний:"
         entry: "&7- {file}: {error}"
+        schema: "&7- {file}: {path}: {error}"
+        missing_field: "&cОтсутствует поле: {field}"
+        invalid_value: "&cНеверное значение {field}: {value}"
+        unknown_effect: "&cНеизвестный тип эффекта: {type}"
         missing_section: "&cОтсутствует секция spell."
         invalid_id: "&cНекорректный id."
         missing_type: "&cНе указан тип."

@@ -1,6 +1,7 @@
 package ru.realite.magic;
 
 import java.io.File;
+import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -58,6 +59,20 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         if (report.hasErrors()) {
             getLogger().warning(messages.raw("magic.cmd.spells.errors.header"));
             for (var error : report.errors()) {
+                if ("magic.cmd.spells.errors.schema".equals(error.messageKey())) {
+                    getLogger().warning(messages.raw(error.messageKey(), error.placeholders()));
+                    continue;
+                }
+                if (error.placeholders().containsKey("path")) {
+                    String errorMessage = error.messageKey() == null
+                            ? (error.message() == null ? messages.raw("magic.cmd.spells.errors.unknown") : error.message())
+                            : messages.raw(error.messageKey(), error.placeholders());
+                    getLogger().warning(messages.raw("magic.cmd.spells.errors.schema",
+                            Map.of("file", error.fileName(),
+                                    "path", error.placeholders().get("path"),
+                                    "error", errorMessage)));
+                    continue;
+                }
                 getLogger().warning(messages.raw("magic.cmd.spells.errors.entry",
                         "file", error.fileName(),
                         "error", error.messageKey() == null
