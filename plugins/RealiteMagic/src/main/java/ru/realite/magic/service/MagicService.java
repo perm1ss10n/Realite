@@ -1,12 +1,14 @@
 package ru.realite.magic.service;
 
-import java.util.HashMap;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -16,6 +18,11 @@ import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.Nullable;
 import ru.realite.magic.cast.CastAttemptResult;
 import ru.realite.magic.cast.WarnLimiter;
+import ru.realite.magic.debug.DebugService;
+import ru.realite.magic.effect.EffectContext;
+import ru.realite.magic.effect.EffectExecutorRegistry;
+import ru.realite.magic.effect.SpellEffectDefinition;
+import ru.realite.magic.effect.SpellEffectExecutor;
 import ru.realite.magic.api.event.SpellCastAttemptEvent;
 import ru.realite.magic.api.event.SpellCastSuccessEvent;
 import ru.realite.magic.integration.classes.ClassesBridge;
@@ -28,10 +35,10 @@ import ru.realite.magic.gui.SpellSelectMenu;
 import ru.realite.magic.requirements.CheckResult;
 import ru.realite.magic.requirements.DefaultSpellRequirementChecker;
 import ru.realite.magic.requirements.SpellRequirementChecker;
-import ru.realite.magic.spell.SpellCaster;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellRegistry;
 import ru.realite.magic.spell.SpellRequirements;
+import ru.realite.magic.target.SpellTarget;
 import ru.realite.magic.target.SpellTargetDefinition;
 import ru.realite.magic.target.SpellTargetType;
 import ru.realite.magic.target.TargetResolver;
@@ -47,12 +54,13 @@ public final class MagicService {
     private final JavaPlugin plugin;
     private final MagicMessages messages;
     private final SpellRegistry spellRegistry;
-    private final SpellCaster caster;
     private final ItemsBridge itemsBridge;
     private final ClassesBridge classesBridge;
     private final PlayerSpellService playerSpellService;
     private final MagicEventPublisher eventPublisher;
     private final SpellRequirementChecker requirementChecker;
+    private final EffectExecutorRegistry effectRegistry;
+    private final DebugService debugService;
     private final Map<UUID, MageState> states = new HashMap<>();
     private final WarnLimiter warnLimiter = new WarnLimiter();
     private final SpellSelectMenu spellSelectMenu;
@@ -66,7 +74,9 @@ public final class MagicService {
                         PlayerSpellService playerSpellService,
                         ItemsBridge itemsBridge,
                         ClassesBridge classesBridge,
-                        MagicEventPublisher eventPublisher) {
+                        MagicEventPublisher eventPublisher,
+                        EffectExecutorRegistry effectRegistry,
+                        DebugService debugService) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.messages = Objects.requireNonNull(messages, "messages");
         this.spellRegistry = Objects.requireNonNull(spellRegistry, "spellRegistry");
@@ -74,6 +84,8 @@ public final class MagicService {
         this.classesBridge = Objects.requireNonNull(classesBridge, "classesBridge");
         this.playerSpellService = Objects.requireNonNull(playerSpellService, "playerSpellService");
         this.eventPublisher = Objects.requireNonNull(eventPublisher, "eventPublisher");
+        this.effectRegistry = Objects.requireNonNull(effectRegistry, "effectRegistry");
+        this.debugService = Objects.requireNonNull(debugService, "debugService");
         boolean failWhenItemsUnavailable = plugin.getConfig()
                 .getBoolean("requirements.failWhenItemsUnavailable", true);
         this.requirementChecker = new DefaultSpellRequirementChecker(
@@ -82,7 +94,6 @@ public final class MagicService {
                 this.messages,
                 this::warnMissingItemBridge,
                 failWhenItemsUnavailable);
-        this.caster = new SpellCaster(this, messages);
         this.spellSelectMenu = new SpellSelectMenu(plugin, spellRegistry, playerSpellService, requirementChecker, messages);
     }
 
@@ -195,22 +206,26 @@ public final class MagicService {
     public CastAttemptResult tryCastSelected(Player player) {
         String selectedSpellId = playerSpellService.getSelected(player.getUniqueId()).orElse(null);
         if (selectedSpellId == null) {
-            return fail(player, null, "magic.cast.no_selected", Map.of(), warnLimited(player, "no_selected"), WARN_WINDOW_MS);
+            return fail(player, null, null, SpellTargetType.NONE, "magic.cast.no_selected", Map.of(),
+                    warnLimited(player, "no_selected"), WARN_WINDOW_MS);
         }
         SpellDefinition spell = spellRegistry.find(selectedSpellId).orElse(null);
         if (spell == null) {
             playerSpellService.clearSelected(player.getUniqueId());
-            return fail(player, selectedSpellId, "magic.spell.unknown", Map.of("spell", selectedSpellId), false, 0L);
+            return fail(player, null, selectedSpellId, SpellTargetType.NONE,
+                    "magic.spell.unknown", Map.of("spell", selectedSpellId), false, 0L);
         }
         return tryCast(player, spell);
     }
 
     public CastAttemptResult tryCast(Player player, SpellDefinition spell) {
         if (spell == null) {
-            return fail(player, null, "magic.spell.unknown", Map.of("spell", "null"), false, 0L);
+            return fail(player, null, null, SpellTargetType.NONE, "magic.spell.unknown",
+                    Map.of("spell", "null"), false, 0L);
         }
         if (!player.hasPermission(PERMISSION_USE)) {
-            return fail(player, spell.id(), "magic.command.errors.no_permission", Map.of(), false, 0L);
+            return fail(player, spell, null, targetType(spell), "magic.command.errors.no_permission",
+                    Map.of(), false, 0L);
         }
         CastAttemptResult castItemResult = checkCastItem(player, spell);
         if (castItemResult instanceof CastAttemptResult.Fail) {
@@ -218,37 +233,63 @@ public final class MagicService {
         }
         CheckResult requirementResult = checkRequirements(player, spell);
         if (requirementResult instanceof CheckResult.Fail fail) {
-            return fail(player, spell.id(), fail.reasonKey(), fail.placeholders(), false, 0L);
+            return fail(player, spell, null, targetType(spell), fail.reasonKey(), fail.placeholders(), false, 0L);
         }
         if (!hasRequiredFocus(player)) {
-            return fail(player, spell.id(), "magic.error.need_focus", Map.of(), warnLimited(player, "no_focus"), WARN_WINDOW_MS);
+            return fail(player, spell, null, targetType(spell), "magic.error.need_focus", Map.of(),
+                    warnLimited(player, "no_focus"), WARN_WINDOW_MS);
         }
         long remainingTicks = Math.max(remainingGlobalCooldownTicks(player),
                 remainingCooldownTicks(player, spell.id()));
         if (remainingTicks > 0) {
             String time = formatCooldownSeconds(remainingTicks / 20.0);
-            return fail(player, spell.id(), "magic.cast.cooldown", Map.of("time", time), warnLimited(player, "cooldown"), WARN_WINDOW_MS);
+            return fail(player, spell, null, targetType(spell), "magic.cast.cooldown", Map.of("time", time),
+                    warnLimited(player, "cooldown"), WARN_WINDOW_MS);
         }
         double currentMana = getMana(player);
         if (currentMana < spell.mana()) {
             String needed = formatNumber(spell.mana() - currentMana, "casting.manaFormat", "0.0");
-            return fail(player, spell.id(), "magic.cast.no_mana", Map.of("mana", needed), warnLimited(player, "no_mana"), WARN_WINDOW_MS);
+            return fail(player, spell, null, targetType(spell), "magic.cast.no_mana", Map.of("mana", needed),
+                    warnLimited(player, "no_mana"), WARN_WINDOW_MS);
         }
-        if (isTargetRequired(spell) && targetResolver.resolve(player, spell).isEmpty()) {
-            return fail(player, spell.id(), "magic.cast.no_target", Map.of(), warnLimited(player, "no_target"), WARN_WINDOW_MS);
+        Optional<SpellTarget> resolvedTarget = targetResolver.resolve(player, spell);
+        if (isTargetRequired(spell) && resolvedTarget.isEmpty()) {
+            return fail(player, spell, null, targetType(spell), "magic.cast.no_target", Map.of(),
+                    warnLimited(player, "no_target"), WARN_WINDOW_MS);
         }
+        SpellTarget target = resolvedTarget.orElseGet(() -> new SpellTarget.Self(player));
         consumeRequiredItemOnCast(player, spell);
         addMana(player, -spell.mana());
         setCooldown(player, GLOBAL_COOLDOWN_KEY, globalCastTicks());
         setCooldown(player, spell.id(), spell.cooldownTicks());
-        cast(player, spell);
+        cast(player, spell, target);
+        debugService.recordSuccess(spell.id());
+        debugService.logCast(player,
+                spell.id(),
+                targetType(target),
+                getMana(player),
+                remainingGlobalCooldownTicks(player),
+                remainingCooldownTicks(player, spell.id()),
+                null);
         publishCastAttempt(player.getUniqueId(), spell.id(), true, null, Map.of());
         eventPublisher.publish(new SpellCastSuccessEvent(player.getUniqueId(), spell.id()));
         return new CastAttemptResult.Success(spell);
     }
 
-    public void cast(Player player, SpellDefinition spell) {
-        caster.cast(player, spell);
+    public void cast(Player player, SpellDefinition spell, SpellTarget target) {
+        if (spell == null || player == null || target == null) {
+            return;
+        }
+        EffectContext context = new EffectContext(player, spell, target, ThreadLocalRandom.current(), this);
+        for (SpellEffectDefinition effect : spell.effects()) {
+            SpellEffectExecutor executor = effectRegistry.find(effect.type()).orElse(null);
+            if (executor == null) {
+                plugin.getLogger().warning("Unknown effect executor: " + effect.type());
+                continue;
+            }
+            executor.execute(context, effect);
+        }
+        handleCastRewards(player, spell);
     }
 
     public MagicMessages messages() {
@@ -257,6 +298,10 @@ public final class MagicService {
 
     public SpellSelectMenu spellSelectMenu() {
         return spellSelectMenu;
+    }
+
+    public DebugService debugService() {
+        return debugService;
     }
 
     public ItemsBridge itemsBridge() {
@@ -448,7 +493,9 @@ public final class MagicService {
         }
         String itemName = LEGACY.serialize(itemsBridge.displayName(castItemId));
         return fail(player,
-                spell.id(),
+                spell,
+                null,
+                targetType(spell),
                 "magic.cast.wrong_item",
                 Map.of("item", itemName),
                 warnLimited(player, "wrong_item"),
@@ -460,14 +507,25 @@ public final class MagicService {
     }
 
     private CastAttemptResult.Fail fail(Player player,
-                                        @Nullable String spellId,
+                                        @Nullable SpellDefinition spell,
+                                        @Nullable String spellIdOverride,
+                                        SpellTargetType targetType,
                                         String reasonKey,
                                         Map<String, String> placeholders,
                                         boolean silent,
                                         long cooldownMsForSpam) {
+        String spellId = spell != null ? spell.id() : spellIdOverride;
         if (spellId != null) {
             publishCastAttempt(player.getUniqueId(), spellId, false, reasonKey, placeholders);
         }
+        debugService.recordFailure(reasonKey);
+        debugService.logCast(player,
+                spellId == null ? "unknown" : spellId,
+                targetType,
+                getMana(player),
+                remainingGlobalCooldownTicks(player),
+                spellId == null ? 0 : remainingCooldownTicks(player, spellId),
+                reasonKey);
         return new CastAttemptResult.Fail(reasonKey, Map.copyOf(placeholders), silent, cooldownMsForSpam);
     }
 
@@ -501,6 +559,29 @@ public final class MagicService {
             return false;
         }
         return target.type() != SpellTargetType.NONE;
+    }
+
+    private SpellTargetType targetType(SpellDefinition spell) {
+        if (spell == null || spell.target() == null) {
+            return SpellTargetType.NONE;
+        }
+        return spell.target().type();
+    }
+
+    private SpellTargetType targetType(SpellTarget target) {
+        if (target instanceof SpellTarget.Self) {
+            return SpellTargetType.SELF;
+        }
+        if (target instanceof SpellTarget.EntityTarget) {
+            return SpellTargetType.ENTITY;
+        }
+        if (target instanceof SpellTarget.BlockTarget) {
+            return SpellTargetType.BLOCK;
+        }
+        if (target instanceof SpellTarget.LocationTarget) {
+            return SpellTargetType.LOCATION;
+        }
+        return SpellTargetType.NONE;
     }
 
 }
