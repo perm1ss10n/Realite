@@ -2,6 +2,7 @@ package ru.realite.magic.service;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -22,6 +23,9 @@ import ru.realite.magic.cast.CastDeliveryType;
 import ru.realite.magic.cast.CastEngine;
 import ru.realite.magic.cast.CastExecutionPlan;
 import ru.realite.magic.cast.WarnLimiter;
+import ru.realite.magic.admin.MagicDiagnosticsService;
+import ru.realite.magic.admin.MagicDiagnosticsService.CastLogEntry;
+import ru.realite.magic.admin.override.MagicOverrideService;
 import ru.realite.magic.debug.DebugService;
 import ru.realite.magic.balance.ItemModifiers;
 import ru.realite.magic.balance.ItemModifiersService;
@@ -94,18 +98,20 @@ public final class MagicService {
     private final GuildBonusService guildBonusService;
     private final TalentMagicService talentMagicService;
     private final PveService pveService;
+    private final MagicDiagnosticsService diagnosticsService;
+    private final MagicOverrideService overrideService;
     private final Map<UUID, MageState> states = new HashMap<>();
     private final WarnLimiter warnLimiter = new WarnLimiter();
     private final SpellSelectMenu spellSelectMenu;
     private final TargetResolver targetResolver = new TargetResolver();
-    private final CastEngine castEngine;
+    private CastEngine castEngine;
     private BukkitTask regenTask;
     private boolean itemBridgeWarned;
     private final boolean failWhenItemsUnavailable;
-    private final boolean failWhenReagentsUnavailable;
-    private final boolean economyEnabled;
-    private final boolean failWhenEconomyUnavailable;
-    private final Map<MagicSchool, List<ReagentItem>> defaultReagentsBySchool;
+    private boolean failWhenReagentsUnavailable;
+    private boolean economyEnabled;
+    private boolean failWhenEconomyUnavailable;
+    private Map<MagicSchool, List<ReagentItem>> defaultReagentsBySchool;
 
     public MagicService(JavaPlugin plugin,
                         MagicMessages messages,
@@ -140,6 +146,8 @@ public final class MagicService {
         this.talentMagicService = new TalentMagicService(talentsBridge, plugin.getLogger());
         this.pveService = new PveService(plugin);
         this.castEngine = new CastEngine(plugin);
+        this.diagnosticsService = new MagicDiagnosticsService(100);
+        this.overrideService = new MagicOverrideService();
         this.failWhenItemsUnavailable = plugin.getConfig()
                 .getBoolean("requirements.failWhenItemsUnavailable", true);
         this.failWhenReagentsUnavailable = plugin.getConfig()
@@ -179,6 +187,14 @@ public final class MagicService {
 
     public PveService pveService() {
         return pveService;
+    }
+
+    public MagicDiagnosticsService diagnosticsService() {
+        return diagnosticsService;
+    }
+
+    public MagicOverrideService overrideService() {
+        return overrideService;
     }
 
     public double getMana(Player player) {
@@ -301,17 +317,26 @@ public final class MagicService {
             return fail(player, spell, null, targetType(spell), "magic.command.errors.no_permission",
                     Map.of(), false, 0L);
         }
-        CastAttemptResult castItemResult = checkCastItem(player, spell);
-        if (castItemResult instanceof CastAttemptResult.Fail) {
-            return castItemResult;
-        }
-        CheckResult requirementResult = checkRequirements(player, spell);
-        if (requirementResult instanceof CheckResult.Fail fail) {
-            return fail(player, spell, null, targetType(spell), fail.reasonKey(), fail.placeholders(), false, 0L);
-        }
-        CheckResult conflictResult = schoolService.conflictReason(player, spell);
-        if (conflictResult instanceof CheckResult.Fail fail) {
-            return fail(player, spell, null, targetType(spell), fail.reasonKey(), fail.placeholders(), false, 0L);
+        UUID playerId = player.getUniqueId();
+        boolean bypassRequirements = overrideService.bypassRequirements(playerId);
+        boolean bypassCooldown = overrideService.bypassCooldown(playerId);
+        boolean bypassMana = overrideService.bypassMana(playerId);
+        boolean bypassReagents = overrideService.bypassReagents(playerId);
+        boolean bypassEconomy = overrideService.bypassEconomy(playerId);
+        boolean bypassStaff = overrideService.bypassStaffCharges(playerId);
+        if (!bypassRequirements) {
+            CastAttemptResult castItemResult = checkCastItem(player, spell);
+            if (castItemResult instanceof CastAttemptResult.Fail) {
+                return castItemResult;
+            }
+            CheckResult requirementResult = checkRequirements(player, spell);
+            if (requirementResult instanceof CheckResult.Fail fail) {
+                return fail(player, spell, null, targetType(spell), fail.reasonKey(), fail.placeholders(), false, 0L);
+            }
+            CheckResult conflictResult = schoolService.conflictReason(player, spell);
+            if (conflictResult instanceof CheckResult.Fail fail) {
+                return fail(player, spell, null, targetType(spell), fail.reasonKey(), fail.placeholders(), false, 0L);
+            }
         }
         CastPolicy regionPolicy = regionRuleService.castPolicy(player, spell, player.getLocation());
         if (!regionPolicy.allowed()) {
@@ -320,23 +345,27 @@ public final class MagicService {
                     : regionPolicy.denyReasonKey();
             return fail(player, spell, null, targetType(spell), reasonKey, regionPolicy.placeholders(), false, 0L);
         }
-        if (!hasRequiredFocus(player)) {
-            return fail(player, spell, null, targetType(spell), "magic.error.need_focus", Map.of(),
-                    warnLimited(player, "no_focus"), WARN_WINDOW_MS);
+        if (!bypassRequirements) {
+            if (!hasRequiredFocus(player)) {
+                return fail(player, spell, null, targetType(spell), "magic.error.need_focus", Map.of(),
+                        warnLimited(player, "no_focus"), WARN_WINDOW_MS);
+            }
         }
         long remainingTicks = Math.max(remainingGlobalCooldownTicks(player),
                 remainingCooldownTicks(player, spell.id()));
-        if (remainingTicks > 0) {
+        if (!bypassCooldown && remainingTicks > 0) {
             String time = formatCooldownSeconds(remainingTicks / 20.0);
             return fail(player, spell, null, targetType(spell), "magic.cast.cooldown", Map.of("time", time),
                     warnLimited(player, "cooldown"), WARN_WINDOW_MS);
         }
-        CheckResult runeCheck = itemModifiersService.checkRuneSchool(player, spell);
-        if (runeCheck instanceof CheckResult.Fail fail) {
-            return fail(player, spell, null, targetType(spell), fail.reasonKey(), fail.placeholders(), false, 0L);
+        if (!bypassRequirements) {
+            CheckResult runeCheck = itemModifiersService.checkRuneSchool(player, spell);
+            if (runeCheck instanceof CheckResult.Fail fail) {
+                return fail(player, spell, null, targetType(spell), fail.reasonKey(), fail.placeholders(), false, 0L);
+            }
         }
         ReagentCost effectiveReagents = resolveEffectiveReagents(spell);
-        if (effectiveReagents != null && !effectiveReagents.isEmpty()) {
+        if (!bypassReagents && effectiveReagents != null && !effectiveReagents.isEmpty()) {
             if (itemsBridge instanceof NoopItemsBridge) {
                 warnMissingItemBridge();
                 if (failWhenReagentsUnavailable) {
@@ -351,7 +380,7 @@ public final class MagicService {
                 }
             }
         }
-        boolean shouldPay = economyEnabled && spell.moneyCost() > 0;
+        boolean shouldPay = !bypassEconomy && economyEnabled && spell.moneyCost() > 0;
         if (shouldPay) {
             if (!economyBridge.isAvailable()) {
                 if (failWhenEconomyUnavailable) {
@@ -366,12 +395,12 @@ public final class MagicService {
         BalanceModifiers modifiers = balanceModifiers(player, spell, null);
         double effectiveMana = effectiveManaCost(spell, modifiers);
         double currentMana = getMana(player);
-        if (currentMana < effectiveMana) {
+        if (!bypassMana && currentMana < effectiveMana) {
             String needed = formatNumber(effectiveMana - currentMana, "casting.manaFormat", "0.0");
             return fail(player, spell, null, targetType(spell), "magic.cast.no_mana", Map.of("mana", needed),
                     warnLimited(player, "no_mana"), WARN_WINDOW_MS);
         }
-        StaffCastResult staffResult = checkStaffForCast(player, spell);
+        StaffCastResult staffResult = bypassStaff ? StaffCastResult.ok() : checkStaffForCast(player, spell);
         if (staffResult.reasonKey() != null) {
             return fail(player, spell, null, targetType(spell), staffResult.reasonKey(),
                     staffResult.placeholders(), warnLimited(player, "staff_fail"), WARN_WINDOW_MS);
@@ -385,7 +414,7 @@ public final class MagicService {
         if (shouldPay && !economyBridge.withdraw(player.getUniqueId(), spell.moneyCost())) {
             return fail(player, spell, null, targetType(spell), "magic.economy.not_enough", Map.of(), false, 0L);
         }
-        if (effectiveReagents != null && effectiveReagents.consumeOnCast()) {
+        if (!bypassReagents && effectiveReagents != null && effectiveReagents.consumeOnCast()) {
             CastAttemptResult consumeResult = consumeReagents(player, spell, effectiveReagents);
             if (consumeResult != null) {
                 if (shouldPay) {
@@ -394,11 +423,20 @@ public final class MagicService {
                 return consumeResult;
             }
         }
-        consumeStaffChargesOnCast(player, staffResult);
-        consumeRequiredItemOnCast(player, spell);
-        addMana(player, -effectiveMana);
-        setCooldown(player, GLOBAL_COOLDOWN_KEY, globalCastTicks());
-        setCooldown(player, spell.id(), effectiveCooldownTicks(spell, modifiers));
+        if (!bypassStaff) {
+            consumeStaffChargesOnCast(player, staffResult);
+        }
+        if (!bypassRequirements) {
+            consumeRequiredItemOnCast(player, spell);
+        }
+        if (!bypassMana) {
+            addMana(player, -effectiveMana);
+        }
+        long cooldownTicks = effectiveCooldownTicks(spell, modifiers);
+        if (!bypassCooldown) {
+            setCooldown(player, GLOBAL_COOLDOWN_KEY, globalCastTicks());
+            setCooldown(player, spell.id(), cooldownTicks);
+        }
         cast(player, spell, target, modifiers);
         MageState state = state(player);
         state.lastSchool(spell.school());
@@ -413,6 +451,22 @@ public final class MagicService {
                 null);
         publishCastAttempt(player.getUniqueId(), spell.id(), true, null, Map.of());
         eventPublisher.publish(new SpellCastSuccessEvent(player.getUniqueId(), spell.id()));
+        diagnosticsService.recordSuccess(new CastLogEntry(
+                Instant.now(),
+                player.getName(),
+                spell.id(),
+                true,
+                null,
+                targetType(target).name(),
+                spell.school() == null ? null : spell.school().name(),
+                bypassMana ? 0.0 : effectiveMana,
+                bypassCooldown ? 0L : cooldownTicks,
+                regionRuleService.regionId(player.getLocation()),
+                bypassStaff ? 0 : staffResult.cost(),
+                !bypassReagents && effectiveReagents != null && effectiveReagents.consumeOnCast()
+                        ? effectiveReagents.items()
+                        : List.of(),
+                shouldPay ? spell.moneyCost() : 0.0));
         return new CastAttemptResult.Success(spell);
     }
 
@@ -487,6 +541,18 @@ public final class MagicService {
 
     public StaffChargeService staffChargeService() {
         return staffChargeService;
+    }
+
+    public TalentMagicService talentMagicService() {
+        return talentMagicService;
+    }
+
+    public RegionRuleService regionRuleService() {
+        return regionRuleService;
+    }
+
+    public GuildBonusService guildBonusService() {
+        return guildBonusService;
     }
 
     public void setSelectedSpell(Player player, String spellId) {
@@ -814,6 +880,10 @@ public final class MagicService {
         return new ReagentCost(consumeOnCast, mergedItems);
     }
 
+    public ReagentCost resolveEffectiveReagentsForInspect(SpellDefinition spell) {
+        return resolveEffectiveReagents(spell);
+    }
+
     private void mergeReagents(Map<String, Integer> target, List<ReagentItem> items) {
         for (ReagentItem item : items) {
             if (item == null || item.itemId() == null || item.itemId().isBlank()) {
@@ -987,7 +1057,50 @@ public final class MagicService {
                 remainingGlobalCooldownTicks(player),
                 spellId == null ? 0 : remainingCooldownTicks(player, spellId),
                 reasonKey);
+        diagnosticsService.recordFail(new CastLogEntry(
+                Instant.now(),
+                player.getName(),
+                spellId,
+                false,
+                reasonKey,
+                targetType.name(),
+                spell == null || spell.school() == null ? null : spell.school().name(),
+                0.0,
+                0L,
+                regionRuleService.regionId(player.getLocation()),
+                0,
+                List.of(),
+                0.0));
         return new CastAttemptResult.Fail(reasonKey, Map.copyOf(placeholders), silent, cooldownMsForSpam);
+    }
+
+    public boolean reloadConfigSection(MagicConfigSection section) {
+        if (section == null) {
+            return false;
+        }
+        plugin.reloadConfig();
+        if (section == MagicConfigSection.ALL || section == MagicConfigSection.PVE) {
+            pveService.reload(plugin.getConfig());
+        }
+        if (section == MagicConfigSection.ALL || section == MagicConfigSection.REAGENTS) {
+            failWhenReagentsUnavailable = plugin.getConfig()
+                    .getBoolean("reagents.failWhenItemsUnavailable", true);
+            defaultReagentsBySchool = loadDefaultReagents();
+        }
+        if (section == MagicConfigSection.ALL || section == MagicConfigSection.ECONOMY) {
+            economyEnabled = plugin.getConfig().getBoolean("economy.enabled", true);
+            failWhenEconomyUnavailable = plugin.getConfig().getBoolean("economy.failWhenUnavailable", false);
+        }
+        if (section == MagicConfigSection.ALL || section == MagicConfigSection.MASTERY) {
+            masteryService.reloadConfig();
+        }
+        if (section == MagicConfigSection.ALL || section == MagicConfigSection.LIMITS) {
+            castEngine = new CastEngine(plugin);
+        }
+        if (section == MagicConfigSection.ALL || section == MagicConfigSection.HUD) {
+            messages.reload();
+        }
+        return true;
     }
 
     private void publishCastAttempt(UUID playerId,

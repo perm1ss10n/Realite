@@ -51,6 +51,7 @@ public final class TeleportEffectExecutor implements SpellEffectExecutor {
                     || targetType == EffectTargetType.LOCATION) {
                 PveService pveService = ctx.magicService().pveService();
                 if (pveService.isTeleportImmune(ctx.plan().primaryTarget())) {
+                    ctx.magicService().diagnosticsService().recordPveImmune(def.type());
                     return;
                 }
             }

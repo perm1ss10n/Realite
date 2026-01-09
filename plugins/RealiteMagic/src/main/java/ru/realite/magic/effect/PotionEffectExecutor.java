@@ -93,9 +93,11 @@ public final class PotionEffectExecutor implements SpellEffectExecutor {
         PveService pveService = ctx.magicService().pveService();
         for (LivingEntity target : EffectTargetResolver.resolveTargets(ctx.plan(), mode)) {
             if (pveService.isEffectImmune(def, ctx.spell(), target)) {
+                ctx.magicService().diagnosticsService().recordPveImmune(def.type());
                 continue;
             }
             if (pveService.isPotionImmune(type, target)) {
+                ctx.magicService().diagnosticsService().recordPveImmune("potion:" + type.getKey().getKey());
                 continue;
             }
             target.addPotionEffect(new PotionEffect(type, duration, amplifier));

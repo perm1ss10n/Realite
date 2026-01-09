@@ -67,6 +67,7 @@ public final class CleanseEffectExecutor implements SpellEffectExecutor {
         PveService pveService = ctx.magicService().pveService();
         for (LivingEntity target : EffectTargetResolver.resolveTargets(ctx.plan(), mode)) {
             if (pveService.isEffectImmune(def, ctx.spell(), target)) {
+                ctx.magicService().diagnosticsService().recordPveImmune(def.type());
                 continue;
             }
             if (removeList != null && !removeList.isEmpty()) {

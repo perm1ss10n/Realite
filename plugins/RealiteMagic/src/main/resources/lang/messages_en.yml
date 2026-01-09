@@ -4,7 +4,7 @@ format:
 magic:
   enabled: "{prefix}&aRealiteMagic plugin enabled."
   cmd:
-    usage: "&eUsage: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery>"
+    usage: "&eUsage: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery|admin|reload>"
     player_not_found: "&cPlayer not found: &f{player}"
     debug:
       usage: "&eUsage: &f/rmagic debug <on|off|cast|stats> [player]"
@@ -67,6 +67,41 @@ magic:
       line_level: "&7Level: &f{level}"
       line_xp: "&7XP: &f{xp}&7/&f{next}"
       line_bonus: "&7Bonus: &f{damage} dmg, {mana} mana, {cooldown} cd"
+    admin:
+      usage: "&eUsage: &f/rmagic admin <stats|log|inspect|bypass|export>"
+      stats:
+        header: "&eDiagnostics top {count}:"
+        casts: "&6Top casts:"
+        fails: "&6Top failures:"
+        pve_immune: "&6Top PVE immunes:"
+        pve_resist: "&6Top PVE resists:"
+        empty: "&7No data."
+      log:
+        header: "&eLast {count} casts:"
+      inspect:
+        usage: "&eUsage: &f/rmagic admin inspect <player>"
+        header: "&eInspect: &f{player}"
+        slot: "&7Slot {slot}: &f{spell}"
+        school: "&7School: &f{school}"
+        mana: "&7Mana: &f{current}&7/&f{max}"
+        cooldown: "&7Cooldown: &f{time}&7s"
+        staff: "&7Staff charges: &f{staff}"
+        reagents_none: "&7Reagents: &fnone"
+        reagents_ok: "&7Reagents: &aok"
+        reagents_missing: "&7Missing reagents: &c{list}"
+        mastery: "&7Mastery: &f{level}&7 (xp {xp})"
+        talents: "&7Talents: &f{list}"
+        talents_none: "&7Talents: &fnone"
+        region_allow: "&7Region: &aallowed"
+        region_deny: "&7Region: &cdenied ({reason})"
+        guild: "&7Guild bonus: &f{damage} dmg, {mana} mana, {cooldown} cd"
+        guild_none: "&7Guild bonus: &fnone"
+      export:
+        ok: "&aReport saved to &f{file}&a."
+        fail: "&cFailed to export report."
+    reload:
+      ok: "&aConfig section reloaded: &f{section}&a."
+      section_unknown: "&cUnknown config section: &f{section}"
     status:
       header: "&eMagic status:"
       slot: "&7Slot: &f{slot}"
@@ -76,7 +111,7 @@ magic:
       cooldown: "&7Cooldown: &f{time}&7s"
   command:
     usage:
-      root: "&eUsage: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery>"
+      root: "&eUsage: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery|admin|reload>"
       spell: "&eUsage: &f/rmagic spell <select|clear|get> [player] [spellId]"
     only-player: "{prefix}&cCommand is only for players."
     spell:
@@ -166,6 +201,13 @@ magic:
     no_charges: "Your staff has no charges."
     charges: "Charges: {current}/{max}"
     recharged: "Staff recharged: +{add}"
+  admin:
+    bypass:
+      enabled: "&aBypass enabled for &f{player}&a ({what}, {ttl}m)."
+      disabled: "&eBypass disabled for &f{player}&e ({what})."
+      usage: "&eUsage: &f/rmagic admin bypass <player> <on|off> [what] [ttlMinutes]"
+      list:
+        header: "&eBypass list ({count}):"
   rune:
     school_mismatch: "Rune school does not match the spell."
   school:
