@@ -256,7 +256,8 @@ public final class QuestsModule implements Module {
                 "archer_initiation.yml",
                 "wanderer_initiation.yml",
                 "common_gear_up.yml",
-                "common_settle_in_city.yml"
+                "common_settle_in_city.yml",
+                "magic_intro.yml"
         };
         Path questsDir = ctx.dataFolder().resolve("quests");
         try {

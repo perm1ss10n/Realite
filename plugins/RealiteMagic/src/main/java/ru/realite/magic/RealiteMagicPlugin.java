@@ -82,7 +82,10 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         saveDefaultConfig();
         saveIfNotExists("lang/messages_ru.yml");
         saveIfNotExists("lang/messages_en.yml");
-        saveIfNotExists("spells/warlock_basic.yml");
+        saveIfNotExists("spells/warlock.yml");
+        saveIfNotExists("spells/fire.yml");
+        saveIfNotExists("spells/frost.yml");
+        saveIfNotExists("spells/holy.yml");
         messages = new MagicMessages(this);
         EffectExecutorRegistry effectRegistry = buildEffectRegistry();
         spellRegistry = new SpellRegistry(this, effectRegistry);

@@ -15,6 +15,7 @@ import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import ru.realite.items.service.ItemService;
@@ -93,26 +94,44 @@ public final class SpellRegistry {
                 continue;
             }
             ConfigurationSection root = cfg.getConfigurationSection("spell");
-            if (root == null) {
+            if (root != null) {
+                loadSpellSection(errors, loaded, validator, root, defaultIconMaterial, castLimits, file.getName());
+                continue;
+            }
+            List<Map<?, ?>> spellEntries = cfg.getMapList("spells");
+            if (spellEntries == null || spellEntries.isEmpty()) {
                 addSchemaError(errors, file.getName(), null, "spell",
                         "magic.cmd.spells.errors.missing_field",
                         Map.of("field", "spell"));
                 continue;
             }
-            SpellDefinition def = parseSpell(root, defaultIconMaterial, castLimits, file.getName());
-            SchemaReport schemaReport = validator.validate(def, file.getName());
-            addSchemaErrors(errors, schemaReport);
-            if (!schemaReport.ok()) {
-                continue;
+            int index = 0;
+            for (Map<?, ?> entry : spellEntries) {
+                index++;
+                if (entry == null || entry.isEmpty()) {
+                    addSchemaError(errors, file.getName(), null, "spells[" + index + "]",
+                            "magic.cmd.spells.errors.invalid_value",
+                            Map.of("field", "spells[" + index + "]", "value", "null"));
+                    continue;
+                }
+                if (!(entry instanceof Map<?, ?>)) {
+                    addSchemaError(errors, file.getName(), null, "spells[" + index + "]",
+                            "magic.cmd.spells.errors.invalid_value",
+                            Map.of("field", "spells[" + index + "]", "value", String.valueOf(entry)));
+                    continue;
+                }
+                MemoryConfiguration entryConfig = new MemoryConfiguration();
+                entryConfig.createSection("spell", entry);
+                ConfigurationSection entrySection = entryConfig.getConfigurationSection("spell");
+                if (entrySection == null) {
+                    addSchemaError(errors, file.getName(), null, "spells[" + index + "]",
+                            "magic.cmd.spells.errors.invalid_value",
+                            Map.of("field", "spells[" + index + "]", "value", "null"));
+                    continue;
+                }
+                loadSpellSection(errors, loaded, validator, entrySection,
+                        defaultIconMaterial, castLimits, file.getName());
             }
-            warnMissingItemsBridge(def);
-            if (loaded.containsKey(def.id())) {
-                addSchemaError(errors, file.getName(), def.id(), "id",
-                        "magic.cmd.spells.errors.duplicate_id",
-                        Map.of("id", def.id()));
-                continue;
-            }
-            loaded.put(def.id(), def);
         }
 
         if (applyChanges) {
@@ -121,6 +140,29 @@ public final class SpellRegistry {
         }
 
         return new SpellLoadReport(loaded.size(), errors);
+    }
+
+    private void loadSpellSection(List<SpellLoadError> errors,
+                                  Map<String, SpellDefinition> loaded,
+                                  SpellSchemaValidator validator,
+                                  ConfigurationSection section,
+                                  Material defaultIconMaterial,
+                                  CastLimits castLimits,
+                                  String fileName) {
+        SpellDefinition def = parseSpell(section, defaultIconMaterial, castLimits, fileName);
+        SchemaReport schemaReport = validator.validate(def, fileName);
+        addSchemaErrors(errors, schemaReport);
+        if (!schemaReport.ok()) {
+            return;
+        }
+        warnMissingItemsBridge(def);
+        if (loaded.containsKey(def.id())) {
+            addSchemaError(errors, fileName, def.id(), "id",
+                    "magic.cmd.spells.errors.duplicate_id",
+                    Map.of("id", def.id()));
+            return;
+        }
+        loaded.put(def.id(), def);
     }
 
     private void warnMissingItemsBridge(SpellDefinition def) {
