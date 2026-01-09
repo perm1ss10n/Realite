@@ -14,7 +14,7 @@ import ru.realite.magic.model.PlayerSpellData;
 
 public final class YamlPlayerSpellStorage implements PlayerSpellStorage {
 
-    private static final int CURRENT_VERSION = 1;
+    private static final int CURRENT_VERSION = 2;
 
     private final File spellsDir;
     private final JavaPlugin plugin;
@@ -46,11 +46,27 @@ public final class YamlPlayerSpellStorage implements PlayerSpellStorage {
         }
 
         int version = yml.getInt("version", CURRENT_VERSION);
-        PlayerSpellData data = new PlayerSpellData(version);
+        PlayerSpellData data = new PlayerSpellData(CURRENT_VERSION);
         for (String spellId : yml.getStringList("learned")) {
             data.learn(spellId);
         }
         data.selected(yml.getString("selected", null));
+        data.activeSlot(yml.getInt("activeSlot", 1));
+        List<String> slots = new ArrayList<>();
+        List<?> rawSlots = yml.getList("slots");
+        if (rawSlots != null) {
+            for (Object value : rawSlots) {
+                if (value == null) {
+                    slots.add(null);
+                } else {
+                    slots.add(value.toString());
+                }
+            }
+        }
+        data.slots(slots);
+        if (version < 2) {
+            data.slot(1, data.selected().orElse(null));
+        }
         return data;
     }
 
@@ -63,6 +79,8 @@ public final class YamlPlayerSpellStorage implements PlayerSpellStorage {
         learned.sort(String::compareTo);
         yml.set("learned", learned);
         yml.set("selected", data.selected().orElse(null));
+        yml.set("slots", new ArrayList<>(data.slots()));
+        yml.set("activeSlot", data.activeSlot());
         try {
             yml.save(file);
         } catch (IOException e) {

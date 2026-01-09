@@ -29,6 +29,7 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
 
     private static final String PERMISSION_ADMIN = "realite.magic.admin";
     private static final String PERMISSION_MENU = "realite.magic.menu";
+    private static final String PERMISSION_USE = "realite.magic.use";
 
     private final MagicService magicService;
     private final PlayerSpellService playerSpellService;
@@ -63,6 +64,9 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
         if ("spells".equals(sub)) {
             return handleSpells(sender, args);
         }
+        if ("slot".equals(sub)) {
+            return handleSlot(sender, args);
+        }
         if ("debug".equals(sub)) {
             return handleDebug(sender, args);
         }
@@ -73,13 +77,17 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return List.of("menu", "spell", "spells", "mana", "debug");
+            return List.of("menu", "spell", "spells", "mana", "debug", "slot");
         }
         if (args.length >= 2
                 && !args[0].equalsIgnoreCase("spell")
                 && !args[0].equalsIgnoreCase("spells")
-                && !args[0].equalsIgnoreCase("debug")) {
+                && !args[0].equalsIgnoreCase("debug")
+                && !args[0].equalsIgnoreCase("slot")) {
             return Collections.emptyList();
+        }
+        if (args[0].equalsIgnoreCase("slot")) {
+            return tabCompleteSlots(args.length);
         }
         if (!sender.hasPermission(PERMISSION_ADMIN)) {
             return Collections.emptyList();
@@ -202,6 +210,142 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
                 yield true;
             }
         };
+    }
+
+    private boolean handleSlot(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messages.msg("magic.command.only-player"));
+            return true;
+        }
+        if (!player.hasPermission(PERMISSION_USE)) {
+            sender.sendMessage(messages.msg("magic.command.errors.no_permission"));
+            return true;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(messages.msg("magic.cmd.slot.usage"));
+            return true;
+        }
+        String action = args[1].toLowerCase(Locale.ROOT);
+        return switch (action) {
+            case "set" -> handleSlotSet(player, args);
+            case "clear" -> handleSlotClear(player, args);
+            case "use" -> handleSlotUse(player, args);
+            default -> {
+                sender.sendMessage(messages.msg("magic.cmd.slot.usage"));
+                yield true;
+            }
+        };
+    }
+
+    private boolean handleSlotSet(Player player, String[] args) {
+        if (args.length < 4) {
+            player.sendMessage(messages.msg("magic.cmd.slot.usage"));
+            return true;
+        }
+        Integer slot = parseSlot(args[2]);
+        if (slot == null) {
+            player.sendMessage(messages.msg("magic.slot.invalid", "slot", args[2]));
+            return true;
+        }
+        String spellId = args[3];
+        var result = playerSpellService.setSlot(player.getUniqueId(), slot, spellId);
+        if (result instanceof ru.realite.magic.service.SetSlotResult.Fail fail) {
+            player.sendMessage(messages.msg(fail.reasonKey()));
+            return true;
+        }
+        player.sendMessage(messages.msg("magic.slot.set.ok"));
+        return true;
+    }
+
+    private boolean handleSlotClear(Player player, String[] args) {
+        if (args.length < 3) {
+            player.sendMessage(messages.msg("magic.cmd.slot.usage"));
+            return true;
+        }
+        Integer slot = parseSlot(args[2]);
+        if (slot == null) {
+            player.sendMessage(messages.msg("magic.slot.invalid", "slot", args[2]));
+            return true;
+        }
+        var result = playerSpellService.setSlot(player.getUniqueId(), slot, null);
+        if (result instanceof ru.realite.magic.service.SetSlotResult.Fail fail) {
+            player.sendMessage(messages.msg(fail.reasonKey()));
+            return true;
+        }
+        player.sendMessage(messages.msg("magic.slot.clear.ok"));
+        return true;
+    }
+
+    private boolean handleSlotUse(Player player, String[] args) {
+        if (args.length < 3) {
+            player.sendMessage(messages.msg("magic.cmd.slot.usage"));
+            return true;
+        }
+        Integer slot = parseSlot(args[2]);
+        if (slot == null) {
+            player.sendMessage(messages.msg("magic.slot.invalid", "slot", args[2]));
+            return true;
+        }
+        var result = playerSpellService.setActiveSlot(player.getUniqueId(), slot);
+        if (result instanceof ru.realite.magic.service.SetActiveSlotResult.Fail fail) {
+            player.sendMessage(messages.msg(fail.reasonKey()));
+            return true;
+        }
+        sendSlotActionbar(player, slot);
+        return true;
+    }
+
+    private void sendSlotActionbar(Player player, int slot) {
+        String spellId = playerSpellService.getActiveSlotSpell(player.getUniqueId()).orElse(null);
+        if (spellId == null) {
+            player.sendActionBar(messages.msg("magic.bar.slot.empty", "slot", String.valueOf(slot)));
+            return;
+        }
+        String spellName = displaySpellName(spellId);
+        player.sendActionBar(messages.msg("magic.bar.slot.changed",
+                "slot", String.valueOf(slot),
+                "spell", spellName));
+    }
+
+    private String displaySpellName(String spellId) {
+        SpellDefinition spell = magicService.spellRegistry().get(spellId);
+        if (spell == null) {
+            return spellId;
+        }
+        String nameKey = spell.nameKey();
+        if (nameKey == null || nameKey.isBlank()) {
+            return spell.id();
+        }
+        String raw = messages.raw(nameKey);
+        return raw == null || raw.isBlank() ? spell.id() : raw;
+    }
+
+    private List<String> tabCompleteSlots(int argsLength) {
+        if (argsLength == 2) {
+            return List.of("set", "clear", "use");
+        }
+        if (argsLength == 3) {
+            return List.of("1", "2", "3", "4", "5", "6", "7", "8", "9");
+        }
+        if (argsLength == 4) {
+            return spellIds();
+        }
+        return Collections.emptyList();
+    }
+
+    private Integer parseSlot(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            int value = Integer.parseInt(raw);
+            if (value < 1 || value > 9) {
+                return null;
+            }
+            return value;
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     private boolean handleDebugOn(CommandSender sender) {
@@ -470,18 +614,6 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
             ids.add(spell.id());
         }
         return ids;
-    }
-
-    private String displaySpellName(String spellId) {
-        SpellDefinition spell = magicService.spellRegistry().get(spellId);
-        if (spell == null) {
-            return spellId;
-        }
-        String nameKey = spell.nameKey();
-        if (nameKey == null || nameKey.isBlank()) {
-            return spell.id();
-        }
-        return messages.raw(nameKey);
     }
 
     private String format(double value) {

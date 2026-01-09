@@ -28,6 +28,7 @@ import ru.realite.magic.listener.CombatListener;
 import ru.realite.magic.listener.MagicInteractListener;
 import ru.realite.magic.listener.MagicMenuListener;
 import ru.realite.magic.listener.PlayerCleanupListener;
+import ru.realite.magic.listener.SpellBarListener;
 import ru.realite.magic.listener.SpellUnlockListener;
 import ru.realite.magic.command.MagicCommand;
 import ru.realite.magic.service.MagicService;
@@ -154,6 +155,8 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(
                 new MagicMenuListener(magicService.spellSelectMenu(), spellRegistry, playerSpellService, messages), this);
         Bukkit.getPluginManager().registerEvents(interactListener, this);
+        Bukkit.getPluginManager().registerEvents(
+                new SpellBarListener(playerSpellService, spellRegistry, messages), this);
     }
 
     private void saveIfNotExists(String resourcePath) {
