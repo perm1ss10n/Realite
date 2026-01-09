@@ -10,11 +10,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.plugin.RegisteredServiceProvider;
+import ru.realite.items.service.ItemService;
 import ru.realite.magic.cast.AoeCastDefinition;
 import ru.realite.magic.cast.BeamCastDefinition;
 import ru.realite.magic.cast.BeamParticlesDefinition;
@@ -37,6 +40,7 @@ public final class SpellRegistry {
     private final JavaPlugin plugin;
     private final EffectExecutorRegistry effectRegistry;
     private final Map<String, SpellDefinition> spells = new HashMap<>();
+    private boolean itemsBridgeWarned;
 
     public SpellRegistry(JavaPlugin plugin, EffectExecutorRegistry effectRegistry) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
@@ -101,6 +105,7 @@ public final class SpellRegistry {
             if (!schemaReport.ok()) {
                 continue;
             }
+            warnMissingItemsBridge(def);
             if (loaded.containsKey(def.id())) {
                 addSchemaError(errors, file.getName(), def.id(), "id",
                         "magic.cmd.spells.errors.duplicate_id",
@@ -116,6 +121,26 @@ public final class SpellRegistry {
         }
 
         return new SpellLoadReport(loaded.size(), errors);
+    }
+
+    private void warnMissingItemsBridge(SpellDefinition def) {
+        if (itemsBridgeWarned) {
+            return;
+        }
+        if (def.reagents() == null || def.reagents().isEmpty()) {
+            return;
+        }
+        if (isItemsBridgeAvailable()) {
+            return;
+        }
+        itemsBridgeWarned = true;
+        plugin.getLogger().warning("[Magic] Reagents are defined, but RealiteItems is unavailable.");
+    }
+
+    private boolean isItemsBridgeAvailable() {
+        RegisteredServiceProvider<ItemService> provider =
+                Bukkit.getServicesManager().getRegistration(ItemService.class);
+        return provider != null && provider.getProvider() != null;
     }
 
     public Collection<SpellDefinition> all() {
@@ -160,6 +185,8 @@ public final class SpellRegistry {
         SpellCastTrigger castTrigger = parseCastTrigger(castSection);
         String castItemId = parseCastItemId(castSection);
         Integer staffChargesCost = parseStaffChargesCost(castSection);
+        ReagentCost reagents = parseReagents(section.getConfigurationSection("reagents"));
+        double moneyCost = section.getDouble("cost.money", 0.0);
         SpellGiveItem giveItem = parseGiveItem(section.getConfigurationSection("effects"));
         Material iconMaterial = parseIconMaterial(section.getConfigurationSection("icon"),
                 defaultIconMaterial);
@@ -167,7 +194,8 @@ public final class SpellRegistry {
         Integer guiSlot = parseGuiSlot(section.getConfigurationSection("gui"));
         return new SpellDefinition(id, type, nameKey, descKey, school, mana, cooldownTicks, range, damage, requirements,
                 target, castDelivery, projectileCast, beamCast, aoeCast, chainCast, effects, castTrigger, castItemId,
-                staffChargesCost, giveItem.id(), giveItem.amount(), iconMaterial, iconCustomModelData, guiSlot);
+                staffChargesCost, reagents, moneyCost, giveItem.id(), giveItem.amount(), iconMaterial,
+                iconCustomModelData, guiSlot);
     }
 
     private List<SpellEffectDefinition> parseEffects(ConfigurationSection section) {
@@ -217,6 +245,46 @@ public final class SpellRegistry {
             requiredItemId = null;
         }
         return new SpellRequirements(classId, evolutionId, requiredItemId, consumeOnCast);
+    }
+
+    private ReagentCost parseReagents(ConfigurationSection section) {
+        if (section == null) {
+            return null;
+        }
+        boolean consumeOnCast = section.getBoolean("consumeOnCast", true);
+        List<ReagentItem> items = parseReagentItems(section.getMapList("items"));
+        if (items.isEmpty()) {
+            return null;
+        }
+        return new ReagentCost(consumeOnCast, items);
+    }
+
+    private List<ReagentItem> parseReagentItems(List<Map<?, ?>> rawItems) {
+        if (rawItems == null || rawItems.isEmpty()) {
+            return List.of();
+        }
+        List<ReagentItem> items = new ArrayList<>();
+        for (Object raw : rawItems) {
+            if (!(raw instanceof Map<?, ?> itemMap)) {
+                items.add(null);
+                continue;
+            }
+            Object itemIdRaw = itemMap.get("itemId");
+            String itemId = itemIdRaw == null ? null : String.valueOf(itemIdRaw);
+            int amount = 0;
+            Object amountRaw = itemMap.get("amount");
+            if (amountRaw instanceof Number number) {
+                amount = number.intValue();
+            } else if (amountRaw != null) {
+                try {
+                    amount = Integer.parseInt(String.valueOf(amountRaw));
+                } catch (NumberFormatException ex) {
+                    amount = 0;
+                }
+            }
+            items.add(new ReagentItem(itemId, amount));
+        }
+        return List.copyOf(items);
     }
 
     private SpellCastTrigger parseCastTrigger(ConfigurationSection section) {

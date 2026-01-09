@@ -17,6 +17,8 @@ import ru.realite.magic.effect.EffectTargetType;
 import ru.realite.magic.effect.EffectValidationResult;
 import ru.realite.magic.effect.SpellEffectDefinition;
 import ru.realite.magic.effect.SpellEffectExecutor;
+import ru.realite.magic.spell.ReagentCost;
+import ru.realite.magic.spell.ReagentItem;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellRequirements;
 import ru.realite.magic.target.SpellTargetDefinition;
@@ -86,8 +88,13 @@ public final class SpellSchemaValidator {
             report.addError(fileName, spellId, "cast.staffChargesCost", "magic.cmd.spells.errors.invalid_value",
                     Map.of("field", "cast.staffChargesCost", "value", String.valueOf(spell.staffChargesCost())));
         }
+        if (spell.moneyCost() < 0) {
+            report.addError(fileName, spellId, "cost.money", "magic.cmd.spells.errors.invalid_value",
+                    Map.of("field", "cost.money", "value", String.valueOf(spell.moneyCost())));
+        }
         validateCastDelivery(report, spell, fileName, spellId);
         validateRequirements(report, spell, fileName, spellId);
+        validateReagents(report, spell, fileName, spellId);
         validateTarget(report, spell.target(), fileName, spellId);
         validateEffects(report, spell, fileName, spellId);
         return report;
@@ -279,6 +286,37 @@ public final class SpellSchemaValidator {
                     "magic.cmd.spells.errors.invalid_value",
                     Map.of("field", "requirements.requiredItemId",
                             "value", String.valueOf(requirements.requiredItemId())));
+        }
+    }
+
+    private void validateReagents(SchemaReport report,
+                                  SpellDefinition spell,
+                                  String fileName,
+                                  String spellId) {
+        ReagentCost reagents = spell.reagents();
+        if (reagents == null || reagents.items() == null || reagents.items().isEmpty()) {
+            return;
+        }
+        int index = 0;
+        for (ReagentItem item : reagents.items()) {
+            index++;
+            if (item == null) {
+                report.addError(fileName, spellId, "reagents.items",
+                        "magic.cmd.spells.errors.invalid_value",
+                        Map.of("field", "reagents.items[" + index + "]", "value", "null"));
+                continue;
+            }
+            if (item.itemId() == null || item.itemId().isBlank()) {
+                report.addError(fileName, spellId, "reagents.items.itemId",
+                        "magic.cmd.spells.errors.missing_field",
+                        Map.of("field", "reagents.items[" + index + "].itemId"));
+            }
+            if (item.amount() <= 0) {
+                report.addError(fileName, spellId, "reagents.items.amount",
+                        "magic.cmd.spells.errors.invalid_value",
+                        Map.of("field", "reagents.items[" + index + "].amount",
+                                "value", String.valueOf(item.amount())));
+            }
         }
     }
 

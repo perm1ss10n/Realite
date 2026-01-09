@@ -32,6 +32,8 @@ public record SpellDefinition(
         SpellCastTrigger castTrigger,
         String castItemId,
         Integer staffChargesCost,
+        ReagentCost reagents,
+        double moneyCost,
         String giveItemId,
         int giveItemAmount,
         Material iconMaterial,
