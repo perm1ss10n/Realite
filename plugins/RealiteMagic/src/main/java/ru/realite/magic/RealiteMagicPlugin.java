@@ -15,6 +15,7 @@ import ru.realite.magic.effect.EffectExecutorRegistry;
 import ru.realite.magic.effect.ParticlesEffectExecutor;
 import ru.realite.magic.effect.PotionEffectExecutor;
 import ru.realite.magic.effect.SoundEffectExecutor;
+import ru.realite.magic.hud.MagicHudService;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.integration.classes.ClassesBridge;
 import ru.realite.magic.integration.classes.CoreClassesBridge;
@@ -45,6 +46,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
     private SpellRegistry spellRegistry;
     private PlayerSpellService playerSpellService;
     private DebugService debugService;
+    private MagicHudService hudService;
     private MagicApi magicApi;
 
     @Override
@@ -87,6 +89,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         ItemsBridge itemsBridge = ItemsBridgeFactory.create();
         ClassesBridge classesBridge = resolveClassesBridge();
         debugService = new DebugService(messages);
+        hudService = new MagicHudService(this, messages, spellRegistry);
         magicService = new MagicService(this,
                 messages,
                 spellRegistry,
@@ -95,7 +98,8 @@ public final class RealiteMagicPlugin extends JavaPlugin {
                 classesBridge,
                 eventPublisher,
                 effectRegistry,
-                debugService);
+                debugService,
+                hudService);
         magicService.start();
         magicApi = new MagicApiImpl(spellRegistry, playerSpellService, magicService);
         Bukkit.getServicesManager().register(MagicApi.class, magicApi, this, ServicePriority.Normal);
@@ -139,7 +143,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
             getLogger().warning("Command /rmagic missing in plugin.yml");
             return;
         }
-        MagicCommand magicCommand = new MagicCommand(magicService, playerSpellService, messages, debugService);
+        MagicCommand magicCommand = new MagicCommand(magicService, playerSpellService, messages, debugService, hudService);
         command.setExecutor(magicCommand);
         command.setTabCompleter(magicCommand);
     }
@@ -147,7 +151,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
     private void registerListeners() {
         Bukkit.getPluginManager().registerEvents(new CombatListener(magicService), this);
         MagicInteractListener interactListener =
-                new MagicInteractListener(magicService, messages);
+                new MagicInteractListener(magicService);
         Bukkit.getPluginManager().registerEvents(
                 new SpellUnlockListener(magicService, playerSpellService, messages), this);
         Bukkit.getPluginManager().registerEvents(
@@ -156,7 +160,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
                 new MagicMenuListener(magicService.spellSelectMenu(), spellRegistry, playerSpellService, messages), this);
         Bukkit.getPluginManager().registerEvents(interactListener, this);
         Bukkit.getPluginManager().registerEvents(
-                new SpellBarListener(playerSpellService, spellRegistry, messages), this);
+                new SpellBarListener(playerSpellService, hudService), this);
     }
 
     private void saveIfNotExists(String resourcePath) {

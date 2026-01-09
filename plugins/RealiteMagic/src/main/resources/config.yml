@@ -18,6 +18,14 @@ casting:
   cooldownFormat: "0.0"
   giveItemMessage: true
 
+hud:
+  enabled: true
+  useActionBar: true
+  showOnSlotChange: true
+  showFailReasons: true
+  showSuccess: false
+  throttleMs: 250
+
 requirements:
   failWhenItemsUnavailable: true
 

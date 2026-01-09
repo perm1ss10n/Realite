@@ -25,6 +25,7 @@ import ru.realite.magic.effect.SpellEffectDefinition;
 import ru.realite.magic.effect.SpellEffectExecutor;
 import ru.realite.magic.api.event.SpellCastAttemptEvent;
 import ru.realite.magic.api.event.SpellCastSuccessEvent;
+import ru.realite.magic.hud.MagicHudService;
 import ru.realite.magic.integration.classes.ClassesBridge;
 import ru.realite.magic.integration.events.MagicEventPublisher;
 import ru.realite.magic.integration.items.ItemsBridge;
@@ -61,6 +62,7 @@ public final class MagicService {
     private final SpellRequirementChecker requirementChecker;
     private final EffectExecutorRegistry effectRegistry;
     private final DebugService debugService;
+    private final MagicHudService hudService;
     private final Map<UUID, MageState> states = new HashMap<>();
     private final WarnLimiter warnLimiter = new WarnLimiter();
     private final SpellSelectMenu spellSelectMenu;
@@ -76,7 +78,8 @@ public final class MagicService {
                         ClassesBridge classesBridge,
                         MagicEventPublisher eventPublisher,
                         EffectExecutorRegistry effectRegistry,
-                        DebugService debugService) {
+                        DebugService debugService,
+                        MagicHudService hudService) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.messages = Objects.requireNonNull(messages, "messages");
         this.spellRegistry = Objects.requireNonNull(spellRegistry, "spellRegistry");
@@ -86,6 +89,7 @@ public final class MagicService {
         this.eventPublisher = Objects.requireNonNull(eventPublisher, "eventPublisher");
         this.effectRegistry = Objects.requireNonNull(effectRegistry, "effectRegistry");
         this.debugService = Objects.requireNonNull(debugService, "debugService");
+        this.hudService = Objects.requireNonNull(hudService, "hudService");
         boolean failWhenItemsUnavailable = plugin.getConfig()
                 .getBoolean("requirements.failWhenItemsUnavailable", true);
         this.requirementChecker = new DefaultSpellRequirementChecker(
@@ -201,6 +205,7 @@ public final class MagicService {
     public void cleanup(Player player) {
         states.remove(player.getUniqueId());
         warnLimiter.clear(player.getUniqueId());
+        hudService.cleanup(player);
     }
 
     public CastAttemptResult tryCastSelected(Player player) {
@@ -301,6 +306,16 @@ public final class MagicService {
 
     public MagicMessages messages() {
         return messages;
+    }
+
+    public void handleCastResult(Player player, CastAttemptResult result) {
+        if (result instanceof CastAttemptResult.Fail fail) {
+            hudService.showCastFail(player, fail.reasonKey(), fail.placeholders());
+            return;
+        }
+        if (result instanceof CastAttemptResult.Success success) {
+            hudService.showCastSuccess(player, success.spell());
+        }
     }
 
     public SpellSelectMenu spellSelectMenu() {
@@ -544,7 +559,7 @@ public final class MagicService {
         eventPublisher.publish(new SpellCastAttemptEvent(playerId, spellId, success, reasonKey, placeholders));
     }
 
-    private String formatCooldownSeconds(double seconds) {
+    public String formatCooldownSeconds(double seconds) {
         double rounded = Math.ceil(seconds * 10.0) / 10.0;
         return formatNumber(rounded, "casting.cooldownFormat", "0.0");
     }
