@@ -63,6 +63,9 @@ public final class ParticlesEffectExecutor implements SpellEffectExecutor {
 
     @Override
     public void execute(EffectContext ctx, SpellEffectDefinition def) {
+        if (ctx == null || def == null) {
+            return;
+        }
         Map<String, Object> params = def.params();
         String particleName = EffectParamUtils.stringParam(params, "particle");
         Particle particle = particleName == null ? null : parseParticle(particleName);
@@ -72,6 +75,9 @@ public final class ParticlesEffectExecutor implements SpellEffectExecutor {
             return;
         }
         EffectTargetType targetType = EffectTargetType.from(params.get("target"));
+        if (targetType == null) {
+            return;
+        }
         Location location = EffectTargetResolver.resolveLocation(ctx.plan(), targetType, ctx.caster());
         if (location == null) {
             return;

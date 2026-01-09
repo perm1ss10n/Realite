@@ -5,6 +5,11 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Fired after a spell successfully completes casting.
+ * <p>
+ * The target id is optional and may be {@code null} for non-entity targets.
+ */
 public final class SpellCastSuccessEvent extends Event {
 
     private static final HandlerList HANDLERS = new HandlerList();

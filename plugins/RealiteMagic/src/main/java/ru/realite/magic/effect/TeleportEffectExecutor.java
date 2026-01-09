@@ -41,10 +41,16 @@ public final class TeleportEffectExecutor implements SpellEffectExecutor {
 
     @Override
     public void execute(EffectContext ctx, SpellEffectDefinition def) {
+        if (ctx == null || def == null) {
+            return;
+        }
         Map<String, Object> params = def.params();
         EffectTargetType targetType = EffectTargetType.from(params.get("target"));
         Boolean safe = EffectParamUtils.booleanParam(params, "safe");
         boolean safeTeleport = safe != null && safe;
+        if (targetType == null) {
+            return;
+        }
         if (ctx.plan() != null && ctx.plan().primaryTarget() != null) {
             if (targetType == EffectTargetType.PRIMARY
                     || targetType == EffectTargetType.ENTITY

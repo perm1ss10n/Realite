@@ -35,6 +35,9 @@ public final class HealEffectExecutor implements SpellEffectExecutor {
 
     @Override
     public void execute(EffectContext ctx, SpellEffectDefinition def) {
+        if (ctx == null || def == null) {
+            return;
+        }
         Map<String, Object> params = def.params();
         Double amount = EffectParamUtils.doubleParam(params, "amount");
         if (amount == null || amount <= 0) {
@@ -45,6 +48,9 @@ public final class HealEffectExecutor implements SpellEffectExecutor {
             mode = EffectApplyMode.PRIMARY;
         }
         for (LivingEntity target : EffectTargetResolver.resolveTargets(ctx.plan(), mode)) {
+            if (target == null) {
+                continue;
+            }
             double maxHealth = maxHealth(target);
             double next = Math.min(maxHealth, target.getHealth() + amount);
             target.setHealth(next);

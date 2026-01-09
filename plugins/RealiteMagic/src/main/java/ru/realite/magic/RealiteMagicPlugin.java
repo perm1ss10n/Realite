@@ -89,8 +89,10 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         messages = new MagicMessages(this);
         EffectExecutorRegistry effectRegistry = buildEffectRegistry();
         spellRegistry = new SpellRegistry(this, effectRegistry);
+        boolean strictValidation = getConfig().getBoolean("release.strictValidation", true);
+        boolean logConfigWarnings = getConfig().getBoolean("release.logConfigWarnings", true);
         var report = spellRegistry.load();
-        if (report.hasErrors()) {
+        if (report.hasErrors() && logConfigWarnings) {
             getLogger().warning(messages.raw("magic.cmd.spells.errors.header"));
             for (var error : report.errors()) {
                 if ("magic.cmd.spells.errors.schema".equals(error.messageKey())) {
@@ -112,6 +114,9 @@ public final class RealiteMagicPlugin extends JavaPlugin {
                         "error", error.messageKey() == null
                                 ? (error.message() == null ? messages.raw("magic.cmd.spells.errors.unknown") : error.message())
                                 : messages.raw(error.messageKey(), error.placeholders())));
+            }
+            if (!strictValidation) {
+                getLogger().warning("[Magic] Spell validation is not strict; invalid entries were skipped.");
             }
         }
         PlayerSpellStorage storage = new YamlPlayerSpellStorage(this, messages);
