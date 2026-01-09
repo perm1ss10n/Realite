@@ -74,6 +74,10 @@ public final class SpellSchemaValidator {
             report.addError(fileName, spellId, "cast.itemId", "magic.cmd.spells.errors.invalid_value",
                     Map.of("field", "cast.itemId", "value", spell.castItemId()));
         }
+        if (spell.staffChargesCost() != null && spell.staffChargesCost() < 0) {
+            report.addError(fileName, spellId, "cast.staffChargesCost", "magic.cmd.spells.errors.invalid_value",
+                    Map.of("field", "cast.staffChargesCost", "value", String.valueOf(spell.staffChargesCost())));
+        }
         validateRequirements(report, spell, fileName, spellId);
         validateTarget(report, spell.target(), fileName, spellId);
         validateEffects(report, spell, fileName, spellId);

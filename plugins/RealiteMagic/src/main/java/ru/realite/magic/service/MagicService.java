@@ -19,6 +19,8 @@ import org.jetbrains.annotations.Nullable;
 import ru.realite.magic.cast.CastAttemptResult;
 import ru.realite.magic.cast.WarnLimiter;
 import ru.realite.magic.debug.DebugService;
+import ru.realite.magic.balance.ItemModifiers;
+import ru.realite.magic.balance.ItemModifiersService;
 import ru.realite.magic.effect.BalanceModifiers;
 import ru.realite.magic.effect.EffectContext;
 import ru.realite.magic.effect.EffectExecutorRegistry;
@@ -37,6 +39,8 @@ import ru.realite.magic.mastery.MasteryModifiers;
 import ru.realite.magic.mastery.MasteryService;
 import ru.realite.magic.school.SchoolModifiers;
 import ru.realite.magic.school.SchoolService;
+import ru.realite.magic.service.StaffChargeService.StaffCharges;
+import ru.realite.magic.service.StaffChargeService.StaffItem;
 import ru.realite.magic.gui.SpellSelectMenu;
 import ru.realite.magic.requirements.CheckResult;
 import ru.realite.magic.requirements.DefaultSpellRequirementChecker;
@@ -70,12 +74,15 @@ public final class MagicService {
     private final MagicHudService hudService;
     private final SchoolService schoolService;
     private final MasteryService masteryService;
+    private final ItemModifiersService itemModifiersService;
+    private final StaffChargeService staffChargeService;
     private final Map<UUID, MageState> states = new HashMap<>();
     private final WarnLimiter warnLimiter = new WarnLimiter();
     private final SpellSelectMenu spellSelectMenu;
     private final TargetResolver targetResolver = new TargetResolver();
     private BukkitTask regenTask;
     private boolean itemBridgeWarned;
+    private final boolean failWhenItemsUnavailable;
 
     public MagicService(JavaPlugin plugin,
                         MagicMessages messages,
@@ -100,21 +107,24 @@ public final class MagicService {
         this.hudService = Objects.requireNonNull(hudService, "hudService");
         this.schoolService = new SchoolService(plugin, classesBridge, messages, this::state);
         this.masteryService = Objects.requireNonNull(masteryService, "masteryService");
-        boolean failWhenItemsUnavailable = plugin.getConfig()
+        this.failWhenItemsUnavailable = plugin.getConfig()
                 .getBoolean("requirements.failWhenItemsUnavailable", true);
         this.requirementChecker = new DefaultSpellRequirementChecker(
                 this.itemsBridge,
                 this.classesBridge,
                 this.messages,
                 this::warnMissingItemBridge,
-                failWhenItemsUnavailable);
+                this.failWhenItemsUnavailable);
         this.spellSelectMenu = new SpellSelectMenu(plugin, spellRegistry, playerSpellService, requirementChecker, messages);
+        this.itemModifiersService = new ItemModifiersService(plugin, itemsBridge);
+        this.staffChargeService = new StaffChargeService(itemsBridge);
     }
 
     public void start() {
         if (regenTask != null) {
             return;
         }
+        warnStaffConfiguration();
         regenTask = Bukkit.getScheduler().runTaskTimer(plugin, this::tickRegen, 20L, 20L);
     }
 
@@ -272,6 +282,10 @@ public final class MagicService {
             return fail(player, spell, null, targetType(spell), "magic.cast.cooldown", Map.of("time", time),
                     warnLimited(player, "cooldown"), WARN_WINDOW_MS);
         }
+        CheckResult runeCheck = itemModifiersService.checkRuneSchool(player, spell);
+        if (runeCheck instanceof CheckResult.Fail fail) {
+            return fail(player, spell, null, targetType(spell), fail.reasonKey(), fail.placeholders(), false, 0L);
+        }
         BalanceModifiers modifiers = balanceModifiers(player, spell);
         double effectiveMana = effectiveManaCost(spell, modifiers);
         double currentMana = getMana(player);
@@ -280,12 +294,18 @@ public final class MagicService {
             return fail(player, spell, null, targetType(spell), "magic.cast.no_mana", Map.of("mana", needed),
                     warnLimited(player, "no_mana"), WARN_WINDOW_MS);
         }
+        StaffCastResult staffResult = checkStaffForCast(player, spell);
+        if (staffResult.reasonKey() != null) {
+            return fail(player, spell, null, targetType(spell), staffResult.reasonKey(),
+                    staffResult.placeholders(), warnLimited(player, "staff_fail"), WARN_WINDOW_MS);
+        }
         Optional<SpellTarget> resolvedTarget = targetResolver.resolve(player, spell);
         if (isTargetRequired(spell) && resolvedTarget.isEmpty()) {
             return fail(player, spell, null, targetType(spell), "magic.cast.no_target", Map.of(),
                     warnLimited(player, "no_target"), WARN_WINDOW_MS);
         }
         SpellTarget target = resolvedTarget.orElseGet(() -> new SpellTarget.Self(player));
+        consumeStaffChargesOnCast(player, staffResult);
         consumeRequiredItemOnCast(player, spell);
         addMana(player, -effectiveMana);
         setCooldown(player, GLOBAL_COOLDOWN_KEY, globalCastTicks());
@@ -360,6 +380,10 @@ public final class MagicService {
 
     public ClassesBridge classesBridge() {
         return classesBridge;
+    }
+
+    public StaffChargeService staffChargeService() {
+        return staffChargeService;
     }
 
     public void setSelectedSpell(Player player, String spellId) {
@@ -518,6 +542,99 @@ public final class MagicService {
         itemsBridge.removeItem(player, requiredItemId, 1);
     }
 
+    private StaffCastResult checkStaffForCast(Player player, SpellDefinition spell) {
+        if (!isStaffEnabled()) {
+            return StaffCastResult.ok();
+        }
+        if (itemsBridge instanceof NoopItemsBridge) {
+            warnMissingItemBridge();
+            if (isStaffRequired() && failWhenItemsUnavailable) {
+                return StaffCastResult.fail("magic.cast.items_bridge_missing", Map.of());
+            }
+            return StaffCastResult.ok();
+        }
+        boolean allowOffhand = plugin.getConfig().getBoolean("staff.allowOffhand", true);
+        Optional<StaffItem> staffItem = staffChargeService.findStaff(player, allowOffhand);
+        if (staffItem.isEmpty()) {
+            if (isStaffRequired()) {
+                return StaffCastResult.fail("magic.error.need_focus", Map.of());
+            }
+            return StaffCastResult.ok();
+        }
+        StaffCharges charges = staffChargeService.readCharges(staffItem.get().stack());
+        showStaffCharges(player, charges);
+        int cost = staffChargesCost(spell);
+        if (cost > 0 && charges.current() < cost) {
+            return StaffCastResult.fail("magic.staff.no_charges", Map.of());
+        }
+        return new StaffCastResult(null, Map.of(), staffItem.get(), charges, cost);
+    }
+
+    private void consumeStaffChargesOnCast(Player player, StaffCastResult staffResult) {
+        if (player == null || staffResult == null) {
+            return;
+        }
+        if (staffResult.staffItem() == null || staffResult.cost() <= 0) {
+            return;
+        }
+        if (!plugin.getConfig().getBoolean("staff.consumeChargesOnCast", true)) {
+            return;
+        }
+        int newCharges = Math.max(0, staffResult.charges().current() - staffResult.cost());
+        staffChargeService.writeCharges(player, staffResult.staffItem(), newCharges);
+    }
+
+    private void showStaffCharges(Player player, StaffCharges charges) {
+        if (charges == null) {
+            return;
+        }
+        int max = charges.max() > 0 ? charges.max() : charges.current();
+        hudService.showGeneric(player, messages.msg("magic.staff.charges",
+                "current", String.valueOf(charges.current()),
+                "max", String.valueOf(max)));
+    }
+
+    private boolean isStaffEnabled() {
+        return plugin.getConfig().getBoolean("staff.enabled", true);
+    }
+
+    private boolean isStaffRequired() {
+        return plugin.getConfig().getBoolean("staff.requireStaff", true);
+    }
+
+    private int staffChargesCost(SpellDefinition spell) {
+        if (spell != null && spell.staffChargesCost() != null) {
+            return Math.max(0, spell.staffChargesCost());
+        }
+        int configured = plugin.getConfig().getInt("staff.chargesCostDefault", 1);
+        return Math.max(0, configured);
+    }
+
+    private void warnStaffConfiguration() {
+        if (isStaffEnabled()) {
+            return;
+        }
+        boolean hasStaffCost = spellRegistry.all().stream()
+                .anyMatch(spell -> spell != null && spell.staffChargesCost() != null && spell.staffChargesCost() > 0);
+        if (hasStaffCost) {
+            plugin.getLogger().warning("Staff charges are configured in spells, but staff.enabled=false.");
+        }
+    }
+
+    private record StaffCastResult(@Nullable String reasonKey,
+                                   Map<String, String> placeholders,
+                                   @Nullable StaffItem staffItem,
+                                   @Nullable StaffCharges charges,
+                                   int cost) {
+        private static StaffCastResult ok() {
+            return new StaffCastResult(null, Map.of(), null, null, 0);
+        }
+
+        private static StaffCastResult fail(String reasonKey, Map<String, String> placeholders) {
+            return new StaffCastResult(reasonKey, placeholders, null, null, 0);
+        }
+    }
+
     private void warnMissingItemBridge() {
         if (itemBridgeWarned) {
             return;
@@ -552,10 +669,11 @@ public final class MagicService {
         }
         SchoolModifiers schoolModifiers = schoolService.modifiersFor(player, spell);
         MasteryModifiers masteryModifiers = masteryService.modifiers(player.getUniqueId(), spell.id());
+        ItemModifiers itemModifiers = itemModifiersService.modifiers(player, spell);
         return new BalanceModifiers(
-                schoolModifiers.damageMultiplier() * masteryModifiers.damageMultiplier(),
-                schoolModifiers.manaMultiplier() * masteryModifiers.manaMultiplier(),
-                schoolModifiers.cooldownMultiplier() * masteryModifiers.cooldownMultiplier());
+                schoolModifiers.damageMultiplier() * masteryModifiers.damageMultiplier() * itemModifiers.damageMultiplier(),
+                schoolModifiers.manaMultiplier() * masteryModifiers.manaMultiplier() * itemModifiers.manaMultiplier(),
+                schoolModifiers.cooldownMultiplier() * masteryModifiers.cooldownMultiplier() * itemModifiers.cooldownMultiplier());
     }
 
     private CastAttemptResult checkCastItem(Player player, SpellDefinition spell) {
