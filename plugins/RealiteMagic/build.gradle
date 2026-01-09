@@ -29,7 +29,8 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 tasks.jar {
-    enabled = false
+    enabled = true
+    archiveClassifier.set("plain") // Обычный jar для зависимостей других модулей
 }
 
 tasks.shadowJar {

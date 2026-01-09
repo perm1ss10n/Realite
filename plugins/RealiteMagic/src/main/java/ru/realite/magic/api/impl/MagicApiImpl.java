@@ -16,6 +16,7 @@ public final class MagicApiImpl implements MagicApi {
     private final PlayerSpellsApi playerSpells;
     private final MagicCastingApi casting;
     private final MagicEventsApi events;
+    private final MagicService magicService;
 
     public MagicApiImpl(SpellRegistry registry,
                         PlayerSpellService playerSpellService,
@@ -27,6 +28,7 @@ public final class MagicApiImpl implements MagicApi {
         this.playerSpells = new PlayerSpellsApiImpl(playerSpellService);
         this.casting = new MagicCastingApiImpl(magicService, registry);
         this.events = new MagicEventsApiImpl();
+        this.magicService = magicService;
     }
 
     @Override
@@ -47,5 +49,10 @@ public final class MagicApiImpl implements MagicApi {
     @Override
     public MagicEventsApi events() {
         return events;
+    }
+
+    @Override
+    public int masteryLevel(java.util.UUID playerId, String spellId) {
+        return magicService.masteryService().getProgress(playerId, spellId).level();
     }
 }
