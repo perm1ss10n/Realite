@@ -87,9 +87,9 @@ public final class RealiteMagicPlugin extends JavaPlugin {
     private void registerListeners() {
         Bukkit.getPluginManager().registerEvents(new CombatListener(magicService), this);
         MagicInteractListener interactListener =
-                new MagicInteractListener(magicService, playerSpellService, spellRegistry, messages);
+                new MagicInteractListener(magicService, messages);
         Bukkit.getPluginManager().registerEvents(
-                new PlayerCleanupListener(magicService, playerSpellService, interactListener), this);
+                new PlayerCleanupListener(magicService, playerSpellService), this);
         Bukkit.getPluginManager().registerEvents(
                 new MagicMenuListener(magicService.spellSelectMenu(), spellRegistry, playerSpellService, messages), this);
         Bukkit.getPluginManager().registerEvents(interactListener, this);
