@@ -35,6 +35,9 @@ import ru.realite.magic.integration.guilds.GuildBridge;
 import ru.realite.magic.integration.guilds.NoopGuildBridge;
 import ru.realite.magic.integration.items.ItemsBridge;
 import ru.realite.magic.integration.items.ItemsBridgeFactory;
+import ru.realite.magic.integration.talents.CoreTalentsBridge;
+import ru.realite.magic.integration.talents.NoopTalentsBridge;
+import ru.realite.magic.integration.talents.TalentsBridge;
 import ru.realite.magic.listener.CombatListener;
 import ru.realite.magic.listener.MagicInteractListener;
 import ru.realite.magic.listener.MagicMenuListener;
@@ -106,6 +109,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         playerSpellService = playerSpellServiceImpl;
         ItemsBridge itemsBridge = ItemsBridgeFactory.create();
         ClassesBridge classesBridge = resolveClassesBridge();
+        TalentsBridge talentsBridge = resolveTalentsBridge();
         CityBridge cityBridge = resolveCityBridge();
         GuildBridge guildBridge = resolveGuildBridge();
         debugService = new DebugService(messages);
@@ -119,6 +123,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
                 playerSpellService,
                 itemsBridge,
                 classesBridge,
+                talentsBridge,
                 eventPublisher,
                 effectRegistry,
                 debugService,
@@ -214,6 +219,14 @@ public final class RealiteMagicPlugin extends JavaPlugin {
             return coreBridge;
         }
         return new NoopClassesBridge();
+    }
+
+    private TalentsBridge resolveTalentsBridge() {
+        CoreTalentsBridge coreBridge = new CoreTalentsBridge(getLogger());
+        if (coreBridge.isAvailable()) {
+            return coreBridge;
+        }
+        return new NoopTalentsBridge();
     }
 
     private CityBridge resolveCityBridge() {

@@ -8,6 +8,12 @@ import ru.realite.classes.model.EvolutionDef;
 import ru.realite.classes.model.EvolutionRequirement;
 import ru.realite.classes.model.HiddenClassUnlock;
 import ru.realite.classes.model.ItemAmount;
+import ru.realite.core.api.talents.TalentDefinition;
+import ru.realite.core.api.talents.TalentMagicDefinition;
+import ru.realite.core.api.talents.TalentMagicModifiers;
+import ru.realite.core.api.talents.TalentMagicOnDamage;
+import ru.realite.core.api.talents.TalentMagicPotionEffect;
+import ru.realite.core.api.talents.TalentRequirements;
 
 import java.io.File;
 import java.util.*;
@@ -92,6 +98,7 @@ public class ClassConfigRepository {
     private final File dataFolder;
     private final Map<ClassId, ClassDef> map = new EnumMap<>(ClassId.class);
     private final Map<ClassId, HiddenClassUnlock> hiddenUnlocks = new EnumMap<>(ClassId.class);
+    private final Map<String, TalentDefinition> talents = new HashMap<>();
 
     public ClassConfigRepository(File dataFolder) {
         this.dataFolder = dataFolder;
@@ -102,6 +109,7 @@ public class ClassConfigRepository {
     public void reload() {
         map.clear();
         hiddenUnlocks.clear();
+        talents.clear();
 
         File file = new File(dataFolder, "classes.yml");
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
@@ -144,6 +152,25 @@ public class ClassConfigRepository {
             }
 
             map.put(id, new ClassDef(id, icon, name, lore, effects, xpPerLevel, xpPerMoney, evolutions, hidden, req));
+        }
+
+        ConfigurationSection talentSection = yml.getConfigurationSection("talents");
+        if (talentSection != null) {
+            for (String key : talentSection.getKeys(false)) {
+                ConfigurationSection s = talentSection.getConfigurationSection(key);
+                if (s == null) {
+                    continue;
+                }
+                String id = normalizeId(s.getString("id", key));
+                if (id == null) {
+                    continue;
+                }
+                String nameKey = s.getString("nameKey", "talents." + id + ".name");
+                String descriptionKey = s.getString("descriptionKey", "talents." + id + ".desc");
+                TalentRequirements requirements = parseTalentRequirements(s.getConfigurationSection("requirements"));
+                TalentMagicDefinition magic = parseTalentMagic(s.getConfigurationSection("magic"));
+                talents.put(id, new TalentDefinition(id, nameKey, descriptionKey, requirements, magic));
+            }
         }
 
         ConfigurationSection hiddenClasses = yml.getConfigurationSection("hiddenClasses");
@@ -220,6 +247,74 @@ public class ClassConfigRepository {
         return out;
     }
 
+    private TalentRequirements parseTalentRequirements(ConfigurationSection section) {
+        if (section == null) {
+            return null;
+        }
+        String classId = trim(section.getString("classId"));
+        String evolutionId = trim(section.getString("evolutionId"));
+        if (classId == null && evolutionId == null) {
+            return null;
+        }
+        return new TalentRequirements(classId, evolutionId);
+    }
+
+    private TalentMagicDefinition parseTalentMagic(ConfigurationSection section) {
+        if (section == null) {
+            return null;
+        }
+        String school = trim(section.getString("school"));
+        String delivery = trim(section.getString("delivery"));
+        String effect = trim(section.getString("effect"));
+        TalentMagicModifiers modifiers = parseTalentModifiers(section.getConfigurationSection("modifiers"));
+        TalentMagicOnDamage onDamage = parseTalentOnDamage(section.getConfigurationSection("onDamage"));
+        return new TalentMagicDefinition(school, delivery, effect, modifiers, onDamage);
+    }
+
+    private TalentMagicModifiers parseTalentModifiers(ConfigurationSection section) {
+        if (section == null) {
+            return TalentMagicModifiers.identity();
+        }
+        double damage = section.getDouble("damageMultiplier", 1.0);
+        double mana = section.getDouble("manaMultiplier", 1.0);
+        double cooldown = section.getDouble("cooldownMultiplier", 1.0);
+        return new TalentMagicModifiers(damage, mana, cooldown);
+    }
+
+    private TalentMagicOnDamage parseTalentOnDamage(ConfigurationSection section) {
+        if (section == null) {
+            return null;
+        }
+        double chance = section.getDouble("chance", 0.0);
+        TalentMagicPotionEffect potion = null;
+        ConfigurationSection applyPotion = section.getConfigurationSection("applyPotion");
+        if (applyPotion != null) {
+            String effect = trim(applyPotion.getString("effect"));
+            int duration = applyPotion.getInt("durationTicks", 0);
+            int amplifier = applyPotion.getInt("amplifier", 0);
+            if (effect != null) {
+                potion = new TalentMagicPotionEffect(effect, duration, amplifier);
+            }
+        }
+        return new TalentMagicOnDamage(chance, potion);
+    }
+
+    private String normalizeId(String raw) {
+        String id = trim(raw);
+        if (id == null) {
+            return null;
+        }
+        return id.toLowerCase(java.util.Locale.ROOT);
+    }
+
+    private String trim(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String trimmed = raw.trim();
+        return trimmed.isBlank() ? null : trimmed;
+    }
+
     private static String str(Object o) {
         return o == null ? null : String.valueOf(o);
     }
@@ -274,5 +369,16 @@ public class ClassConfigRepository {
 
     public HiddenClassUnlock getHiddenUnlock(ClassId id) {
         return hiddenUnlocks.get(id);
+    }
+
+    public TalentDefinition getTalent(String id) {
+        if (id == null) {
+            return null;
+        }
+        return talents.get(id.toLowerCase(java.util.Locale.ROOT));
+    }
+
+    public Collection<TalentDefinition> talents() {
+        return talents.values();
     }
 }
