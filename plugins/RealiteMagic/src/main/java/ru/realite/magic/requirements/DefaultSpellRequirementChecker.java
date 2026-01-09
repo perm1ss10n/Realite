@@ -3,7 +3,7 @@ package ru.realite.magic.requirements;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.Player;
 import ru.realite.magic.integration.classes.ClassesBridge;
 import ru.realite.magic.integration.items.ItemsBridge;
@@ -14,22 +14,25 @@ import ru.realite.magic.spell.SpellRequirements;
 
 public final class DefaultSpellRequirementChecker implements SpellRequirementChecker {
 
-    private static final LegacyComponentSerializer LEGACY =
-            LegacyComponentSerializer.legacyAmpersand();
+    private static final PlainTextComponentSerializer PLAIN =
+            PlainTextComponentSerializer.plainText();
 
     private final ItemsBridge itemsBridge;
     private final ClassesBridge classesBridge;
     private final MagicMessages messages;
     private final Runnable missingItemBridgeWarning;
+    private final boolean failWhenItemsUnavailable;
 
     public DefaultSpellRequirementChecker(ItemsBridge itemsBridge,
                                           ClassesBridge classesBridge,
                                           MagicMessages messages,
-                                          Runnable missingItemBridgeWarning) {
+                                          Runnable missingItemBridgeWarning,
+                                          boolean failWhenItemsUnavailable) {
         this.itemsBridge = itemsBridge;
         this.classesBridge = classesBridge;
         this.messages = Objects.requireNonNull(messages, "messages");
         this.missingItemBridgeWarning = missingItemBridgeWarning;
+        this.failWhenItemsUnavailable = failWhenItemsUnavailable;
     }
 
     @Override
@@ -46,10 +49,13 @@ public final class DefaultSpellRequirementChecker implements SpellRequirementChe
 
         String classId = requirements.classId();
         if (classId != null && !classId.isBlank()) {
-            placeholders.put("class", LEGACY.serialize(classesBridge.displayClassName(classId)));
-            String activeClassId = classesBridge.getActiveClassId(player);
-            if (activeClassId == null) {
+            placeholders.put("class", PLAIN.serialize(classesBridge.displayClassName(classId)));
+            if (!classesBridge.isAvailable()) {
                 return new CheckResult.Fail(RequirementReasons.MISSING_CLASS_MODULE, placeholders);
+            }
+            String activeClassId = classesBridge.getActiveClassId(player);
+            if (activeClassId == null || activeClassId.isBlank()) {
+                return new CheckResult.Fail(RequirementReasons.NO_CLASS_SELECTED, placeholders);
             }
             if (!activeClassId.equalsIgnoreCase(classId)) {
                 return new CheckResult.Fail(RequirementReasons.CLASS_MISMATCH, placeholders);
@@ -57,10 +63,13 @@ public final class DefaultSpellRequirementChecker implements SpellRequirementChe
         }
         String evolutionId = requirements.evolutionId();
         if (evolutionId != null && !evolutionId.isBlank()) {
-            placeholders.put("evolution", LEGACY.serialize(classesBridge.displayEvolutionName(evolutionId)));
+            placeholders.put("evolution", PLAIN.serialize(classesBridge.displayEvolutionName(evolutionId)));
+            if (!classesBridge.isAvailable()) {
+                return new CheckResult.Fail(RequirementReasons.MISSING_CLASS_MODULE, placeholders);
+            }
             String activeEvolutionId = classesBridge.getActiveEvolutionId(player);
-            if (activeEvolutionId == null) {
-                return new CheckResult.Fail(RequirementReasons.EVOLUTION_MISSING, placeholders);
+            if (activeEvolutionId == null || activeEvolutionId.isBlank()) {
+                return new CheckResult.Fail(RequirementReasons.NO_EVOLUTION, placeholders);
             }
             if (!activeEvolutionId.equalsIgnoreCase(evolutionId)) {
                 return new CheckResult.Fail(RequirementReasons.EVOLUTION_MISMATCH, placeholders);
@@ -71,6 +80,9 @@ public final class DefaultSpellRequirementChecker implements SpellRequirementChe
         if (requiredItemId != null && !requiredItemId.isBlank()) {
             placeholders.put("item", resolveItemName(requiredItemId));
             if (itemsBridge instanceof NoopItemsBridge) {
+                if (failWhenItemsUnavailable) {
+                    return new CheckResult.Fail(RequirementReasons.MISSING_ITEMS_MODULE, placeholders);
+                }
                 if (missingItemBridgeWarning != null) {
                     missingItemBridgeWarning.run();
                 }
@@ -82,6 +94,6 @@ public final class DefaultSpellRequirementChecker implements SpellRequirementChe
     }
 
     private String resolveItemName(String requiredItemId) {
-        return LEGACY.serialize(itemsBridge.displayName(requiredItemId));
+        return PLAIN.serialize(itemsBridge.displayName(requiredItemId));
     }
 }

@@ -10,16 +10,22 @@ public final class PlayerCleanupListener implements Listener {
 
     private final MagicService magicService;
     private final PlayerSpellService playerSpellService;
+    private final MagicInteractListener interactListener;
 
-    public PlayerCleanupListener(MagicService magicService, PlayerSpellService playerSpellService) {
+    public PlayerCleanupListener(MagicService magicService,
+                                 PlayerSpellService playerSpellService,
+                                 MagicInteractListener interactListener) {
         this.magicService = magicService;
         this.playerSpellService = playerSpellService;
+        this.interactListener = interactListener;
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        playerSpellService.flush(event.getPlayer().getUniqueId());
-        playerSpellService.evict(event.getPlayer().getUniqueId());
+        var playerId = event.getPlayer().getUniqueId();
+        playerSpellService.flush(playerId);
+        playerSpellService.evict(playerId);
         magicService.cleanup(event.getPlayer());
+        interactListener.clearWarnings(playerId);
     }
 }

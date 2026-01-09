@@ -18,6 +18,9 @@ casting:
   cooldownFormat: "0.0"
   giveItemMessage: true
 
+requirements:
+  failWhenItemsUnavailable: true
+
 menu:
   spellSelect:
     titleKey: "magic.gui.title"
