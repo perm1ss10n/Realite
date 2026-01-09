@@ -17,6 +17,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.magic.effect.EffectExecutorRegistry;
 import ru.realite.magic.effect.SpellEffectDefinition;
+import ru.realite.magic.school.MagicSchool;
 import ru.realite.magic.target.SpellTargetDefinition;
 import ru.realite.magic.target.SpellTargetType;
 import ru.realite.magic.validation.SchemaError;
@@ -85,7 +86,7 @@ public final class SpellRegistry {
                         Map.of("field", "spell"));
                 continue;
             }
-            SpellDefinition def = parseSpell(root, defaultIconMaterial);
+            SpellDefinition def = parseSpell(root, defaultIconMaterial, file.getName());
             SchemaReport schemaReport = validator.validate(def, file.getName());
             addSchemaErrors(errors, schemaReport);
             if (!schemaReport.ok()) {
@@ -124,12 +125,14 @@ public final class SpellRegistry {
     }
 
     private SpellDefinition parseSpell(ConfigurationSection section,
-                                       Material defaultIconMaterial) {
+                                       Material defaultIconMaterial,
+                                       String fileName) {
         String id = section.getString("id");
         String typeRaw = section.getString("type");
         SpellType type = parseSpellType(typeRaw);
         String nameKey = section.getString("nameKey");
         String descKey = section.getString("descKey");
+        MagicSchool school = parseMagicSchool(section, id, fileName);
         double mana = section.getDouble("mana", -1);
         long cooldownTicks = section.getLong("cooldownTicks", -1);
         double range = section.getDouble("range", -1);
@@ -145,7 +148,7 @@ public final class SpellRegistry {
                 defaultIconMaterial);
         Integer iconCustomModelData = parseIconCustomModelData(section.getConfigurationSection("icon"));
         Integer guiSlot = parseGuiSlot(section.getConfigurationSection("gui"));
-        return new SpellDefinition(id, type, nameKey, descKey, mana, cooldownTicks, range, damage, requirements,
+        return new SpellDefinition(id, type, nameKey, descKey, school, mana, cooldownTicks, range, damage, requirements,
                 target, effects, castTrigger, castItemId, giveItem.id(), giveItem.amount(), iconMaterial,
                 iconCustomModelData, guiSlot);
     }
@@ -325,6 +328,23 @@ public final class SpellRegistry {
         } catch (IllegalArgumentException ex) {
             return null;
         }
+    }
+
+    private MagicSchool parseMagicSchool(ConfigurationSection section, String spellId, String fileName) {
+        if (section == null) {
+            return MagicSchool.NONE;
+        }
+        boolean hasSchool = section.isSet("school");
+        String schoolRaw = section.getString("school");
+        if (!hasSchool) {
+            plugin.getLogger().warning("Spell '" + spellId + "' in " + fileName
+                    + " missing school field, defaulting to NONE.");
+            return MagicSchool.NONE;
+        }
+        if (schoolRaw == null || schoolRaw.isBlank()) {
+            return null;
+        }
+        return MagicSchool.fromString(schoolRaw);
     }
 
     private void addSchemaErrors(List<SpellLoadError> errors, SchemaReport report) {
