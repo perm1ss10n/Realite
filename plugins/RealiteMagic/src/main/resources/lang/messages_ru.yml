@@ -4,7 +4,7 @@ format:
 magic:
   enabled: "{prefix}&aПлагин RealiteMagic включён."
   cmd:
-    usage: "&eИспользование: &f/rmagic <menu|spell|spells|mana|debug>"
+    usage: "&eИспользование: &f/rmagic <menu|spell|spells|mana|debug|slot>"
     player_not_found: "&cИгрок не найден: &f{player}"
     debug:
       usage: "&eИспользование: &f/rmagic debug <on|off|cast|stats> [player]"
@@ -59,9 +59,11 @@ magic:
         effect_target_mismatch: "&cЭффект #{index} ({type}): target {target} не совместим с target заклинания {spellTarget}."
         unknown: "&cНеизвестная ошибка."
       no_errors: "&aОшибок не найдено."
+    slot:
+      usage: "&eИспользование: &f/rmagic slot <set|clear|use> <1-9> [spellId]"
   command:
     usage:
-      root: "&eИспользование: &f/rmagic <menu|spell|spells|mana|debug>"
+      root: "&eИспользование: &f/rmagic <menu|spell|spells|mana|debug|slot>"
       spell: "&eИспользование: &f/rmagic spell <select|clear|get> [player] [spellId]"
     only-player: "{prefix}&cКоманда доступна только игрокам."
     spell:
@@ -79,6 +81,10 @@ magic:
       no_permission: "&cНет прав."
       player_not_found: "&cИгрок не найден: &f{player}"
       only_players: "&cКоманда доступна только игрокам."
+  bar:
+    slot:
+      changed: "{prefix}&dСлот {slot}: &f{spell}"
+      empty: "{prefix}&dСлот {slot}: &7пусто"
   need-focus: "{prefix}&cНужен фокус-предмет для каста."
   menu:
     title: "&5Выбор заклинания"
@@ -110,6 +116,7 @@ magic:
     need_focus: "&cНужен магический фокус в руке."
   cast:
     no_selected: "&cТы не выбрал заклинание."
+    slot_empty: "&cВ активном слоте нет заклинания."
     cooldown: "&cПодожди {time}с."
     no_mana: "&cНе хватает маны: &f{mana}"
     no_target: "&cНет подходящей цели."
@@ -157,6 +164,13 @@ magic:
     warlock_ray:
       name: "&5Луч Тьмы"
       desc: "&7Пронзающий луч наносит магический урон."
+  slot:
+    set:
+      ok: "{prefix}&aЗаклинание привязано к слоту."
+      fail: "{prefix}&cНе удалось привязать заклинание к слоту."
+    clear:
+      ok: "{prefix}&eСлот очищен."
+    invalid: "{prefix}&cНеверный слот: &f{slot}"
   require:
     missing_class_module: "&cМодуль классов недоступен."
     no_class_selected: "&cКласс не выбран."

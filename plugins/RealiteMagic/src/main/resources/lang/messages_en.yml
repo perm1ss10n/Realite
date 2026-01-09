@@ -4,7 +4,7 @@ format:
 magic:
   enabled: "{prefix}&aRealiteMagic plugin enabled."
   cmd:
-    usage: "&eUsage: &f/rmagic <menu|spell|spells|mana|debug>"
+    usage: "&eUsage: &f/rmagic <menu|spell|spells|mana|debug|slot>"
     player_not_found: "&cPlayer not found: &f{player}"
     debug:
       usage: "&eUsage: &f/rmagic debug <on|off|cast|stats> [player]"
@@ -59,9 +59,11 @@ magic:
         effect_target_mismatch: "&cEffect #{index} ({type}): target {target} does not match spell target {spellTarget}."
         unknown: "&cUnknown error."
       no_errors: "&aNo errors found."
+    slot:
+      usage: "&eUsage: &f/rmagic slot <set|clear|use> <1-9> [spellId]"
   command:
     usage:
-      root: "&eUsage: &f/rmagic <menu|spell|spells|mana|debug>"
+      root: "&eUsage: &f/rmagic <menu|spell|spells|mana|debug|slot>"
       spell: "&eUsage: &f/rmagic spell <select|clear|get> [player] [spellId]"
     only-player: "{prefix}&cCommand is only for players."
     spell:
@@ -79,6 +81,10 @@ magic:
       no_permission: "&cNo permission."
       player_not_found: "&cPlayer not found: &f{player}"
       only_players: "&cCommand is only for players."
+  bar:
+    slot:
+      changed: "{prefix}&dSlot {slot}: &f{spell}"
+      empty: "{prefix}&dSlot {slot}: &7empty"
   need-focus: "{prefix}&cYou need a focus item to cast."
   menu:
     title: "&5Select spell"
@@ -110,6 +116,7 @@ magic:
     need_focus: "&cYou need a magic focus in hand."
   cast:
     no_selected: "&cNo spell selected."
+    slot_empty: "&cThere is no spell in the active slot."
     cooldown: "&cWait {time}s."
     no_mana: "&cNot enough mana: &f{mana}"
     no_target: "&cNo valid target."
@@ -157,6 +164,13 @@ magic:
     warlock_ray:
       name: "&5Shadow Ray"
       desc: "&7A piercing ray that deals magic damage."
+  slot:
+    set:
+      ok: "{prefix}&aSpell bound to slot."
+      fail: "{prefix}&cFailed to bind spell to slot."
+    clear:
+      ok: "{prefix}&eSlot cleared."
+    invalid: "{prefix}&cInvalid slot: &f{slot}"
   require:
     missing_class_module: "&cClass module is unavailable."
     no_class_selected: "&cYou have no class selected."

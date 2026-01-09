@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import javax.annotation.Nullable;
 import ru.realite.magic.api.event.SpellSelectedEvent;
 import ru.realite.magic.api.event.SpellUnlockedEvent;
 import ru.realite.magic.integration.events.MagicEventPublisher;
@@ -20,6 +21,9 @@ import ru.realite.magic.spell.SpellRegistry;
 import ru.realite.magic.storage.PlayerSpellStorage;
 
 public final class PlayerSpellServiceImpl implements PlayerSpellService {
+
+    private static final String SLOT_INVALID = "magic.slot.invalid";
+    private static final String SLOT_SET_FAIL = "magic.slot.set.fail";
 
     private final PlayerSpellStorage storage;
     private final SpellRegistry registry;
@@ -72,12 +76,15 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
             return new RevokeResult.Ok(false);
         }
         data.unlearn(normalized);
-        data.selected().ifPresent(selected -> {
-            if (selected.equals(normalized)) {
-                data.selected(null);
-            }
-        });
         markDirty(playerId);
+        boolean removedFromSlots = clearSlotsForSpell(data, normalized);
+        if (removedFromSlots) {
+            markDirty(playerId);
+        }
+        String selected = data.selected().orElse(null);
+        if (selected != null && selected.equals(normalized)) {
+            updateSelected(playerId, data, null);
+        }
         return new RevokeResult.Ok(true);
     }
 
@@ -104,10 +111,10 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
         if (!data.isLearned(normalized)) {
             return new SelectResult.Fail(SpellActionReason.NOT_LEARNED);
         }
-        String previous = data.selected().orElse(null);
-        data.selected(normalized);
+        int activeSlot = data.activeSlot();
+        data.slot(activeSlot, normalized);
         markDirty(playerId);
-        eventPublisher.publish(new SpellSelectedEvent(playerId, previous, normalized));
+        updateSelected(playerId, data, normalized);
         return new SelectResult.Ok();
     }
 
@@ -118,9 +125,69 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
         if (previous == null) {
             return;
         }
-        data.selected(null);
+        int activeSlot = data.activeSlot();
+        data.slot(activeSlot, null);
         markDirty(playerId);
-        eventPublisher.publish(new SpellSelectedEvent(playerId, previous, null));
+        updateSelected(playerId, data, null);
+    }
+
+    @Override
+    public Optional<String> getSlot(UUID playerId, int slot) {
+        return data(playerId).slot(slot);
+    }
+
+    @Override
+    public SetSlotResult setSlot(UUID playerId, int slot, @Nullable String spellId) {
+        if (!isValidSlot(slot)) {
+            return new SetSlotResult.Fail(SLOT_INVALID);
+        }
+        String normalized = normalize(spellId);
+        PlayerSpellData data = data(playerId);
+        if (normalized != null) {
+            if (resolveSpell(normalized) == null) {
+                return new SetSlotResult.Fail(SLOT_SET_FAIL);
+            }
+            if (!data.isLearned(normalized)) {
+                return new SetSlotResult.Fail(SLOT_SET_FAIL);
+            }
+        }
+        String previous = data.slot(slot).orElse(null);
+        if (Objects.equals(previous, normalized)) {
+            return new SetSlotResult.Ok();
+        }
+        data.slot(slot, normalized);
+        markDirty(playerId);
+        if (data.activeSlot() == slot) {
+            updateSelected(playerId, data, normalized);
+        }
+        return new SetSlotResult.Ok();
+    }
+
+    @Override
+    public int getActiveSlot(UUID playerId) {
+        return data(playerId).activeSlot();
+    }
+
+    @Override
+    public SetActiveSlotResult setActiveSlot(UUID playerId, int slot) {
+        if (!isValidSlot(slot)) {
+            return new SetActiveSlotResult.Fail(SLOT_INVALID);
+        }
+        PlayerSpellData data = data(playerId);
+        if (data.activeSlot() == slot) {
+            return new SetActiveSlotResult.Ok();
+        }
+        data.activeSlot(slot);
+        markDirty(playerId);
+        String spellId = data.slot(slot).orElse(null);
+        updateSelected(playerId, data, spellId);
+        return new SetActiveSlotResult.Ok();
+    }
+
+    @Override
+    public Optional<String> getActiveSlotSpell(UUID playerId) {
+        PlayerSpellData data = data(playerId);
+        return data.slot(data.activeSlot());
     }
 
     @Override
@@ -157,6 +224,32 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
 
     private void markDirty(UUID playerId) {
         dirty.add(playerId);
+    }
+
+    private boolean isValidSlot(int slot) {
+        return slot >= 1 && slot <= 9;
+    }
+
+    private void updateSelected(UUID playerId, PlayerSpellData data, @Nullable String next) {
+        String previous = data.selected().orElse(null);
+        if (Objects.equals(previous, next)) {
+            return;
+        }
+        data.selected(next);
+        markDirty(playerId);
+        eventPublisher.publish(new SpellSelectedEvent(playerId, previous, next));
+    }
+
+    private boolean clearSlotsForSpell(PlayerSpellData data, String spellId) {
+        boolean changed = false;
+        for (int slot = 1; slot <= 9; slot++) {
+            Optional<String> current = data.slot(slot);
+            if (current.isPresent() && current.get().equals(spellId)) {
+                data.slot(slot, null);
+                changed = true;
+            }
+        }
+        return changed;
     }
 
     private SpellDefinition resolveSpell(String spellId) {
