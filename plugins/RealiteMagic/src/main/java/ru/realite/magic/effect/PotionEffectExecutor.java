@@ -4,12 +4,26 @@ import java.util.Map;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import java.util.Locale;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 
 public final class PotionEffectExecutor implements SpellEffectExecutor {
 
     @Override
     public String type() {
         return "potion";
+    }
+
+    private static PotionEffectType resolvePotionType(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String key = raw.trim().toLowerCase(Locale.ROOT);
+        if (key.isBlank()) {
+            return null;
+        }
+        return Registry.POTION_EFFECT_TYPE.get(NamespacedKey.minecraft(key));
     }
 
     @Override
@@ -21,7 +35,7 @@ public final class PotionEffectExecutor implements SpellEffectExecutor {
             return EffectValidationResult.fail("magic.cmd.spells.errors.effect_missing_param",
                     Map.of("type", def.type(), "param", "effect"));
         }
-        if (effectName == null || PotionEffectType.getByName(effectName.toUpperCase()) == null) {
+        if (effectName == null || resolvePotionType(effectName) == null) {
             return EffectValidationResult.fail("magic.cmd.spells.errors.effect_invalid_param",
                     Map.of("type", def.type(), "param", "effect", "value", String.valueOf(effectRaw)));
         }
@@ -65,7 +79,7 @@ public final class PotionEffectExecutor implements SpellEffectExecutor {
     public void execute(EffectContext ctx, SpellEffectDefinition def) {
         Map<String, Object> params = def.params();
         String effectName = EffectParamUtils.stringParam(params, "effect");
-        PotionEffectType type = effectName == null ? null : PotionEffectType.getByName(effectName.toUpperCase());
+        PotionEffectType type = resolvePotionType(effectName);
         Integer duration = EffectParamUtils.intParam(params, "durationTicks");
         Integer amplifier = EffectParamUtils.intParam(params, "amplifier");
         if (type == null || duration == null || amplifier == null || duration <= 0 || amplifier < 0) {

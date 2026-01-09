@@ -53,9 +53,6 @@ public final class HealEffectExecutor implements SpellEffectExecutor {
 
     private double maxHealth(LivingEntity target) {
         AttributeInstance attribute = target.getAttribute(Attribute.GENERIC_MAX_HEALTH);
-        if (attribute != null) {
-            return attribute.getValue();
-        }
-        return target.getMaxHealth();
+        return attribute != null ? attribute.getValue() : 0.0;
     }
 }

@@ -4,9 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionEffectTypeCategory;
 
 public final class CleanseEffectExecutor implements SpellEffectExecutor {
 
@@ -26,7 +30,8 @@ public final class CleanseEffectExecutor implements SpellEffectExecutor {
         boolean hasRemoveNegative = params.get("removeNegative") != null;
         if (hasRemoveNegative && EffectParamUtils.booleanParam(params, "removeNegative") == null) {
             return EffectValidationResult.fail("magic.cmd.spells.errors.effect_invalid_param",
-                    Map.of("type", def.type(), "param", "removeNegative", "value", String.valueOf(params.get("removeNegative"))));
+                    Map.of("type", def.type(), "param", "removeNegative", "value",
+                            String.valueOf(params.get("removeNegative"))));
         }
         Object removeRaw = params.get("remove");
         if (removeRaw != null) {
@@ -36,7 +41,7 @@ public final class CleanseEffectExecutor implements SpellEffectExecutor {
                         Map.of("type", def.type(), "param", "remove", "value", String.valueOf(removeRaw)));
             }
             for (String name : removeList) {
-                if (PotionEffectType.getByName(name.toUpperCase(Locale.ROOT)) == null) {
+                if (resolvePotionType(name) == null) {
                     return EffectValidationResult.fail("magic.cmd.spells.errors.effect_invalid_param",
                             Map.of("type", def.type(), "param", "remove", "value", name));
                 }
@@ -61,7 +66,7 @@ public final class CleanseEffectExecutor implements SpellEffectExecutor {
         for (LivingEntity target : EffectTargetResolver.resolveTargets(ctx.plan(), mode)) {
             if (removeList != null && !removeList.isEmpty()) {
                 for (String name : removeList) {
-                    PotionEffectType type = PotionEffectType.getByName(name.toUpperCase(Locale.ROOT));
+                    PotionEffectType type = resolvePotionType(name);
                     if (type != null) {
                         target.removePotionEffect(type);
                     }
@@ -71,12 +76,20 @@ public final class CleanseEffectExecutor implements SpellEffectExecutor {
             if (removeNegative) {
                 for (PotionEffect effect : target.getActivePotionEffects()) {
                     PotionEffectType type = effect.getType();
-                    if (!type.isBeneficial()) {
+                    if (type.getCategory() == PotionEffectTypeCategory.HARMFUL) {
                         target.removePotionEffect(type);
                     }
                 }
             }
         }
+    }
+
+    private static PotionEffectType resolvePotionType(String name) {
+        if (name == null) {
+            return null;
+        }
+        NamespacedKey key = NamespacedKey.minecraft(name.toLowerCase(Locale.ROOT));
+        return Registry.POTION_EFFECT_TYPE.get(key);
     }
 
     private List<String> parseRemoveList(Object raw) {

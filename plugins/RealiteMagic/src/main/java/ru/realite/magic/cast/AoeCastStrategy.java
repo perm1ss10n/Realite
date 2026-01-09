@@ -81,7 +81,7 @@ public final class AoeCastStrategy implements CastStrategy {
             double x = center.getX() + Math.cos(angle) * radius;
             double z = center.getZ() + Math.sin(angle) * radius;
             Location particleLocation = new Location(world, x, center.getY() + 0.1, z);
-            world.spawnParticle(Particle.SPELL_WITCH, particleLocation, 1, 0, 0, 0, 0);
+            world.spawnParticle(Particle.WITCH, particleLocation, 1, 0, 0, 0, 0);
         }
     }
 }
