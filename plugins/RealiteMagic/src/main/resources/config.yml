@@ -44,6 +44,39 @@ limits:
   maxBeamDistance: 30
   maxProjectileDistance: 40
 
+pve:
+  enabled: true
+
+  defaults:
+    damageTakenMultiplier: 1.0
+    schoolDamageTaken:
+      WARLOCK: 1.0
+      FIRE: 1.0
+      FROST: 1.0
+      HOLY: 1.0
+
+  byEntityType:
+    SKELETON:
+      schoolDamageTaken:
+        HOLY: 0.8
+        FIRE: 1.1
+      immunePotionEffects: [SLOW]
+
+  byTag:
+    boss:
+      damageTakenMultiplier: 0.7
+      schoolDamageTaken:
+        WARLOCK: 0.6
+        HOLY: 1.2
+      immuneEffects: [knockback, pull]
+      maxHitsPerWindow: 6
+      windowMs: 2000
+
+    elite:
+      damageTakenMultiplier: 0.85
+      maxHitsPerWindow: 10
+      windowMs: 2000
+
 staff:
   enabled: true
   requireStaff: true

@@ -11,6 +11,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionEffectTypeCategory;
+import ru.realite.magic.pve.PveService;
 
 public final class CleanseEffectExecutor implements SpellEffectExecutor {
 
@@ -63,7 +64,11 @@ public final class CleanseEffectExecutor implements SpellEffectExecutor {
         }
         List<String> removeList = parseRemoveList(params.get("remove"));
         boolean removeNegative = Boolean.TRUE.equals(EffectParamUtils.booleanParam(params, "removeNegative"));
+        PveService pveService = ctx.magicService().pveService();
         for (LivingEntity target : EffectTargetResolver.resolveTargets(ctx.plan(), mode)) {
+            if (pveService.isEffectImmune(def, ctx.spell(), target)) {
+                continue;
+            }
             if (removeList != null && !removeList.isEmpty()) {
                 for (String name : removeList) {
                     PotionEffectType type = resolvePotionType(name);
