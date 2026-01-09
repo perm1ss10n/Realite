@@ -1,261 +1,138 @@
-🌍 **Language:** English \| [Русский](README.ru.md)
+🌍 **Language:** English | [Русский](README.ru.md)
 
-# 🧩 Realite --- Minecraft RPG Platform
+# 🧩 Realite — Minecraft RPG Platform
 
-**Realite** is a modular RPG platform for Minecraft (Paper), built as a
-set of interconnected plugins unified by a shared core.
+**Realite** is a modular RPG platform for Minecraft (**Paper**), built as a set of
+interconnected plugins unified by a shared core (**RealiteCore**).
 
 The project focuses on:
 
--   long-term player progression
--   deep RPG systems (classes, evolutions, economy, cities, guilds,
-    quests, items, magic)
--   scalability without constant refactoring
--   clean architecture and developer-friendly design
--   unified CI and monorepo workflow
+- long-term player progression
+- deep RPG systems (classes, evolutions, economy, cities, guilds, quests, items, magic)
+- scalability without constant refactoring
+- clean architecture and developer-friendly design
+- monorepo workflow (all modules developed & versioned together)
 
-The repository uses a **monorepo approach**: all plugins are developed
-and versioned together.
-
-------------------------------------------------------------------------
+---
 
 ## 🧠 Project Architecture
 
-    Realite/
-    ├── RealiteCore/        # Platform core (API / services / integrations)
-    ├── plugins/            # Gameplay modules (plugins)
-    │   ├── RealiteClasses/             # RPG classes and progression
-    │   ├── RealiteChat/                # Chat formatting and tags
-    │   ├── RealiteGuilds/              # Player guilds
-    │   ├── RealiteCityInfrastructure/  # Cities, plots, shops, market
-    │   ├── RealiteQuests/              # Quests and lore
-    │   ├── RealiteItems/               # Custom items & item API
-    │   └── RealiteMagic/               # Magic system and spells
-    ├── build.gradle
-    ├── settings.gradle
-    └── README.md
+```
+Realite/
+├── RealiteCore/                        # Platform core (API / services / bridges)
+└── plugins/
+    ├── RealiteClasses/                 # RPG classes, evolutions, mastery (integration hooks)
+    ├── RealiteChat/                    # Chat formatting + guild chat bridge
+    ├── RealiteGuilds/                  # Guilds, ranks, progression, bonuses
+    ├── RealiteCityInfrastructure/      # Cities, plots, shops, market, region rules
+    ├── RealiteQuests/                  # Quest engine + content packs
+    ├── RealiteItems/                   # Custom items system + Items API/Bridge
+    └── RealiteMagic/                   # Spell system, casting engine, schools, reagents, HUD
+```
 
 ### 🔑 Core Idea
 
--   **RealiteCore** is the single source of truth (API & services)
--   gameplay modules live in `plugins/*` and **do not depend on each
-    other directly**
--   interaction happens strictly through Core APIs
--   each module can evolve independently
+- **RealiteCore** is the single source of truth (APIs, shared services, bridge contracts)
+- modules should **not** depend on each other directly
+- integrations happen via **bridges/interfaces** provided by the Core (or module APIs)
+- modules can be added/removed and iterated independently
 
-------------------------------------------------------------------------
+---
 
-## 🧱 Modules
+## ✨ Current Gameplay Systems
 
-### ⚙ RealiteCore
+> Realite is still evolving — the goal is a coherent, extensible RPG ecosystem, not a one-off plugin dump.
 
-The heart of the platform.
+### 🧬 Classes & Progression (RealiteClasses)
+- class selection via GUI
+- XP/levels and progression rules
+- evolutions / branching paths
+- mastery modifiers & balance hooks
+- integrations for magic, items, quests, guilds
 
-Responsibilities:
+### 🎒 Custom Items (RealiteItems)
+A centralized item provider for the whole platform.
 
--   shared services and APIs
--   common utilities and contracts
--   integrations (Vault, PlaceholderAPI, etc.)
--   module lifecycle management
--   unified localization system
--   base gameplay contracts (Items, Magic, Quests, Guilds)
+- YAML-defined item registry (stable item IDs)
+- supports:
+  - `material`
+  - `customModelData`
+  - localized name & lore keys
+  - glow
+  - unstackable items
+- strict identification (server-side, not “guessing by name”)
+- public integration surface through an `ItemsBridge`
 
-------------------------------------------------------------------------
+### 🔮 Magic & Spells (RealiteMagic)
+Spell casting system designed for expansion and balance.
 
-### 🧬 plugins/RealiteClasses
+- spell registry (YAML-driven definitions)
+- casting checks:
+  - permissions
+  - cooldowns (global + per-spell)
+  - mana cost
+  - staff/focus requirement (optional)
+  - reagents requirement (optional)
+  - economy cost (optional)
+  - region policies (deny/allow + modifiers)
+- spell targeting & delivery:
+  - self / entity / block / location
+  - instant, AOE, chain (depending on the spell)
+- effect execution pipeline (executor registry)
+  - supports pluggable effect types (e.g. particles/knockback/potions/etc.)
+- HUD feedback for success/fail + diagnostics logging
+- safe “smoke tests” (optional debug mode)
 
-A full-featured RPG class system.
+### 🏰 Cities, Guilds, Quests
+- **Guilds**: ranks, progression and hooks for bonuses
+- **City infrastructure**: plots/shops/market scaffolding + region rules
+- **Quests**: quest engine + content packs and integration hooks
 
-Features:
+---
 
--   class selection via GUI
--   XP and leveling
--   evolutions and progression branches
--   class passives and effects
--   HUD / hotbar integration
--   GUI settings
--   economy integration
--   events and hooks for quests, magic, items, cities, and guilds
+## 🧩 Localization
 
-Configuration:
+Realite supports multi-language messaging. Most modules ship with `messages_ru.yml` and `messages_en.yml`.
 
--   `classes.yml`
--   `xp.yml`
+Repository-level README language switch:
+- English: `README.md`
+- Russian: `README.ru.md`
 
-------------------------------------------------------------------------
+---
 
-### 🎒 plugins/RealiteItems
+## 🛠️ Build & Development
 
-Custom item system and shared item API.
+### Requirements
+- Java **21**
+- Gradle Wrapper (`./gradlew`)
 
-Features:
-
--   YAML-based custom item definitions
--   CustomModelData, glow, unstackable items
--   localized names and lore
--   integration with quests, classes, and magic
--   API for item validation and granting
--   unified item format across all modules
-
-Configuration:
-
--   `items/*.yml`
--   `items_locale.yml`
-
-------------------------------------------------------------------------
-
-### ✨ plugins/RealiteMagic
-
-Spellcasting and magic system.
-
-Features:
-
--   spell system (spells)
--   cooldowns and costs
--   class and evolution requirements
--   usage conditions
--   effects (particles, damage, buffs, debuffs)
--   GUI-based spell selection for players
--   admin commands for testing and management
--   deep integration with RealiteItems and RealiteClasses
-
-Configuration:
-
--   `spells/*.yml`
--   `magic.yml`
-
-------------------------------------------------------------------------
-
-### 💬 plugins/RealiteChat
-
-Chat formatting and social tags.
-
-Features:
-
--   global chat
--   guild chat
--   **guild spy** mode for administrators
--   hover tooltips for classes and guilds
--   full message localization
-
-------------------------------------------------------------------------
-
-### 🛡 plugins/RealiteGuilds
-
-Player guild and social progression system.
-
-Features:
-
--   guild creation and management
--   internal ranks and permissions
--   guild chat
--   guild progression and leveling
--   guild XP rewards
--   groundwork for treasury and quest integration
-
-------------------------------------------------------------------------
-
-### 📜 plugins/RealiteQuests
-
-MVP quest and lore system.
-
-Implemented:
-
--   YAML-based quest definitions
--   objectives: items, crafting, mobs, blocks, NPCs
--   quest lifecycle (start → progress → completion)
--   localization
--   hooks for classes, guilds, magic, and items
-
-Planned:
-
--   dialogs and NPCs
--   story-driven quest chains
--   rewards and access conditions
--   guild and city quests
-
-------------------------------------------------------------------------
-
-### 🏙 plugins/RealiteCityInfrastructure
-
-City and social infrastructure.
-
-Features:
-
--   cities and regions
--   plots with types
--   shops and market
--   access control
--   plot transactions and teleportation
-
-------------------------------------------------------------------------
-
-## 🛠 Technology Stack
-
--   Java 21
--   Gradle (monorepo)
--   Paper API
--   Vault
--   YAML-based configuration
--   GitHub Actions (CI)
-
-------------------------------------------------------------------------
-
-## 📦 Build
-
-``` bash
-./gradlew build
+### Build
+```bash
+./gradlew clean build
 ```
 
-Built `.jar` files:
+### Run locally (Paper)
+- build module(s)
+- copy resulting `.jar` into your Paper `plugins/` directory
+- start the server, then configure modules under `plugins/<ModuleName>/`
 
-    /plugins/**/build/libs/
+---
 
-------------------------------------------------------------------------
+## 🧭 Repository Guidelines
 
-## 🚀 Quick Start
+- keep module boundaries clean (no direct hard dependency between gameplay modules)
+- prefer **Kyori Adventure** for text/components (avoid legacy chat APIs)
+- configs are YAML, with localization keys instead of hardcoded strings
+- integrate through bridges (ItemsBridge, EconomyBridge, ClassesBridge, etc.)
 
-1.  Install **Java 21** and **Paper**.
-2.  Clone the repository and build the project:
+---
 
-``` bash
-./gradlew build
-```
+## 📜 License
 
-3.  Copy the required `.jar` files into your server's `plugins/`
-    directory.
+TBD (project is actively evolving).
 
-------------------------------------------------------------------------
-
-## 🧩 Project Principles
-
--   modularity \> monolith
--   extensibility \> hacks
--   configuration \> hardcode
--   Core as the single source of truth
--   plugins do not depend on implementations of each other
--   localization by default
-
-------------------------------------------------------------------------
+---
 
 ## 📌 Status
 
-The project is under active development.\
-Architecture and APIs may change until Core stabilization.
-
-------------------------------------------------------------------------
-
-## 👤 Team
-
-**perm1ss10n** --- author & lead developer\
-Platform architecture, RealiteCore, gameplay systems.
-
-**satanidea** --- testing & QA
-
-**mbutovsky** --- lore & narrative design
-
-------------------------------------------------------------------------
-
-## 📄 License
-
-TBD
+This is an actively developed monorepo. Expect iteration, refactors, and expanding content packs.
