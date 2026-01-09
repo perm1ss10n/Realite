@@ -69,6 +69,7 @@ public final class CityInfrastructureAccessHook implements CityAccessHook {
             case MODIFY -> ru.realite.city.service.Action.MODIFY;
             case INTERACT -> ru.realite.city.service.Action.INTERACT;
             case EXPLOSION -> ru.realite.city.service.Action.EXPLOSION;
+            case MAGIC_CAST -> ru.realite.city.service.Action.MAGIC_CAST;
         };
     }
 

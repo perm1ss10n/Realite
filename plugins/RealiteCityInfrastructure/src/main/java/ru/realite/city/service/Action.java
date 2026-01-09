@@ -3,5 +3,6 @@ package ru.realite.city.service;
 public enum Action {
     MODIFY,
     INTERACT,
-    EXPLOSION
+    EXPLOSION,
+    MAGIC_CAST
 }

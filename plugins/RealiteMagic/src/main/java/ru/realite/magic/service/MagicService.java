@@ -45,6 +45,8 @@ import ru.realite.magic.gui.SpellSelectMenu;
 import ru.realite.magic.requirements.CheckResult;
 import ru.realite.magic.requirements.DefaultSpellRequirementChecker;
 import ru.realite.magic.requirements.SpellRequirementChecker;
+import ru.realite.magic.region.CastPolicy;
+import ru.realite.magic.region.RegionRuleService;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellRegistry;
 import ru.realite.magic.spell.SpellRequirements;
@@ -76,6 +78,8 @@ public final class MagicService {
     private final MasteryService masteryService;
     private final ItemModifiersService itemModifiersService;
     private final StaffChargeService staffChargeService;
+    private final RegionRuleService regionRuleService;
+    private final GuildBonusService guildBonusService;
     private final Map<UUID, MageState> states = new HashMap<>();
     private final WarnLimiter warnLimiter = new WarnLimiter();
     private final SpellSelectMenu spellSelectMenu;
@@ -94,7 +98,9 @@ public final class MagicService {
                         EffectExecutorRegistry effectRegistry,
                         DebugService debugService,
                         MagicHudService hudService,
-                        MasteryService masteryService) {
+                        MasteryService masteryService,
+                        RegionRuleService regionRuleService,
+                        GuildBonusService guildBonusService) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.messages = Objects.requireNonNull(messages, "messages");
         this.spellRegistry = Objects.requireNonNull(spellRegistry, "spellRegistry");
@@ -107,6 +113,8 @@ public final class MagicService {
         this.hudService = Objects.requireNonNull(hudService, "hudService");
         this.schoolService = new SchoolService(plugin, classesBridge, messages, this::state);
         this.masteryService = Objects.requireNonNull(masteryService, "masteryService");
+        this.regionRuleService = Objects.requireNonNull(regionRuleService, "regionRuleService");
+        this.guildBonusService = Objects.requireNonNull(guildBonusService, "guildBonusService");
         this.failWhenItemsUnavailable = plugin.getConfig()
                 .getBoolean("requirements.failWhenItemsUnavailable", true);
         this.requirementChecker = new DefaultSpellRequirementChecker(
@@ -270,6 +278,13 @@ public final class MagicService {
         CheckResult conflictResult = schoolService.conflictReason(player, spell);
         if (conflictResult instanceof CheckResult.Fail fail) {
             return fail(player, spell, null, targetType(spell), fail.reasonKey(), fail.placeholders(), false, 0L);
+        }
+        CastPolicy regionPolicy = regionRuleService.castPolicy(player, spell, player.getLocation());
+        if (!regionPolicy.allowed()) {
+            String reasonKey = regionPolicy.denyReasonKey() == null
+                    ? "magic.region.denied.default"
+                    : regionPolicy.denyReasonKey();
+            return fail(player, spell, null, targetType(spell), reasonKey, regionPolicy.placeholders(), false, 0L);
         }
         if (!hasRequiredFocus(player)) {
             return fail(player, spell, null, targetType(spell), "magic.error.need_focus", Map.of(),
@@ -670,10 +685,24 @@ public final class MagicService {
         SchoolModifiers schoolModifiers = schoolService.modifiersFor(player, spell);
         MasteryModifiers masteryModifiers = masteryService.modifiers(player.getUniqueId(), spell.id());
         ItemModifiers itemModifiers = itemModifiersService.modifiers(player, spell);
+        BalanceModifiers regionModifiers = regionRuleService.regionModifiers(player, spell, player.getLocation());
+        BalanceModifiers guildModifiers = guildBonusService.guildModifiers(player, spell);
         return new BalanceModifiers(
-                schoolModifiers.damageMultiplier() * masteryModifiers.damageMultiplier() * itemModifiers.damageMultiplier(),
-                schoolModifiers.manaMultiplier() * masteryModifiers.manaMultiplier() * itemModifiers.manaMultiplier(),
-                schoolModifiers.cooldownMultiplier() * masteryModifiers.cooldownMultiplier() * itemModifiers.cooldownMultiplier());
+                schoolModifiers.damageMultiplier()
+                        * masteryModifiers.damageMultiplier()
+                        * itemModifiers.damageMultiplier()
+                        * regionModifiers.damageMultiplier()
+                        * guildModifiers.damageMultiplier(),
+                schoolModifiers.manaMultiplier()
+                        * masteryModifiers.manaMultiplier()
+                        * itemModifiers.manaMultiplier()
+                        * regionModifiers.manaMultiplier()
+                        * guildModifiers.manaMultiplier(),
+                schoolModifiers.cooldownMultiplier()
+                        * masteryModifiers.cooldownMultiplier()
+                        * itemModifiers.cooldownMultiplier()
+                        * regionModifiers.cooldownMultiplier()
+                        * guildModifiers.cooldownMultiplier());
     }
 
     private CastAttemptResult checkCastItem(Player player, SpellDefinition spell) {
