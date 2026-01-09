@@ -4,7 +4,7 @@ format:
 magic:
   enabled: "{prefix}&aRealiteMagic plugin enabled."
   cmd:
-    usage: "&eUsage: &f/rmagic <menu|spell|spells|mana|status|debug|slot>"
+    usage: "&eUsage: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery>"
     player_not_found: "&cPlayer not found: &f{player}"
     debug:
       usage: "&eUsage: &f/rmagic debug <on|off|cast|stats> [player]"
@@ -61,6 +61,12 @@ magic:
       no_errors: "&aNo errors found."
     slot:
       usage: "&eUsage: &f/rmagic slot <set|clear|use> <1-9> [spellId]"
+    mastery:
+      usage: "&eUsage: &f/rmagic mastery <spellId|selected>"
+      header: "&eMastery: &f{spell}"
+      line_level: "&7Level: &f{level}"
+      line_xp: "&7XP: &f{xp}&7/&f{next}"
+      line_bonus: "&7Bonus: &f{damage} dmg, {mana} mana, {cooldown} cd"
     status:
       header: "&eMagic status:"
       slot: "&7Slot: &f{slot}"
@@ -70,7 +76,7 @@ magic:
       cooldown: "&7Cooldown: &f{time}&7s"
   command:
     usage:
-      root: "&eUsage: &f/rmagic <menu|spell|spells|mana|status|debug|slot>"
+      root: "&eUsage: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery>"
       spell: "&eUsage: &f/rmagic spell <select|clear|get> [player] [spellId]"
     only-player: "{prefix}&cCommand is only for players."
     spell:
@@ -101,6 +107,8 @@ magic:
     no_mana: "⚡ Not enough mana ({need})"
     no_target: "No target"
     success: "Cast: {spell}"
+  mastery:
+    level_up: "{prefix}&a{spell}: mastery level {level}!"
   need-focus: "{prefix}&cYou need a focus item to cast."
   menu:
     title: "&5Select spell"

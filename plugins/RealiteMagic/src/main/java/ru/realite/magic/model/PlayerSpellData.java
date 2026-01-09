@@ -5,15 +5,19 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.Set;
 import javax.annotation.Nullable;
+import ru.realite.magic.mastery.MasteryProgress;
 
 public final class PlayerSpellData {
 
     private final int version;
     private final Set<String> learned;
     private final List<String> slots;
+    private final Map<String, MasteryProgress> mastery;
     private int activeSlot;
     @Nullable
     private String selected;
@@ -22,6 +26,7 @@ public final class PlayerSpellData {
         this.version = version;
         this.learned = new HashSet<>();
         this.slots = new ArrayList<>(Collections.nCopies(9, null));
+        this.mastery = new TreeMap<>();
         this.activeSlot = 1;
     }
 
@@ -99,6 +104,26 @@ public final class PlayerSpellData {
             return;
         }
         this.activeSlot = slot;
+    }
+
+    public Map<String, MasteryProgress> mastery() {
+        return Collections.unmodifiableMap(mastery);
+    }
+
+    public MasteryProgress masteryProgress(String spellId) {
+        String normalized = normalize(spellId);
+        if (normalized == null) {
+            return new MasteryProgress(1, 0, 0, 0, 0);
+        }
+        return mastery.computeIfAbsent(normalized, id -> new MasteryProgress(1, 0, 0, 0, 0));
+    }
+
+    public void mastery(String spellId, MasteryProgress progress) {
+        String normalized = normalize(spellId);
+        if (normalized == null || progress == null) {
+            return;
+        }
+        mastery.put(normalized, progress);
     }
 
     private int slotIndex(int slot) {

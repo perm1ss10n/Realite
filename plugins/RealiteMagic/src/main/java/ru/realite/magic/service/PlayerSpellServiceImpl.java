@@ -15,12 +15,14 @@ import ru.realite.magic.api.event.SpellSelectedEvent;
 import ru.realite.magic.api.event.SpellUnlockedEvent;
 import ru.realite.magic.integration.events.MagicEventPublisher;
 import ru.realite.magic.i18n.MagicMessages;
+import ru.realite.magic.mastery.MasteryProgress;
+import ru.realite.magic.mastery.MasteryProgressRepository;
 import ru.realite.magic.model.PlayerSpellData;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellRegistry;
 import ru.realite.magic.storage.PlayerSpellStorage;
 
-public final class PlayerSpellServiceImpl implements PlayerSpellService {
+public final class PlayerSpellServiceImpl implements PlayerSpellService, MasteryProgressRepository {
 
     private static final String SLOT_INVALID = "magic.slot.invalid";
     private static final String SLOT_SET_FAIL = "magic.slot.set.fail";
@@ -59,7 +61,7 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
             return new UnlockResult.Ok(true);
         }
         data.learn(normalized);
-        markDirty(playerId);
+        markDirtyInternal(playerId);
         eventPublisher.publish(new SpellUnlockedEvent(playerId, normalized, source));
         return new UnlockResult.Ok(false);
     }
@@ -76,10 +78,10 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
             return new RevokeResult.Ok(false);
         }
         data.unlearn(normalized);
-        markDirty(playerId);
+        markDirtyInternal(playerId);
         boolean removedFromSlots = clearSlotsForSpell(data, normalized);
         if (removedFromSlots) {
-            markDirty(playerId);
+            markDirtyInternal(playerId);
         }
         String selected = data.selected().orElse(null);
         if (selected != null && selected.equals(normalized)) {
@@ -113,7 +115,7 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
         }
         int activeSlot = data.activeSlot();
         data.slot(activeSlot, normalized);
-        markDirty(playerId);
+        markDirtyInternal(playerId);
         updateSelected(playerId, data, normalized);
         return new SelectResult.Ok();
     }
@@ -127,7 +129,7 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
         }
         int activeSlot = data.activeSlot();
         data.slot(activeSlot, null);
-        markDirty(playerId);
+        markDirtyInternal(playerId);
         updateSelected(playerId, data, null);
     }
 
@@ -156,7 +158,7 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
             return new SetSlotResult.Ok();
         }
         data.slot(slot, normalized);
-        markDirty(playerId);
+        markDirtyInternal(playerId);
         if (data.activeSlot() == slot) {
             updateSelected(playerId, data, normalized);
         }
@@ -178,7 +180,7 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
             return new SetActiveSlotResult.Ok();
         }
         data.activeSlot(slot);
-        markDirty(playerId);
+        markDirtyInternal(playerId);
         String spellId = data.slot(slot).orElse(null);
         updateSelected(playerId, data, spellId);
         return new SetActiveSlotResult.Ok();
@@ -222,8 +224,38 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
         return cache.computeIfAbsent(playerId, storage::load);
     }
 
-    private void markDirty(UUID playerId) {
+    private void markDirtyInternal(UUID playerId) {
         dirty.add(playerId);
+    }
+
+    @Override
+    public MasteryProgress getOrCreate(UUID playerId, String spellId) {
+        String normalized = normalize(spellId);
+        if (normalized == null) {
+            return new MasteryProgress(1, 0, 0, 0, 0);
+        }
+        PlayerSpellData data = data(playerId);
+        MasteryProgress existing = data.mastery().get(normalized);
+        if (existing != null) {
+            return existing;
+        }
+        if (!data.isLearned(normalized)) {
+            return new MasteryProgress(1, 0, 0, 0, 0);
+        }
+        MasteryProgress progress = new MasteryProgress(1, 0, 0, 0, 0);
+        data.mastery(normalized, progress);
+        markDirtyInternal(playerId);
+        return progress;
+    }
+
+    @Override
+    public boolean isLearned(UUID playerId, String spellId) {
+        return data(playerId).isLearned(spellId);
+    }
+
+    @Override
+    public void markDirty(UUID playerId) {
+        markDirtyInternal(playerId);
     }
 
     private boolean isValidSlot(int slot) {
@@ -236,7 +268,7 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
             return;
         }
         data.selected(next);
-        markDirty(playerId);
+        markDirtyInternal(playerId);
         eventPublisher.publish(new SpellSelectedEvent(playerId, previous, next));
     }
 

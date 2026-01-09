@@ -39,6 +39,35 @@ schools:
       damageMultiplier: 1.15
       manaMultiplier: 0.95
 
+mastery:
+  enabled: true
+  maxLevel: 10
+  xp:
+    castSuccess: 1
+    hit: 2
+    kill: 5
+  progression:
+    mode: LINEAR
+    linear:
+      base: 20
+      perLevel: 10
+    table:
+      - 20
+      - 30
+      - 45
+      - 60
+      - 80
+      - 105
+      - 135
+      - 170
+      - 210
+      - 255
+  modifiers:
+    perLevel:
+      damageMultiplier: 0.02
+      manaMultiplier: -0.01
+      cooldownMultiplier: -0.01
+
 hud:
   enabled: true
   useActionBar: true
