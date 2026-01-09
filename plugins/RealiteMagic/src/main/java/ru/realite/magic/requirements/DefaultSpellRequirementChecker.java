@@ -2,12 +2,11 @@ package ru.realite.magic.requirements;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Supplier;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.entity.Player;
-import ru.realite.core.api.classes.ClassProfile;
-import ru.realite.core.api.classes.ClassProfileProvider;
+import ru.realite.magic.integration.classes.ClassesBridge;
+import ru.realite.magic.integration.classes.CoreClassesBridge;
+import ru.realite.magic.integration.classes.NoopClassesBridge;
 import ru.realite.magic.integration.items.ItemsBridge;
 import ru.realite.magic.integration.items.NoopItemsBridge;
 import ru.realite.magic.spell.SpellDefinition;
@@ -19,14 +18,14 @@ public final class DefaultSpellRequirementChecker implements SpellRequirementChe
             LegacyComponentSerializer.legacyAmpersand();
 
     private final ItemsBridge itemsBridge;
-    private final Supplier<ClassProfileProvider> classProfileProvider;
+    private final ClassesBridge classesBridge;
     private final Runnable missingItemBridgeWarning;
 
     public DefaultSpellRequirementChecker(ItemsBridge itemsBridge,
-                                          Supplier<ClassProfileProvider> classProfileProvider,
+                                          ClassesBridge classesBridge,
                                           Runnable missingItemBridgeWarning) {
         this.itemsBridge = itemsBridge;
-        this.classProfileProvider = classProfileProvider;
+        this.classesBridge = classesBridge;
         this.missingItemBridgeWarning = missingItemBridgeWarning;
     }
 
@@ -56,38 +55,31 @@ public final class DefaultSpellRequirementChecker implements SpellRequirementChe
 
         String classId = requirements.classId();
         if (classId != null && !classId.isBlank()) {
-            placeholders.put("class", classId);
+            placeholders.put("class", LEGACY.serialize(classesBridge.displayClassName(classId)));
         }
         String evolutionId = requirements.evolutionId();
         if (evolutionId != null && !evolutionId.isBlank()) {
-            placeholders.put("evolution", evolutionId);
+            placeholders.put("evolution", LEGACY.serialize(classesBridge.displayEvolutionName(evolutionId)));
         }
 
         if ((classId != null && !classId.isBlank())
                 || (evolutionId != null && !evolutionId.isBlank())) {
-            ClassProfileProvider provider = classProfileProvider.get();
-            if (provider == null) {
+            if (classesBridge instanceof NoopClassesBridge) {
                 return new CheckResult.Fail(RequirementReasons.MISSING_CLASS_MODULE, placeholders);
             }
-            Optional<ClassProfile> profile = provider.getProfile(player);
-            if (profile.isEmpty()) {
-                if (classId != null && !classId.isBlank()) {
+            if (classesBridge instanceof CoreClassesBridge coreBridge && !coreBridge.isAvailable()) {
+                return new CheckResult.Fail(RequirementReasons.MISSING_CLASS_MODULE, placeholders);
+            }
+            String activeClassId = classesBridge.getActiveClassId(player);
+            if (classId != null && !classId.isBlank()) {
+                if (activeClassId == null || !activeClassId.equalsIgnoreCase(classId)) {
                     return new CheckResult.Fail(RequirementReasons.CLASS_MISMATCH, placeholders);
                 }
-                if (evolutionId != null && !evolutionId.isBlank()) {
+            }
+            String activeEvolutionId = classesBridge.getActiveEvolutionId(player);
+            if (evolutionId != null && !evolutionId.isBlank()) {
+                if (activeEvolutionId == null || !activeEvolutionId.equalsIgnoreCase(evolutionId)) {
                     return new CheckResult.Fail(RequirementReasons.EVOLUTION_MISSING, placeholders);
-                }
-            } else {
-                ClassProfile info = profile.get();
-                if (classId != null && !classId.isBlank()) {
-                    if (info.classId() == null || !info.classId().equalsIgnoreCase(classId)) {
-                        return new CheckResult.Fail(RequirementReasons.CLASS_MISMATCH, placeholders);
-                    }
-                }
-                if (evolutionId != null && !evolutionId.isBlank()) {
-                    if (info.evolutionId() == null || !info.evolutionId().equalsIgnoreCase(evolutionId)) {
-                        return new CheckResult.Fail(RequirementReasons.EVOLUTION_MISSING, placeholders);
-                    }
                 }
             }
         }

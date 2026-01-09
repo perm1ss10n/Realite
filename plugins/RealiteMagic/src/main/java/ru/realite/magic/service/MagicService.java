@@ -8,11 +8,9 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
-import ru.realite.core.api.CoreApi;
-import ru.realite.core.api.classes.ClassProfileProvider;
+import ru.realite.magic.integration.classes.ClassesBridge;
 import ru.realite.magic.integration.items.ItemsBridge;
 import ru.realite.magic.integration.items.NoopItemsBridge;
 import ru.realite.magic.i18n.MagicMessages;
@@ -37,6 +35,7 @@ public final class MagicService {
     private final SpellRegistry spellRegistry;
     private final SpellCaster caster;
     private final ItemsBridge itemsBridge;
+    private final ClassesBridge classesBridge;
     private final SpellRequirementChecker requirementChecker;
     private final Map<UUID, MageState> states = new HashMap<>();
     private final SpellSelectMenu spellSelectMenu;
@@ -47,14 +46,16 @@ public final class MagicService {
                         MagicMessages messages,
                         SpellRegistry spellRegistry,
                         PlayerSpellService playerSpellService,
-                        ItemsBridge itemsBridge) {
+                        ItemsBridge itemsBridge,
+                        ClassesBridge classesBridge) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.messages = Objects.requireNonNull(messages, "messages");
         this.spellRegistry = Objects.requireNonNull(spellRegistry, "spellRegistry");
         this.itemsBridge = Objects.requireNonNull(itemsBridge, "itemsBridge");
+        this.classesBridge = Objects.requireNonNull(classesBridge, "classesBridge");
         this.requirementChecker = new DefaultSpellRequirementChecker(
                 this.itemsBridge,
-                this::resolveClassProfileProvider,
+                this.classesBridge,
                 this::warnMissingItemBridge);
         this.caster = new SpellCaster(this, messages);
         this.spellSelectMenu = new SpellSelectMenu(plugin, spellRegistry, playerSpellService, requirementChecker, messages);
@@ -183,6 +184,10 @@ public final class MagicService {
 
     public ItemsBridge itemsBridge() {
         return itemsBridge;
+    }
+
+    public ClassesBridge classesBridge() {
+        return classesBridge;
     }
 
     public void setSelectedSpell(Player player, String spellId) {
@@ -315,16 +320,6 @@ public final class MagicService {
             return fallback;
         }
         return value;
-    }
-
-    private ClassProfileProvider resolveClassProfileProvider() {
-        RegisteredServiceProvider<CoreApi> provider =
-                Bukkit.getServicesManager().getRegistration(CoreApi.class);
-        if (provider == null || provider.getProvider() == null) {
-            return null;
-        }
-        CoreApi core = provider.getProvider();
-        return core.services().get(ClassProfileProvider.class);
     }
 
     private void sendRequirementMessage(Player player, SpellDefinition spell) {
