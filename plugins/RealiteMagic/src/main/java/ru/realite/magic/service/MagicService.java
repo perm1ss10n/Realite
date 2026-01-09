@@ -3,6 +3,7 @@ package ru.realite.magic.service;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -33,6 +34,7 @@ import ru.realite.magic.api.event.SpellCastAttemptEvent;
 import ru.realite.magic.api.event.SpellCastSuccessEvent;
 import ru.realite.magic.hud.MagicHudService;
 import ru.realite.magic.integration.classes.ClassesBridge;
+import ru.realite.magic.integration.economy.EconomyBridge;
 import ru.realite.magic.integration.events.MagicEventPublisher;
 import ru.realite.magic.integration.items.ItemsBridge;
 import ru.realite.magic.integration.items.NoopItemsBridge;
@@ -51,6 +53,9 @@ import ru.realite.magic.requirements.DefaultSpellRequirementChecker;
 import ru.realite.magic.requirements.SpellRequirementChecker;
 import ru.realite.magic.region.CastPolicy;
 import ru.realite.magic.region.RegionRuleService;
+import ru.realite.magic.school.MagicSchool;
+import ru.realite.magic.spell.ReagentCost;
+import ru.realite.magic.spell.ReagentItem;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellRegistry;
 import ru.realite.magic.spell.SpellRequirements;
@@ -73,6 +78,7 @@ public final class MagicService {
     private final SpellRegistry spellRegistry;
     private final ItemsBridge itemsBridge;
     private final ClassesBridge classesBridge;
+    private final EconomyBridge economyBridge;
     private final PlayerSpellService playerSpellService;
     private final MagicEventPublisher eventPublisher;
     private final SpellRequirementChecker requirementChecker;
@@ -94,6 +100,10 @@ public final class MagicService {
     private BukkitTask regenTask;
     private boolean itemBridgeWarned;
     private final boolean failWhenItemsUnavailable;
+    private final boolean failWhenReagentsUnavailable;
+    private final boolean economyEnabled;
+    private final boolean failWhenEconomyUnavailable;
+    private final Map<MagicSchool, List<ReagentItem>> defaultReagentsBySchool;
 
     public MagicService(JavaPlugin plugin,
                         MagicMessages messages,
@@ -101,6 +111,7 @@ public final class MagicService {
                         PlayerSpellService playerSpellService,
                         ItemsBridge itemsBridge,
                         ClassesBridge classesBridge,
+                        EconomyBridge economyBridge,
                         TalentsBridge talentsBridge,
                         MagicEventPublisher eventPublisher,
                         EffectExecutorRegistry effectRegistry,
@@ -114,6 +125,7 @@ public final class MagicService {
         this.spellRegistry = Objects.requireNonNull(spellRegistry, "spellRegistry");
         this.itemsBridge = Objects.requireNonNull(itemsBridge, "itemsBridge");
         this.classesBridge = Objects.requireNonNull(classesBridge, "classesBridge");
+        this.economyBridge = Objects.requireNonNull(economyBridge, "economyBridge");
         this.playerSpellService = Objects.requireNonNull(playerSpellService, "playerSpellService");
         this.eventPublisher = Objects.requireNonNull(eventPublisher, "eventPublisher");
         this.effectRegistry = Objects.requireNonNull(effectRegistry, "effectRegistry");
@@ -127,6 +139,11 @@ public final class MagicService {
         this.castEngine = new CastEngine(plugin);
         this.failWhenItemsUnavailable = plugin.getConfig()
                 .getBoolean("requirements.failWhenItemsUnavailable", true);
+        this.failWhenReagentsUnavailable = plugin.getConfig()
+                .getBoolean("reagents.failWhenItemsUnavailable", true);
+        this.economyEnabled = plugin.getConfig().getBoolean("economy.enabled", true);
+        this.failWhenEconomyUnavailable = plugin.getConfig().getBoolean("economy.failWhenUnavailable", false);
+        this.defaultReagentsBySchool = loadDefaultReagents();
         this.requirementChecker = new DefaultSpellRequirementChecker(
                 this.itemsBridge,
                 this.classesBridge,
@@ -311,6 +328,34 @@ public final class MagicService {
         if (runeCheck instanceof CheckResult.Fail fail) {
             return fail(player, spell, null, targetType(spell), fail.reasonKey(), fail.placeholders(), false, 0L);
         }
+        ReagentCost effectiveReagents = resolveEffectiveReagents(spell);
+        if (effectiveReagents != null && !effectiveReagents.isEmpty()) {
+            if (itemsBridge instanceof NoopItemsBridge) {
+                warnMissingItemBridge();
+                if (failWhenReagentsUnavailable) {
+                    return fail(player, spell, null, targetType(spell), "magic.cast.items_bridge_missing",
+                            Map.of(), false, 0L);
+                }
+                effectiveReagents = null;
+            } else {
+                CastAttemptResult reagentsResult = checkReagents(player, spell, effectiveReagents);
+                if (reagentsResult != null) {
+                    return reagentsResult;
+                }
+            }
+        }
+        boolean shouldPay = economyEnabled && spell.moneyCost() > 0;
+        if (shouldPay) {
+            if (!economyBridge.isAvailable()) {
+                if (failWhenEconomyUnavailable) {
+                    return fail(player, spell, null, targetType(spell), "magic.economy.unavailable", Map.of(),
+                            false, 0L);
+                }
+                shouldPay = false;
+            } else if (economyBridge.balance(player.getUniqueId()) < spell.moneyCost()) {
+                return fail(player, spell, null, targetType(spell), "magic.economy.not_enough", Map.of(), false, 0L);
+            }
+        }
         BalanceModifiers modifiers = balanceModifiers(player, spell, null);
         double effectiveMana = effectiveManaCost(spell, modifiers);
         double currentMana = getMana(player);
@@ -330,6 +375,18 @@ public final class MagicService {
                     warnLimited(player, "no_target"), WARN_WINDOW_MS);
         }
         SpellTarget target = resolvedTarget.orElseGet(() -> new SpellTarget.Self(player));
+        if (shouldPay && !economyBridge.withdraw(player.getUniqueId(), spell.moneyCost())) {
+            return fail(player, spell, null, targetType(spell), "magic.economy.not_enough", Map.of(), false, 0L);
+        }
+        if (effectiveReagents != null && effectiveReagents.consumeOnCast()) {
+            CastAttemptResult consumeResult = consumeReagents(player, spell, effectiveReagents);
+            if (consumeResult != null) {
+                if (shouldPay) {
+                    economyBridge.deposit(player.getUniqueId(), spell.moneyCost());
+                }
+                return consumeResult;
+            }
+        }
         consumeStaffChargesOnCast(player, staffResult);
         consumeRequiredItemOnCast(player, spell);
         addMana(player, -effectiveMana);
@@ -415,6 +472,10 @@ public final class MagicService {
 
     public ClassesBridge classesBridge() {
         return classesBridge;
+    }
+
+    public EconomyBridge economyBridge() {
+        return economyBridge;
     }
 
     public StaffChargeService staffChargeService() {
@@ -577,6 +638,53 @@ public final class MagicService {
         itemsBridge.removeItem(player, requiredItemId, 1);
     }
 
+    private CastAttemptResult checkReagents(Player player, SpellDefinition spell, ReagentCost reagents) {
+        for (ReagentItem item : reagents.items()) {
+            if (item == null) {
+                continue;
+            }
+            if (!itemsBridge.hasItem(player, item.itemId(), item.amount())) {
+                String display = item.itemId();
+                if (item.itemId() != null && !item.itemId().isBlank()) {
+                    display = LEGACY.serialize(itemsBridge.displayName(item.itemId()));
+                }
+                return fail(player, spell, null, targetType(spell), "magic.reagents.missing",
+                        Map.of("item", display, "need", String.valueOf(item.amount())), false, 0L);
+            }
+        }
+        return null;
+    }
+
+    private CastAttemptResult consumeReagents(Player player, SpellDefinition spell, ReagentCost reagents) {
+        for (ReagentItem item : reagents.items()) {
+            if (item == null) {
+                continue;
+            }
+            if (!itemsBridge.hasItem(player, item.itemId(), item.amount())) {
+                String display = item.itemId();
+                if (item.itemId() != null && !item.itemId().isBlank()) {
+                    display = LEGACY.serialize(itemsBridge.displayName(item.itemId()));
+                }
+                return fail(player, spell, null, targetType(spell), "magic.reagents.missing",
+                        Map.of("item", display, "need", String.valueOf(item.amount())), false, 0L);
+            }
+        }
+        for (ReagentItem item : reagents.items()) {
+            if (item == null) {
+                continue;
+            }
+            if (!itemsBridge.takeItem(player, item.itemId(), item.amount())) {
+                String display = item.itemId();
+                if (item.itemId() != null && !item.itemId().isBlank()) {
+                    display = LEGACY.serialize(itemsBridge.displayName(item.itemId()));
+                }
+                return fail(player, spell, null, targetType(spell), "magic.reagents.missing",
+                        Map.of("item", display, "need", String.valueOf(item.amount())), false, 0L);
+            }
+        }
+        return null;
+    }
+
     private StaffCastResult checkStaffForCast(Player player, SpellDefinition spell) {
         if (!isStaffEnabled()) {
             return StaffCastResult.ok();
@@ -676,6 +784,84 @@ public final class MagicService {
         }
         itemBridgeWarned = true;
         plugin.getLogger().warning(messages.raw("magic.cast.items_bridge_missing"));
+    }
+
+    private ReagentCost resolveEffectiveReagents(SpellDefinition spell) {
+        if (!plugin.getConfig().getBoolean("reagents.enabled", true)) {
+            return null;
+        }
+        List<ReagentItem> defaults = defaultReagentsBySchool.getOrDefault(spell.school(), List.of());
+        List<ReagentItem> items = spell.reagents() != null && spell.reagents().items() != null
+                ? spell.reagents().items()
+                : List.of();
+        if (defaults.isEmpty() && items.isEmpty()) {
+            return null;
+        }
+        Map<String, Integer> merged = new HashMap<>();
+        mergeReagents(merged, defaults);
+        mergeReagents(merged, items);
+        List<ReagentItem> mergedItems = merged.entrySet().stream()
+                .map(entry -> new ReagentItem(entry.getKey(), entry.getValue()))
+                .toList();
+        boolean consumeOnCast = spell.reagents() == null || spell.reagents().consumeOnCast();
+        return new ReagentCost(consumeOnCast, mergedItems);
+    }
+
+    private void mergeReagents(Map<String, Integer> target, List<ReagentItem> items) {
+        for (ReagentItem item : items) {
+            if (item == null || item.itemId() == null || item.itemId().isBlank()) {
+                continue;
+            }
+            int amount = Math.max(0, item.amount());
+            if (amount == 0) {
+                continue;
+            }
+            target.merge(item.itemId(), amount, Integer::sum);
+        }
+    }
+
+    private Map<MagicSchool, List<ReagentItem>> loadDefaultReagents() {
+        Map<MagicSchool, List<ReagentItem>> result = new HashMap<>();
+        var section = plugin.getConfig().getConfigurationSection("reagents.defaultsBySchool");
+        if (section == null) {
+            return result;
+        }
+        for (String key : section.getKeys(false)) {
+            MagicSchool school = MagicSchool.fromString(key);
+            if (school == null) {
+                continue;
+            }
+            List<ReagentItem> items = parseReagentItems(section.getMapList(key));
+            result.put(school, items);
+        }
+        return result;
+    }
+
+    private List<ReagentItem> parseReagentItems(List<Map<?, ?>> rawItems) {
+        if (rawItems == null || rawItems.isEmpty()) {
+            return List.of();
+        }
+        List<ReagentItem> items = new java.util.ArrayList<>();
+        for (Object raw : rawItems) {
+            if (!(raw instanceof Map<?, ?> itemMap)) {
+                continue;
+            }
+            Object itemIdRaw = itemMap.get("itemId");
+            String itemId = itemIdRaw == null ? null : String.valueOf(itemIdRaw);
+            int amount = 0;
+            Object amountRaw = itemMap.get("amount");
+            if (amountRaw instanceof Number number) {
+                amount = number.intValue();
+            } else if (amountRaw != null) {
+                try {
+                    amount = Integer.parseInt(String.valueOf(amountRaw));
+                } catch (NumberFormatException ex) {
+                    amount = 0;
+                }
+            }
+            items.add(new ReagentItem(itemId, amount));
+        }
+        return List.copyOf(items);
     }
 
     private double clamp(double value, double min, double max) {

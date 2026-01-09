@@ -3,10 +3,15 @@ package ru.realite.magic;
 import java.io.File;
 import java.util.Map;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.inventory.ShapedRecipe;
 import ru.realite.core.api.CoreApi;
+import ru.realite.items.service.ItemService;
 import ru.realite.magic.api.MagicApi;
 import ru.realite.magic.api.impl.MagicApiImpl;
 import ru.realite.magic.debug.DebugService;
@@ -27,6 +32,10 @@ import ru.realite.magic.integration.classes.NoopClassesBridge;
 import ru.realite.magic.integration.city.CityBridge;
 import ru.realite.magic.integration.city.CoreCityBridge;
 import ru.realite.magic.integration.city.NoopCityBridge;
+import ru.realite.magic.integration.economy.CoreEconomyBridge;
+import ru.realite.magic.integration.economy.EconomyBridge;
+import ru.realite.magic.integration.economy.NoopEconomyBridge;
+import ru.realite.magic.integration.economy.VaultEconomyBridge;
 import ru.realite.magic.integration.events.BukkitEventPublisher;
 import ru.realite.magic.integration.events.CoreEventPublisher;
 import ru.realite.magic.integration.events.MagicEventPublisher;
@@ -109,6 +118,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         playerSpellService = playerSpellServiceImpl;
         ItemsBridge itemsBridge = ItemsBridgeFactory.create();
         ClassesBridge classesBridge = resolveClassesBridge();
+        EconomyBridge economyBridge = resolveEconomyBridge();
         TalentsBridge talentsBridge = resolveTalentsBridge();
         CityBridge cityBridge = resolveCityBridge();
         GuildBridge guildBridge = resolveGuildBridge();
@@ -123,6 +133,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
                 playerSpellService,
                 itemsBridge,
                 classesBridge,
+                economyBridge,
                 talentsBridge,
                 eventPublisher,
                 effectRegistry,
@@ -136,6 +147,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         Bukkit.getServicesManager().register(MagicApi.class, magicApi, this, ServicePriority.Normal);
         registerCommand();
         registerListeners();
+        registerCraftingRecipes();
     }
 
     public MagicMessages getMessages() {
@@ -243,6 +255,89 @@ public final class RealiteMagicPlugin extends JavaPlugin {
             return coreBridge;
         }
         return new NoopGuildBridge();
+    }
+
+    private EconomyBridge resolveEconomyBridge() {
+        CoreEconomyBridge coreBridge = new CoreEconomyBridge(getLogger());
+        if (coreBridge.isAvailable()) {
+            return coreBridge;
+        }
+        VaultEconomyBridge vaultBridge = new VaultEconomyBridge(getLogger());
+        if (vaultBridge.isAvailable()) {
+            return vaultBridge;
+        }
+        return new NoopEconomyBridge();
+    }
+
+    private void registerCraftingRecipes() {
+        if (!getConfig().getBoolean("crafting.enabled", true)) {
+            return;
+        }
+        ItemService itemService = resolveItemService();
+        if (itemService == null) {
+            getLogger().warning("[Magic] Crafting recipes are enabled, but RealiteItems is unavailable.");
+            return;
+        }
+        ConfigurationSection recipesSection = getConfig().getConfigurationSection("crafting.recipes");
+        if (recipesSection == null) {
+            return;
+        }
+        for (String recipeId : recipesSection.getKeys(false)) {
+            ConfigurationSection recipeSection = recipesSection.getConfigurationSection(recipeId);
+            if (recipeSection == null || !recipeSection.getBoolean("enabled", true)) {
+                continue;
+            }
+            String resultItemId = recipeSection.getString("resultItemId");
+            if (resultItemId == null || resultItemId.isBlank()) {
+                getLogger().warning("[Magic] Crafting recipe " + recipeId + " missing resultItemId.");
+                continue;
+            }
+            var shape = recipeSection.getStringList("shape");
+            if (shape == null || shape.isEmpty()) {
+                getLogger().warning("[Magic] Crafting recipe " + recipeId + " missing shape.");
+                continue;
+            }
+            NamespacedKey key = new NamespacedKey(this, "magic_" + recipeId.toLowerCase());
+            ShapedRecipe recipe;
+            try {
+                recipe = new ShapedRecipe(key, itemService.create(resultItemId, 1));
+            } catch (IllegalArgumentException ex) {
+                getLogger().warning("[Magic] Crafting recipe " + recipeId + " failed: " + ex.getMessage());
+                continue;
+            }
+            recipe.shape(shape.toArray(new String[0]));
+            ConfigurationSection ingredientsSection = recipeSection.getConfigurationSection("ingredients");
+            if (ingredientsSection == null) {
+                getLogger().warning("[Magic] Crafting recipe " + recipeId + " missing ingredients.");
+                continue;
+            }
+            for (String ingredientKey : ingredientsSection.getKeys(false)) {
+                if (ingredientKey.length() != 1) {
+                    continue;
+                }
+                String materialName = ingredientsSection.getString(ingredientKey);
+                if (materialName == null || materialName.isBlank()) {
+                    continue;
+                }
+                Material material = Material.matchMaterial(materialName);
+                if (material == null) {
+                    getLogger().warning("[Magic] Crafting recipe " + recipeId + " has unknown material: "
+                            + materialName);
+                    continue;
+                }
+                recipe.setIngredient(ingredientKey.charAt(0), material);
+            }
+            Bukkit.addRecipe(recipe);
+        }
+    }
+
+    private ItemService resolveItemService() {
+        RegisteredServiceProvider<ItemService> provider =
+                Bukkit.getServicesManager().getRegistration(ItemService.class);
+        if (provider == null || provider.getProvider() == null) {
+            return null;
+        }
+        return provider.getProvider();
     }
 
     private MagicEventPublisher resolveEventPublisher() {

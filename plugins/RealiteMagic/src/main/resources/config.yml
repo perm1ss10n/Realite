@@ -145,6 +145,50 @@ hud:
 requirements:
   failWhenItemsUnavailable: true
 
+reagents:
+  enabled: true
+  failWhenItemsUnavailable: true
+  defaultsBySchool:
+    WARLOCK:
+      - itemId: "magic_ash"
+        amount: 1
+    FIRE:
+      - itemId: "fire_powder"
+        amount: 1
+
+economy:
+  enabled: true
+  failWhenUnavailable: false
+  tax:
+    enabled: true
+    cityCut: 0.20
+    guildCut: 0.10
+
+crafting:
+  enabled: true
+  recipes:
+    charge_crystal:
+      enabled: true
+      resultItemId: "magic_charge_crystal"
+      shape:
+        - "AGA"
+        - "GCG"
+        - "AGA"
+      ingredients:
+        A: "AMETHYST_SHARD"
+        G: "GLOWSTONE_DUST"
+        C: "DIAMOND"
+    fire_rune:
+      enabled: true
+      resultItemId: "magic_rune_fire"
+      shape:
+        - " B "
+        - "BPB"
+        - " B "
+      ingredients:
+        B: "BLAZE_POWDER"
+        P: "PAPER"
+
 menu:
   spellSelect:
     titleKey: "magic.gui.title"
