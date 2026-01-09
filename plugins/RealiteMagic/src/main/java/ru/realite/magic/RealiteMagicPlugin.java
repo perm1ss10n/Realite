@@ -20,9 +20,15 @@ import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.integration.classes.ClassesBridge;
 import ru.realite.magic.integration.classes.CoreClassesBridge;
 import ru.realite.magic.integration.classes.NoopClassesBridge;
+import ru.realite.magic.integration.city.CityBridge;
+import ru.realite.magic.integration.city.CoreCityBridge;
+import ru.realite.magic.integration.city.NoopCityBridge;
 import ru.realite.magic.integration.events.BukkitEventPublisher;
 import ru.realite.magic.integration.events.CoreEventPublisher;
 import ru.realite.magic.integration.events.MagicEventPublisher;
+import ru.realite.magic.integration.guilds.CoreGuildBridge;
+import ru.realite.magic.integration.guilds.GuildBridge;
+import ru.realite.magic.integration.guilds.NoopGuildBridge;
 import ru.realite.magic.integration.items.ItemsBridge;
 import ru.realite.magic.integration.items.ItemsBridgeFactory;
 import ru.realite.magic.listener.CombatListener;
@@ -34,7 +40,9 @@ import ru.realite.magic.listener.SpellBarListener;
 import ru.realite.magic.listener.SpellUnlockListener;
 import ru.realite.magic.listener.StaffRechargeListener;
 import ru.realite.magic.mastery.MasteryService;
+import ru.realite.magic.region.RegionRuleService;
 import ru.realite.magic.command.MagicCommand;
+import ru.realite.magic.service.GuildBonusService;
 import ru.realite.magic.service.MagicService;
 import ru.realite.magic.service.PlayerSpellService;
 import ru.realite.magic.service.PlayerSpellServiceImpl;
@@ -94,9 +102,13 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         playerSpellService = playerSpellServiceImpl;
         ItemsBridge itemsBridge = ItemsBridgeFactory.create();
         ClassesBridge classesBridge = resolveClassesBridge();
+        CityBridge cityBridge = resolveCityBridge();
+        GuildBridge guildBridge = resolveGuildBridge();
         debugService = new DebugService(messages);
         hudService = new MagicHudService(this, messages, spellRegistry);
         masteryService = new MasteryService(this, messages, spellRegistry, playerSpellServiceImpl);
+        RegionRuleService regionRuleService = new RegionRuleService(this, cityBridge);
+        GuildBonusService guildBonusService = new GuildBonusService(this, guildBridge);
         magicService = new MagicService(this,
                 messages,
                 spellRegistry,
@@ -107,7 +119,9 @@ public final class RealiteMagicPlugin extends JavaPlugin {
                 effectRegistry,
                 debugService,
                 hudService,
-                masteryService);
+                masteryService,
+                regionRuleService,
+                guildBonusService);
         magicService.start();
         magicApi = new MagicApiImpl(spellRegistry, playerSpellService, magicService);
         Bukkit.getServicesManager().register(MagicApi.class, magicApi, this, ServicePriority.Normal);
@@ -196,6 +210,22 @@ public final class RealiteMagicPlugin extends JavaPlugin {
             return coreBridge;
         }
         return new NoopClassesBridge();
+    }
+
+    private CityBridge resolveCityBridge() {
+        CoreCityBridge coreBridge = new CoreCityBridge();
+        if (coreBridge.isAvailable()) {
+            return coreBridge;
+        }
+        return new NoopCityBridge();
+    }
+
+    private GuildBridge resolveGuildBridge() {
+        CoreGuildBridge coreBridge = new CoreGuildBridge();
+        if (coreBridge.isAvailable()) {
+            return coreBridge;
+        }
+        return new NoopGuildBridge();
     }
 
     private MagicEventPublisher resolveEventPublisher() {

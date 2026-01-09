@@ -148,6 +148,11 @@ magic:
     wrong_item: "&cДля этого заклинания нужен предмет: &f{item}"
     give_item: "&aПолучено: &f{item}&a x{amount}"
     items_bridge_missing: "RealiteItems не подключен, requiredItemId не проверяется."
+  region:
+    denied:
+      default: "Здесь нельзя использовать магию."
+      school: "Эта школа магии запрещена в этой зоне."
+      spawn: "На спавне магия запрещена."
   staff:
     no_charges: "Посох разряжен."
     charges: "Заряды: {current}/{max}"

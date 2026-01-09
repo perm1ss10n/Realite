@@ -148,6 +148,11 @@ magic:
     wrong_item: "&cThis spell requires item: &f{item}"
     give_item: "&aReceived: &f{item}&a x{amount}"
     items_bridge_missing: "RealiteItems is not connected, requiredItemId is not checked."
+  region:
+    denied:
+      default: "You cannot use magic here."
+      school: "This magic school is forbidden here."
+      spawn: "Magic is disabled at spawn."
   staff:
     no_charges: "Your staff has no charges."
     charges: "Charges: {current}/{max}"
