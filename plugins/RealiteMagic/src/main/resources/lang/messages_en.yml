@@ -149,6 +149,12 @@ magic:
     wrong_item: "&cThis spell requires item: &f{item}"
     give_item: "&aReceived: &f{item}&a x{amount}"
     items_bridge_missing: "RealiteItems is not connected, requiredItemId is not checked."
+  reagents:
+    missing: "&cMissing reagent: &f{item}&c x{need}."
+  economy:
+    unavailable: "&cEconomy is unavailable."
+    not_enough: "&cNot enough money to cast."
+    paid: "&aPaid: &f{amount}&a."
   teleport:
     failed: "&cSafe teleport failed."
   region:

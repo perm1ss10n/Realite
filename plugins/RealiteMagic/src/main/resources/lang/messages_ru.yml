@@ -149,6 +149,12 @@ magic:
     wrong_item: "&cДля этого заклинания нужен предмет: &f{item}"
     give_item: "&aПолучено: &f{item}&a x{amount}"
     items_bridge_missing: "RealiteItems не подключен, requiredItemId не проверяется."
+  reagents:
+    missing: "&cНе хватает реагента: &f{item}&c x{need}."
+  economy:
+    unavailable: "&cЭкономика недоступна."
+    not_enough: "&cНедостаточно денег для каста."
+    paid: "&aОплачено: &f{amount}&a."
   teleport:
     failed: "&cБезопасная телепортация не найдена."
   region:

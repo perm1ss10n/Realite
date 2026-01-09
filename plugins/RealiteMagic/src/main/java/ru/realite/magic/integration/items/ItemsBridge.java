@@ -13,6 +13,10 @@ public interface ItemsBridge {
 
     boolean removeItem(Player player, String itemId, int amount);
 
+    default boolean takeItem(Player player, String itemId, int amount) {
+        return removeItem(player, itemId, amount);
+    }
+
     boolean isItem(ItemStack stack, String itemId);
 
     Optional<String> getItemId(ItemStack stack);
