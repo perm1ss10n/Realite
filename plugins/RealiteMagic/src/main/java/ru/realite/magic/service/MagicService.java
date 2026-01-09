@@ -36,6 +36,7 @@ import ru.realite.magic.integration.classes.ClassesBridge;
 import ru.realite.magic.integration.events.MagicEventPublisher;
 import ru.realite.magic.integration.items.ItemsBridge;
 import ru.realite.magic.integration.items.NoopItemsBridge;
+import ru.realite.magic.integration.talents.TalentsBridge;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.model.MageState;
 import ru.realite.magic.mastery.MasteryModifiers;
@@ -53,6 +54,7 @@ import ru.realite.magic.region.RegionRuleService;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellRegistry;
 import ru.realite.magic.spell.SpellRequirements;
+import ru.realite.magic.talent.TalentMagicService;
 import ru.realite.magic.target.SpellTarget;
 import ru.realite.magic.target.SpellTargetDefinition;
 import ru.realite.magic.target.SpellTargetType;
@@ -83,6 +85,7 @@ public final class MagicService {
     private final StaffChargeService staffChargeService;
     private final RegionRuleService regionRuleService;
     private final GuildBonusService guildBonusService;
+    private final TalentMagicService talentMagicService;
     private final Map<UUID, MageState> states = new HashMap<>();
     private final WarnLimiter warnLimiter = new WarnLimiter();
     private final SpellSelectMenu spellSelectMenu;
@@ -98,6 +101,7 @@ public final class MagicService {
                         PlayerSpellService playerSpellService,
                         ItemsBridge itemsBridge,
                         ClassesBridge classesBridge,
+                        TalentsBridge talentsBridge,
                         MagicEventPublisher eventPublisher,
                         EffectExecutorRegistry effectRegistry,
                         DebugService debugService,
@@ -119,6 +123,7 @@ public final class MagicService {
         this.masteryService = Objects.requireNonNull(masteryService, "masteryService");
         this.regionRuleService = Objects.requireNonNull(regionRuleService, "regionRuleService");
         this.guildBonusService = Objects.requireNonNull(guildBonusService, "guildBonusService");
+        this.talentMagicService = new TalentMagicService(talentsBridge, plugin.getLogger());
         this.castEngine = new CastEngine(plugin);
         this.failWhenItemsUnavailable = plugin.getConfig()
                 .getBoolean("requirements.failWhenItemsUnavailable", true);
@@ -306,7 +311,7 @@ public final class MagicService {
         if (runeCheck instanceof CheckResult.Fail fail) {
             return fail(player, spell, null, targetType(spell), fail.reasonKey(), fail.placeholders(), false, 0L);
         }
-        BalanceModifiers modifiers = balanceModifiers(player, spell);
+        BalanceModifiers modifiers = balanceModifiers(player, spell, null);
         double effectiveMana = effectiveManaCost(spell, modifiers);
         double currentMana = getMana(player);
         if (currentMana < effectiveMana) {
@@ -348,7 +353,7 @@ public final class MagicService {
     }
 
     public void cast(Player player, SpellDefinition spell, SpellTarget target) {
-        BalanceModifiers modifiers = balanceModifiers(player, spell);
+        BalanceModifiers modifiers = balanceModifiers(player, spell, null);
         cast(player, spell, target, modifiers);
     }
 
@@ -365,14 +370,8 @@ public final class MagicService {
             return;
         }
         EffectContext context = new EffectContext(player, spell, plan, modifiers, ThreadLocalRandom.current(), this);
-        for (SpellEffectDefinition effect : spell.effects()) {
-            SpellEffectExecutor executor = effectRegistry.find(effect.type()).orElse(null);
-            if (executor == null) {
-                plugin.getLogger().warning("Unknown effect executor: " + effect.type());
-                continue;
-            }
-            executor.execute(context, effect);
-        }
+        executeEffects(context, spell.effects());
+        executeEffects(context, talentMagicService.extraEffects(player, spell, plan));
         handleCastRewards(player, spell);
     }
 
@@ -521,7 +520,7 @@ public final class MagicService {
         if (spell == null) {
             return;
         }
-        BalanceModifiers modifiers = balanceModifiers(player, spell);
+        BalanceModifiers modifiers = balanceModifiers(player, spell, null);
         consumeRequiredItemOnCast(player, spell);
         addMana(player, -effectiveManaCost(spell, modifiers));
         setCooldown(player, GLOBAL_COOLDOWN_KEY, globalCastTicks());
@@ -700,6 +699,10 @@ public final class MagicService {
     }
 
     private BalanceModifiers balanceModifiers(Player player, SpellDefinition spell) {
+        return balanceModifiers(player, spell, null);
+    }
+
+    private BalanceModifiers balanceModifiers(Player player, SpellDefinition spell, @Nullable CastExecutionPlan plan) {
         if (spell == null) {
             return BalanceModifiers.identity();
         }
@@ -708,22 +711,40 @@ public final class MagicService {
         ItemModifiers itemModifiers = itemModifiersService.modifiers(player, spell);
         BalanceModifiers regionModifiers = regionRuleService.regionModifiers(player, spell, player.getLocation());
         BalanceModifiers guildModifiers = guildBonusService.guildModifiers(player, spell);
+        BalanceModifiers talentModifiers = talentMagicService.modifiers(player, spell, plan);
         return new BalanceModifiers(
                 schoolModifiers.damageMultiplier()
                         * masteryModifiers.damageMultiplier()
                         * itemModifiers.damageMultiplier()
                         * regionModifiers.damageMultiplier()
-                        * guildModifiers.damageMultiplier(),
+                        * guildModifiers.damageMultiplier()
+                        * talentModifiers.damageMultiplier(),
                 schoolModifiers.manaMultiplier()
                         * masteryModifiers.manaMultiplier()
                         * itemModifiers.manaMultiplier()
                         * regionModifiers.manaMultiplier()
-                        * guildModifiers.manaMultiplier(),
+                        * guildModifiers.manaMultiplier()
+                        * talentModifiers.manaMultiplier(),
                 schoolModifiers.cooldownMultiplier()
                         * masteryModifiers.cooldownMultiplier()
                         * itemModifiers.cooldownMultiplier()
                         * regionModifiers.cooldownMultiplier()
-                        * guildModifiers.cooldownMultiplier());
+                        * guildModifiers.cooldownMultiplier()
+                        * talentModifiers.cooldownMultiplier());
+    }
+
+    private void executeEffects(EffectContext context, Iterable<SpellEffectDefinition> effects) {
+        if (effects == null) {
+            return;
+        }
+        for (SpellEffectDefinition effect : effects) {
+            SpellEffectExecutor executor = effectRegistry.find(effect.type()).orElse(null);
+            if (executor == null) {
+                plugin.getLogger().warning("Unknown effect executor: " + effect.type());
+                continue;
+            }
+            executor.execute(context, effect);
+        }
     }
 
     private CastAttemptResult checkCastItem(Player player, SpellDefinition spell) {
