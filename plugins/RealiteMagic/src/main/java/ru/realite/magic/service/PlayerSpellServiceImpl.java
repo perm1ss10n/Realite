@@ -10,6 +10,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import ru.realite.magic.api.event.SpellSelectedEvent;
+import ru.realite.magic.api.event.SpellUnlockedEvent;
+import ru.realite.magic.integration.events.MagicEventPublisher;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.model.PlayerSpellData;
 import ru.realite.magic.spell.SpellDefinition;
@@ -21,15 +24,18 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
     private final PlayerSpellStorage storage;
     private final SpellRegistry registry;
     private final MagicMessages messages;
+    private final MagicEventPublisher eventPublisher;
     private final Map<UUID, PlayerSpellData> cache = new HashMap<>();
     private final Set<UUID> dirty = new HashSet<>();
 
     public PlayerSpellServiceImpl(PlayerSpellStorage storage,
                                   SpellRegistry registry,
-                                  MagicMessages messages) {
+                                  MagicMessages messages,
+                                  MagicEventPublisher eventPublisher) {
         this.storage = Objects.requireNonNull(storage, "storage");
         this.registry = Objects.requireNonNull(registry, "registry");
         this.messages = Objects.requireNonNull(messages, "messages");
+        this.eventPublisher = Objects.requireNonNull(eventPublisher, "eventPublisher");
     }
 
     @Override
@@ -50,6 +56,7 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
         }
         data.learn(normalized);
         markDirty(playerId);
+        eventPublisher.publish(new SpellUnlockedEvent(playerId, normalized, source));
         return new UnlockResult.Ok(false);
     }
 
@@ -97,19 +104,23 @@ public final class PlayerSpellServiceImpl implements PlayerSpellService {
         if (!data.isLearned(normalized)) {
             return new SelectResult.Fail(SpellActionReason.NOT_LEARNED);
         }
+        String previous = data.selected().orElse(null);
         data.selected(normalized);
         markDirty(playerId);
+        eventPublisher.publish(new SpellSelectedEvent(playerId, previous, normalized));
         return new SelectResult.Ok();
     }
 
     @Override
     public void clearSelected(UUID playerId) {
         PlayerSpellData data = data(playerId);
-        if (data.selected().isEmpty()) {
+        String previous = data.selected().orElse(null);
+        if (previous == null) {
             return;
         }
         data.selected(null);
         markDirty(playerId);
+        eventPublisher.publish(new SpellSelectedEvent(playerId, previous, null));
     }
 
     @Override
