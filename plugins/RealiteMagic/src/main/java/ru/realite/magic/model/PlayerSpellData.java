@@ -1,7 +1,9 @@
 package ru.realite.magic.model;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
@@ -11,12 +13,16 @@ public final class PlayerSpellData {
 
     private final int version;
     private final Set<String> learned;
+    private final List<String> slots;
+    private int activeSlot;
     @Nullable
     private String selected;
 
     public PlayerSpellData(int version) {
         this.version = version;
         this.learned = new HashSet<>();
+        this.slots = new ArrayList<>(Collections.nCopies(9, null));
+        this.activeSlot = 1;
     }
 
     public int version() {
@@ -52,6 +58,54 @@ public final class PlayerSpellData {
 
     public void selected(@Nullable String spellId) {
         this.selected = normalize(spellId);
+    }
+
+    public List<String> slots() {
+        return Collections.unmodifiableList(slots);
+    }
+
+    public Optional<String> slot(int slot) {
+        int index = slotIndex(slot);
+        if (index < 0) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(slots.get(index));
+    }
+
+    public void slot(int slot, @Nullable String spellId) {
+        int index = slotIndex(slot);
+        if (index < 0) {
+            return;
+        }
+        slots.set(index, normalize(spellId));
+    }
+
+    public void slots(List<String> slots) {
+        if (slots == null) {
+            return;
+        }
+        for (int i = 0; i < this.slots.size(); i++) {
+            String value = i < slots.size() ? slots.get(i) : null;
+            this.slots.set(i, normalize(value));
+        }
+    }
+
+    public int activeSlot() {
+        return activeSlot;
+    }
+
+    public void activeSlot(int slot) {
+        if (slotIndex(slot) < 0) {
+            return;
+        }
+        this.activeSlot = slot;
+    }
+
+    private int slotIndex(int slot) {
+        if (slot < 1 || slot > 9) {
+            return -1;
+        }
+        return slot - 1;
     }
 
     @Nullable

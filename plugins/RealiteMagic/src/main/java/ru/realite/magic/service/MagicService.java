@@ -204,14 +204,21 @@ public final class MagicService {
     }
 
     public CastAttemptResult tryCastSelected(Player player) {
-        String selectedSpellId = playerSpellService.getSelected(player.getUniqueId()).orElse(null);
+        UUID playerId = player.getUniqueId();
+        int activeSlot = playerSpellService.getActiveSlot(playerId);
+        String selectedSpellId = playerSpellService.getActiveSlotSpell(playerId).orElse(null);
         if (selectedSpellId == null) {
-            return fail(player, null, null, SpellTargetType.NONE, "magic.cast.no_selected", Map.of(),
-                    warnLimited(player, "no_selected"), WARN_WINDOW_MS);
+            return fail(player, null, null, SpellTargetType.NONE, "magic.cast.slot_empty", Map.of(),
+                    warnLimited(player, "slot_empty"), WARN_WINDOW_MS);
+        }
+        if (!playerSpellService.hasSpell(playerId, selectedSpellId)) {
+            playerSpellService.setSlot(playerId, activeSlot, null);
+            return fail(player, null, selectedSpellId, SpellTargetType.NONE,
+                    "magic.spell.select.not_learned", Map.of("spell", selectedSpellId), false, 0L);
         }
         SpellDefinition spell = spellRegistry.find(selectedSpellId).orElse(null);
         if (spell == null) {
-            playerSpellService.clearSelected(player.getUniqueId());
+            playerSpellService.setSlot(playerId, activeSlot, null);
             return fail(player, null, selectedSpellId, SpellTargetType.NONE,
                     "magic.spell.unknown", Map.of("spell", selectedSpellId), false, 0L);
         }
