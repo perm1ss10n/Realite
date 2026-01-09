@@ -148,6 +148,12 @@ magic:
     wrong_item: "&cThis spell requires item: &f{item}"
     give_item: "&aReceived: &f{item}&a x{amount}"
     items_bridge_missing: "RealiteItems is not connected, requiredItemId is not checked."
+  staff:
+    no_charges: "Your staff has no charges."
+    charges: "Charges: {current}/{max}"
+    recharged: "Staff recharged: +{add}"
+  rune:
+    school_mismatch: "Rune school does not match the spell."
   school:
     conflict: "&cThis school conflicts with {other}."
     name:

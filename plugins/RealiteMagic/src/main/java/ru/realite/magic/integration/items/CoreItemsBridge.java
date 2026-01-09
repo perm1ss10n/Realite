@@ -3,12 +3,16 @@ package ru.realite.magic.integration.items;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
 import java.util.function.Supplier;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import ru.realite.items.service.ItemService;
 
@@ -174,6 +178,35 @@ public final class CoreItemsBridge implements ItemsBridge {
             }
             remaining -= toGive;
         }
+    }
+
+    @Override
+    public OptionalInt readInt(ItemStack stack, String key) {
+        Integer value = readTag(stack, key, PersistentDataType.INTEGER);
+        return value == null ? OptionalInt.empty() : OptionalInt.of(value);
+    }
+
+    @Override
+    public OptionalDouble readDouble(ItemStack stack, String key) {
+        Double value = readTag(stack, key, PersistentDataType.DOUBLE);
+        return value == null ? OptionalDouble.empty() : OptionalDouble.of(value);
+    }
+
+    @Override
+    public Optional<String> readString(ItemStack stack, String key) {
+        return Optional.ofNullable(readTag(stack, key, PersistentDataType.STRING));
+    }
+
+    private <T> T readTag(ItemStack stack, String key, PersistentDataType<?, T> type) {
+        if (stack == null || key == null || key.isBlank()) {
+            return null;
+        }
+        ItemMeta meta = stack.getItemMeta();
+        if (meta == null) {
+            return null;
+        }
+        PersistentDataContainer container = meta.getPersistentDataContainer();
+        return container.get(MagicItemTags.key(key), type);
     }
 
     private static ItemService resolveItemService() {
