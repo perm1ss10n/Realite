@@ -13,6 +13,8 @@ import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import ru.realite.magic.target.SpellTargetDefinition;
+import ru.realite.magic.target.SpellTargetType;
 
 public final class SpellRegistry {
 
@@ -161,6 +163,7 @@ public final class SpellRegistry {
         }
 
         SpellRequirements requirements = parseRequirements(section.getConfigurationSection("requirements"));
+        SpellTargetDefinition target = parseTarget(section.getConfigurationSection("target"), range);
         String castItemId = parseCastItemId(section.getConfigurationSection("cast"));
         SpellGiveItem giveItem = parseGiveItem(section.getConfigurationSection("effects"));
         Material iconMaterial = parseIconMaterial(section.getConfigurationSection("icon"),
@@ -171,7 +174,7 @@ public final class SpellRegistry {
         Integer iconCustomModelData = parseIconCustomModelData(section.getConfigurationSection("icon"));
         Integer guiSlot = parseGuiSlot(section.getConfigurationSection("gui"), id, fileName, errors);
         return new SpellDefinition(id, type, nameKey, descKey, mana, cooldownTicks, range, damage, requirements,
-                castItemId, giveItem.id(), giveItem.amount(), iconMaterial, iconCustomModelData, guiSlot);
+                target, castItemId, giveItem.id(), giveItem.amount(), iconMaterial, iconCustomModelData, guiSlot);
     }
 
     private SpellRequirements parseRequirements(ConfigurationSection section) {
@@ -222,6 +225,26 @@ public final class SpellRegistry {
             amount = 1;
         }
         return new SpellGiveItem(id, amount);
+    }
+
+    private SpellTargetDefinition parseTarget(ConfigurationSection section, double range) {
+        if (section == null) {
+            return SpellTargetDefinition.none();
+        }
+        String typeRaw = section.getString("type");
+        SpellTargetType type = SpellTargetType.NONE;
+        if (typeRaw != null && !typeRaw.isBlank()) {
+            try {
+                type = SpellTargetType.valueOf(typeRaw.trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                type = SpellTargetType.NONE;
+            }
+        }
+        double maxDistance = section.getDouble("maxDistance", range);
+        boolean lineOfSight = section.getBoolean("lineOfSight", true);
+        boolean allowPlayers = section.getBoolean("allowPlayers", true);
+        boolean allowMobs = section.getBoolean("allowMobs", true);
+        return new SpellTargetDefinition(type, maxDistance, lineOfSight, allowPlayers, allowMobs);
     }
 
     private Material resolveDefaultIconMaterial(List<SpellLoadError> errors) {

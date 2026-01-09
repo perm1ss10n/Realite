@@ -32,6 +32,9 @@ import ru.realite.magic.spell.SpellCaster;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellRegistry;
 import ru.realite.magic.spell.SpellRequirements;
+import ru.realite.magic.target.SpellTargetDefinition;
+import ru.realite.magic.target.SpellTargetType;
+import ru.realite.magic.target.TargetResolver;
 
 public final class MagicService {
 
@@ -53,6 +56,7 @@ public final class MagicService {
     private final Map<UUID, MageState> states = new HashMap<>();
     private final WarnLimiter warnLimiter = new WarnLimiter();
     private final SpellSelectMenu spellSelectMenu;
+    private final TargetResolver targetResolver = new TargetResolver();
     private BukkitTask regenTask;
     private boolean itemBridgeWarned;
 
@@ -229,6 +233,9 @@ public final class MagicService {
         if (currentMana < spell.mana()) {
             String needed = formatNumber(spell.mana() - currentMana, "casting.manaFormat", "0.0");
             return fail(player, spell.id(), "magic.cast.no_mana", Map.of("mana", needed), warnLimited(player, "no_mana"), WARN_WINDOW_MS);
+        }
+        if (isTargetRequired(spell) && targetResolver.resolve(player, spell).isEmpty()) {
+            return fail(player, spell.id(), "magic.cast.no_target", Map.of(), warnLimited(player, "no_target"), WARN_WINDOW_MS);
         }
         consumeRequiredItemOnCast(player, spell);
         addMana(player, -spell.mana());
@@ -486,6 +493,14 @@ public final class MagicService {
             format = new DecimalFormat(fallbackPattern, DecimalFormatSymbols.getInstance(Locale.US));
         }
         return format.format(value);
+    }
+
+    private boolean isTargetRequired(SpellDefinition spell) {
+        SpellTargetDefinition target = spell.target();
+        if (target == null) {
+            return false;
+        }
+        return target.type() != SpellTargetType.NONE;
     }
 
 }

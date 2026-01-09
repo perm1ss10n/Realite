@@ -1,6 +1,7 @@
 package ru.realite.magic.spell;
 
 import org.bukkit.Material;
+import ru.realite.magic.target.SpellTargetDefinition;
 
 public record SpellDefinition(
         String id,
@@ -12,6 +13,7 @@ public record SpellDefinition(
         double range,
         double damage,
         SpellRequirements requirements,
+        SpellTargetDefinition target,
         String castItemId,
         String giveItemId,
         int giveItemAmount,
