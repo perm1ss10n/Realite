@@ -92,6 +92,7 @@ magic:
     no_selected: "&cNo spell selected."
     cooldown: "&cWait {time}s."
     no_mana: "&cNot enough mana: &f{mana}"
+    no_target: "&cNo valid target."
     missing_item: "&cRequired item: &f{item}"
     wrong_item: "&cThis spell requires item: &f{item}"
     give_item: "&aReceived: &f{item}&a x{amount}"
