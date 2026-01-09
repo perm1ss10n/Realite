@@ -10,11 +10,15 @@ import ru.realite.core.api.CoreApi;
 import ru.realite.magic.api.MagicApi;
 import ru.realite.magic.api.impl.MagicApiImpl;
 import ru.realite.magic.debug.DebugService;
+import ru.realite.magic.effect.CleanseEffectExecutor;
 import ru.realite.magic.effect.DamageEffectExecutor;
 import ru.realite.magic.effect.EffectExecutorRegistry;
+import ru.realite.magic.effect.HealEffectExecutor;
+import ru.realite.magic.effect.KnockbackEffectExecutor;
 import ru.realite.magic.effect.ParticlesEffectExecutor;
 import ru.realite.magic.effect.PotionEffectExecutor;
 import ru.realite.magic.effect.SoundEffectExecutor;
+import ru.realite.magic.effect.TeleportEffectExecutor;
 import ru.realite.magic.hud.MagicHudService;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.integration.classes.ClassesBridge;
@@ -243,6 +247,10 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         registry.register(new PotionEffectExecutor());
         registry.register(new ParticlesEffectExecutor());
         registry.register(new SoundEffectExecutor());
+        registry.register(new HealEffectExecutor());
+        registry.register(new TeleportEffectExecutor());
+        registry.register(new KnockbackEffectExecutor());
+        registry.register(new CleanseEffectExecutor());
         return registry;
     }
 }

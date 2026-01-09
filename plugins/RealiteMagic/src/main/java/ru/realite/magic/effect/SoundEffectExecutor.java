@@ -51,7 +51,10 @@ public final class SoundEffectExecutor implements SpellEffectExecutor {
             return EffectValidationResult.fail("magic.cmd.spells.errors.effect_missing_param",
                     Map.of("type", def.type(), "param", "target"));
         }
-        if (targetType != EffectTargetType.LOCATION) {
+        if (targetType != EffectTargetType.LOCATION
+                && targetType != EffectTargetType.ORIGIN
+                && targetType != EffectTargetType.IMPACT
+                && targetType != EffectTargetType.PRIMARY) {
             return EffectValidationResult.fail("magic.cmd.spells.errors.effect_invalid_param",
                     Map.of("type", def.type(), "param", "target", "value", String.valueOf(targetRaw)));
         }
@@ -68,7 +71,8 @@ public final class SoundEffectExecutor implements SpellEffectExecutor {
         if (sound == null || volume == null || pitch == null || volume < 0 || pitch < 0) {
             return;
         }
-        Location location = EffectTargetResolver.resolveLocation(ctx.target(), ctx.caster());
+        EffectTargetType targetType = EffectTargetType.from(params.get("target"));
+        Location location = EffectTargetResolver.resolveLocation(ctx.plan(), targetType, ctx.caster());
         if (location == null) {
             return;
         }

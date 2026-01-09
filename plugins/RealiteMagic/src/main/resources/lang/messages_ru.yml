@@ -144,10 +144,13 @@ magic:
     cooldown: "&cПодожди {time}с."
     no_mana: "&cНе хватает маны: &f{mana}"
     no_target: "&cНет подходящей цели."
+    no_targets: "&cЦели не найдены."
     missing_item: "&cНужен предмет: &f{item}"
     wrong_item: "&cДля этого заклинания нужен предмет: &f{item}"
     give_item: "&aПолучено: &f{item}&a x{amount}"
     items_bridge_missing: "RealiteItems не подключен, requiredItemId не проверяется."
+  teleport:
+    failed: "&cБезопасная телепортация не найдена."
   region:
     denied:
       default: "Здесь нельзя использовать магию."

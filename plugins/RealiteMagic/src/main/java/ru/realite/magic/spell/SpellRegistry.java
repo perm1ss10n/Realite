@@ -15,6 +15,14 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import ru.realite.magic.cast.AoeCastDefinition;
+import ru.realite.magic.cast.BeamCastDefinition;
+import ru.realite.magic.cast.BeamParticlesDefinition;
+import ru.realite.magic.cast.CastDeliveryType;
+import ru.realite.magic.cast.CastLimits;
+import ru.realite.magic.cast.ChainCastDefinition;
+import ru.realite.magic.cast.ProjectileCastDefinition;
+import ru.realite.magic.cast.ProjectileHitPolicy;
 import ru.realite.magic.effect.EffectExecutorRegistry;
 import ru.realite.magic.effect.SpellEffectDefinition;
 import ru.realite.magic.school.MagicSchool;
@@ -68,6 +76,7 @@ public final class SpellRegistry {
         }
 
         Material defaultIconMaterial = resolveDefaultIconMaterial(errors);
+        CastLimits castLimits = CastLimits.fromConfig(plugin.getConfig());
         SpellSchemaValidator validator = new SpellSchemaValidator(effectRegistry);
         for (File file : files) {
             YamlConfiguration cfg = new YamlConfiguration();
@@ -86,7 +95,7 @@ public final class SpellRegistry {
                         Map.of("field", "spell"));
                 continue;
             }
-            SpellDefinition def = parseSpell(root, defaultIconMaterial, file.getName());
+            SpellDefinition def = parseSpell(root, defaultIconMaterial, castLimits, file.getName());
             SchemaReport schemaReport = validator.validate(def, file.getName());
             addSchemaErrors(errors, schemaReport);
             if (!schemaReport.ok()) {
@@ -126,6 +135,7 @@ public final class SpellRegistry {
 
     private SpellDefinition parseSpell(ConfigurationSection section,
                                        Material defaultIconMaterial,
+                                       CastLimits castLimits,
                                        String fileName) {
         String id = section.getString("id");
         String typeRaw = section.getString("type");
@@ -139,19 +149,25 @@ public final class SpellRegistry {
         double damage = section.getDouble("damage", -1);
 
         SpellRequirements requirements = parseRequirements(section.getConfigurationSection("requirements"));
+        ConfigurationSection castSection = section.getConfigurationSection("cast");
         SpellTargetDefinition target = parseTarget(section.getConfigurationSection("target"), range);
+        CastDeliveryType castDelivery = parseCastDeliveryType(castSection);
+        ProjectileCastDefinition projectileCast = parseProjectileCast(castSection, castLimits, id);
+        BeamCastDefinition beamCast = parseBeamCast(castSection, castLimits, id);
+        AoeCastDefinition aoeCast = parseAoeCast(castSection, castLimits, id);
+        ChainCastDefinition chainCast = parseChainCast(castSection, castLimits, id);
         List<SpellEffectDefinition> effects = parseEffects(section);
-        SpellCastTrigger castTrigger = parseCastTrigger(section.getConfigurationSection("cast"));
-        String castItemId = parseCastItemId(section.getConfigurationSection("cast"));
-        Integer staffChargesCost = parseStaffChargesCost(section.getConfigurationSection("cast"));
+        SpellCastTrigger castTrigger = parseCastTrigger(castSection);
+        String castItemId = parseCastItemId(castSection);
+        Integer staffChargesCost = parseStaffChargesCost(castSection);
         SpellGiveItem giveItem = parseGiveItem(section.getConfigurationSection("effects"));
         Material iconMaterial = parseIconMaterial(section.getConfigurationSection("icon"),
                 defaultIconMaterial);
         Integer iconCustomModelData = parseIconCustomModelData(section.getConfigurationSection("icon"));
         Integer guiSlot = parseGuiSlot(section.getConfigurationSection("gui"));
         return new SpellDefinition(id, type, nameKey, descKey, school, mana, cooldownTicks, range, damage, requirements,
-                target, effects, castTrigger, castItemId, staffChargesCost, giveItem.id(), giveItem.amount(), iconMaterial,
-                iconCustomModelData, guiSlot);
+                target, castDelivery, projectileCast, beamCast, aoeCast, chainCast, effects, castTrigger, castItemId,
+                staffChargesCost, giveItem.id(), giveItem.amount(), iconMaterial, iconCustomModelData, guiSlot);
     }
 
     private List<SpellEffectDefinition> parseEffects(ConfigurationSection section) {
@@ -213,6 +229,129 @@ public final class SpellRegistry {
         }
         try {
             return SpellCastTrigger.valueOf(triggerRaw.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    private CastDeliveryType parseCastDeliveryType(ConfigurationSection section) {
+        if (section == null) {
+            return CastDeliveryType.INSTANT;
+        }
+        String raw = section.getString("delivery");
+        if (raw == null || raw.isBlank()) {
+            return CastDeliveryType.INSTANT;
+        }
+        try {
+            return CastDeliveryType.valueOf(raw.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    private ProjectileCastDefinition parseProjectileCast(ConfigurationSection section,
+                                                          CastLimits limits,
+                                                          String spellId) {
+        if (section == null) {
+            return null;
+        }
+        ConfigurationSection projectile = section.getConfigurationSection("projectile");
+        if (projectile == null) {
+            return null;
+        }
+        double speed = projectile.getDouble("speed", -1);
+        boolean gravity = projectile.getBoolean("gravity", false);
+        double maxDistance = projectile.getDouble("maxDistance", -1);
+        double hitRadius = projectile.getDouble("hitRadius", -1);
+        String onHitRaw = projectile.getString("onHit", "STOP");
+        ProjectileHitPolicy onHit = parseProjectileHitPolicy(onHitRaw);
+        if (maxDistance > limits.maxProjectileDistance()) {
+            plugin.getLogger().warning("Spell '" + spellId + "' projectile maxDistance " + maxDistance
+                    + " exceeds limit " + limits.maxProjectileDistance() + ", clamping.");
+            maxDistance = limits.maxProjectileDistance();
+        }
+        return new ProjectileCastDefinition(speed, gravity, maxDistance, hitRadius, onHit);
+    }
+
+    private BeamCastDefinition parseBeamCast(ConfigurationSection section,
+                                             CastLimits limits,
+                                             String spellId) {
+        if (section == null) {
+            return null;
+        }
+        ConfigurationSection beam = section.getConfigurationSection("beam");
+        if (beam == null) {
+            return null;
+        }
+        double maxDistance = beam.getDouble("maxDistance", -1);
+        double step = beam.getDouble("step", -1);
+        double hitRadius = beam.getDouble("hitRadius", -1);
+        BeamParticlesDefinition particles = null;
+        ConfigurationSection particlesSection = beam.getConfigurationSection("particles");
+        if (particlesSection != null) {
+            String particle = particlesSection.getString("particle");
+            int countPerStep = particlesSection.getInt("countPerStep", -1);
+            particles = new BeamParticlesDefinition(particle, countPerStep);
+        }
+        if (maxDistance > limits.maxBeamDistance()) {
+            plugin.getLogger().warning("Spell '" + spellId + "' beam maxDistance " + maxDistance
+                    + " exceeds limit " + limits.maxBeamDistance() + ", clamping.");
+            maxDistance = limits.maxBeamDistance();
+        }
+        return new BeamCastDefinition(maxDistance, step, hitRadius, particles);
+    }
+
+    private AoeCastDefinition parseAoeCast(ConfigurationSection section,
+                                           CastLimits limits,
+                                           String spellId) {
+        if (section == null) {
+            return null;
+        }
+        ConfigurationSection aoe = section.getConfigurationSection("aoe");
+        if (aoe == null) {
+            return null;
+        }
+        double radius = aoe.getDouble("radius", -1);
+        int maxTargets = aoe.getInt("maxTargets", -1);
+        boolean includePlayers = aoe.getBoolean("includePlayers", true);
+        boolean includeMobs = aoe.getBoolean("includeMobs", true);
+        if (maxTargets > limits.maxAoeTargets()) {
+            plugin.getLogger().warning("Spell '" + spellId + "' aoe maxTargets " + maxTargets
+                    + " exceeds limit " + limits.maxAoeTargets() + ", clamping.");
+            maxTargets = limits.maxAoeTargets();
+        }
+        return new AoeCastDefinition(radius, maxTargets, includePlayers, includeMobs);
+    }
+
+    private ChainCastDefinition parseChainCast(ConfigurationSection section,
+                                               CastLimits limits,
+                                               String spellId) {
+        if (section == null) {
+            return null;
+        }
+        ConfigurationSection chain = section.getConfigurationSection("chain");
+        if (chain == null) {
+            return null;
+        }
+        int jumps = chain.getInt("jumps", -1);
+        double jumpRange = chain.getDouble("jumpRange", -1);
+        boolean includePlayers = chain.getBoolean("includePlayers", true);
+        boolean includeMobs = chain.getBoolean("includeMobs", true);
+        int maxTargets = jumps < 0 ? jumps : jumps + 1;
+        if (maxTargets > limits.maxChainTargets()) {
+            plugin.getLogger().warning("Spell '" + spellId + "' chain jumps " + jumps
+                    + " exceeds limit " + limits.maxChainTargets() + ", clamping.");
+            jumps = Math.max(0, limits.maxChainTargets() - 1);
+        }
+        return new ChainCastDefinition(jumps, jumpRange, includePlayers, includeMobs);
+    }
+
+    private ProjectileHitPolicy parseProjectileHitPolicy(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return ProjectileHitPolicy.STOP;
+        }
+        try {
+            return ProjectileHitPolicy.valueOf(raw.trim().toUpperCase());
         } catch (IllegalArgumentException ex) {
             return null;
         }

@@ -18,6 +18,12 @@ casting:
   cooldownFormat: "0.0"
   giveItemMessage: true
 
+limits:
+  maxAoeTargets: 16
+  maxChainTargets: 8
+  maxBeamDistance: 30
+  maxProjectileDistance: 40
+
 staff:
   enabled: true
   requireStaff: true
