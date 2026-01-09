@@ -2,9 +2,12 @@ package ru.realite.magic;
 
 import java.io.File;
 import org.bukkit.Bukkit;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.core.api.CoreApi;
+import ru.realite.magic.api.MagicApi;
+import ru.realite.magic.api.impl.MagicApiImpl;
 import ru.realite.magic.debug.DebugService;
 import ru.realite.magic.effect.DamageEffectExecutor;
 import ru.realite.magic.effect.EffectExecutorRegistry;
@@ -40,6 +43,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
     private SpellRegistry spellRegistry;
     private PlayerSpellService playerSpellService;
     private DebugService debugService;
+    private MagicApi magicApi;
 
     @Override
     public void onEnable() {
@@ -77,6 +81,8 @@ public final class RealiteMagicPlugin extends JavaPlugin {
                 effectRegistry,
                 debugService);
         magicService.start();
+        magicApi = new MagicApiImpl(spellRegistry, playerSpellService, magicService);
+        Bukkit.getServicesManager().register(MagicApi.class, magicApi, this, ServicePriority.Normal);
         registerCommand();
         registerListeners();
     }
@@ -101,6 +107,10 @@ public final class RealiteMagicPlugin extends JavaPlugin {
     public void onDisable() {
         if (magicService != null) {
             magicService.stop();
+        }
+        if (magicApi != null) {
+            Bukkit.getServicesManager().unregister(MagicApi.class, magicApi);
+            magicApi = null;
         }
         if (playerSpellService != null) {
             playerSpellService.flushAll();
