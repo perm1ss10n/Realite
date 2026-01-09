@@ -36,7 +36,17 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         saveIfNotExists("spells/warlock_basic.yml");
         messages = new MagicMessages(this);
         spellRegistry = new SpellRegistry(this);
-        spellRegistry.load();
+        var report = spellRegistry.load();
+        if (report.hasErrors()) {
+            getLogger().warning(messages.raw("magic.cmd.spells.errors.header"));
+            for (var error : report.errors()) {
+                getLogger().warning(messages.raw("magic.cmd.spells.errors.entry",
+                        "file", error.fileName(),
+                        "error", error.messageKey() == null
+                                ? (error.message() == null ? messages.raw("magic.cmd.spells.errors.unknown") : error.message())
+                                : messages.raw(error.messageKey(), error.placeholders())));
+            }
+        }
         PlayerSpellStorage storage = new YamlPlayerSpellStorage(this, messages);
         playerSpellService = new PlayerSpellServiceImpl(storage, spellRegistry, messages);
         ItemsBridge itemsBridge = ItemsBridgeFactory.create();

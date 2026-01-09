@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -20,6 +21,8 @@ import ru.realite.magic.service.SpellActionReason;
 import ru.realite.magic.service.UnlockCause;
 import ru.realite.magic.service.UnlockResult;
 import ru.realite.magic.spell.SpellDefinition;
+import ru.realite.magic.spell.SpellLoadError;
+import ru.realite.magic.spell.SpellLoadReport;
 
 public final class MagicCommand implements CommandExecutor, TabCompleter {
 
@@ -51,6 +54,9 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
         if ("spell".equals(sub)) {
             return handleSpell(sender, args);
         }
+        if ("spells".equals(sub)) {
+            return handleSpells(sender, args);
+        }
         sender.sendMessage(messages.msg("magic.cmd.usage"));
         return true;
     }
@@ -58,16 +64,22 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return List.of("menu", "spell", "mana");
+            return List.of("menu", "spell", "spells", "mana");
         }
-        if (args.length >= 2 && !args[0].equalsIgnoreCase("spell")) {
+        if (args.length >= 2 && !args[0].equalsIgnoreCase("spell") && !args[0].equalsIgnoreCase("spells")) {
             return Collections.emptyList();
         }
         if (!sender.hasPermission(PERMISSION_ADMIN)) {
             return Collections.emptyList();
         }
         if (args.length == 2) {
+            if (args[0].equalsIgnoreCase("spells")) {
+                return List.of("reload", "validate");
+            }
             return List.of("give", "remove", "list", "select", "clear");
+        }
+        if (args[0].equalsIgnoreCase("spells")) {
+            return Collections.emptyList();
         }
         String action = args[1].toLowerCase(Locale.ROOT);
         if (args.length == 3) {
@@ -127,6 +139,81 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
                 yield true;
             }
         };
+    }
+
+    private boolean handleSpells(CommandSender sender, String[] args) {
+        if (!sender.hasPermission(PERMISSION_ADMIN)) {
+            sender.sendMessage(messages.msg("magic.command.errors.no_permission"));
+            return true;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(messages.msg("magic.cmd.spells.usage"));
+            return true;
+        }
+        String action = args[1].toLowerCase(Locale.ROOT);
+        return switch (action) {
+            case "reload" -> handleSpellsReload(sender);
+            case "validate" -> handleSpellsValidate(sender);
+            default -> {
+                sender.sendMessage(messages.msg("magic.cmd.spells.usage"));
+                yield true;
+            }
+        };
+    }
+
+    private boolean handleSpellsReload(CommandSender sender) {
+        SpellLoadReport report = magicService.spellRegistry().reload();
+        sender.sendMessage(messages.msg("magic.cmd.spells.reload.ok",
+                "count", String.valueOf(report.loadedCount()),
+                "errors", String.valueOf(report.errors().size())));
+        sendSpellErrors(sender, report);
+        logSpellReport(report);
+        return true;
+    }
+
+    private boolean handleSpellsValidate(CommandSender sender) {
+        SpellLoadReport report = magicService.spellRegistry().validate();
+        sender.sendMessage(messages.msg("magic.cmd.spells.validate.ok",
+                "count", String.valueOf(report.loadedCount()),
+                "errors", String.valueOf(report.errors().size())));
+        sendSpellErrors(sender, report);
+        logSpellReport(report);
+        return true;
+    }
+
+    private void sendSpellErrors(CommandSender sender, SpellLoadReport report) {
+        if (!report.hasErrors()) {
+            sender.sendMessage(messages.msg("magic.cmd.spells.no_errors"));
+            return;
+        }
+        sender.sendMessage(messages.msg("magic.cmd.spells.errors.header"));
+        for (SpellLoadError error : report.errors()) {
+            sender.sendMessage(messages.msg("magic.cmd.spells.errors.entry",
+                    "file", error.fileName(),
+                    "error", resolveError(error)));
+        }
+    }
+
+    private void logSpellReport(SpellLoadReport report) {
+        if (!report.hasErrors()) {
+            Bukkit.getLogger().info(messages.raw("magic.cmd.spells.no_errors"));
+            return;
+        }
+        Bukkit.getLogger().info(messages.raw("magic.cmd.spells.errors.header"));
+        for (SpellLoadError error : report.errors()) {
+            Bukkit.getLogger().warning(messages.raw("magic.cmd.spells.errors.entry",
+                    Map.of("file", error.fileName(), "error", resolveError(error))));
+        }
+    }
+
+    private String resolveError(SpellLoadError error) {
+        if (error.messageKey() != null) {
+            return messages.raw(error.messageKey(), error.placeholders());
+        }
+        if (error.message() != null) {
+            return error.message();
+        }
+        return messages.raw("magic.cmd.spells.errors.unknown");
     }
 
     private boolean handleSpellGive(CommandSender sender, String[] args) {

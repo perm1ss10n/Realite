@@ -1,9 +1,11 @@
 package ru.realite.magic.spell;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -21,37 +23,70 @@ public final class SpellRegistry {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
     }
 
-    public void load() {
-        spells.clear();
+    public SpellLoadReport load() {
+        return reloadInternal(true);
+    }
+
+    public SpellLoadReport reload() {
+        return load();
+    }
+
+    public SpellLoadReport validate() {
+        return reloadInternal(false);
+    }
+
+    private SpellLoadReport reloadInternal(boolean applyChanges) {
+        List<SpellLoadError> errors = new ArrayList<>();
+        Map<String, SpellDefinition> loaded = new HashMap<>();
         File folder = new File(plugin.getDataFolder(), "spells");
         if (!folder.exists()) {
             if (!folder.mkdirs()) {
-                plugin.getLogger().warning("Failed to create spells folder: " + folder.getAbsolutePath());
-                return;
+                errors.add(SpellLoadError.ofKey(
+                        "spells",
+                        null,
+                        "magic.cmd.spells.errors.folder_create_failed",
+                        Map.of("path", folder.getAbsolutePath())));
+                return new SpellLoadReport(0, errors);
             }
         }
 
         File[] files = folder.listFiles((dir, name) -> name.endsWith(".yml"));
         if (files == null) {
-            return;
+            return new SpellLoadReport(0, errors);
         }
 
+        Material defaultIconMaterial = resolveDefaultIconMaterial(errors);
         for (File file : files) {
             YamlConfiguration cfg = YamlConfiguration.loadConfiguration(file);
             ConfigurationSection root = cfg.getConfigurationSection("spell");
             if (root == null) {
-                plugin.getLogger().warning("Spell file " + file.getName() + " missing 'spell' section. Skipping.");
+                errors.add(SpellLoadError.ofKey(
+                        file.getName(),
+                        null,
+                        "magic.cmd.spells.errors.missing_section",
+                        Map.of()));
                 continue;
             }
-            SpellDefinition def = parseSpell(file.getName(), root);
+            SpellDefinition def = parseSpell(file.getName(), root, defaultIconMaterial, errors);
             if (def != null) {
-                if (spells.containsKey(def.id())) {
-                    plugin.getLogger().warning("Duplicate spell id '" + def.id() + "' in " + file.getName() + ". Skipping.");
+                if (loaded.containsKey(def.id())) {
+                    errors.add(SpellLoadError.ofKey(
+                            file.getName(),
+                            def.id(),
+                            "magic.cmd.spells.errors.duplicate_id",
+                            Map.of("id", def.id())));
                     continue;
                 }
-                spells.put(def.id(), def);
+                loaded.put(def.id(), def);
             }
         }
+
+        if (applyChanges) {
+            spells.clear();
+            spells.putAll(loaded);
+        }
+
+        return new SpellLoadReport(loaded.size(), errors);
     }
 
     public Collection<SpellDefinition> all() {
@@ -69,46 +104,72 @@ public final class SpellRegistry {
         return Optional.ofNullable(spells.get(id));
     }
 
-    private SpellDefinition parseSpell(String fileName, ConfigurationSection section) {
+    private SpellDefinition parseSpell(String fileName,
+                                       ConfigurationSection section,
+                                       Material defaultIconMaterial,
+                                       List<SpellLoadError> errors) {
         String id = section.getString("id");
-        String typeRaw = section.getString("type");
-        String nameKey = section.getString("nameKey");
-        String descKey = section.getString("descKey");
-        double mana = section.getDouble("mana", -1);
-        long cooldownTicks = section.getLong("cooldownTicks", -1);
-        double range = section.getDouble("range", -1);
-        double damage = section.getDouble("damage", -1);
-        SpellRequirements requirements = parseRequirements(section.getConfigurationSection("requirements"));
-        String castItemId = parseCastItemId(section.getConfigurationSection("cast"));
-        SpellGiveItem giveItem = parseGiveItem(section.getConfigurationSection("effects"));
-        Material defaultIconMaterial = resolveDefaultIconMaterial();
-        Material iconMaterial = parseIconMaterial(section.getConfigurationSection("icon"), defaultIconMaterial, id, fileName);
-        Integer iconCustomModelData = parseIconCustomModelData(section.getConfigurationSection("icon"));
-        Integer guiSlot = parseGuiSlot(section.getConfigurationSection("gui"), id, fileName);
-
         if (id == null || id.isBlank()) {
-            plugin.getLogger().warning("Spell file " + fileName + " has invalid id. Skipping.");
+            errors.add(SpellLoadError.ofKey(
+                    fileName,
+                    null,
+                    "magic.cmd.spells.errors.invalid_id",
+                    Map.of()));
             return null;
         }
+        String typeRaw = section.getString("type");
         if (typeRaw == null || typeRaw.isBlank()) {
-            plugin.getLogger().warning("Spell '" + id + "' has missing type in " + fileName + ". Skipping.");
+            errors.add(SpellLoadError.ofKey(
+                    fileName,
+                    id,
+                    "magic.cmd.spells.errors.missing_type",
+                    Map.of()));
             return null;
         }
         SpellType type;
         try {
             type = SpellType.valueOf(typeRaw.trim().toUpperCase());
         } catch (IllegalArgumentException ex) {
-            plugin.getLogger().warning("Spell '" + id + "' has unknown type '" + typeRaw + "' in " + fileName + ". Skipping.");
+            errors.add(SpellLoadError.ofKey(
+                    fileName,
+                    id,
+                    "magic.cmd.spells.errors.unknown_type",
+                    Map.of("type", typeRaw)));
             return null;
         }
+        String nameKey = section.getString("nameKey");
+        String descKey = section.getString("descKey");
+        double mana = section.getDouble("mana", -1);
+        long cooldownTicks = section.getLong("cooldownTicks", -1);
+        double range = section.getDouble("range", -1);
+        double damage = section.getDouble("damage", -1);
         if (nameKey == null || nameKey.isBlank() || descKey == null || descKey.isBlank()) {
-            plugin.getLogger().warning("Spell '" + id + "' missing nameKey/descKey in " + fileName + ". Skipping.");
+            errors.add(SpellLoadError.ofKey(
+                    fileName,
+                    id,
+                    "magic.cmd.spells.errors.missing_name_desc",
+                    Map.of()));
             return null;
         }
         if (mana < 0 || cooldownTicks < 0 || range <= 0 || damage < 0) {
-            plugin.getLogger().warning("Spell '" + id + "' has invalid numbers in " + fileName + ". Skipping.");
+            errors.add(SpellLoadError.ofKey(
+                    fileName,
+                    id,
+                    "magic.cmd.spells.errors.invalid_numbers",
+                    Map.of()));
             return null;
         }
+
+        SpellRequirements requirements = parseRequirements(section.getConfigurationSection("requirements"));
+        String castItemId = parseCastItemId(section.getConfigurationSection("cast"));
+        SpellGiveItem giveItem = parseGiveItem(section.getConfigurationSection("effects"));
+        Material iconMaterial = parseIconMaterial(section.getConfigurationSection("icon"),
+                defaultIconMaterial,
+                id,
+                fileName,
+                errors);
+        Integer iconCustomModelData = parseIconCustomModelData(section.getConfigurationSection("icon"));
+        Integer guiSlot = parseGuiSlot(section.getConfigurationSection("gui"), id, fileName, errors);
         return new SpellDefinition(id, type, nameKey, descKey, mana, cooldownTicks, range, damage, requirements,
                 castItemId, giveItem.id(), giveItem.amount(), iconMaterial, iconCustomModelData, guiSlot);
     }
@@ -163,14 +224,18 @@ public final class SpellRegistry {
         return new SpellGiveItem(id, amount);
     }
 
-    private Material resolveDefaultIconMaterial() {
+    private Material resolveDefaultIconMaterial(List<SpellLoadError> errors) {
         String configured = plugin.getConfig().getString("menu.spellSelect.defaultSpellIconMaterial", "PAPER");
         if (configured == null || configured.isBlank()) {
             configured = "PAPER";
         }
         Material material = Material.matchMaterial(configured.trim());
         if (material == null) {
-            plugin.getLogger().warning("Invalid defaultSpellIconMaterial '" + configured + "' in config.yml. Using PAPER.");
+            errors.add(SpellLoadError.ofKey(
+                    "config.yml",
+                    null,
+                    "magic.cmd.spells.errors.invalid_default_icon_material",
+                    Map.of("material", configured)));
             return Material.PAPER;
         }
         return material;
@@ -179,7 +244,8 @@ public final class SpellRegistry {
     private Material parseIconMaterial(ConfigurationSection section,
                                        Material defaultMaterial,
                                        String spellId,
-                                       String fileName) {
+                                       String fileName,
+                                       List<SpellLoadError> errors) {
         if (section == null) {
             return defaultMaterial;
         }
@@ -189,8 +255,11 @@ public final class SpellRegistry {
         }
         Material material = Material.matchMaterial(materialName.trim());
         if (material == null) {
-            plugin.getLogger().warning("Spell '" + spellId + "' has invalid icon.material '" + materialName
-                    + "' in " + fileName + ". Using default.");
+            errors.add(SpellLoadError.ofKey(
+                    fileName,
+                    spellId,
+                    "magic.cmd.spells.errors.invalid_icon_material",
+                    Map.of("material", materialName)));
             return defaultMaterial;
         }
         return material;
@@ -207,14 +276,20 @@ public final class SpellRegistry {
         return value >= 0 ? value : null;
     }
 
-    private Integer parseGuiSlot(ConfigurationSection section, String spellId, String fileName) {
+    private Integer parseGuiSlot(ConfigurationSection section,
+                                 String spellId,
+                                 String fileName,
+                                 List<SpellLoadError> errors) {
         if (section == null || !section.isSet("slot")) {
             return null;
         }
         int slot = section.getInt("slot");
         if (slot < 0) {
-            plugin.getLogger().warning("Spell '" + spellId + "' has invalid gui.slot '" + slot
-                    + "' in " + fileName + ". Ignoring.");
+            errors.add(SpellLoadError.ofKey(
+                    fileName,
+                    spellId,
+                    "magic.cmd.spells.errors.invalid_gui_slot",
+                    Map.of("slot", String.valueOf(slot))));
             return null;
         }
         return slot;

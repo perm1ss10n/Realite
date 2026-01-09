@@ -4,7 +4,7 @@ format:
 magic:
   enabled: "{prefix}&aПлагин RealiteMagic включён."
   cmd:
-    usage: "&eИспользование: &f/rmagic <menu|spell|mana>"
+    usage: "&eИспользование: &f/rmagic <menu|spell|spells|mana>"
     player_not_found: "&cИгрок не найден: &f{player}"
     spell:
       usage: "&eИспользование: &f/rmagic spell <give|remove|list|select|clear> <player> [spellId]"
@@ -17,9 +17,31 @@ magic:
       list:
         header: "&eЗаклинания игрока &f{player}&e:"
         entry: "&7- {spell} &8({id})"
+    spells:
+      usage: "&eИспользование: &f/rmagic spells <reload|validate>"
+      reload:
+        ok: "&aЗагружено &f{count}&a, ошибок &f{errors}&a."
+      validate:
+        ok: "&aПроверено &f{count}&a, ошибок &f{errors}&a."
+      errors:
+        header: "&eОшибки загрузки заклинаний:"
+        entry: "&7- {file}: {error}"
+        missing_section: "&cОтсутствует секция spell."
+        invalid_id: "&cНекорректный id."
+        missing_type: "&cНе указан тип."
+        unknown_type: "&cНеизвестный тип: &f{type}"
+        missing_name_desc: "&cНе указаны nameKey/descKey."
+        invalid_numbers: "&cНекорректные числовые значения."
+        duplicate_id: "&cДублирующийся id: &f{id}"
+        invalid_icon_material: "&eНеверный icon.material: &f{material}"
+        invalid_gui_slot: "&eНеверный gui.slot: &f{slot}"
+        invalid_default_icon_material: "&eНеверный defaultSpellIconMaterial: &f{material}"
+        folder_create_failed: "&cНе удалось создать папку: &f{path}"
+        unknown: "&cНеизвестная ошибка."
+      no_errors: "&aОшибок не найдено."
   command:
     usage:
-      root: "&eИспользование: &f/rmagic <menu|spell|mana>"
+      root: "&eИспользование: &f/rmagic <menu|spell|spells|mana>"
       spell: "&eИспользование: &f/rmagic spell <select|clear|get> [player] [spellId]"
     only-player: "{prefix}&cКоманда доступна только игрокам."
     spell:
