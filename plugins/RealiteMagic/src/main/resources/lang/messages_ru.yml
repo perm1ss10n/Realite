@@ -107,3 +107,8 @@ magic:
     warlock_ray:
       name: "&5Луч Тьмы"
       desc: "&7Пронзающий луч наносит магический урон."
+  require:
+    missing_class_module: "&cМодуль классов недоступен."
+    class_mismatch: "&cТребуется класс: &f{class}"
+    evolution_missing: "&cТребуется эволюция: &f{evolution}"
+    item_missing: "&cНужен предмет: &f{item}"

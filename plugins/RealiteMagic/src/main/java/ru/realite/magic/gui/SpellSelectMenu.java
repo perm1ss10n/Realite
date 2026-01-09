@@ -22,6 +22,8 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.magic.i18n.MagicMessages;
+import ru.realite.magic.requirements.CheckResult;
+import ru.realite.magic.requirements.SpellRequirementChecker;
 import ru.realite.magic.service.PlayerSpellService;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellRegistry;
@@ -31,6 +33,7 @@ public final class SpellSelectMenu implements InventoryHolder {
 
     private final SpellRegistry spellRegistry;
     private final PlayerSpellService playerSpellService;
+    private final SpellRequirementChecker requirementChecker;
     private final MagicMessages messages;
     private final NamespacedKey spellIdKey;
     private final NamespacedKey menuKey;
@@ -41,10 +44,12 @@ public final class SpellSelectMenu implements InventoryHolder {
     public SpellSelectMenu(JavaPlugin plugin,
                            SpellRegistry spellRegistry,
                            PlayerSpellService playerSpellService,
+                           SpellRequirementChecker requirementChecker,
                            MagicMessages messages) {
         this.plugin = plugin;
         this.spellRegistry = spellRegistry;
         this.playerSpellService = playerSpellService;
+        this.requirementChecker = requirementChecker;
         this.messages = messages;
         this.spellIdKey = new NamespacedKey("realite", "spell_id");
         this.menuKey = new NamespacedKey("realite", "menu");
@@ -161,7 +166,7 @@ public final class SpellSelectMenu implements InventoryHolder {
                 continue;
             }
             boolean selected = selectedSpellId != null && selectedSpellId.equalsIgnoreCase(spell.id());
-            inventory.setItem(targetSlot, createSpellItem(spell, learned, selected));
+            inventory.setItem(targetSlot, createSpellItem(player, spell, learned, selected));
             placed++;
         }
 
@@ -172,7 +177,7 @@ public final class SpellSelectMenu implements InventoryHolder {
         applyButtons();
     }
 
-    private ItemStack createSpellItem(SpellDefinition spell, boolean learned, boolean selected) {
+    private ItemStack createSpellItem(Player player, SpellDefinition spell, boolean learned, boolean selected) {
         ItemStack item = new ItemStack(spell.iconMaterial());
         ItemMeta meta = item.getItemMeta();
         if (meta == null) {
@@ -205,6 +210,14 @@ public final class SpellSelectMenu implements InventoryHolder {
         } else {
             lore.add(messages.msg("magic.gui.spell.locked"));
             meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        }
+
+        CheckResult result = requirementChecker.check(player, spell);
+        if (result instanceof CheckResult.Fail fail) {
+            String reason = formatRequirementReason(fail);
+            if (reason != null && !reason.isBlank()) {
+                lore.add(messages.msg("magic.spell.lore.locked_reason", "reason", reason));
+            }
         }
 
         meta.lore(lore);
@@ -385,5 +398,16 @@ public final class SpellSelectMenu implements InventoryHolder {
             separator = " ";
         }
         return String.join(separator, parts);
+    }
+
+    private String formatRequirementReason(CheckResult.Fail fail) {
+        String raw = messages.raw(fail.reasonKey());
+        if (raw == null || raw.isBlank()) {
+            return raw;
+        }
+        for (var entry : fail.placeholders().entrySet()) {
+            raw = raw.replace("{" + entry.getKey() + "}", entry.getValue());
+        }
+        return raw;
     }
 }

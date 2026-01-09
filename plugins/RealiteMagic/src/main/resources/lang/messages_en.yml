@@ -107,3 +107,8 @@ magic:
     warlock_ray:
       name: "&5Shadow Ray"
       desc: "&7A piercing ray that deals magic damage."
+  require:
+    missing_class_module: "&cClass module is unavailable."
+    class_mismatch: "&cRequired class: &f{class}"
+    evolution_missing: "&cRequired evolution: &f{evolution}"
+    item_missing: "&cRequired item: &f{item}"
