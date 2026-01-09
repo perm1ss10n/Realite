@@ -3,7 +3,6 @@ package ru.realite.magic.service;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
@@ -13,13 +12,15 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import ru.realite.core.api.CoreApi;
-import ru.realite.core.api.classes.ClassProfile;
 import ru.realite.core.api.classes.ClassProfileProvider;
 import ru.realite.magic.integration.items.ItemsBridge;
 import ru.realite.magic.integration.items.NoopItemsBridge;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.model.MageState;
 import ru.realite.magic.gui.SpellSelectMenu;
+import ru.realite.magic.requirements.CheckResult;
+import ru.realite.magic.requirements.DefaultSpellRequirementChecker;
+import ru.realite.magic.requirements.SpellRequirementChecker;
 import ru.realite.magic.spell.SpellCaster;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellRegistry;
@@ -36,6 +37,7 @@ public final class MagicService {
     private final SpellRegistry spellRegistry;
     private final SpellCaster caster;
     private final ItemsBridge itemsBridge;
+    private final SpellRequirementChecker requirementChecker;
     private final Map<UUID, MageState> states = new HashMap<>();
     private final SpellSelectMenu spellSelectMenu;
     private BukkitTask regenTask;
@@ -50,8 +52,12 @@ public final class MagicService {
         this.messages = Objects.requireNonNull(messages, "messages");
         this.spellRegistry = Objects.requireNonNull(spellRegistry, "spellRegistry");
         this.itemsBridge = Objects.requireNonNull(itemsBridge, "itemsBridge");
+        this.requirementChecker = new DefaultSpellRequirementChecker(
+                this.itemsBridge,
+                this::resolveClassProfileProvider,
+                this::warnMissingItemBridge);
         this.caster = new SpellCaster(this, messages);
-        this.spellSelectMenu = new SpellSelectMenu(plugin, spellRegistry, playerSpellService, messages);
+        this.spellSelectMenu = new SpellSelectMenu(plugin, spellRegistry, playerSpellService, requirementChecker, messages);
     }
 
     public void start() {
@@ -206,38 +212,7 @@ public final class MagicService {
         if (spell == null) {
             return false;
         }
-        SpellRequirements requirements = spell.requirements();
-        if (requirements == null || requirements.isEmpty()) {
-            return true;
-        }
-        String requiredItemId = requirements.requiredItemId();
-        if (requiredItemId != null && !requiredItemId.isBlank()) {
-            if (!hasRequiredItem(player, requiredItemId)) {
-                return false;
-            }
-        }
-        ClassProfileProvider provider = resolveClassProfileProvider();
-        if (provider == null) {
-            return true;
-        }
-        Optional<ClassProfile> profile = provider.getProfile(player);
-        if (profile.isEmpty()) {
-            return false;
-        }
-        ClassProfile info = profile.get();
-        String classId = requirements.classId();
-        if (classId != null && !classId.isBlank()) {
-            if (info.classId() == null || !info.classId().equalsIgnoreCase(classId)) {
-                return false;
-            }
-        }
-        String evolutionId = requirements.evolutionId();
-        if (evolutionId != null && !evolutionId.isBlank()) {
-            if (info.evolutionId() == null || !info.evolutionId().equalsIgnoreCase(evolutionId)) {
-                return false;
-            }
-        }
-        return true;
+        return requirementChecker.check(player, spell) instanceof CheckResult.Ok;
     }
 
     public boolean hasRequiredFocus(Player player) {
@@ -356,39 +331,10 @@ public final class MagicService {
         if (spell == null) {
             return;
         }
-        SpellRequirements requirements = spell.requirements();
-        if (requirements == null || requirements.isEmpty()) {
-            return;
+        CheckResult result = requirementChecker.check(player, spell);
+        if (result instanceof CheckResult.Fail fail) {
+            player.sendMessage(messages.msg(fail.reasonKey(), fail.placeholders()));
         }
-        String requiredItemId = requirements.requiredItemId();
-        if (requiredItemId != null && !requiredItemId.isBlank()) {
-            if (!hasRequiredItem(player, requiredItemId)) {
-                String itemName = resolveRequiredItemName(requiredItemId);
-                player.sendMessage(messages.msg("magic.cast.missing_item", "item", itemName));
-            }
-        }
-        ClassProfileProvider provider = resolveClassProfileProvider();
-        if (provider == null) {
-            return;
-        }
-        String classId = requirements.classId();
-        if (classId != null && !classId.isBlank()) {
-            player.sendMessage(messages.msg("magic.spell.requirements.class",
-                    "class", classId));
-        }
-        String evolutionId = requirements.evolutionId();
-        if (evolutionId != null && !evolutionId.isBlank()) {
-            player.sendMessage(messages.msg("magic.spell.requirements.evolution",
-                    "evolution", evolutionId));
-        }
-    }
-
-    private boolean hasRequiredItem(Player player, String requiredItemId) {
-        if (itemsBridge instanceof NoopItemsBridge) {
-            warnMissingItemBridge();
-            return true;
-        }
-        return itemsBridge.hasItem(player, requiredItemId, 1);
     }
 
     private void consumeRequiredItemOnCast(Player player, SpellDefinition spell) {
@@ -405,14 +351,6 @@ public final class MagicService {
             return;
         }
         itemsBridge.removeItem(player, requiredItemId, 1);
-    }
-
-    private String resolveRequiredItemName(String requiredItemId) {
-        if (itemsBridge instanceof NoopItemsBridge) {
-            warnMissingItemBridge();
-            return requiredItemId;
-        }
-        return LEGACY.serialize(itemsBridge.displayName(requiredItemId));
     }
 
     private void warnMissingItemBridge() {
