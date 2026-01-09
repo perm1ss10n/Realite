@@ -14,6 +14,7 @@ import ru.realite.items.model.ItemDefinition;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -109,8 +110,42 @@ public final class ItemService {
             container.set(UID_KEY, PersistentDataType.STRING, UUID.randomUUID().toString());
         }
 
+        applyTags(container, def);
+
         stack.setItemMeta(meta);
         return stack;
+    }
+
+    private void applyTags(PersistentDataContainer container, ItemDefinition def) {
+        if (container == null || def == null || def.tags() == null || def.tags().isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, Object> entry : def.tags().entrySet()) {
+            String key = entry.getKey();
+            if (key == null || key.isBlank()) {
+                continue;
+            }
+            NamespacedKey namespacedKey = new NamespacedKey("realite", key);
+            if (container.has(namespacedKey)) {
+                continue;
+            }
+            Object value = entry.getValue();
+            if (value instanceof Number number) {
+                if (value instanceof Float || value instanceof Double) {
+                    container.set(namespacedKey, PersistentDataType.DOUBLE, number.doubleValue());
+                } else {
+                    container.set(namespacedKey, PersistentDataType.INTEGER, number.intValue());
+                }
+                continue;
+            }
+            if (value instanceof Boolean bool) {
+                container.set(namespacedKey, PersistentDataType.INTEGER, bool ? 1 : 0);
+                continue;
+            }
+            if (value != null) {
+                container.set(namespacedKey, PersistentDataType.STRING, String.valueOf(value));
+            }
+        }
     }
 
     public JavaPlugin plugin() {

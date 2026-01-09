@@ -3,6 +3,7 @@ package ru.realite.items.model;
 import org.bukkit.Material;
 
 import java.util.List;
+import java.util.Map;
 
 public record ItemDefinition(
         String id,
@@ -11,5 +12,6 @@ public record ItemDefinition(
         String nameKey,
         List<String> loreKeys,
         boolean glow,
-        boolean unstackable
+        boolean unstackable,
+        Map<String, Object> tags
 ) {}

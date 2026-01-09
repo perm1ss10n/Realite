@@ -1,0 +1,97 @@
+items:
+  magic_staff_basic:
+    id: "magic_staff_basic"
+    material: "BLAZE_ROD"
+    customModelData: 20001
+    nameKey: "items.magic_staff_basic.name"
+    loreKeys:
+      - "items.magic_staff_basic.lore-1"
+      - "items.magic_staff_basic.lore-2"
+    glow: true
+    unstackable: true
+    tags:
+      magic.staff: 1
+      magic.staff.charges: 20
+      magic.staff.maxCharges: 20
+
+  magic_charge_crystal:
+    id: "magic_charge_crystal"
+    material: "AMETHYST_SHARD"
+    customModelData: 20002
+    nameKey: "items.magic_charge_crystal.name"
+    loreKeys:
+      - "items.magic_charge_crystal.lore-1"
+
+  magic_ash:
+    id: "magic_ash"
+    material: "GUNPOWDER"
+    customModelData: 20010
+    nameKey: "items.magic_ash.name"
+    loreKeys:
+      - "items.magic_ash.lore-1"
+
+  fire_powder:
+    id: "fire_powder"
+    material: "BLAZE_POWDER"
+    customModelData: 20011
+    nameKey: "items.fire_powder.name"
+    loreKeys:
+      - "items.fire_powder.lore-1"
+
+  frost_dust:
+    id: "frost_dust"
+    material: "SNOWBALL"
+    customModelData: 20012
+    nameKey: "items.frost_dust.name"
+    loreKeys:
+      - "items.frost_dust.lore-1"
+
+  holy_salt:
+    id: "holy_salt"
+    material: "SUGAR"
+    customModelData: 20013
+    nameKey: "items.holy_salt.name"
+    loreKeys:
+      - "items.holy_salt.lore-1"
+
+  rune_damage_warlock:
+    id: "rune_damage_warlock"
+    material: "PAPER"
+    customModelData: 20101
+    nameKey: "items.rune_damage_warlock.name"
+    loreKeys:
+      - "items.rune_damage_warlock.lore-1"
+    glow: true
+    unstackable: true
+    tags:
+      magic.rune: 1
+      magic.rune.damageMultiplier: 1.08
+      magic.rune.school: "WARLOCK"
+
+  rune_mana_fire:
+    id: "rune_mana_fire"
+    material: "PAPER"
+    customModelData: 20102
+    nameKey: "items.rune_mana_fire.name"
+    loreKeys:
+      - "items.rune_mana_fire.lore-1"
+    glow: true
+    unstackable: true
+    tags:
+      magic.rune: 1
+      magic.rune.manaMultiplier: 0.95
+      magic.rune.school: "FIRE"
+
+  rune_cooldown_frost:
+    id: "rune_cooldown_frost"
+    material: "PAPER"
+    customModelData: 20103
+    nameKey: "items.rune_cooldown_frost.name"
+    loreKeys:
+      - "items.rune_cooldown_frost.lore-1"
+    glow: true
+    unstackable: true
+    tags:
+      magic.rune: 1
+      magic.rune.cooldownMultiplier: 0.95
+      magic.rune.school: "FROST"

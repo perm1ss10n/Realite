@@ -10,10 +10,30 @@ mana:
 cooldowns:
   globalCastTicks: 10
 
+balance:
+  tiers:
+    T1:
+      mana: 6
+      cooldown: 2.0
+      damage: 4.0
+    T2:
+      mana: 10
+      cooldown: 4.0
+      damage: 7.0
+    T3:
+      mana: 16
+      cooldown: 7.0
+      damage: 11.0
+    T4:
+      mana: 24
+      cooldown: 12.0
+      damage: 16.0
+
 casting:
   requireFocus: true
   allowedFocusItemIds:
     - "warlock_grimoire"
+    - "magic_staff_basic"
   manaFormat: "0.0"
   cooldownFormat: "0.0"
   giveItemMessage: true
@@ -154,6 +174,12 @@ reagents:
         amount: 1
     FIRE:
       - itemId: "fire_powder"
+        amount: 1
+    FROST:
+      - itemId: "frost_dust"
+        amount: 1
+    HOLY:
+      - itemId: "holy_salt"
         amount: 1
 
 economy:

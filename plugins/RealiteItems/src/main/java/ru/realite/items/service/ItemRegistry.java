@@ -72,6 +72,11 @@ public final class ItemRegistry {
                 var loreKeys = section.getStringList("loreKeys");
                 boolean glow = section.getBoolean("glow", false);
                 boolean unstackable = section.getBoolean("unstackable", false);
+                Map<String, Object> tags = Map.of();
+                ConfigurationSection tagsSection = section.getConfigurationSection("tags");
+                if (tagsSection != null) {
+                    tags = new HashMap<>(tagsSection.getValues(false));
+                }
 
                 ItemDefinition def = new ItemDefinition(
                         id,
@@ -80,7 +85,8 @@ public final class ItemRegistry {
                         nameKey,
                         loreKeys,
                         glow,
-                        unstackable
+                        unstackable,
+                        tags
                 );
                 items.put(id, def);
             }
