@@ -3,6 +3,7 @@ package ru.realite.magic.effect;
 import java.util.Map;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import ru.realite.magic.pve.PveService;
 
 public final class DamageEffectExecutor implements SpellEffectExecutor {
 
@@ -55,15 +56,25 @@ public final class DamageEffectExecutor implements SpellEffectExecutor {
             return;
         }
         double multiplier = ctx.modifiers().damageMultiplier();
-        if (multiplier != 1.0) {
-            amount *= multiplier;
-        }
+        double baseDamage = multiplier == 1.0 ? amount : amount * multiplier;
         EffectApplyMode mode = EffectApplyMode.from(params.get("mode"));
         if (mode == null) {
             mode = EffectApplyMode.PRIMARY;
         }
+        PveService pveService = ctx.magicService().pveService();
         for (LivingEntity target : EffectTargetResolver.resolveTargets(ctx.plan(), mode)) {
-            target.damage(amount, ctx.caster());
+            if (pveService.isEffectImmune(def, ctx.spell(), target)) {
+                continue;
+            }
+            if (!pveService.allowHit(ctx.caster().getUniqueId(), target.getUniqueId(), target)) {
+                continue;
+            }
+            double targetMultiplier = pveService.damageTakenMultiplier(ctx.spell(), target);
+            double finalDamage = baseDamage * targetMultiplier;
+            if (finalDamage <= 0) {
+                continue;
+            }
+            target.damage(finalDamage, ctx.caster());
         }
     }
 

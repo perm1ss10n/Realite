@@ -6,6 +6,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
+import ru.realite.magic.pve.PveService;
 
 public final class TeleportEffectExecutor implements SpellEffectExecutor {
 
@@ -44,6 +45,16 @@ public final class TeleportEffectExecutor implements SpellEffectExecutor {
         EffectTargetType targetType = EffectTargetType.from(params.get("target"));
         Boolean safe = EffectParamUtils.booleanParam(params, "safe");
         boolean safeTeleport = safe != null && safe;
+        if (ctx.plan() != null && ctx.plan().primaryTarget() != null) {
+            if (targetType == EffectTargetType.PRIMARY
+                    || targetType == EffectTargetType.ENTITY
+                    || targetType == EffectTargetType.LOCATION) {
+                PveService pveService = ctx.magicService().pveService();
+                if (pveService.isTeleportImmune(ctx.plan().primaryTarget())) {
+                    return;
+                }
+            }
+        }
         Location target = EffectTargetResolver.resolveLocation(ctx.plan(), targetType, ctx.caster());
         if (target == null) {
             return;

@@ -7,6 +7,7 @@ import org.bukkit.potion.PotionEffectType;
 import java.util.Locale;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import ru.realite.magic.pve.PveService;
 
 public final class PotionEffectExecutor implements SpellEffectExecutor {
 
@@ -89,7 +90,14 @@ public final class PotionEffectExecutor implements SpellEffectExecutor {
         if (mode == null) {
             mode = EffectApplyMode.PRIMARY;
         }
+        PveService pveService = ctx.magicService().pveService();
         for (LivingEntity target : EffectTargetResolver.resolveTargets(ctx.plan(), mode)) {
+            if (pveService.isEffectImmune(def, ctx.spell(), target)) {
+                continue;
+            }
+            if (pveService.isPotionImmune(type, target)) {
+                continue;
+            }
             target.addPotionEffect(new PotionEffect(type, duration, amplifier));
         }
     }

@@ -48,6 +48,7 @@ import ru.realite.magic.school.SchoolService;
 import ru.realite.magic.service.StaffChargeService.StaffCharges;
 import ru.realite.magic.service.StaffChargeService.StaffItem;
 import ru.realite.magic.gui.SpellSelectMenu;
+import ru.realite.magic.pve.PveService;
 import ru.realite.magic.requirements.CheckResult;
 import ru.realite.magic.requirements.DefaultSpellRequirementChecker;
 import ru.realite.magic.requirements.SpellRequirementChecker;
@@ -92,6 +93,7 @@ public final class MagicService {
     private final RegionRuleService regionRuleService;
     private final GuildBonusService guildBonusService;
     private final TalentMagicService talentMagicService;
+    private final PveService pveService;
     private final Map<UUID, MageState> states = new HashMap<>();
     private final WarnLimiter warnLimiter = new WarnLimiter();
     private final SpellSelectMenu spellSelectMenu;
@@ -136,6 +138,7 @@ public final class MagicService {
         this.regionRuleService = Objects.requireNonNull(regionRuleService, "regionRuleService");
         this.guildBonusService = Objects.requireNonNull(guildBonusService, "guildBonusService");
         this.talentMagicService = new TalentMagicService(talentsBridge, plugin.getLogger());
+        this.pveService = new PveService(plugin);
         this.castEngine = new CastEngine(plugin);
         this.failWhenItemsUnavailable = plugin.getConfig()
                 .getBoolean("requirements.failWhenItemsUnavailable", true);
@@ -172,6 +175,10 @@ public final class MagicService {
 
     public SpellRegistry spellRegistry() {
         return spellRegistry;
+    }
+
+    public PveService pveService() {
+        return pveService;
     }
 
     public double getMana(Player player) {
