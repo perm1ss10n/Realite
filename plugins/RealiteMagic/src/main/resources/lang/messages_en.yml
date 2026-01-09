@@ -140,6 +140,16 @@ magic:
     wrong_item: "&cThis spell requires item: &f{item}"
     give_item: "&aReceived: &f{item}&a x{amount}"
     items_bridge_missing: "RealiteItems is not connected, requiredItemId is not checked."
+  school:
+    conflict: "&cThis school conflicts with {other}."
+    name:
+      NONE: "None"
+      WARLOCK: "Warlock"
+      FIRE: "Fire"
+      ARCANE: "Arcane"
+      FROST: "Frost"
+      HOLY: "Holy"
+      NATURE: "Nature"
   storage:
     load_fail: "&cFailed to load spell data."
     save_fail: "&cFailed to save spell data."

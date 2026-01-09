@@ -18,6 +18,27 @@ casting:
   cooldownFormat: "0.0"
   giveItemMessage: true
 
+schools:
+  enabled: true
+  conflictWindowSeconds: 10
+  modifiers:
+    WARLOCK:
+      damageMultiplier: 1.0
+      manaMultiplier: 1.0
+      cooldownMultiplier: 1.0
+    FIRE:
+      damageMultiplier: 1.1
+      manaMultiplier: 1.05
+      cooldownMultiplier: 1.0
+  conflicts:
+    - a: HOLY
+      b: WARLOCK
+  classBonuses:
+    warlock:
+      school: WARLOCK
+      damageMultiplier: 1.15
+      manaMultiplier: 0.95
+
 hud:
   enabled: true
   useActionBar: true

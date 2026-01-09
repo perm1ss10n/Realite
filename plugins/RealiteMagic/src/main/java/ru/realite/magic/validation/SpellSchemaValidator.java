@@ -46,6 +46,10 @@ public final class SpellSchemaValidator {
             report.addError(fileName, spellId, "descKey", "magic.cmd.spells.errors.missing_field",
                     Map.of("field", "descKey"));
         }
+        if (spell.school() == null) {
+            report.addError(fileName, spellId, "school", "magic.cmd.spells.errors.invalid_value",
+                    Map.of("field", "school", "value", "null"));
+        }
         if (spell.mana() < 0) {
             report.addError(fileName, spellId, "mana", "magic.cmd.spells.errors.invalid_value",
                     Map.of("field", "mana", "value", String.valueOf(spell.mana())));

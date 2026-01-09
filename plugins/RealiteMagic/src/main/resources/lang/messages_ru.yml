@@ -140,6 +140,16 @@ magic:
     wrong_item: "&cДля этого заклинания нужен предмет: &f{item}"
     give_item: "&aПолучено: &f{item}&a x{amount}"
     items_bridge_missing: "RealiteItems не подключен, requiredItemId не проверяется."
+  school:
+    conflict: "&cЭта школа конфликтует с {other}."
+    name:
+      NONE: "Нет школы"
+      WARLOCK: "Чернокнижие"
+      FIRE: "Огонь"
+      ARCANE: "Аркана"
+      FROST: "Лед"
+      HOLY: "Свет"
+      NATURE: "Природа"
   storage:
     load_fail: "&cНе удалось загрузить данные заклинаний."
     save_fail: "&cНе удалось сохранить данные заклинаний."
