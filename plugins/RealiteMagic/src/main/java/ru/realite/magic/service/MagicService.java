@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import ru.realite.magic.cast.CastAttemptResult;
 import ru.realite.magic.cast.WarnLimiter;
 import ru.realite.magic.debug.DebugService;
+import ru.realite.magic.effect.BalanceModifiers;
 import ru.realite.magic.effect.EffectContext;
 import ru.realite.magic.effect.EffectExecutorRegistry;
 import ru.realite.magic.effect.SpellEffectDefinition;
@@ -32,6 +33,8 @@ import ru.realite.magic.integration.items.ItemsBridge;
 import ru.realite.magic.integration.items.NoopItemsBridge;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.model.MageState;
+import ru.realite.magic.mastery.MasteryModifiers;
+import ru.realite.magic.mastery.MasteryService;
 import ru.realite.magic.school.SchoolModifiers;
 import ru.realite.magic.school.SchoolService;
 import ru.realite.magic.gui.SpellSelectMenu;
@@ -66,6 +69,7 @@ public final class MagicService {
     private final DebugService debugService;
     private final MagicHudService hudService;
     private final SchoolService schoolService;
+    private final MasteryService masteryService;
     private final Map<UUID, MageState> states = new HashMap<>();
     private final WarnLimiter warnLimiter = new WarnLimiter();
     private final SpellSelectMenu spellSelectMenu;
@@ -82,7 +86,8 @@ public final class MagicService {
                         MagicEventPublisher eventPublisher,
                         EffectExecutorRegistry effectRegistry,
                         DebugService debugService,
-                        MagicHudService hudService) {
+                        MagicHudService hudService,
+                        MasteryService masteryService) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.messages = Objects.requireNonNull(messages, "messages");
         this.spellRegistry = Objects.requireNonNull(spellRegistry, "spellRegistry");
@@ -94,6 +99,7 @@ public final class MagicService {
         this.debugService = Objects.requireNonNull(debugService, "debugService");
         this.hudService = Objects.requireNonNull(hudService, "hudService");
         this.schoolService = new SchoolService(plugin, classesBridge, messages, this::state);
+        this.masteryService = Objects.requireNonNull(masteryService, "masteryService");
         boolean failWhenItemsUnavailable = plugin.getConfig()
                 .getBoolean("requirements.failWhenItemsUnavailable", true);
         this.requirementChecker = new DefaultSpellRequirementChecker(
@@ -266,7 +272,7 @@ public final class MagicService {
             return fail(player, spell, null, targetType(spell), "magic.cast.cooldown", Map.of("time", time),
                     warnLimited(player, "cooldown"), WARN_WINDOW_MS);
         }
-        SchoolModifiers modifiers = schoolService.modifiersFor(player, spell);
+        BalanceModifiers modifiers = balanceModifiers(player, spell);
         double effectiveMana = effectiveManaCost(spell, modifiers);
         double currentMana = getMana(player);
         if (currentMana < effectiveMana) {
@@ -302,11 +308,11 @@ public final class MagicService {
     }
 
     public void cast(Player player, SpellDefinition spell, SpellTarget target) {
-        SchoolModifiers modifiers = schoolService.modifiersFor(player, spell);
+        BalanceModifiers modifiers = balanceModifiers(player, spell);
         cast(player, spell, target, modifiers);
     }
 
-    private void cast(Player player, SpellDefinition spell, SpellTarget target, SchoolModifiers modifiers) {
+    private void cast(Player player, SpellDefinition spell, SpellTarget target, BalanceModifiers modifiers) {
         if (spell == null || player == null || target == null) {
             return;
         }
@@ -324,6 +330,10 @@ public final class MagicService {
 
     public MagicMessages messages() {
         return messages;
+    }
+
+    public MasteryService masteryService() {
+        return masteryService;
     }
 
     public void handleCastResult(Player player, CastAttemptResult result) {
@@ -451,7 +461,7 @@ public final class MagicService {
         if (spell == null) {
             return;
         }
-        SchoolModifiers modifiers = schoolService.modifiersFor(player, spell);
+        BalanceModifiers modifiers = balanceModifiers(player, spell);
         consumeRequiredItemOnCast(player, spell);
         addMana(player, -effectiveManaCost(spell, modifiers));
         setCooldown(player, GLOBAL_COOLDOWN_KEY, globalCastTicks());
@@ -520,7 +530,7 @@ public final class MagicService {
         return Math.max(min, Math.min(max, value));
     }
 
-    private double effectiveManaCost(SpellDefinition spell, SchoolModifiers modifiers) {
+    private double effectiveManaCost(SpellDefinition spell, BalanceModifiers modifiers) {
         if (spell == null) {
             return 0;
         }
@@ -528,12 +538,24 @@ public final class MagicService {
         return Math.max(0, spell.mana() * multiplier);
     }
 
-    private long effectiveCooldownTicks(SpellDefinition spell, SchoolModifiers modifiers) {
+    private long effectiveCooldownTicks(SpellDefinition spell, BalanceModifiers modifiers) {
         if (spell == null) {
             return 0;
         }
         double multiplier = modifiers == null ? 1.0 : modifiers.cooldownMultiplier();
         return Math.max(0, Math.round(spell.cooldownTicks() * multiplier));
+    }
+
+    private BalanceModifiers balanceModifiers(Player player, SpellDefinition spell) {
+        if (spell == null) {
+            return BalanceModifiers.identity();
+        }
+        SchoolModifiers schoolModifiers = schoolService.modifiersFor(player, spell);
+        MasteryModifiers masteryModifiers = masteryService.modifiers(player.getUniqueId(), spell.id());
+        return new BalanceModifiers(
+                schoolModifiers.damageMultiplier() * masteryModifiers.damageMultiplier(),
+                schoolModifiers.manaMultiplier() * masteryModifiers.manaMultiplier(),
+                schoolModifiers.cooldownMultiplier() * masteryModifiers.cooldownMultiplier());
     }
 
     private CastAttemptResult checkCastItem(Player player, SpellDefinition spell) {

@@ -28,9 +28,11 @@ import ru.realite.magic.integration.items.ItemsBridgeFactory;
 import ru.realite.magic.listener.CombatListener;
 import ru.realite.magic.listener.MagicInteractListener;
 import ru.realite.magic.listener.MagicMenuListener;
+import ru.realite.magic.listener.MasteryListener;
 import ru.realite.magic.listener.PlayerCleanupListener;
 import ru.realite.magic.listener.SpellBarListener;
 import ru.realite.magic.listener.SpellUnlockListener;
+import ru.realite.magic.mastery.MasteryService;
 import ru.realite.magic.command.MagicCommand;
 import ru.realite.magic.service.MagicService;
 import ru.realite.magic.service.PlayerSpellService;
@@ -48,6 +50,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
     private DebugService debugService;
     private MagicHudService hudService;
     private MagicApi magicApi;
+    private MasteryService masteryService;
 
     @Override
     public void onEnable() {
@@ -85,11 +88,14 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         }
         PlayerSpellStorage storage = new YamlPlayerSpellStorage(this, messages);
         MagicEventPublisher eventPublisher = resolveEventPublisher();
-        playerSpellService = new PlayerSpellServiceImpl(storage, spellRegistry, messages, eventPublisher);
+        PlayerSpellServiceImpl playerSpellServiceImpl =
+                new PlayerSpellServiceImpl(storage, spellRegistry, messages, eventPublisher);
+        playerSpellService = playerSpellServiceImpl;
         ItemsBridge itemsBridge = ItemsBridgeFactory.create();
         ClassesBridge classesBridge = resolveClassesBridge();
         debugService = new DebugService(messages);
         hudService = new MagicHudService(this, messages, spellRegistry);
+        masteryService = new MasteryService(this, messages, spellRegistry, playerSpellServiceImpl);
         magicService = new MagicService(this,
                 messages,
                 spellRegistry,
@@ -99,7 +105,8 @@ public final class RealiteMagicPlugin extends JavaPlugin {
                 eventPublisher,
                 effectRegistry,
                 debugService,
-                hudService);
+                hudService,
+                masteryService);
         magicService.start();
         magicApi = new MagicApiImpl(spellRegistry, playerSpellService, magicService);
         Bukkit.getServicesManager().register(MagicApi.class, magicApi, this, ServicePriority.Normal);
@@ -161,6 +168,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(interactListener, this);
         Bukkit.getPluginManager().registerEvents(
                 new SpellBarListener(playerSpellService, hudService), this);
+        Bukkit.getPluginManager().registerEvents(new MasteryListener(masteryService), this);
     }
 
     private void saveIfNotExists(String resourcePath) {

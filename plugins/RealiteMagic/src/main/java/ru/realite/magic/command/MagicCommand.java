@@ -14,6 +14,9 @@ import org.bukkit.entity.Player;
 import ru.realite.magic.debug.DebugService;
 import ru.realite.magic.hud.MagicHudService;
 import ru.realite.magic.i18n.MagicMessages;
+import ru.realite.magic.mastery.MasteryModifiers;
+import ru.realite.magic.mastery.MasteryProgress;
+import ru.realite.magic.mastery.MasteryService;
 import ru.realite.magic.service.MagicService;
 import ru.realite.magic.service.PlayerSpellService;
 import ru.realite.magic.service.RevokeResult;
@@ -73,6 +76,9 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
         if ("slot".equals(sub)) {
             return handleSlot(sender, args);
         }
+        if ("mastery".equals(sub)) {
+            return showMastery(sender, args);
+        }
         if ("debug".equals(sub)) {
             return handleDebug(sender, args);
         }
@@ -83,17 +89,21 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return List.of("menu", "spell", "spells", "mana", "status", "debug", "slot");
+            return List.of("menu", "spell", "spells", "mana", "status", "debug", "slot", "mastery");
         }
         if (args.length >= 2
                 && !args[0].equalsIgnoreCase("spell")
                 && !args[0].equalsIgnoreCase("spells")
                 && !args[0].equalsIgnoreCase("debug")
-                && !args[0].equalsIgnoreCase("slot")) {
+                && !args[0].equalsIgnoreCase("slot")
+                && !args[0].equalsIgnoreCase("mastery")) {
             return Collections.emptyList();
         }
         if (args[0].equalsIgnoreCase("slot")) {
             return tabCompleteSlots(args.length);
+        }
+        if (args[0].equalsIgnoreCase("mastery")) {
+            return tabCompleteMastery(args.length);
         }
         if (!sender.hasPermission(PERMISSION_ADMIN)) {
             return Collections.emptyList();
@@ -178,6 +188,53 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(messages.msg("magic.cmd.status.cooldown", "time", time));
             }
         }
+        return true;
+    }
+
+    private boolean showMastery(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messages.msg("magic.command.only-player"));
+            return true;
+        }
+        if (!sender.hasPermission(PERMISSION_USE)) {
+            sender.sendMessage(messages.msg("magic.command.errors.no_permission"));
+            return true;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(messages.msg("magic.cmd.mastery.usage"));
+            return true;
+        }
+        String target = args[1];
+        String spellId;
+        if ("selected".equalsIgnoreCase(target)) {
+            spellId = playerSpellService.getSelected(player.getUniqueId()).orElse(null);
+        } else {
+            spellId = normalizeSpellId(target);
+        }
+        if (spellId == null || spellId.isBlank()) {
+            sender.sendMessage(messages.msg("magic.no_selected_spell"));
+            return true;
+        }
+        SpellDefinition spell = magicService.spellRegistry().get(spellId);
+        if (spell == null) {
+            sender.sendMessage(messages.msg("magic.command.spell.unknown_spell", "spellId", spellId));
+            return true;
+        }
+        MasteryService masteryService = magicService.masteryService();
+        MasteryProgress progress = masteryService.getProgress(player.getUniqueId(), spellId);
+        int xpToNext = masteryService.xpToNext(player.getUniqueId(), spellId);
+        MasteryModifiers modifiers = masteryService.modifiers(player.getUniqueId(), spellId);
+        sender.sendMessage(messages.msg("magic.cmd.mastery.header",
+                "spell", displaySpellName(spellId)));
+        sender.sendMessage(messages.msg("magic.cmd.mastery.line_level",
+                "level", String.valueOf(progress.level())));
+        sender.sendMessage(messages.msg("magic.cmd.mastery.line_xp",
+                "xp", String.valueOf(progress.xp()),
+                "next", String.valueOf(xpToNext)));
+        sender.sendMessage(messages.msg("magic.cmd.mastery.line_bonus",
+                "damage", formatBonus(modifiers.damageMultiplier()),
+                "mana", formatBonus(modifiers.manaMultiplier()),
+                "cooldown", formatBonus(modifiers.cooldownMultiplier())));
         return true;
     }
 
@@ -352,6 +409,16 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
         }
         if (argsLength == 4) {
             return spellIds();
+        }
+        return Collections.emptyList();
+    }
+
+    private List<String> tabCompleteMastery(int argsLength) {
+        if (argsLength == 2) {
+            List<String> options = new ArrayList<>();
+            options.add("selected");
+            options.addAll(spellIds());
+            return options;
         }
         return Collections.emptyList();
     }
@@ -641,5 +708,21 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
 
     private String format(double value) {
         return String.format(Locale.US, "%.1f", value);
+    }
+
+    private String formatBonus(double multiplier) {
+        double percent = (multiplier - 1.0) * 100.0;
+        return String.format(Locale.US, "%+.1f%%", percent);
+    }
+
+    private String normalizeSpellId(String spellId) {
+        if (spellId == null) {
+            return null;
+        }
+        String trimmed = spellId.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        return trimmed.toLowerCase(Locale.ROOT);
     }
 }
