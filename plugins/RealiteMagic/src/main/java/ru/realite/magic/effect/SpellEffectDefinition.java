@@ -11,9 +11,6 @@ public record SpellEffectDefinition(String type, Map<String, Object> params) {
     public SpellEffectDefinition {
         Objects.requireNonNull(type, "type");
         String normalized = type.trim().toLowerCase(Locale.ROOT);
-        if (normalized.isBlank()) {
-            throw new IllegalArgumentException("Effect type cannot be blank");
-        }
         type = normalized;
         if (params == null || params.isEmpty()) {
             params = Map.of();

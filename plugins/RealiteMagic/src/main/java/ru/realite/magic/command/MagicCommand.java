@@ -277,6 +277,17 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
         }
         sender.sendMessage(messages.msg("magic.cmd.spells.errors.header"));
         for (SpellLoadError error : report.errors()) {
+            if ("magic.cmd.spells.errors.schema".equals(error.messageKey())) {
+                sender.sendMessage(messages.msg(error.messageKey(), error.placeholders()));
+                continue;
+            }
+            if (error.placeholders().containsKey("path")) {
+                sender.sendMessage(messages.msg("magic.cmd.spells.errors.schema",
+                        Map.of("file", error.fileName(),
+                                "path", error.placeholders().get("path"),
+                                "error", resolveError(error))));
+                continue;
+            }
             sender.sendMessage(messages.msg("magic.cmd.spells.errors.entry",
                     "file", error.fileName(),
                     "error", resolveError(error)));
@@ -290,6 +301,17 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
         }
         Bukkit.getLogger().info(messages.raw("magic.cmd.spells.errors.header"));
         for (SpellLoadError error : report.errors()) {
+            if ("magic.cmd.spells.errors.schema".equals(error.messageKey())) {
+                Bukkit.getLogger().warning(messages.raw(error.messageKey(), error.placeholders()));
+                continue;
+            }
+            if (error.placeholders().containsKey("path")) {
+                Bukkit.getLogger().warning(messages.raw("magic.cmd.spells.errors.schema",
+                        Map.of("file", error.fileName(),
+                                "path", error.placeholders().get("path"),
+                                "error", resolveError(error))));
+                continue;
+            }
             Bukkit.getLogger().warning(messages.raw("magic.cmd.spells.errors.entry",
                     Map.of("file", error.fileName(), "error", resolveError(error))));
         }
@@ -304,6 +326,7 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
         }
         return messages.raw("magic.cmd.spells.errors.unknown");
     }
+
 
     private boolean handleSpellGive(CommandSender sender, String[] args) {
         if (args.length != 4) {

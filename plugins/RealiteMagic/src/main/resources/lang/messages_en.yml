@@ -36,6 +36,10 @@ magic:
       errors:
         header: "&eSpell load errors:"
         entry: "&7- {file}: {error}"
+        schema: "&7- {file}: {path}: {error}"
+        missing_field: "&cMissing field: {field}"
+        invalid_value: "&cInvalid value for {field}: {value}"
+        unknown_effect: "&cUnknown effect type: {type}"
         missing_section: "&cMissing spell section."
         invalid_id: "&cInvalid id."
         missing_type: "&cMissing type."
