@@ -6,18 +6,14 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import ru.realite.magic.cast.CastAttemptResult;
-import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.service.MagicService;
 
 public final class MagicInteractListener implements Listener {
 
     private final MagicService magicService;
-    private final MagicMessages messages;
 
-    public MagicInteractListener(MagicService magicService,
-                                 MagicMessages messages) {
+    public MagicInteractListener(MagicService magicService) {
         this.magicService = magicService;
-        this.messages = messages;
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -31,8 +27,6 @@ public final class MagicInteractListener implements Listener {
         }
 
         CastAttemptResult result = magicService.tryCastSelected(event.getPlayer());
-        if (result instanceof CastAttemptResult.Fail fail && !fail.silent()) {
-            event.getPlayer().sendMessage(messages.msg(fail.reasonKey(), fail.placeholders()));
-        }
+        magicService.handleCastResult(event.getPlayer(), result);
     }
 }

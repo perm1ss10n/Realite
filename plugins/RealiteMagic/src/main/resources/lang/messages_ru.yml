@@ -4,7 +4,7 @@ format:
 magic:
   enabled: "{prefix}&aПлагин RealiteMagic включён."
   cmd:
-    usage: "&eИспользование: &f/rmagic <menu|spell|spells|mana|debug|slot>"
+    usage: "&eИспользование: &f/rmagic <menu|spell|spells|mana|status|debug|slot>"
     player_not_found: "&cИгрок не найден: &f{player}"
     debug:
       usage: "&eИспользование: &f/rmagic debug <on|off|cast|stats> [player]"
@@ -61,9 +61,16 @@ magic:
       no_errors: "&aОшибок не найдено."
     slot:
       usage: "&eИспользование: &f/rmagic slot <set|clear|use> <1-9> [spellId]"
+    status:
+      header: "&eСтатус магии:"
+      slot: "&7Слот: &f{slot}"
+      spell: "&7Заклинание: &f{spell}"
+      spell_empty: "&7Заклинание: &fпусто"
+      mana: "&7Мана: &f{current}&7/&f{max}"
+      cooldown: "&7КД: &f{time}&7с"
   command:
     usage:
-      root: "&eИспользование: &f/rmagic <menu|spell|spells|mana|debug|slot>"
+      root: "&eИспользование: &f/rmagic <menu|spell|spells|mana|status|debug|slot>"
       spell: "&eИспользование: &f/rmagic spell <select|clear|get> [player] [spellId]"
     only-player: "{prefix}&cКоманда доступна только игрокам."
     spell:
@@ -85,6 +92,15 @@ magic:
     slot:
       changed: "{prefix}&dСлот {slot}: &f{spell}"
       empty: "{prefix}&dСлот {slot}: &7пусто"
+  hud:
+    selected: "Слот {slot}: {spell}"
+    selected_empty: "Слот {slot}: пусто"
+    fail: "Не удалось: {reason}"
+    cooldown: "⏳ КД: {time}с"
+    mana: "⚡ Мана: {current}/{max}"
+    no_mana: "⚡ Не хватает маны ({need})"
+    no_target: "Нет цели"
+    success: "Каст: {spell}"
   need-focus: "{prefix}&cНужен фокус-предмет для каста."
   menu:
     title: "&5Выбор заклинания"

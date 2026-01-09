@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -13,6 +12,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import ru.realite.magic.debug.DebugService;
+import ru.realite.magic.hud.MagicHudService;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.service.MagicService;
 import ru.realite.magic.service.PlayerSpellService;
@@ -35,15 +35,18 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
     private final PlayerSpellService playerSpellService;
     private final MagicMessages messages;
     private final DebugService debugService;
+    private final MagicHudService hudService;
 
     public MagicCommand(MagicService magicService,
                         PlayerSpellService playerSpellService,
                         MagicMessages messages,
-                        DebugService debugService) {
+                        DebugService debugService,
+                        MagicHudService hudService) {
         this.magicService = magicService;
         this.playerSpellService = playerSpellService;
         this.messages = messages;
         this.debugService = debugService;
+        this.hudService = hudService;
     }
 
     @Override
@@ -54,6 +57,9 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
         String sub = args[0].toLowerCase(Locale.ROOT);
         if ("mana".equals(sub)) {
             return showMana(sender);
+        }
+        if ("status".equals(sub)) {
+            return showStatus(sender);
         }
         if ("menu".equals(sub)) {
             return openMenu(sender);
@@ -77,7 +83,7 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return List.of("menu", "spell", "spells", "mana", "debug", "slot");
+            return List.of("menu", "spell", "spells", "mana", "status", "debug", "slot");
         }
         if (args.length >= 2
                 && !args[0].equalsIgnoreCase("spell")
@@ -140,10 +146,38 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
         }
         double mana = magicService.getMana(player);
         double max = magicService.getMaxMana(player);
-        Component msg = messages.msg("magic.mana.actionbar",
-                "mana", format(mana),
-                "max", format(max));
-        player.sendActionBar(msg);
+        hudService.showMana(player, (int) Math.round(mana), (int) Math.round(max));
+        return true;
+    }
+
+    private boolean showStatus(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messages.msg("magic.command.only-player"));
+            return true;
+        }
+        sender.sendMessage(messages.msg("magic.cmd.status.header"));
+        int slot = playerSpellService.getActiveSlot(player.getUniqueId());
+        sender.sendMessage(messages.msg("magic.cmd.status.slot",
+                "slot", String.valueOf(slot)));
+        String spellId = playerSpellService.getActiveSlotSpell(player.getUniqueId()).orElse(null);
+        if (spellId == null) {
+            sender.sendMessage(messages.msg("magic.cmd.status.spell_empty"));
+        } else {
+            sender.sendMessage(messages.msg("magic.cmd.status.spell",
+                    "spell", displaySpellName(spellId)));
+        }
+        double mana = magicService.getMana(player);
+        double max = magicService.getMaxMana(player);
+        sender.sendMessage(messages.msg("magic.cmd.status.mana",
+                "current", format(mana),
+                "max", format(max)));
+        if (spellId != null) {
+            long remainingTicks = magicService.remainingCooldownTicks(player, spellId);
+            if (remainingTicks > 0) {
+                String time = magicService.formatCooldownSeconds(remainingTicks / 20.0);
+                sender.sendMessage(messages.msg("magic.cmd.status.cooldown", "time", time));
+            }
+        }
         return true;
     }
 
@@ -291,20 +325,9 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
             player.sendMessage(messages.msg(fail.reasonKey()));
             return true;
         }
-        sendSlotActionbar(player, slot);
-        return true;
-    }
-
-    private void sendSlotActionbar(Player player, int slot) {
         String spellId = playerSpellService.getActiveSlotSpell(player.getUniqueId()).orElse(null);
-        if (spellId == null) {
-            player.sendActionBar(messages.msg("magic.bar.slot.empty", "slot", String.valueOf(slot)));
-            return;
-        }
-        String spellName = displaySpellName(spellId);
-        player.sendActionBar(messages.msg("magic.bar.slot.changed",
-                "slot", String.valueOf(slot),
-                "spell", spellName));
+        hudService.showSelected(player, slot, spellId);
+        return true;
     }
 
     private String displaySpellName(String spellId) {

@@ -4,7 +4,7 @@ format:
 magic:
   enabled: "{prefix}&aRealiteMagic plugin enabled."
   cmd:
-    usage: "&eUsage: &f/rmagic <menu|spell|spells|mana|debug|slot>"
+    usage: "&eUsage: &f/rmagic <menu|spell|spells|mana|status|debug|slot>"
     player_not_found: "&cPlayer not found: &f{player}"
     debug:
       usage: "&eUsage: &f/rmagic debug <on|off|cast|stats> [player]"
@@ -61,9 +61,16 @@ magic:
       no_errors: "&aNo errors found."
     slot:
       usage: "&eUsage: &f/rmagic slot <set|clear|use> <1-9> [spellId]"
+    status:
+      header: "&eMagic status:"
+      slot: "&7Slot: &f{slot}"
+      spell: "&7Spell: &f{spell}"
+      spell_empty: "&7Spell: &fempty"
+      mana: "&7Mana: &f{current}&7/&f{max}"
+      cooldown: "&7Cooldown: &f{time}&7s"
   command:
     usage:
-      root: "&eUsage: &f/rmagic <menu|spell|spells|mana|debug|slot>"
+      root: "&eUsage: &f/rmagic <menu|spell|spells|mana|status|debug|slot>"
       spell: "&eUsage: &f/rmagic spell <select|clear|get> [player] [spellId]"
     only-player: "{prefix}&cCommand is only for players."
     spell:
@@ -85,6 +92,15 @@ magic:
     slot:
       changed: "{prefix}&dSlot {slot}: &f{spell}"
       empty: "{prefix}&dSlot {slot}: &7empty"
+  hud:
+    selected: "Slot {slot}: {spell}"
+    selected_empty: "Slot {slot}: empty"
+    fail: "Failed: {reason}"
+    cooldown: "⏳ Cooldown: {time}s"
+    mana: "⚡ Mana: {current}/{max}"
+    no_mana: "⚡ Not enough mana ({need})"
+    no_target: "No target"
+    success: "Cast: {spell}"
   need-focus: "{prefix}&cYou need a focus item to cast."
   menu:
     title: "&5Select spell"
