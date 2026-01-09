@@ -1,6 +1,8 @@
 package ru.realite.magic.spell;
 
+import java.util.List;
 import org.bukkit.Material;
+import ru.realite.magic.effect.SpellEffectDefinition;
 import ru.realite.magic.target.SpellTargetDefinition;
 
 public record SpellDefinition(
@@ -14,6 +16,7 @@ public record SpellDefinition(
         double damage,
         SpellRequirements requirements,
         SpellTargetDefinition target,
+        List<SpellEffectDefinition> effects,
         String castItemId,
         String giveItemId,
         int giveItemAmount,
