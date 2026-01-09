@@ -4,7 +4,7 @@ format:
 magic:
   enabled: "{prefix}&aПлагин RealiteMagic включён."
   cmd:
-    usage: "&eИспользование: &f/rmagic <menu|spell|spells|mana|status|debug|slot>"
+    usage: "&eИспользование: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery>"
     player_not_found: "&cИгрок не найден: &f{player}"
     debug:
       usage: "&eИспользование: &f/rmagic debug <on|off|cast|stats> [player]"
@@ -61,6 +61,12 @@ magic:
       no_errors: "&aОшибок не найдено."
     slot:
       usage: "&eИспользование: &f/rmagic slot <set|clear|use> <1-9> [spellId]"
+    mastery:
+      usage: "&eИспользование: &f/rmagic mastery <spellId|selected>"
+      header: "&eМастерство: &f{spell}"
+      line_level: "&7Уровень: &f{level}"
+      line_xp: "&7XP: &f{xp}&7/&f{next}"
+      line_bonus: "&7Бонус: &f{damage} урона, {mana} маны, {cooldown} кд"
     status:
       header: "&eСтатус магии:"
       slot: "&7Слот: &f{slot}"
@@ -70,7 +76,7 @@ magic:
       cooldown: "&7КД: &f{time}&7с"
   command:
     usage:
-      root: "&eИспользование: &f/rmagic <menu|spell|spells|mana|status|debug|slot>"
+      root: "&eИспользование: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery>"
       spell: "&eИспользование: &f/rmagic spell <select|clear|get> [player] [spellId]"
     only-player: "{prefix}&cКоманда доступна только игрокам."
     spell:
@@ -101,6 +107,8 @@ magic:
     no_mana: "⚡ Не хватает маны ({need})"
     no_target: "Нет цели"
     success: "Каст: {spell}"
+  mastery:
+    level_up: "{prefix}&a{spell}: уровень мастерства {level}!"
   need-focus: "{prefix}&cНужен фокус-предмет для каста."
   menu:
     title: "&5Выбор заклинания"
