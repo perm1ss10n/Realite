@@ -53,6 +53,52 @@ schools:
       damageMultiplier: 1.15
       manaMultiplier: 0.95
 
+regions:
+  enabled: true
+
+  default:
+    allowCast: true
+
+  byType:
+    CITY:
+      allowCast: true
+    PLOT:
+      allowCast: true
+
+  overrides:
+    spawn:
+      allowCast: false
+      messageKey: magic.region.denied.spawn
+    arena:
+      allowCast: true
+      schoolWhitelist: [FIRE, ARCANE]
+      modifiers:
+        cooldownMultiplier: 0.85
+
+  schoolModifiers:
+    temple:
+      HOLY:
+        damageMultiplier: 1.2
+      WARLOCK:
+        damageMultiplier: 0.8
+
+  byWorld:
+    world_nether:
+      allowCast: true
+    spawn_world:
+      allowCast: false
+
+guilds:
+  enabled: true
+  bonuses:
+    WARLOCK:
+      damageMultiplier: 1.05
+    FIRE:
+      cooldownMultiplier: 0.95
+  rankBonuses:
+    leader:
+      manaMultiplier: 0.9
+
 mastery:
   enabled: true
   maxLevel: 10
