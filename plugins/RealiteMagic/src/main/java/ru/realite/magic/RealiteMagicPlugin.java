@@ -2,11 +2,16 @@ package ru.realite.magic;
 
 import java.io.File;
 import org.bukkit.Bukkit;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import ru.realite.core.api.CoreApi;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.integration.classes.ClassesBridge;
 import ru.realite.magic.integration.classes.CoreClassesBridge;
 import ru.realite.magic.integration.classes.NoopClassesBridge;
+import ru.realite.magic.integration.events.BukkitEventPublisher;
+import ru.realite.magic.integration.events.CoreEventPublisher;
+import ru.realite.magic.integration.events.MagicEventPublisher;
 import ru.realite.magic.integration.items.ItemsBridge;
 import ru.realite.magic.integration.items.ItemsBridgeFactory;
 import ru.realite.magic.listener.CombatListener;
@@ -49,10 +54,17 @@ public final class RealiteMagicPlugin extends JavaPlugin {
             }
         }
         PlayerSpellStorage storage = new YamlPlayerSpellStorage(this, messages);
-        playerSpellService = new PlayerSpellServiceImpl(storage, spellRegistry, messages);
+        MagicEventPublisher eventPublisher = resolveEventPublisher();
+        playerSpellService = new PlayerSpellServiceImpl(storage, spellRegistry, messages, eventPublisher);
         ItemsBridge itemsBridge = ItemsBridgeFactory.create();
         ClassesBridge classesBridge = resolveClassesBridge();
-        magicService = new MagicService(this, messages, spellRegistry, playerSpellService, itemsBridge, classesBridge);
+        magicService = new MagicService(this,
+                messages,
+                spellRegistry,
+                playerSpellService,
+                itemsBridge,
+                classesBridge,
+                eventPublisher);
         magicService.start();
         registerCommand();
         registerListeners();
@@ -129,5 +141,14 @@ public final class RealiteMagicPlugin extends JavaPlugin {
             return coreBridge;
         }
         return new NoopClassesBridge();
+    }
+
+    private MagicEventPublisher resolveEventPublisher() {
+        RegisteredServiceProvider<CoreApi> provider =
+                Bukkit.getServicesManager().getRegistration(CoreApi.class);
+        if (provider != null && provider.getProvider() != null) {
+            return new CoreEventPublisher(provider.getProvider().events());
+        }
+        return new BukkitEventPublisher();
     }
 }
