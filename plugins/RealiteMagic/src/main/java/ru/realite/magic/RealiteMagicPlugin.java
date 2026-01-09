@@ -32,6 +32,7 @@ import ru.realite.magic.listener.MasteryListener;
 import ru.realite.magic.listener.PlayerCleanupListener;
 import ru.realite.magic.listener.SpellBarListener;
 import ru.realite.magic.listener.SpellUnlockListener;
+import ru.realite.magic.listener.StaffRechargeListener;
 import ru.realite.magic.mastery.MasteryService;
 import ru.realite.magic.command.MagicCommand;
 import ru.realite.magic.service.MagicService;
@@ -169,6 +170,9 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(
                 new SpellBarListener(playerSpellService, hudService), this);
         Bukkit.getPluginManager().registerEvents(new MasteryListener(masteryService), this);
+        Bukkit.getPluginManager().registerEvents(
+                new StaffRechargeListener(this, messages, magicService.itemsBridge(), magicService.staffChargeService()),
+                this);
     }
 
     private void saveIfNotExists(String resourcePath) {

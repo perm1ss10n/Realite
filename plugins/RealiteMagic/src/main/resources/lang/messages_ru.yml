@@ -148,6 +148,12 @@ magic:
     wrong_item: "&cДля этого заклинания нужен предмет: &f{item}"
     give_item: "&aПолучено: &f{item}&a x{amount}"
     items_bridge_missing: "RealiteItems не подключен, requiredItemId не проверяется."
+  staff:
+    no_charges: "Посох разряжен."
+    charges: "Заряды: {current}/{max}"
+    recharged: "Посох перезаряжен: +{add}"
+  rune:
+    school_mismatch: "Школа руны не совпадает со школой заклинания."
   school:
     conflict: "&cЭта школа конфликтует с {other}."
     name:

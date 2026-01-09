@@ -18,6 +18,20 @@ casting:
   cooldownFormat: "0.0"
   giveItemMessage: true
 
+staff:
+  enabled: true
+  requireStaff: true
+  consumeChargesOnCast: true
+  chargesCostDefault: 1
+  allowOffhand: true
+  recharge:
+    enabled: true
+    itemId: "magic_charge_crystal"
+    addCharges: 10
+
+runes:
+  strictSchoolMatch: false
+
 schools:
   enabled: true
   conflictWindowSeconds: 10

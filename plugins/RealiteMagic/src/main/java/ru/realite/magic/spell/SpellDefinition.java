@@ -21,6 +21,7 @@ public record SpellDefinition(
         List<SpellEffectDefinition> effects,
         SpellCastTrigger castTrigger,
         String castItemId,
+        Integer staffChargesCost,
         String giveItemId,
         int giveItemAmount,
         Material iconMaterial,

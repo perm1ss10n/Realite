@@ -143,13 +143,14 @@ public final class SpellRegistry {
         List<SpellEffectDefinition> effects = parseEffects(section);
         SpellCastTrigger castTrigger = parseCastTrigger(section.getConfigurationSection("cast"));
         String castItemId = parseCastItemId(section.getConfigurationSection("cast"));
+        Integer staffChargesCost = parseStaffChargesCost(section.getConfigurationSection("cast"));
         SpellGiveItem giveItem = parseGiveItem(section.getConfigurationSection("effects"));
         Material iconMaterial = parseIconMaterial(section.getConfigurationSection("icon"),
                 defaultIconMaterial);
         Integer iconCustomModelData = parseIconCustomModelData(section.getConfigurationSection("icon"));
         Integer guiSlot = parseGuiSlot(section.getConfigurationSection("gui"));
         return new SpellDefinition(id, type, nameKey, descKey, school, mana, cooldownTicks, range, damage, requirements,
-                target, effects, castTrigger, castItemId, giveItem.id(), giveItem.amount(), iconMaterial,
+                target, effects, castTrigger, castItemId, staffChargesCost, giveItem.id(), giveItem.amount(), iconMaterial,
                 iconCustomModelData, guiSlot);
     }
 
@@ -226,6 +227,14 @@ public final class SpellRegistry {
             return null;
         }
         return castItemId;
+    }
+
+    private Integer parseStaffChargesCost(ConfigurationSection section) {
+        if (section == null || !section.isSet("staffChargesCost")) {
+            return null;
+        }
+        int value = section.getInt("staffChargesCost", 0);
+        return value;
     }
 
     private SpellGiveItem parseGiveItem(ConfigurationSection section) {
