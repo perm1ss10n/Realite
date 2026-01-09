@@ -57,6 +57,9 @@ public final class CleanseEffectExecutor implements SpellEffectExecutor {
 
     @Override
     public void execute(EffectContext ctx, SpellEffectDefinition def) {
+        if (ctx == null || def == null) {
+            return;
+        }
         Map<String, Object> params = def.params();
         EffectApplyMode mode = EffectApplyMode.from(params.get("mode"));
         if (mode == null) {
@@ -66,6 +69,9 @@ public final class CleanseEffectExecutor implements SpellEffectExecutor {
         boolean removeNegative = Boolean.TRUE.equals(EffectParamUtils.booleanParam(params, "removeNegative"));
         PveService pveService = ctx.magicService().pveService();
         for (LivingEntity target : EffectTargetResolver.resolveTargets(ctx.plan(), mode)) {
+            if (target == null) {
+                continue;
+            }
             if (pveService.isEffectImmune(def, ctx.spell(), target)) {
                 ctx.magicService().diagnosticsService().recordPveImmune(def.type());
                 continue;

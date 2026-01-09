@@ -1,6 +1,7 @@
 package ru.realite.magic.effect;
 
 import java.util.List;
+import java.util.Objects;
 import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -16,7 +17,9 @@ public final class EffectTargetResolver {
             return List.of();
         }
         if (mode == EffectApplyMode.ALL) {
-            return plan.targets();
+            return plan.targets().stream()
+                    .filter(Objects::nonNull)
+                    .toList();
         }
         LivingEntity primary = plan.primaryTarget();
         return primary == null ? List.of() : List.of(primary);

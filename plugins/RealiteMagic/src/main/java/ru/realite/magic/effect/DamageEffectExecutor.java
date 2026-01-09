@@ -50,6 +50,9 @@ public final class DamageEffectExecutor implements SpellEffectExecutor {
 
     @Override
     public void execute(EffectContext ctx, SpellEffectDefinition def) {
+        if (ctx == null || def == null) {
+            return;
+        }
         Map<String, Object> params = def.params();
         Double amount = EffectParamUtils.doubleParam(params, "amount");
         if (amount == null || amount <= 0) {
@@ -63,6 +66,9 @@ public final class DamageEffectExecutor implements SpellEffectExecutor {
         }
         PveService pveService = ctx.magicService().pveService();
         for (LivingEntity target : EffectTargetResolver.resolveTargets(ctx.plan(), mode)) {
+            if (target == null) {
+                continue;
+            }
             if (pveService.isEffectImmune(def, ctx.spell(), target)) {
                 ctx.magicService().diagnosticsService().recordPveImmune(def.type());
                 continue;
