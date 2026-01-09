@@ -13,6 +13,7 @@ import org.bukkit.inventory.ItemStack;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.integration.items.ItemsBridge;
 import ru.realite.magic.integration.items.NoopItemsBridge;
+import ru.realite.magic.requirements.CheckResult;
 import ru.realite.magic.service.MagicService;
 import ru.realite.magic.service.PlayerSpellService;
 import ru.realite.magic.spell.SpellDefinition;
@@ -72,6 +73,12 @@ public final class MagicInteractListener implements Listener {
         }
 
         if (!hasCastItem(event.getPlayer(), spell)) {
+            return;
+        }
+
+        CheckResult requirementResult = magicService.checkRequirements(event.getPlayer(), spell);
+        if (requirementResult instanceof CheckResult.Fail fail) {
+            event.getPlayer().sendMessage(messages.msg(fail.reasonKey(), fail.placeholders()));
             return;
         }
 
