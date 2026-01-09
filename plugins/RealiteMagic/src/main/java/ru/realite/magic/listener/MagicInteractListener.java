@@ -20,7 +20,7 @@ public final class MagicInteractListener implements Listener {
         this.messages = messages;
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent event) {
         if (event.getHand() != EquipmentSlot.HAND) {
             return;
