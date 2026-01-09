@@ -616,18 +616,6 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
         return ids;
     }
 
-    private String displaySpellName(String spellId) {
-        SpellDefinition spell = magicService.spellRegistry().get(spellId);
-        if (spell == null) {
-            return spellId;
-        }
-        String nameKey = spell.nameKey();
-        if (nameKey == null || nameKey.isBlank()) {
-            return spell.id();
-        }
-        return messages.raw(nameKey);
-    }
-
     private String format(double value) {
         return String.format(Locale.US, "%.1f", value);
     }
