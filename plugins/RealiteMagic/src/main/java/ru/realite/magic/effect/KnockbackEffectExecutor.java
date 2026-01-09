@@ -4,6 +4,7 @@ import java.util.Map;
 import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
+import ru.realite.magic.pve.PveService;
 
 public final class KnockbackEffectExecutor implements SpellEffectExecutor {
 
@@ -51,7 +52,15 @@ public final class KnockbackEffectExecutor implements SpellEffectExecutor {
         }
         boolean pull = Boolean.TRUE.equals(EffectParamUtils.booleanParam(params, "pull"));
         Location casterLocation = ctx.caster().getLocation();
+        PveService pveService = ctx.magicService().pveService();
         for (LivingEntity target : EffectTargetResolver.resolveTargets(ctx.plan(), mode)) {
+            if (pull) {
+                if (pveService.isPullImmune(target)) {
+                    continue;
+                }
+            } else if (pveService.isKnockbackImmune(target)) {
+                continue;
+            }
             Location targetLocation = target.getLocation();
             Vector direction = pull
                     ? casterLocation.toVector().subtract(targetLocation.toVector())
