@@ -67,6 +67,7 @@ A centralized item provider for the whole platform.
 Spell casting system designed for expansion and balance.
 
 - spell registry (YAML-driven definitions)
+- GUI-based spell selection and quick-cast slots (1–9)
 - casting checks:
   - permissions
   - cooldowns (global + per-spell)
@@ -135,4 +136,9 @@ TBD (project is actively evolving).
 
 ## 📌 Status
 
-This is an actively developed monorepo. Expect iteration, refactors, and expanding content packs.
+This is an actively developed monorepo.
+
+**Current stable milestone:** `v0.6.0-magic-release`  
+(RealiteMagic + RealiteItems fully integrated, build verified on Java 21 / Paper 1.21.x)
+
+Expect iteration, refactors, balance passes, and expanding content packs.
