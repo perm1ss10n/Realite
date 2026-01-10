@@ -18,13 +18,10 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.magic.i18n.MagicMessages;
-import ru.realite.magic.requirements.CheckResult;
-import ru.realite.magic.requirements.SpellRequirementChecker;
-import ru.realite.magic.service.PlayerSpellService;
+import ru.realite.magic.service.MagicService;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellRegistry;
 import ru.realite.magic.spell.SpellRequirements;
@@ -32,9 +29,8 @@ import ru.realite.magic.spell.SpellRequirements;
 public final class SpellSelectMenu implements InventoryHolder {
 
     private final SpellRegistry spellRegistry;
-    private final PlayerSpellService playerSpellService;
-    private final SpellRequirementChecker requirementChecker;
     private final MagicMessages messages;
+    private final MagicService magicService;
     private final NamespacedKey spellIdKey;
     private final NamespacedKey menuKey;
     private final NamespacedKey menuActionKey;
@@ -43,14 +39,12 @@ public final class SpellSelectMenu implements InventoryHolder {
 
     public SpellSelectMenu(JavaPlugin plugin,
                            SpellRegistry spellRegistry,
-                           PlayerSpellService playerSpellService,
-                           SpellRequirementChecker requirementChecker,
-                           MagicMessages messages) {
+                           MagicMessages messages,
+                           MagicService magicService) {
         this.plugin = plugin;
         this.spellRegistry = spellRegistry;
-        this.playerSpellService = playerSpellService;
-        this.requirementChecker = requirementChecker;
         this.messages = messages;
+        this.magicService = magicService;
         this.spellIdKey = new NamespacedKey("realite", "spell_id");
         this.menuKey = new NamespacedKey("realite", "menu");
         this.menuActionKey = new NamespacedKey(plugin, "menu_action");
@@ -136,7 +130,7 @@ public final class SpellSelectMenu implements InventoryHolder {
         }
         inventory.clear();
 
-        String selectedSpellId = playerSpellService.getSelected(player.getUniqueId()).orElse(null);
+        String selectedSpellId = magicService.getSelectedSpellId(player);
         List<SpellDefinition> spells = new ArrayList<>(spellRegistry.all());
         spells.sort(Comparator.comparing(SpellDefinition::id));
 
@@ -144,7 +138,7 @@ public final class SpellSelectMenu implements InventoryHolder {
         int autoIndex = 0;
         int placed = 0;
         for (SpellDefinition spell : spells) {
-            boolean learned = playerSpellService.hasSpell(player.getUniqueId(), spell.id());
+            boolean available = magicService.meetsRequirements(player, spell);
             Integer targetSlot = spell.guiSlot();
             if (targetSlot == null) {
                 while (autoIndex < autoSlots.size()) {
@@ -165,8 +159,7 @@ public final class SpellSelectMenu implements InventoryHolder {
             if (inventory.getItem(targetSlot) != null) {
                 continue;
             }
-            boolean selected = selectedSpellId != null && selectedSpellId.equalsIgnoreCase(spell.id());
-            inventory.setItem(targetSlot, createSpellItem(player, spell, learned, selected));
+            inventory.setItem(targetSlot, createSpellItem(spell, selectedSpellId, available));
             placed++;
         }
 
@@ -177,7 +170,7 @@ public final class SpellSelectMenu implements InventoryHolder {
         applyButtons();
     }
 
-    private ItemStack createSpellItem(Player player, SpellDefinition spell, boolean learned, boolean selected) {
+    private ItemStack createSpellItem(SpellDefinition spell, String selectedSpellId, boolean available) {
         ItemStack item = new ItemStack(spell.iconMaterial());
         ItemMeta meta = item.getItemMeta();
         if (meta == null) {
@@ -202,19 +195,11 @@ public final class SpellSelectMenu implements InventoryHolder {
         lore.add(messages.msg("magic.spell.lore.damage",
                 "damage", formatNumber(spell.damage(), "menu.spellSelect.damageFormat", "0.0")));
 
-        if (learned) {
-            if (selected) {
-                lore.add(messages.msg("magic.gui.spell.selected"));
-            }
-            lore.add(messages.msg("magic.gui.hint.select"));
-        } else {
-            lore.add(messages.msg("magic.gui.spell.locked"));
-            meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        if (spell.id().equals(selectedSpellId)) {
+            lore.add(messages.msg("magic.spell.lore.selected"));
         }
-
-        CheckResult result = requirementChecker.check(player, spell);
-        if (result instanceof CheckResult.Fail fail) {
-            String reason = formatRequirementReason(fail);
+        if (!available) {
+            String reason = buildRequirementReason(spell.requirements());
             if (reason != null && !reason.isBlank()) {
                 lore.add(messages.msg("magic.spell.lore.locked_reason", "reason", reason));
             }
@@ -344,7 +329,7 @@ public final class SpellSelectMenu implements InventoryHolder {
     private String menuTitleKey() {
         String key = plugin.getConfig().getString("menu.spellSelect.titleKey");
         if (key == null || key.isBlank()) {
-            key = "magic.gui.title";
+            key = "magic.menu.spell_select.title";
         }
         return key;
     }
@@ -398,16 +383,5 @@ public final class SpellSelectMenu implements InventoryHolder {
             separator = " ";
         }
         return String.join(separator, parts);
-    }
-
-    private String formatRequirementReason(CheckResult.Fail fail) {
-        String raw = messages.raw(fail.reasonKey());
-        if (raw == null || raw.isBlank()) {
-            return raw;
-        }
-        for (var entry : fail.placeholders().entrySet()) {
-            raw = raw.replace("{" + entry.getKey() + "}", entry.getValue());
-        }
-        return raw;
     }
 }

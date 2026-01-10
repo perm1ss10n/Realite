@@ -350,14 +350,6 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         classProfileProvider = null;
     }
 
-    private void registerTalentProvider() {
-        if (core == null || classService == null || classConfig == null) {
-            return;
-        }
-        talentProvider = new TalentService(classService, classConfig);
-        core.services().replace(TalentProvider.class, talentProvider);
-    }
-
     private void registerClassXpService() {
         if (core == null || progressionService == null) {
             return;

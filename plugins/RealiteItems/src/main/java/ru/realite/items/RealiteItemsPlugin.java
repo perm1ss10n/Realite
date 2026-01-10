@@ -28,7 +28,6 @@ public final class RealiteItemsPlugin extends JavaPlugin {
         saveIfNotExists("lang/messages_ru.yml");
         saveIfNotExists("lang/messages_en.yml");
         saveIfNotExists("items/example_items.yml");
-        saveIfNotExists("items/magic_items.yml");
 
         reloadAll();
 

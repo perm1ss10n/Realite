@@ -17,42 +17,5 @@ items:
     lore-1: "&7Helps you find the way."
     lore-2: "&7Technical item from RealiteItems."
 
-  magic_staff_basic:
-    name: "&dApprentice Staff"
-    lore-1: "&7Basic focus for spellcasting."
-    lore-2: "&7Holds a small charge reserve."
-
-  magic_charge_crystal:
-    name: "&bCharge Crystal"
-    lore-1: "&7Restores staff charges."
-
-  magic_ash:
-    name: "&8Magic Ash"
-    lore-1: "&7A common warlock reagent."
-
-  fire_powder:
-    name: "&cFire Powder"
-    lore-1: "&7Warm, volatile reagent."
-
-  frost_dust:
-    name: "&bFrost Dust"
-    lore-1: "&7Cold and shimmering particles."
-
-  holy_salt:
-    name: "&fHoly Salt"
-    lore-1: "&7Purified crystals of light."
-
-  rune_damage_warlock:
-    name: "&5Warlock Rune: Power"
-    lore-1: "&7Spell damage: &a+8%&7 (Warlock)"
-
-  rune_mana_fire:
-    name: "&cFire Rune: Efficiency"
-    lore-1: "&7Mana cost: &a-5%&7 (Fire)"
-
-  rune_cooldown_frost:
-    name: "&bFrost Rune: Rhythm"
-    lore-1: "&7Cooldown: &a-5%&7 (Frost)"
-
 resource-pack:
   prompt: "{prefix}&eA resource pack is required to display items correctly."

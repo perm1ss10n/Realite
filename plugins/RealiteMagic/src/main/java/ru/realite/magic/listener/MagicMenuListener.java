@@ -6,27 +6,19 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import ru.realite.magic.gui.SpellSelectMenu;
 import ru.realite.magic.i18n.MagicMessages;
-import ru.realite.magic.service.PlayerSpellService;
+import ru.realite.magic.service.MagicService;
 import ru.realite.magic.spell.SpellDefinition;
-import ru.realite.magic.spell.SpellRegistry;
 
 public final class MagicMenuListener implements Listener {
 
     private static final String PERMISSION_SELECT = "realite.magic.spell.select";
     private static final String PERMISSION_ADMIN = "realite.magic.admin";
 
-    private final SpellSelectMenu menu;
-    private final SpellRegistry spellRegistry;
-    private final PlayerSpellService playerSpellService;
+    private final MagicService magicService;
     private final MagicMessages messages;
 
-    public MagicMenuListener(SpellSelectMenu menu,
-                             SpellRegistry spellRegistry,
-                             PlayerSpellService playerSpellService,
-                             MagicMessages messages) {
-        this.menu = menu;
-        this.spellRegistry = spellRegistry;
-        this.playerSpellService = playerSpellService;
+    public MagicMenuListener(MagicService magicService, MagicMessages messages) {
+        this.magicService = magicService;
         this.messages = messages;
     }
 
@@ -36,6 +28,7 @@ public final class MagicMenuListener implements Listener {
             return;
         }
 
+        SpellSelectMenu menu = magicService.spellSelectMenu();
         boolean menuItem = menu.isMenuItem(event.getCurrentItem());
         if (!menuItem && !menu.isMenuTitle(event.getView().title())) {
             return;
@@ -62,7 +55,7 @@ public final class MagicMenuListener implements Listener {
             return;
         }
 
-        SpellDefinition spell = spellRegistry.get(spellId);
+        SpellDefinition spell = magicService.spellRegistry().get(spellId);
         if (spell == null) {
             return;
         }
@@ -72,18 +65,21 @@ public final class MagicMenuListener implements Listener {
             return;
         }
 
-        if (!playerSpellService.hasSpell(player.getUniqueId(), spell.id())) {
-            player.sendMessage(messages.msg("magic.spell.select.not_learned",
-                    "spell", messages.raw(spell.nameKey())));
+        if (!magicService.meetsRequirements(player, spell)) {
+            String reason = menu.requirementReason(spell);
+            if (reason == null) {
+                reason = "";
+            }
+            player.sendMessage(messages.msg("magic.menu.spell_select.locked", "reason", reason));
             return;
         }
 
-        playerSpellService.select(player.getUniqueId(), spell.id());
+        magicService.setSelectedSpell(player, spellId);
+        player.sendMessage(messages.msg("magic.menu.spell_select.selected",
+                "spell", messages.raw(spell.nameKey())));
         if (menu.shouldCloseOnSelect()) {
             player.closeInventory();
-            return;
         }
-        menu.open(player);
     }
 
     private boolean hasSelectPermission(Player player) {

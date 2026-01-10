@@ -5,18 +5,23 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
-import ru.realite.magic.cast.CastAttemptResult;
+import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.service.MagicService;
+import ru.realite.magic.spell.SpellDefinition;
 
 public final class MagicInteractListener implements Listener {
 
-    private final MagicService magicService;
+    private static final String PERMISSION_USE = "realite.magic.use";
 
-    public MagicInteractListener(MagicService magicService) {
+    private final MagicService magicService;
+    private final MagicMessages messages;
+
+    public MagicInteractListener(MagicService magicService, MagicMessages messages) {
         this.magicService = magicService;
+        this.messages = messages;
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         if (event.getHand() != EquipmentSlot.HAND) {
             return;
@@ -26,7 +31,22 @@ public final class MagicInteractListener implements Listener {
             return;
         }
 
-        CastAttemptResult result = magicService.tryCastSelected(event.getPlayer());
-        magicService.handleCastResult(event.getPlayer(), result);
+        if (!event.getPlayer().hasPermission(PERMISSION_USE)) {
+            event.getPlayer().sendMessage(messages.msg("magic.command.errors.no_permission"));
+            return;
+        }
+
+        SpellDefinition spell = magicService.getSelectedSpell(event.getPlayer());
+        if (spell == null) {
+            event.getPlayer().sendMessage(messages.msg("magic.error.no_selected_spell"));
+            return;
+        }
+
+        if (!magicService.hasRequiredFocus(event.getPlayer())) {
+            event.getPlayer().sendMessage(messages.msg("magic.error.need_focus"));
+            return;
+        }
+
+        magicService.cast(event.getPlayer(), spell);
     }
 }
