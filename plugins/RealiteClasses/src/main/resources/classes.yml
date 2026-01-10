@@ -312,21 +312,6 @@ classes:
             - "DIAMOND:16"
             - "EMERALD_BLOCK:4"
 
-# Скрытые классы:
-
-hiddenClasses:
-  MERCENARY:
-    requireQuestCompleted: mercenary_unlock
-    requireEvolution:
-      mastered:
-        - WARRIOR
-  WARLOCK:
-    requireQuestCompleted: warlock_unlock
-    requireEvolution:
-      mastered:
-        - ALCHEMIST
-        - WANDERER
-
   MERCENARY:
     hidden: true
     icon: NETHERITE_SWORD
@@ -446,3 +431,18 @@ hiddenClasses:
           items:
             - "NETHER_STAR:1"
             - "ENCHANTED_GOLDEN_APPLE:1"
+
+# Скрытые классы:
+
+hiddenClasses:
+  MERCENARY:
+    requireQuestCompleted: mercenary_unlock
+    requireEvolution:
+      mastered:
+        - WARRIOR
+  WARLOCK:
+    requireQuestCompleted: warlock_unlock
+    requireEvolution:
+      mastered:
+        - ALCHEMIST
+        - WANDERER
