@@ -10,3 +10,7 @@ quests:
     skipped: "&7You skipped the lore for &e{class}&7."
     deferred: "&7You can reread the lore later with &e/class lore&7."
     missing: "&cBackstory for &e{class} &cnot found."
+  validation:
+    magic_missing: "Magic module required for magic quest objectives."
+    magic_unknown_spell: "Unknown spellId for magic quest objective."
+    magic_invalid_amount: "Invalid amount/level for magic quest objective."

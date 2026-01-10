@@ -10,3 +10,7 @@ quests:
     skipped: "&7Ты пропустил лор класса &e{class}&7."
     deferred: "&7Лор можно перечитать позже командой &e/class lore&7."
     missing: "&cЛор для класса &e{class} &cне найден."
+  validation:
+    magic_missing: "Для магических целей квестов требуется модуль Magic."
+    magic_unknown_spell: "Неизвестный spellId для магической цели квеста."
+    magic_invalid_amount: "Некорректное значение amount/level для магической цели квеста."

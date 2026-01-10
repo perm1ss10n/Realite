@@ -47,6 +47,27 @@ public final class MagicMessages {
         if (raw == null) {
             raw = "";
         }
+        return LEGACY.deserialize(format(raw, placeholders));
+    }
+
+    public String raw(String key) {
+        String raw = messages.getString(key, "&cMissing message: &f" + key);
+        return raw == null ? "" : format(raw, Map.of());
+    }
+
+    public String raw(String key, String... placeholders) {
+        return raw(key, toMap(placeholders));
+    }
+
+    public String raw(String key, Map<String, String> placeholders) {
+        String raw = messages.getString(key, "&cMissing message: &f" + key);
+        if (raw == null) {
+            raw = "";
+        }
+        return format(raw, placeholders);
+    }
+
+    private String format(String raw, Map<String, String> placeholders) {
         String prefix = messages.getString("format.prefix");
         if (prefix == null) {
             prefix = messages.getString("prefix", "");
@@ -55,12 +76,7 @@ public final class MagicMessages {
         for (var entry : placeholders.entrySet()) {
             raw = raw.replace("{" + entry.getKey() + "}", entry.getValue());
         }
-        return LEGACY.deserialize(raw);
-    }
-
-    public String raw(String key) {
-        String raw = messages.getString(key, "&cMissing message: &f" + key);
-        return raw == null ? "" : raw;
+        return raw;
     }
 
     private Map<String, String> toMap(String... placeholders) {

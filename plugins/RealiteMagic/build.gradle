@@ -15,12 +15,14 @@ java {
 repositories {
     mavenCentral()
     maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+    maven { url = 'https://jitpack.io' } // Vault API
 }
 
 dependencies {
     compileOnly "io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT"
     compileOnly project(":RealiteCore")
     compileOnly project(":plugins:RealiteItems")
+    compileOnly "com.github.MilkBowl:VaultAPI:1.7"
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -29,7 +31,8 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 tasks.jar {
-    enabled = false
+    enabled = true
+    archiveClassifier.set("plain") // Обычный jar для зависимостей других модулей
 }
 
 tasks.shadowJar {

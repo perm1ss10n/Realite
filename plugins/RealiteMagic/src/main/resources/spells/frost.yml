@@ -1,0 +1,245 @@
+spells:
+  - id: "frost_shard"
+    type: "RAY_DAMAGE"
+    nameKey: "magic.spell.frost_shard.name"
+    descKey: "magic.spell.frost_shard.desc"
+    school: "FROST"
+    tier: "T1"
+    mana: 6
+    cooldownTicks: 40
+    range: 26
+    damage: 4
+    cast:
+      trigger: "RIGHT_CLICK"
+      delivery: "PROJECTILE"
+      projectile:
+        speed: 1.5
+        gravity: false
+        maxDistance: 26
+        hitRadius: 0.6
+        onHit: "STOP"
+    target:
+      type: "ENTITY"
+      maxDistance: 26
+      lineOfSight: true
+      allowPlayers: true
+      allowMobs: true
+    effects:
+      - type: "particles"
+        particle: "SNOWFLAKE"
+        count: 18
+        spread: 0.25
+        target: "IMPACT"
+      - type: "sound"
+        sound: "BLOCK_GLASS_PLACE"
+        volume: 0.7
+        pitch: 1.4
+        target: "IMPACT"
+      - type: "damage"
+        amount: 4
+        cause: "MAGIC"
+    requirements: {}
+    icon:
+      material: "ICE"
+      customModelData: 13001
+
+  - id: "frost_slow"
+    type: "RAY_DAMAGE"
+    nameKey: "magic.spell.frost_slow.name"
+    descKey: "magic.spell.frost_slow.desc"
+    school: "FROST"
+    tier: "T2"
+    mana: 10
+    cooldownTicks: 80
+    range: 24
+    damage: 7
+    cast:
+      trigger: "RIGHT_CLICK"
+      delivery: "PROJECTILE"
+      projectile:
+        speed: 1.4
+        gravity: false
+        maxDistance: 24
+        hitRadius: 0.6
+        onHit: "STOP"
+    target:
+      type: "ENTITY"
+      maxDistance: 24
+      lineOfSight: true
+      allowPlayers: true
+      allowMobs: true
+    reagents:
+      items:
+        - itemId: "frost_dust"
+          amount: 1
+    effects:
+      - type: "particles"
+        particle: "CLOUD"
+        count: 16
+        spread: 0.3
+        target: "IMPACT"
+      - type: "sound"
+        sound: "ENTITY_SNOWBALL_THROW"
+        volume: 0.7
+        pitch: 1.1
+        target: "IMPACT"
+      - type: "damage"
+        amount: 7
+        cause: "MAGIC"
+      - type: "potion"
+        effect: "slowness"
+        durationTicks: 100
+        amplifier: 0
+    requirements: {}
+    icon:
+      material: "PACKED_ICE"
+      customModelData: 13002
+
+  - id: "ice_nova"
+    type: "RAY_DAMAGE"
+    nameKey: "magic.spell.ice_nova.name"
+    descKey: "magic.spell.ice_nova.desc"
+    school: "FROST"
+    tier: "T2"
+    mana: 10
+    cooldownTicks: 80
+    range: 18
+    damage: 7
+    cast:
+      trigger: "RIGHT_CLICK"
+      delivery: "AOE"
+      aoe:
+        radius: 4
+        maxTargets: 10
+        includePlayers: true
+        includeMobs: true
+    target:
+      type: "LOCATION"
+      maxDistance: 18
+      lineOfSight: true
+      allowPlayers: true
+      allowMobs: true
+    reagents:
+      items:
+        - itemId: "frost_dust"
+          amount: 1
+    effects:
+      - type: "particles"
+        particle: "SNOWFLAKE"
+        count: 24
+        spread: 0.4
+        target: "IMPACT"
+      - type: "sound"
+        sound: "BLOCK_GLASS_BREAK"
+        volume: 0.8
+        pitch: 1.2
+        target: "IMPACT"
+      - type: "damage"
+        amount: 7
+        cause: "MAGIC"
+        mode: "ALL"
+      - type: "potion"
+        effect: "slowness"
+        durationTicks: 80
+        amplifier: 0
+        mode: "ALL"
+    requirements: {}
+    icon:
+      material: "SNOW_BLOCK"
+      customModelData: 13003
+
+  - id: "frost_barrier"
+    type: "RAY_DAMAGE"
+    nameKey: "magic.spell.frost_barrier.name"
+    descKey: "magic.spell.frost_barrier.desc"
+    school: "FROST"
+    tier: "T2"
+    mana: 10
+    cooldownTicks: 80
+    range: 1
+    damage: 7
+    cast:
+      trigger: "RIGHT_CLICK"
+      delivery: "INSTANT"
+    target:
+      type: "SELF"
+      maxDistance: 0
+      lineOfSight: true
+      allowPlayers: true
+      allowMobs: true
+    reagents:
+      items:
+        - itemId: "frost_dust"
+          amount: 1
+    effects:
+      - type: "particles"
+        particle: "SNOWFLAKE"
+        count: 20
+        spread: 0.2
+        target: "ORIGIN"
+      - type: "sound"
+        sound: "BLOCK_GLASS_PLACE"
+        volume: 0.8
+        pitch: 1.4
+        target: "ORIGIN"
+      - type: "potion"
+        effect: "resistance"
+        durationTicks: 120
+        amplifier: 0
+    requirements: {}
+    icon:
+      material: "SHIELD"
+      customModelData: 13004
+
+  - id: "chain_frost"
+    type: "RAY_DAMAGE"
+    nameKey: "magic.spell.chain_frost.name"
+    descKey: "magic.spell.chain_frost.desc"
+    school: "FROST"
+    tier: "T3"
+    mana: 16
+    cooldownTicks: 140
+    range: 20
+    damage: 11
+    cast:
+      trigger: "RIGHT_CLICK"
+      delivery: "CHAIN"
+      chain:
+        jumps: 3
+        jumpRange: 6
+        includePlayers: true
+        includeMobs: true
+    target:
+      type: "ENTITY"
+      maxDistance: 20
+      lineOfSight: true
+      allowPlayers: true
+      allowMobs: true
+    reagents:
+      items:
+        - itemId: "frost_dust"
+          amount: 2
+    effects:
+      - type: "particles"
+        particle: "SNOWFLAKE"
+        count: 18
+        spread: 0.3
+        target: "PRIMARY"
+      - type: "sound"
+        sound: "BLOCK_GLASS_BREAK"
+        volume: 0.8
+        pitch: 0.9
+        target: "PRIMARY"
+      - type: "damage"
+        amount: 11
+        cause: "MAGIC"
+        mode: "ALL"
+      - type: "potion"
+        effect: "slowness"
+        durationTicks: 80
+        amplifier: 0
+        mode: "ALL"
+    requirements: {}
+    icon:
+      material: "BLUE_ICE"
+      customModelData: 13005

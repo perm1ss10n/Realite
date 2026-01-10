@@ -179,6 +179,7 @@ public final class PlotService {
         if (location == null) {
             return AccessResult.allow();
         }
+        boolean isInteractAction = action == Action.INTERACT || action == Action.MAGIC_CAST;
         Player player = playerId == null ? null : Bukkit.getPlayer(playerId);
         if (player != null) {
             if (player.hasPermission(ADMIN_PERMISSION)) {
@@ -209,7 +210,7 @@ public final class PlotService {
                             ? AccessResult.allow()
                             : AccessResult.deny("plot.access.denied");
                 }
-                if (action == Action.INTERACT) {
+                if (isInteractAction) {
                     return config.guildAllowInteractForMembers()
                             ? AccessResult.allow()
                             : AccessResult.deny("plot.access.denied");
@@ -224,7 +225,7 @@ public final class PlotService {
                     return AccessResult.allow();
                 }
             }
-            if (action == Action.INTERACT && plot.type() != PlotType.SHOP && config.allowInteractOutsideMembers()) {
+            if (isInteractAction && plot.type() != PlotType.SHOP && config.allowInteractOutsideMembers()) {
                 return AccessResult.allow();
             }
             return AccessResult.deny("plot.access.denied");

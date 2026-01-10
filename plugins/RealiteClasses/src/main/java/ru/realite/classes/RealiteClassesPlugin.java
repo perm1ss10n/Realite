@@ -21,6 +21,7 @@ import ru.realite.classes.service.EvolutionService;
 import ru.realite.classes.service.EvolutionRequirementAdapter;
 import ru.realite.classes.service.HiddenClassGate;
 import ru.realite.classes.service.ProgressionService;
+import ru.realite.classes.service.TalentService;
 
 import ru.realite.classes.storage.ClassConfigRepository;
 import ru.realite.classes.storage.ClassLoreRepository;
@@ -37,6 +38,7 @@ import ru.realite.core.api.classes.ClassProfileProvider;
 import ru.realite.core.api.classes.ClassTagProvider;
 import ru.realite.core.api.classes.ClassXpService;
 import ru.realite.core.api.logging.Banners;
+import ru.realite.core.api.talents.TalentProvider;
 
 import java.io.File;
 import java.io.InputStream;
@@ -65,6 +67,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
     private ClassProfileProvider classProfileProvider;
     private ClassTagProvider classTagProvider;
     private ClassXpService classXpService;
+    private TalentProvider talentProvider;
     private EvolutionRequirementAdapter evolutionRequirementAdapter;
     private HiddenClassGate hiddenClassGate;
 
@@ -159,6 +162,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         unregisterClassProfileProvider();
         unregisterClassTagProvider();
         unregisterClassXpService();
+        unregisterTalentProvider();
         if (platform != null) {
             platform.info("Disabled");
         }
@@ -221,6 +225,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         registerClassTagProvider();
         registerClassProfileProvider();
         registerClassXpService();
+        registerTalentProvider();
 
         platform.info("reloadAll completed");
     }
@@ -345,6 +350,14 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         classProfileProvider = null;
     }
 
+    private void registerTalentProvider() {
+        if (core == null || classService == null || classConfig == null) {
+            return;
+        }
+        talentProvider = new TalentService(classService, classConfig);
+        core.services().replace(TalentProvider.class, talentProvider);
+    }
+
     private void registerClassXpService() {
         if (core == null || progressionService == null) {
             return;
@@ -362,5 +375,16 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
             core.services().unregister(ClassXpService.class);
         }
         classXpService = null;
+    }
+
+    private void unregisterTalentProvider() {
+        if (core == null || talentProvider == null) {
+            return;
+        }
+        TalentProvider registered = core.services().get(TalentProvider.class);
+        if (registered == talentProvider) {
+            core.services().unregister(TalentProvider.class);
+        }
+        talentProvider = null;
     }
 }

@@ -2,6 +2,7 @@ package ru.realite.magic.model;
 
 import java.util.HashMap;
 import java.util.Map;
+import ru.realite.magic.school.MagicSchool;
 
 public final class MageState {
 
@@ -10,6 +11,8 @@ public final class MageState {
     private final Map<String, Long> cooldowns = new HashMap<>();
     private long lastCombatTime;
     private String selectedSpellId;
+    private MagicSchool lastSchool;
+    private long lastSchoolTime;
 
     public MageState(double mana, double maxMana) {
         this.mana = mana;
@@ -50,5 +53,21 @@ public final class MageState {
 
     public void selectedSpellId(String selectedSpellId) {
         this.selectedSpellId = selectedSpellId;
+    }
+
+    public MagicSchool lastSchool() {
+        return lastSchool;
+    }
+
+    public void lastSchool(MagicSchool lastSchool) {
+        this.lastSchool = lastSchool;
+    }
+
+    public long lastSchoolTime() {
+        return lastSchoolTime;
+    }
+
+    public void lastSchoolTime(long lastSchoolTime) {
+        this.lastSchoolTime = lastSchoolTime;
     }
 }

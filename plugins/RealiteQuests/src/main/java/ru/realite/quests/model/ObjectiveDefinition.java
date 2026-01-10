@@ -11,6 +11,7 @@ public final class ObjectiveDefinition {
 
     private final String id;
     private final ObjectiveType type;
+    private final String spellId;
     private final String npcId;
     private final EntityType entityType;
     private final List<Material> materials;
@@ -24,6 +25,7 @@ public final class ObjectiveDefinition {
 
     public ObjectiveDefinition(String id,
                                ObjectiveType type,
+                               String spellId,
                                String npcId,
                                EntityType entityType,
                                List<Material> materials,
@@ -36,6 +38,7 @@ public final class ObjectiveDefinition {
                                QuestConditions conditions) {
         this.id = Objects.requireNonNull(id, "id");
         this.type = Objects.requireNonNull(type, "type");
+        this.spellId = spellId;
         this.npcId = npcId;
         this.entityType = entityType;
         this.materials = materials == null ? null : List.copyOf(materials);
@@ -54,6 +57,10 @@ public final class ObjectiveDefinition {
 
     public ObjectiveType type() {
         return type;
+    }
+
+    public String spellId() {
+        return spellId;
     }
 
     public String npcId() {

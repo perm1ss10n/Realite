@@ -1,0 +1,23 @@
+id: "magic_intro"
+type: "INTRO"
+objectives:
+  - type: "UNLOCK_SPELL"
+    spellId: "warlock_ray"
+  - type: "CAST_SPELL"
+    spellId: "warlock_ray"
+    amount: 10
+  - type: "MASTERY_LEVEL"
+    spellId: "warlock_ray"
+    level: 2
+rewards:
+  - type: "XP"
+    amount: 50
+  - type: "ITEM"
+    material: "BLAZE_ROD"
+    amount: 1
+  - type: "ITEM"
+    material: "BLAZE_POWDER"
+    amount: 2
+  - type: "ITEM"
+    material: "AMETHYST_SHARD"
+    amount: 1

@@ -3,9 +3,115 @@ format:
 
 magic:
   enabled: "{prefix}&aRealiteMagic plugin enabled."
+  cmd:
+    usage: "&eUsage: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery|admin|reload>"
+    player_not_found: "&cPlayer not found: &f{player}"
+    debug:
+      usage: "&eUsage: &f/rmagic debug <on|off|cast|stats> [player]"
+      on: "&aDebug enabled."
+      off: "&eDebug disabled."
+      player_on: "&aCast debug enabled for &f{player}&a."
+      player_off: "&eCast debug disabled for &f{player}&e."
+      cast: "&7[Debug] {player} spell={spell} target={target} mana={mana} gcd={globalCooldown} cd={spellCooldown} reason={reason}"
+      stats:
+        header: "&eDebug stats ({type}):"
+        entry: "&7- {key}: {value}"
+    spell:
+      usage: "&eUsage: &f/rmagic spell <give|remove|list|select|clear> <player> [spellId]"
+      give:
+        ok: "&aGave spell &f{spell}&a to &f{player}&a."
+      remove:
+        ok: "&eRemoved spell &f{spell}&e from &f{player}&e."
+      select:
+        ok: "&aSelected spell &f{spell}&a for &f{player}&a."
+      list:
+        header: "&eSpells for &f{player}&e:"
+        entry: "&7- {spell} &8({id})"
+    spells:
+      usage: "&eUsage: &f/rmagic spells <reload|validate>"
+      reload:
+        ok: "&aLoaded &f{count}&a, errors &f{errors}&a."
+      validate:
+        ok: "&aValidated &f{count}&a, errors &f{errors}&a."
+      errors:
+        header: "&eSpell load errors:"
+        entry: "&7- {file}: {error}"
+        schema: "&7- {file}: {path}: {error}"
+        missing_field: "&cMissing field: {field}"
+        invalid_value: "&cInvalid value for {field}: {value}"
+        unknown_effect: "&cUnknown effect type: {type}"
+        missing_section: "&cMissing spell section."
+        invalid_id: "&cInvalid id."
+        missing_type: "&cMissing type."
+        unknown_type: "&cUnknown type: &f{type}"
+        missing_name_desc: "&cMissing nameKey/descKey."
+        invalid_numbers: "&cInvalid numeric values."
+        duplicate_id: "&cDuplicate id: &f{id}"
+        invalid_icon_material: "&eInvalid icon.material: &f{material}"
+        invalid_gui_slot: "&eInvalid gui.slot: &f{slot}"
+        invalid_default_icon_material: "&eInvalid defaultSpellIconMaterial: &f{material}"
+        folder_create_failed: "&cFailed to create folder: &f{path}"
+        effect_invalid_entry: "&cEffect #{index}: invalid entry."
+        effect_missing_type: "&cEffect #{index}: missing type."
+        effect_unknown_type: "&cEffect #{index}: unknown type {type}."
+        effect_missing_param: "&cEffect #{index} ({type}): missing param {param}."
+        effect_invalid_param: "&cEffect #{index} ({type}): invalid {param} = {value}."
+        effect_target_mismatch: "&cEffect #{index} ({type}): target {target} does not match spell target {spellTarget}."
+        unknown: "&cUnknown error."
+      no_errors: "&aNo errors found."
+    slot:
+      usage: "&eUsage: &f/rmagic slot <set|clear|use> <1-9> [spellId]"
+    mastery:
+      usage: "&eUsage: &f/rmagic mastery <spellId|selected>"
+      header: "&eMastery: &f{spell}"
+      line_level: "&7Level: &f{level}"
+      line_xp: "&7XP: &f{xp}&7/&f{next}"
+      line_bonus: "&7Bonus: &f{damage} dmg, {mana} mana, {cooldown} cd"
+    admin:
+      usage: "&eUsage: &f/rmagic admin <stats|log|inspect|bypass|export>"
+      stats:
+        header: "&eDiagnostics top {count}:"
+        casts: "&6Top casts:"
+        fails: "&6Top failures:"
+        pve_immune: "&6Top PVE immunes:"
+        pve_resist: "&6Top PVE resists:"
+        empty: "&7No data."
+      log:
+        header: "&eLast {count} casts:"
+      inspect:
+        usage: "&eUsage: &f/rmagic admin inspect <player>"
+        header: "&eInspect: &f{player}"
+        slot: "&7Slot {slot}: &f{spell}"
+        school: "&7School: &f{school}"
+        mana: "&7Mana: &f{current}&7/&f{max}"
+        cooldown: "&7Cooldown: &f{time}&7s"
+        staff: "&7Staff charges: &f{staff}"
+        reagents_none: "&7Reagents: &fnone"
+        reagents_ok: "&7Reagents: &aok"
+        reagents_missing: "&7Missing reagents: &c{list}"
+        mastery: "&7Mastery: &f{level}&7 (xp {xp})"
+        talents: "&7Talents: &f{list}"
+        talents_none: "&7Talents: &fnone"
+        region_allow: "&7Region: &aallowed"
+        region_deny: "&7Region: &cdenied ({reason})"
+        guild: "&7Guild bonus: &f{damage} dmg, {mana} mana, {cooldown} cd"
+        guild_none: "&7Guild bonus: &fnone"
+      export:
+        ok: "&aReport saved to &f{file}&a."
+        fail: "&cFailed to export report."
+    reload:
+      ok: "&aConfig section reloaded: &f{section}&a."
+      section_unknown: "&cUnknown config section: &f{section}"
+    status:
+      header: "&eMagic status:"
+      slot: "&7Slot: &f{slot}"
+      spell: "&7Spell: &f{spell}"
+      spell_empty: "&7Spell: &fempty"
+      mana: "&7Mana: &f{current}&7/&f{max}"
+      cooldown: "&7Cooldown: &f{time}&7s"
   command:
     usage:
-      root: "&eUsage: &f/rmagic <menu|spell|mana>"
+      root: "&eUsage: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery|admin|reload>"
       spell: "&eUsage: &f/rmagic spell <select|clear|get> [player] [spellId]"
     only-player: "{prefix}&cCommand is only for players."
     spell:
@@ -23,6 +129,21 @@ magic:
       no_permission: "&cNo permission."
       player_not_found: "&cPlayer not found: &f{player}"
       only_players: "&cCommand is only for players."
+  bar:
+    slot:
+      changed: "{prefix}&dSlot {slot}: &f{spell}"
+      empty: "{prefix}&dSlot {slot}: &7empty"
+  hud:
+    selected: "Slot {slot}: {spell}"
+    selected_empty: "Slot {slot}: empty"
+    fail: "Failed: {reason}"
+    cooldown: "⏳ Cooldown: {time}s"
+    mana: "⚡ Mana: {current}/{max}"
+    no_mana: "⚡ Not enough mana ({need})"
+    no_target: "No target"
+    success: "Cast: {spell}"
+  mastery:
+    level_up: "{prefix}&a{spell}: mastery level {level}!"
   need-focus: "{prefix}&cYou need a focus item to cast."
   menu:
     title: "&5Select spell"
@@ -39,15 +160,86 @@ magic:
       filler: " "
       close: "&cClose"
       back: "&eBack"
+  gui:
+    title: "&5Spellbook"
+    spell:
+      selected: "&aSelected"
+      locked: "&cNot learned"
+    hint:
+      select: "&7LMB: select"
   error:
     no_selected_spell: "&cNo spell selected. Open &f/rmagic&c and choose one."
     cannot_select_spell: "&cYou cannot select this spell: &f{reason}"
     not_enough_mana: "&cNot enough mana: &f{current}&c/&f{need}"
     on_cooldown: "&cCooldown: &f{seconds}&c s"
     need_focus: "&cYou need a magic focus in hand."
+  cast:
+    no_selected: "&cNo spell selected."
+    slot_empty: "&cThere is no spell in the active slot."
+    cooldown: "&cWait {time}s."
+    no_mana: "&cNot enough mana: &f{mana}"
+    no_target: "&cNo valid target."
+    no_targets: "&cNo targets found."
+    missing_item: "&cRequired item: &f{item}"
+    wrong_item: "&cThis spell requires item: &f{item}"
+    give_item: "&aReceived: &f{item}&a x{amount}"
+    items_bridge_missing: "RealiteItems is not connected, requiredItemId is not checked."
+  reagents:
+    missing: "&cMissing reagent: &f{item}&c x{need}."
+  economy:
+    unavailable: "&cEconomy is unavailable."
+    not_enough: "&cNot enough money to cast."
+    paid: "&aPaid: &f{amount}&a."
+  teleport:
+    failed: "&cSafe teleport failed."
+  region:
+    denied:
+      default: "You cannot use magic here."
+      school: "This magic school is forbidden here."
+      spawn: "Magic is disabled at spawn."
+  staff:
+    no_charges: "Your staff has no charges."
+    charges: "Charges: {current}/{max}"
+    recharged: "Staff recharged: +{add}"
+  admin:
+    bypass:
+      enabled: "&aBypass enabled for &f{player}&a ({what}, {ttl}m)."
+      disabled: "&eBypass disabled for &f{player}&e ({what})."
+      usage: "&eUsage: &f/rmagic admin bypass <player> <on|off> [what] [ttlMinutes]"
+      list:
+        header: "&eBypass list ({count}):"
+  rune:
+    school_mismatch: "Rune school does not match the spell."
+  school:
+    conflict: "&cThis school conflicts with {other}."
+    name:
+      NONE: "None"
+      WARLOCK: "Warlock"
+      FIRE: "Fire"
+      ARCANE: "Arcane"
+      FROST: "Frost"
+      HOLY: "Holy"
+      NATURE: "Nature"
+  storage:
+    load_fail: "&cFailed to load spell data."
+    save_fail: "&cFailed to save spell data."
   mana:
     actionbar: "{prefix}&dMana: &b{mana}&7/&b{max}"
   spell:
+    unknown: "{prefix}&cUnknown spell: &f{spell}"
+    unlock:
+      ok: "{prefix}&aYou learned a spell: &f{spell}"
+      already: "{prefix}&eSpell already learned: &f{spell}"
+      from_item:
+        ok: "{prefix}&aYou learned: &f{spell}"
+        denied: "{prefix}&cCannot learn: &f{reason}"
+        already: "{prefix}&eAlready learned: &f{spell}"
+        invalid_scroll: "{prefix}&cThe scroll is damaged."
+    select:
+      ok: "{prefix}&aSelected spell: &f{spell}"
+      not_learned: "{prefix}&cYou haven't learned this spell: &f{spell}"
+    revoke:
+      ok: "{prefix}&eSpell revoked: &f{spell}"
     lore:
       description: "&7{desc}"
       mana: "&bMana: &f{mana}"
@@ -66,5 +258,80 @@ magic:
       class: "{prefix}&cRequired class: &f{class}"
       evolution: "{prefix}&cRequired evolution: &f{evolution}"
     warlock_ray:
-      name: "&5Shadow Ray"
-      desc: "&7A piercing ray that deals magic damage."
+      name: "&5Warlock Ray"
+      desc: "&7Focused beam of shadow energy."
+    warlock_curse:
+      name: "&5Warlock Curse"
+      desc: "&7Weakens and slows the target."
+    warlock_drain:
+      name: "&5Warping Drain"
+      desc: "&7Heavy damage with lingering decay."
+    warlock_nova:
+      name: "&5Warp Nova"
+      desc: "&7Shadow burst that slows nearby foes."
+    warlock_chain:
+      name: "&5Chain of Ruin"
+      desc: "&7Leaps between targets with dark pain."
+
+    firebolt:
+      name: "&cFirebolt"
+      desc: "&7Quick bolt of flame."
+    fireball:
+      name: "&cFireball"
+      desc: "&7Explodes in a small fiery blast."
+    flame_wall:
+      name: "&cFlame Wall"
+      desc: "&7Scorching beam that chars targets."
+    ignite:
+      name: "&cIgnite"
+      desc: "&7Instantly sears a single target."
+    inferno_nova:
+      name: "&cInferno Nova"
+      desc: "&7Large burst of blazing heat."
+
+    frost_shard:
+      name: "&bFrost Shard"
+      desc: "&7Shard of ice that chills on hit."
+    frost_slow:
+      name: "&bFrost Slow"
+      desc: "&7Freezing projectile that hinders."
+    ice_nova:
+      name: "&bIce Nova"
+      desc: "&7Cold wave that slows enemies."
+    frost_barrier:
+      name: "&bFrost Barrier"
+      desc: "&7Protective chill that hardens skin."
+    chain_frost:
+      name: "&bChain Frost"
+      desc: "&7Icy chain that spreads slowdown."
+
+    holy_heal:
+      name: "&fHoly Heal"
+      desc: "&7Restores health with light."
+    holy_smite:
+      name: "&fHoly Smite"
+      desc: "&7Beam of radiance strikes the wicked."
+    cleanse:
+      name: "&fCleanse"
+      desc: "&7Removes harmful effects from a target."
+    sanctuary:
+      name: "&fSanctuary"
+      desc: "&7Area blessing that heals allies."
+    holy_banish:
+      name: "&fHoly Banish"
+      desc: "&7Radiant knockback against foes."
+  slot:
+    set:
+      ok: "{prefix}&aSpell bound to slot."
+      fail: "{prefix}&cFailed to bind spell to slot."
+    clear:
+      ok: "{prefix}&eSlot cleared."
+    invalid: "{prefix}&cInvalid slot: &f{slot}"
+  require:
+    missing_class_module: "&cClass module is unavailable."
+    no_class_selected: "&cYou have no class selected."
+    class_mismatch: "&cRequired class: &f{class}"
+    no_evolution: "&cRequired evolution: &f{evolution}"
+    evolution_mismatch: "&cRequired evolution: &f{evolution}"
+    item_missing: "&cRequired item: &f{item}"
+    missing_items_module: "&cItems module is unavailable."

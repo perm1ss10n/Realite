@@ -1,56 +1,188 @@
 package ru.realite.magic.spell;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.plugin.RegisteredServiceProvider;
+import ru.realite.items.service.ItemService;
+import ru.realite.magic.cast.AoeCastDefinition;
+import ru.realite.magic.cast.BeamCastDefinition;
+import ru.realite.magic.cast.BeamParticlesDefinition;
+import ru.realite.magic.cast.CastDeliveryType;
+import ru.realite.magic.cast.CastLimits;
+import ru.realite.magic.cast.ChainCastDefinition;
+import ru.realite.magic.cast.ProjectileCastDefinition;
+import ru.realite.magic.cast.ProjectileHitPolicy;
+import ru.realite.magic.effect.EffectExecutorRegistry;
+import ru.realite.magic.effect.SpellEffectDefinition;
+import ru.realite.magic.school.MagicSchool;
+import ru.realite.magic.target.SpellTargetDefinition;
+import ru.realite.magic.target.SpellTargetType;
+import ru.realite.magic.validation.SchemaError;
+import ru.realite.magic.validation.SchemaReport;
+import ru.realite.magic.validation.SpellSchemaValidator;
 
 public final class SpellRegistry {
 
     private final JavaPlugin plugin;
+    private final EffectExecutorRegistry effectRegistry;
     private final Map<String, SpellDefinition> spells = new HashMap<>();
+    private boolean itemsBridgeWarned;
 
-    public SpellRegistry(JavaPlugin plugin) {
+    public SpellRegistry(JavaPlugin plugin, EffectExecutorRegistry effectRegistry) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
+        this.effectRegistry = Objects.requireNonNull(effectRegistry, "effectRegistry");
     }
 
-    public void load() {
-        spells.clear();
+    public SpellLoadReport load() {
+        return reloadInternal(true);
+    }
+
+    public SpellLoadReport reload() {
+        return load();
+    }
+
+    public SpellLoadReport validate() {
+        return reloadInternal(false);
+    }
+
+    private SpellLoadReport reloadInternal(boolean applyChanges) {
+        List<SpellLoadError> errors = new ArrayList<>();
+        Map<String, SpellDefinition> loaded = new HashMap<>();
         File folder = new File(plugin.getDataFolder(), "spells");
         if (!folder.exists()) {
             if (!folder.mkdirs()) {
-                plugin.getLogger().warning("Failed to create spells folder: " + folder.getAbsolutePath());
-                return;
+                errors.add(SpellLoadError.ofKey(
+                        "spells",
+                        null,
+                        "magic.cmd.spells.errors.folder_create_failed",
+                        Map.of("path", folder.getAbsolutePath())));
+                return new SpellLoadReport(0, errors);
             }
         }
 
         File[] files = folder.listFiles((dir, name) -> name.endsWith(".yml"));
         if (files == null) {
-            return;
+            return new SpellLoadReport(0, errors);
         }
 
+        Material defaultIconMaterial = resolveDefaultIconMaterial(errors);
+        CastLimits castLimits = CastLimits.fromConfig(plugin.getConfig());
+        SpellSchemaValidator validator = new SpellSchemaValidator(effectRegistry);
         for (File file : files) {
-            YamlConfiguration cfg = YamlConfiguration.loadConfiguration(file);
-            ConfigurationSection root = cfg.getConfigurationSection("spell");
-            if (root == null) {
-                plugin.getLogger().warning("Spell file " + file.getName() + " missing 'spell' section. Skipping.");
+            YamlConfiguration cfg = new YamlConfiguration();
+            try {
+                cfg.load(file);
+            } catch (IOException | InvalidConfigurationException ex) {
+                addSchemaError(errors, file.getName(), null, "yaml",
+                        "magic.cmd.spells.errors.invalid_value",
+                        Map.of("field", "yaml", "value", String.valueOf(ex.getMessage())));
                 continue;
             }
-            SpellDefinition def = parseSpell(file.getName(), root);
-            if (def != null) {
-                if (spells.containsKey(def.id())) {
-                    plugin.getLogger().warning("Duplicate spell id '" + def.id() + "' in " + file.getName() + ". Skipping.");
+            ConfigurationSection root = cfg.getConfigurationSection("spell");
+            if (root != null) {
+                loadSpellSection(errors, loaded, validator, root, defaultIconMaterial, castLimits, file.getName());
+                continue;
+            }
+            List<Map<?, ?>> spellEntries = cfg.getMapList("spells");
+            if (spellEntries == null || spellEntries.isEmpty()) {
+                addSchemaError(errors, file.getName(), null, "spell",
+                        "magic.cmd.spells.errors.missing_field",
+                        Map.of("field", "spell"));
+                continue;
+            }
+            int index = 0;
+            for (Map<?, ?> entry : spellEntries) {
+                index++;
+                if (entry == null || entry.isEmpty()) {
+                    addSchemaError(errors, file.getName(), null, "spells[" + index + "]",
+                            "magic.cmd.spells.errors.invalid_value",
+                            Map.of("field", "spells[" + index + "]", "value", "null"));
                     continue;
                 }
-                spells.put(def.id(), def);
+                if (!(entry instanceof Map<?, ?>)) {
+                    addSchemaError(errors, file.getName(), null, "spells[" + index + "]",
+                            "magic.cmd.spells.errors.invalid_value",
+                            Map.of("field", "spells[" + index + "]", "value", String.valueOf(entry)));
+                    continue;
+                }
+                MemoryConfiguration entryConfig = new MemoryConfiguration();
+                entryConfig.createSection("spell", entry);
+                ConfigurationSection entrySection = entryConfig.getConfigurationSection("spell");
+                if (entrySection == null) {
+                    addSchemaError(errors, file.getName(), null, "spells[" + index + "]",
+                            "magic.cmd.spells.errors.invalid_value",
+                            Map.of("field", "spells[" + index + "]", "value", "null"));
+                    continue;
+                }
+                loadSpellSection(errors, loaded, validator, entrySection,
+                        defaultIconMaterial, castLimits, file.getName());
             }
         }
+
+        if (applyChanges) {
+            spells.clear();
+            spells.putAll(loaded);
+        }
+
+        return new SpellLoadReport(loaded.size(), errors);
+    }
+
+    private void loadSpellSection(List<SpellLoadError> errors,
+                                  Map<String, SpellDefinition> loaded,
+                                  SpellSchemaValidator validator,
+                                  ConfigurationSection section,
+                                  Material defaultIconMaterial,
+                                  CastLimits castLimits,
+                                  String fileName) {
+        SpellDefinition def = parseSpell(section, defaultIconMaterial, castLimits, fileName);
+        SchemaReport schemaReport = validator.validate(def, fileName);
+        addSchemaErrors(errors, schemaReport);
+        if (!schemaReport.ok()) {
+            return;
+        }
+        warnMissingItemsBridge(def);
+        if (loaded.containsKey(def.id())) {
+            addSchemaError(errors, fileName, def.id(), "id",
+                    "magic.cmd.spells.errors.duplicate_id",
+                    Map.of("id", def.id()));
+            return;
+        }
+        loaded.put(def.id(), def);
+    }
+
+    private void warnMissingItemsBridge(SpellDefinition def) {
+        if (itemsBridgeWarned) {
+            return;
+        }
+        if (def.reagents() == null || def.reagents().isEmpty()) {
+            return;
+        }
+        if (isItemsBridgeAvailable()) {
+            return;
+        }
+        itemsBridgeWarned = true;
+        plugin.getLogger().warning("[Magic] Reagents are defined, but RealiteItems is unavailable.");
+    }
+
+    private boolean isItemsBridgeAvailable() {
+        RegisteredServiceProvider<ItemService> provider =
+                Bukkit.getServicesManager().getRegistration(ItemService.class);
+        return provider != null && provider.getProvider() != null;
     }
 
     public Collection<SpellDefinition> all() {
@@ -61,80 +193,357 @@ public final class SpellRegistry {
         return spells.get(id);
     }
 
-    private SpellDefinition parseSpell(String fileName, ConfigurationSection section) {
+    public Optional<SpellDefinition> find(String id) {
+        if (id == null || id.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(spells.get(id));
+    }
+
+    private SpellDefinition parseSpell(ConfigurationSection section,
+                                       Material defaultIconMaterial,
+                                       CastLimits castLimits,
+                                       String fileName) {
         String id = section.getString("id");
         String typeRaw = section.getString("type");
+        SpellType type = parseSpellType(typeRaw);
         String nameKey = section.getString("nameKey");
         String descKey = section.getString("descKey");
+        MagicSchool school = parseMagicSchool(section, id, fileName);
         double mana = section.getDouble("mana", -1);
         long cooldownTicks = section.getLong("cooldownTicks", -1);
         double range = section.getDouble("range", -1);
         double damage = section.getDouble("damage", -1);
-        SpellRequirements requirements = parseRequirements(section.getConfigurationSection("requirements"));
-        Material defaultIconMaterial = resolveDefaultIconMaterial();
-        Material iconMaterial = parseIconMaterial(section.getConfigurationSection("icon"), defaultIconMaterial, id, fileName);
-        Integer iconCustomModelData = parseIconCustomModelData(section.getConfigurationSection("icon"));
-        Integer guiSlot = parseGuiSlot(section.getConfigurationSection("gui"), id, fileName);
 
-        if (id == null || id.isBlank()) {
-            plugin.getLogger().warning("Spell file " + fileName + " has invalid id. Skipping.");
-            return null;
+        SpellRequirements requirements = parseRequirements(section.getConfigurationSection("requirements"));
+        ConfigurationSection castSection = section.getConfigurationSection("cast");
+        SpellTargetDefinition target = parseTarget(section.getConfigurationSection("target"), range);
+        CastDeliveryType castDelivery = parseCastDeliveryType(castSection);
+        ProjectileCastDefinition projectileCast = parseProjectileCast(castSection, castLimits, id);
+        BeamCastDefinition beamCast = parseBeamCast(castSection, castLimits, id);
+        AoeCastDefinition aoeCast = parseAoeCast(castSection, castLimits, id);
+        ChainCastDefinition chainCast = parseChainCast(castSection, castLimits, id);
+        List<SpellEffectDefinition> effects = parseEffects(section);
+        SpellCastTrigger castTrigger = parseCastTrigger(castSection);
+        String castItemId = parseCastItemId(castSection);
+        Integer staffChargesCost = parseStaffChargesCost(castSection);
+        ReagentCost reagents = parseReagents(section.getConfigurationSection("reagents"));
+        double moneyCost = section.getDouble("cost.money", 0.0);
+        SpellGiveItem giveItem = parseGiveItem(section.getConfigurationSection("effects"));
+        Material iconMaterial = parseIconMaterial(section.getConfigurationSection("icon"),
+                defaultIconMaterial);
+        Integer iconCustomModelData = parseIconCustomModelData(section.getConfigurationSection("icon"));
+        Integer guiSlot = parseGuiSlot(section.getConfigurationSection("gui"));
+        return new SpellDefinition(id, type, nameKey, descKey, school, mana, cooldownTicks, range, damage, requirements,
+                target, castDelivery, projectileCast, beamCast, aoeCast, chainCast, effects, castTrigger, castItemId,
+                staffChargesCost, reagents, moneyCost, giveItem.id(), giveItem.amount(), iconMaterial,
+                iconCustomModelData, guiSlot);
+    }
+
+    private List<SpellEffectDefinition> parseEffects(ConfigurationSection section) {
+        List<Map<?, ?>> rawEffects = section.getMapList("effects");
+        if (rawEffects == null || rawEffects.isEmpty()) {
+            return List.of();
         }
-        if (typeRaw == null || typeRaw.isBlank()) {
-            plugin.getLogger().warning("Spell '" + id + "' has missing type in " + fileName + ". Skipping.");
-            return null;
+        List<SpellEffectDefinition> effects = new ArrayList<>();
+        for (Object raw : rawEffects) {
+            if (!(raw instanceof Map<?, ?> effectMap)) {
+                effects.add(null);
+                continue;
+            }
+            Object typeRaw = effectMap.get("type");
+            String type = typeRaw == null ? "" : String.valueOf(typeRaw);
+            Map<String, Object> params = new HashMap<>();
+            for (Map.Entry<?, ?> entry : effectMap.entrySet()) {
+                if (entry.getKey() == null) {
+                    continue;
+                }
+                String key = String.valueOf(entry.getKey());
+                if ("type".equalsIgnoreCase(key)) {
+                    continue;
+                }
+                params.put(key, entry.getValue());
+            }
+            effects.add(new SpellEffectDefinition(type, params));
         }
-        SpellType type;
-        try {
-            type = SpellType.valueOf(typeRaw.trim().toUpperCase());
-        } catch (IllegalArgumentException ex) {
-            plugin.getLogger().warning("Spell '" + id + "' has unknown type '" + typeRaw + "' in " + fileName + ". Skipping.");
-            return null;
-        }
-        if (nameKey == null || nameKey.isBlank() || descKey == null || descKey.isBlank()) {
-            plugin.getLogger().warning("Spell '" + id + "' missing nameKey/descKey in " + fileName + ". Skipping.");
-            return null;
-        }
-        if (mana < 0 || cooldownTicks < 0 || range <= 0 || damage < 0) {
-            plugin.getLogger().warning("Spell '" + id + "' has invalid numbers in " + fileName + ". Skipping.");
-            return null;
-        }
-        return new SpellDefinition(id, type, nameKey, descKey, mana, cooldownTicks, range, damage, requirements,
-                iconMaterial, iconCustomModelData, guiSlot);
+        return List.copyOf(effects);
     }
 
     private SpellRequirements parseRequirements(ConfigurationSection section) {
         if (section == null) {
-            return new SpellRequirements(null, null);
+            return new SpellRequirements(null, null, null, false);
         }
         String classId = section.getString("class");
         String evolutionId = section.getString("evolution");
+        String requiredItemId = section.getString("requiredItemId");
+        boolean consumeOnCast = section.getBoolean("consumeOnCast", false);
         if (classId != null && classId.isBlank()) {
             classId = null;
         }
         if (evolutionId != null && evolutionId.isBlank()) {
             evolutionId = null;
         }
-        return new SpellRequirements(classId, evolutionId);
+        if (requiredItemId != null && requiredItemId.isBlank()) {
+            requiredItemId = null;
+        }
+        return new SpellRequirements(classId, evolutionId, requiredItemId, consumeOnCast);
     }
 
-    private Material resolveDefaultIconMaterial() {
+    private ReagentCost parseReagents(ConfigurationSection section) {
+        if (section == null) {
+            return null;
+        }
+        boolean consumeOnCast = section.getBoolean("consumeOnCast", true);
+        List<ReagentItem> items = parseReagentItems(section.getMapList("items"));
+        if (items.isEmpty()) {
+            return null;
+        }
+        return new ReagentCost(consumeOnCast, items);
+    }
+
+    private List<ReagentItem> parseReagentItems(List<Map<?, ?>> rawItems) {
+        if (rawItems == null || rawItems.isEmpty()) {
+            return List.of();
+        }
+        List<ReagentItem> items = new ArrayList<>();
+        for (Object raw : rawItems) {
+            if (!(raw instanceof Map<?, ?> itemMap)) {
+                items.add(null);
+                continue;
+            }
+            Object itemIdRaw = itemMap.get("itemId");
+            String itemId = itemIdRaw == null ? null : String.valueOf(itemIdRaw);
+            int amount = 0;
+            Object amountRaw = itemMap.get("amount");
+            if (amountRaw instanceof Number number) {
+                amount = number.intValue();
+            } else if (amountRaw != null) {
+                try {
+                    amount = Integer.parseInt(String.valueOf(amountRaw));
+                } catch (NumberFormatException ex) {
+                    amount = 0;
+                }
+            }
+            items.add(new ReagentItem(itemId, amount));
+        }
+        return List.copyOf(items);
+    }
+
+    private SpellCastTrigger parseCastTrigger(ConfigurationSection section) {
+        if (section == null) {
+            return null;
+        }
+        String triggerRaw = section.getString("trigger");
+        if (triggerRaw == null || triggerRaw.isBlank()) {
+            return null;
+        }
+        try {
+            return SpellCastTrigger.valueOf(triggerRaw.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    private CastDeliveryType parseCastDeliveryType(ConfigurationSection section) {
+        if (section == null) {
+            return CastDeliveryType.INSTANT;
+        }
+        String raw = section.getString("delivery");
+        if (raw == null || raw.isBlank()) {
+            return CastDeliveryType.INSTANT;
+        }
+        try {
+            return CastDeliveryType.valueOf(raw.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    private ProjectileCastDefinition parseProjectileCast(ConfigurationSection section,
+                                                          CastLimits limits,
+                                                          String spellId) {
+        if (section == null) {
+            return null;
+        }
+        ConfigurationSection projectile = section.getConfigurationSection("projectile");
+        if (projectile == null) {
+            return null;
+        }
+        double speed = projectile.getDouble("speed", -1);
+        boolean gravity = projectile.getBoolean("gravity", false);
+        double maxDistance = projectile.getDouble("maxDistance", -1);
+        double hitRadius = projectile.getDouble("hitRadius", -1);
+        String onHitRaw = projectile.getString("onHit", "STOP");
+        ProjectileHitPolicy onHit = parseProjectileHitPolicy(onHitRaw);
+        if (maxDistance > limits.maxProjectileDistance()) {
+            plugin.getLogger().warning("Spell '" + spellId + "' projectile maxDistance " + maxDistance
+                    + " exceeds limit " + limits.maxProjectileDistance() + ", clamping.");
+            maxDistance = limits.maxProjectileDistance();
+        }
+        return new ProjectileCastDefinition(speed, gravity, maxDistance, hitRadius, onHit);
+    }
+
+    private BeamCastDefinition parseBeamCast(ConfigurationSection section,
+                                             CastLimits limits,
+                                             String spellId) {
+        if (section == null) {
+            return null;
+        }
+        ConfigurationSection beam = section.getConfigurationSection("beam");
+        if (beam == null) {
+            return null;
+        }
+        double maxDistance = beam.getDouble("maxDistance", -1);
+        double step = beam.getDouble("step", -1);
+        double hitRadius = beam.getDouble("hitRadius", -1);
+        BeamParticlesDefinition particles = null;
+        ConfigurationSection particlesSection = beam.getConfigurationSection("particles");
+        if (particlesSection != null) {
+            String particle = particlesSection.getString("particle");
+            int countPerStep = particlesSection.getInt("countPerStep", -1);
+            particles = new BeamParticlesDefinition(particle, countPerStep);
+        }
+        if (maxDistance > limits.maxBeamDistance()) {
+            plugin.getLogger().warning("Spell '" + spellId + "' beam maxDistance " + maxDistance
+                    + " exceeds limit " + limits.maxBeamDistance() + ", clamping.");
+            maxDistance = limits.maxBeamDistance();
+        }
+        return new BeamCastDefinition(maxDistance, step, hitRadius, particles);
+    }
+
+    private AoeCastDefinition parseAoeCast(ConfigurationSection section,
+                                           CastLimits limits,
+                                           String spellId) {
+        if (section == null) {
+            return null;
+        }
+        ConfigurationSection aoe = section.getConfigurationSection("aoe");
+        if (aoe == null) {
+            return null;
+        }
+        double radius = aoe.getDouble("radius", -1);
+        int maxTargets = aoe.getInt("maxTargets", -1);
+        boolean includePlayers = aoe.getBoolean("includePlayers", true);
+        boolean includeMobs = aoe.getBoolean("includeMobs", true);
+        if (maxTargets > limits.maxAoeTargets()) {
+            plugin.getLogger().warning("Spell '" + spellId + "' aoe maxTargets " + maxTargets
+                    + " exceeds limit " + limits.maxAoeTargets() + ", clamping.");
+            maxTargets = limits.maxAoeTargets();
+        }
+        return new AoeCastDefinition(radius, maxTargets, includePlayers, includeMobs);
+    }
+
+    private ChainCastDefinition parseChainCast(ConfigurationSection section,
+                                               CastLimits limits,
+                                               String spellId) {
+        if (section == null) {
+            return null;
+        }
+        ConfigurationSection chain = section.getConfigurationSection("chain");
+        if (chain == null) {
+            return null;
+        }
+        int jumps = chain.getInt("jumps", -1);
+        double jumpRange = chain.getDouble("jumpRange", -1);
+        boolean includePlayers = chain.getBoolean("includePlayers", true);
+        boolean includeMobs = chain.getBoolean("includeMobs", true);
+        int maxTargets = jumps < 0 ? jumps : jumps + 1;
+        if (maxTargets > limits.maxChainTargets()) {
+            plugin.getLogger().warning("Spell '" + spellId + "' chain jumps " + jumps
+                    + " exceeds limit " + limits.maxChainTargets() + ", clamping.");
+            jumps = Math.max(0, limits.maxChainTargets() - 1);
+        }
+        return new ChainCastDefinition(jumps, jumpRange, includePlayers, includeMobs);
+    }
+
+    private ProjectileHitPolicy parseProjectileHitPolicy(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return ProjectileHitPolicy.STOP;
+        }
+        try {
+            return ProjectileHitPolicy.valueOf(raw.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    private String parseCastItemId(ConfigurationSection section) {
+        if (section == null) {
+            return null;
+        }
+        String castItemId = section.getString("itemId");
+        if (castItemId != null && castItemId.isBlank()) {
+            return null;
+        }
+        return castItemId;
+    }
+
+    private Integer parseStaffChargesCost(ConfigurationSection section) {
+        if (section == null || !section.isSet("staffChargesCost")) {
+            return null;
+        }
+        int value = section.getInt("staffChargesCost", 0);
+        return value;
+    }
+
+    private SpellGiveItem parseGiveItem(ConfigurationSection section) {
+        if (section == null) {
+            return new SpellGiveItem(null, 1);
+        }
+        ConfigurationSection giveItemSection = section.getConfigurationSection("giveItem");
+        if (giveItemSection == null) {
+            return new SpellGiveItem(null, 1);
+        }
+        String id = giveItemSection.getString("id");
+        if (id != null && id.isBlank()) {
+            id = null;
+        }
+        int amount = giveItemSection.getInt("amount", 1);
+        if (amount <= 0) {
+            amount = 1;
+        }
+        return new SpellGiveItem(id, amount);
+    }
+
+    private SpellTargetDefinition parseTarget(ConfigurationSection section, double range) {
+        if (section == null) {
+            return null;
+        }
+        String typeRaw = section.getString("type");
+        SpellTargetType type = null;
+        if (typeRaw != null && !typeRaw.isBlank()) {
+            try {
+                type = SpellTargetType.valueOf(typeRaw.trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                type = null;
+            }
+        }
+        double maxDistance = section.getDouble("maxDistance", range);
+        boolean lineOfSight = section.getBoolean("lineOfSight", true);
+        boolean allowPlayers = section.getBoolean("allowPlayers", true);
+        boolean allowMobs = section.getBoolean("allowMobs", true);
+        return new SpellTargetDefinition(type, maxDistance, lineOfSight, allowPlayers, allowMobs);
+    }
+
+    private Material resolveDefaultIconMaterial(List<SpellLoadError> errors) {
         String configured = plugin.getConfig().getString("menu.spellSelect.defaultSpellIconMaterial", "PAPER");
         if (configured == null || configured.isBlank()) {
             configured = "PAPER";
         }
         Material material = Material.matchMaterial(configured.trim());
         if (material == null) {
-            plugin.getLogger().warning("Invalid defaultSpellIconMaterial '" + configured + "' in config.yml. Using PAPER.");
+            errors.add(SpellLoadError.ofKey(
+                    "config.yml",
+                    null,
+                    "magic.cmd.spells.errors.invalid_default_icon_material",
+                    Map.of("material", configured)));
             return Material.PAPER;
         }
         return material;
     }
 
     private Material parseIconMaterial(ConfigurationSection section,
-                                       Material defaultMaterial,
-                                       String spellId,
-                                       String fileName) {
+                                       Material defaultMaterial) {
         if (section == null) {
             return defaultMaterial;
         }
@@ -143,12 +552,7 @@ public final class SpellRegistry {
             return defaultMaterial;
         }
         Material material = Material.matchMaterial(materialName.trim());
-        if (material == null) {
-            plugin.getLogger().warning("Spell '" + spellId + "' has invalid icon.material '" + materialName
-                    + "' in " + fileName + ". Using default.");
-            return defaultMaterial;
-        }
-        return material;
+        return material == null ? defaultMaterial : material;
     }
 
     private Integer parseIconCustomModelData(ConfigurationSection section) {
@@ -162,16 +566,61 @@ public final class SpellRegistry {
         return value >= 0 ? value : null;
     }
 
-    private Integer parseGuiSlot(ConfigurationSection section, String spellId, String fileName) {
+    private Integer parseGuiSlot(ConfigurationSection section) {
         if (section == null || !section.isSet("slot")) {
             return null;
         }
         int slot = section.getInt("slot");
-        if (slot < 0) {
-            plugin.getLogger().warning("Spell '" + spellId + "' has invalid gui.slot '" + slot
-                    + "' in " + fileName + ". Ignoring.");
+        return slot < 0 ? null : slot;
+    }
+
+    private record SpellGiveItem(String id, int amount) {
+    }
+
+    private SpellType parseSpellType(String typeRaw) {
+        if (typeRaw == null || typeRaw.isBlank()) {
             return null;
         }
-        return slot;
+        try {
+            return SpellType.valueOf(typeRaw.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    private MagicSchool parseMagicSchool(ConfigurationSection section, String spellId, String fileName) {
+        if (section == null) {
+            return MagicSchool.NONE;
+        }
+        boolean hasSchool = section.isSet("school");
+        String schoolRaw = section.getString("school");
+        if (!hasSchool) {
+            plugin.getLogger().warning("Spell '" + spellId + "' in " + fileName
+                    + " missing school field, defaulting to NONE.");
+            return MagicSchool.NONE;
+        }
+        if (schoolRaw == null || schoolRaw.isBlank()) {
+            return null;
+        }
+        return MagicSchool.fromString(schoolRaw);
+    }
+
+    private void addSchemaErrors(List<SpellLoadError> errors, SchemaReport report) {
+        for (SchemaError error : report.errors()) {
+            addSchemaError(errors, error.file(), error.spellId(), error.path(), error.messageKey(), error.placeholders());
+        }
+    }
+
+    private void addSchemaError(List<SpellLoadError> errors,
+                                String fileName,
+                                String spellId,
+                                String path,
+                                String messageKey,
+                                Map<String, String> placeholders) {
+        Map<String, String> merged = new HashMap<>(placeholders == null ? Map.of() : placeholders);
+        if (path != null) {
+            merged.put("path", path);
+        }
+        errors.add(SpellLoadError.ofKey(fileName, spellId, messageKey, merged));
     }
 }

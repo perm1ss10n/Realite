@@ -1,0 +1,260 @@
+spells:
+  - id: "warlock_ray"
+    type: "RAY_DAMAGE"
+    nameKey: "magic.spell.warlock_ray.name"
+    descKey: "magic.spell.warlock_ray.desc"
+    school: "WARLOCK"
+    tier: "T2"
+    mana: 10
+    cooldownTicks: 80
+    range: 20
+    damage: 7
+    cast:
+      trigger: "RIGHT_CLICK"
+      delivery: "BEAM"
+      beam:
+        maxDistance: 20
+        step: 0.5
+        hitRadius: 0.6
+        particles:
+          particle: "SOUL_FIRE_FLAME"
+          countPerStep: 2
+    target:
+      type: "ENTITY"
+      maxDistance: 20
+      lineOfSight: true
+      allowPlayers: true
+      allowMobs: true
+    effects:
+      - type: "particles"
+        particle: "SOUL_FIRE_FLAME"
+        count: 20
+        spread: 0.3
+        target: "IMPACT"
+      - type: "sound"
+        sound: "ENTITY_BLAZE_SHOOT"
+        volume: 1.0
+        pitch: 0.9
+        target: "IMPACT"
+      - type: "damage"
+        amount: 7
+        cause: "MAGIC"
+      - type: "potion"
+        effect: "wither"
+        durationTicks: 80
+        amplifier: 0
+    requirements: {}
+    icon:
+      material: "BOOK"
+      customModelData: 11001
+
+  - id: "warlock_curse"
+    type: "RAY_DAMAGE"
+    nameKey: "magic.spell.warlock_curse.name"
+    descKey: "magic.spell.warlock_curse.desc"
+    school: "WARLOCK"
+    tier: "T1"
+    mana: 6
+    cooldownTicks: 40
+    range: 24
+    damage: 4
+    cast:
+      trigger: "RIGHT_CLICK"
+      delivery: "PROJECTILE"
+      projectile:
+        speed: 1.4
+        gravity: false
+        maxDistance: 24
+        hitRadius: 0.6
+        onHit: "STOP"
+    target:
+      type: "ENTITY"
+      maxDistance: 24
+      lineOfSight: true
+      allowPlayers: true
+      allowMobs: true
+    effects:
+      - type: "particles"
+        particle: "SMOKE_NORMAL"
+        count: 16
+        spread: 0.25
+        target: "IMPACT"
+      - type: "sound"
+        sound: "ENTITY_WITHER_SHOOT"
+        volume: 0.8
+        pitch: 1.1
+        target: "IMPACT"
+      - type: "damage"
+        amount: 4
+        cause: "MAGIC"
+      - type: "potion"
+        effect: "weakness"
+        durationTicks: 120
+        amplifier: 0
+      - type: "potion"
+        effect: "slowness"
+        durationTicks: 80
+        amplifier: 0
+    requirements: {}
+    icon:
+      material: "BONE"
+      customModelData: 11002
+
+  - id: "warlock_drain"
+    type: "RAY_DAMAGE"
+    nameKey: "magic.spell.warlock_drain.name"
+    descKey: "magic.spell.warlock_drain.desc"
+    school: "WARLOCK"
+    tier: "T3"
+    mana: 16
+    cooldownTicks: 140
+    range: 24
+    damage: 11
+    cast:
+      trigger: "RIGHT_CLICK"
+      delivery: "BEAM"
+      beam:
+        maxDistance: 24
+        step: 0.4
+        hitRadius: 0.6
+        particles:
+          particle: "PORTAL"
+          countPerStep: 3
+    target:
+      type: "ENTITY"
+      maxDistance: 24
+      lineOfSight: true
+      allowPlayers: true
+      allowMobs: true
+    reagents:
+      items:
+        - itemId: "magic_ash"
+          amount: 2
+    effects:
+      - type: "particles"
+        particle: "PORTAL"
+        count: 24
+        spread: 0.4
+        target: "IMPACT"
+      - type: "sound"
+        sound: "ENTITY_ENDERMAN_SCREAM"
+        volume: 0.6
+        pitch: 1.4
+        target: "IMPACT"
+      - type: "damage"
+        amount: 11
+        cause: "MAGIC"
+      - type: "potion"
+        effect: "wither"
+        durationTicks: 100
+        amplifier: 0
+    requirements: {}
+    icon:
+      material: "ENDER_PEARL"
+      customModelData: 11003
+
+  - id: "warlock_nova"
+    type: "RAY_DAMAGE"
+    nameKey: "magic.spell.warlock_nova.name"
+    descKey: "magic.spell.warlock_nova.desc"
+    school: "WARLOCK"
+    tier: "T2"
+    mana: 10
+    cooldownTicks: 80
+    range: 18
+    damage: 7
+    cast:
+      trigger: "RIGHT_CLICK"
+      delivery: "AOE"
+      aoe:
+        radius: 4
+        maxTargets: 10
+        includePlayers: true
+        includeMobs: true
+    target:
+      type: "LOCATION"
+      maxDistance: 18
+      lineOfSight: true
+      allowPlayers: true
+      allowMobs: true
+    reagents:
+      items:
+        - itemId: "magic_ash"
+          amount: 1
+    effects:
+      - type: "particles"
+        particle: "SMOKE_LARGE"
+        count: 28
+        spread: 0.4
+        target: "IMPACT"
+      - type: "sound"
+        sound: "ENTITY_WITHER_AMBIENT"
+        volume: 0.8
+        pitch: 0.8
+        target: "IMPACT"
+      - type: "damage"
+        amount: 7
+        cause: "MAGIC"
+        mode: "ALL"
+      - type: "potion"
+        effect: "slowness"
+        durationTicks: 80
+        amplifier: 0
+        mode: "ALL"
+    requirements: {}
+    icon:
+      material: "COAL"
+      customModelData: 11004
+
+  - id: "warlock_chain"
+    type: "RAY_DAMAGE"
+    nameKey: "magic.spell.warlock_chain.name"
+    descKey: "magic.spell.warlock_chain.desc"
+    school: "WARLOCK"
+    tier: "T3"
+    mana: 16
+    cooldownTicks: 140
+    range: 20
+    damage: 11
+    cast:
+      trigger: "RIGHT_CLICK"
+      delivery: "CHAIN"
+      chain:
+        jumps: 3
+        jumpRange: 6
+        includePlayers: true
+        includeMobs: true
+    target:
+      type: "ENTITY"
+      maxDistance: 20
+      lineOfSight: true
+      allowPlayers: true
+      allowMobs: true
+    reagents:
+      items:
+        - itemId: "magic_ash"
+          amount: 2
+    effects:
+      - type: "particles"
+        particle: "SOUL"
+        count: 18
+        spread: 0.3
+        target: "PRIMARY"
+      - type: "sound"
+        sound: "ENTITY_WITHER_HURT"
+        volume: 0.8
+        pitch: 1.1
+        target: "PRIMARY"
+      - type: "damage"
+        amount: 11
+        cause: "MAGIC"
+        mode: "ALL"
+      - type: "potion"
+        effect: "wither"
+        durationTicks: 60
+        amplifier: 0
+        mode: "ALL"
+    requirements: {}
+    icon:
+      material: "SCULK_VEIN"
+      customModelData: 11005

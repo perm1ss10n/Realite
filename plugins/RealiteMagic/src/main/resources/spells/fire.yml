@@ -1,0 +1,227 @@
+spells:
+  - id: "firebolt"
+    type: "RAY_DAMAGE"
+    nameKey: "magic.spell.firebolt.name"
+    descKey: "magic.spell.firebolt.desc"
+    school: "FIRE"
+    tier: "T1"
+    mana: 6
+    cooldownTicks: 40
+    range: 26
+    damage: 4
+    cast:
+      trigger: "RIGHT_CLICK"
+      delivery: "PROJECTILE"
+      projectile:
+        speed: 1.6
+        gravity: false
+        maxDistance: 26
+        hitRadius: 0.6
+        onHit: "STOP"
+    target:
+      type: "ENTITY"
+      maxDistance: 26
+      lineOfSight: true
+      allowPlayers: true
+      allowMobs: true
+    effects:
+      - type: "particles"
+        particle: "FLAME"
+        count: 20
+        spread: 0.25
+        target: "IMPACT"
+      - type: "sound"
+        sound: "ENTITY_BLAZE_SHOOT"
+        volume: 0.9
+        pitch: 1.2
+        target: "IMPACT"
+      - type: "damage"
+        amount: 4
+        cause: "MAGIC"
+    requirements: {}
+    icon:
+      material: "BLAZE_POWDER"
+      customModelData: 12001
+
+  - id: "fireball"
+    type: "RAY_DAMAGE"
+    nameKey: "magic.spell.fireball.name"
+    descKey: "magic.spell.fireball.desc"
+    school: "FIRE"
+    tier: "T2"
+    mana: 10
+    cooldownTicks: 80
+    range: 20
+    damage: 7
+    cast:
+      trigger: "RIGHT_CLICK"
+      delivery: "AOE"
+      aoe:
+        radius: 3.5
+        maxTargets: 8
+        includePlayers: true
+        includeMobs: true
+    target:
+      type: "LOCATION"
+      maxDistance: 20
+      lineOfSight: true
+      allowPlayers: true
+      allowMobs: true
+    reagents:
+      items:
+        - itemId: "fire_powder"
+          amount: 1
+    effects:
+      - type: "particles"
+        particle: "LAVA"
+        count: 16
+        spread: 0.3
+        target: "IMPACT"
+      - type: "sound"
+        sound: "ENTITY_GENERIC_EXPLODE"
+        volume: 0.7
+        pitch: 1.0
+        target: "IMPACT"
+      - type: "damage"
+        amount: 7
+        cause: "MAGIC"
+        mode: "ALL"
+    requirements: {}
+    icon:
+      material: "FIRE_CHARGE"
+      customModelData: 12002
+
+  - id: "flame_wall"
+    type: "RAY_DAMAGE"
+    nameKey: "magic.spell.flame_wall.name"
+    descKey: "magic.spell.flame_wall.desc"
+    school: "FIRE"
+    tier: "T2"
+    mana: 10
+    cooldownTicks: 80
+    range: 22
+    damage: 7
+    cast:
+      trigger: "RIGHT_CLICK"
+      delivery: "BEAM"
+      beam:
+        maxDistance: 22
+        step: 0.4
+        hitRadius: 0.6
+        particles:
+          particle: "FLAME"
+          countPerStep: 3
+    target:
+      type: "ENTITY"
+      maxDistance: 22
+      lineOfSight: true
+      allowPlayers: true
+      allowMobs: true
+    reagents:
+      items:
+        - itemId: "fire_powder"
+          amount: 1
+    effects:
+      - type: "particles"
+        particle: "FLAME"
+        count: 24
+        spread: 0.3
+        target: "IMPACT"
+      - type: "sound"
+        sound: "BLOCK_FIRE_AMBIENT"
+        volume: 0.8
+        pitch: 1.1
+        target: "IMPACT"
+      - type: "damage"
+        amount: 7
+        cause: "MAGIC"
+    requirements: {}
+    icon:
+      material: "FIRE_CORAL"
+      customModelData: 12003
+
+  - id: "ignite"
+    type: "RAY_DAMAGE"
+    nameKey: "magic.spell.ignite.name"
+    descKey: "magic.spell.ignite.desc"
+    school: "FIRE"
+    tier: "T1"
+    mana: 6
+    cooldownTicks: 40
+    range: 18
+    damage: 4
+    cast:
+      trigger: "RIGHT_CLICK"
+      delivery: "INSTANT"
+    target:
+      type: "ENTITY"
+      maxDistance: 18
+      lineOfSight: true
+      allowPlayers: true
+      allowMobs: true
+    effects:
+      - type: "particles"
+        particle: "SMOKE_NORMAL"
+        count: 12
+        spread: 0.2
+        target: "PRIMARY"
+      - type: "sound"
+        sound: "ITEM_FLINTANDSTEEL_USE"
+        volume: 0.7
+        pitch: 1.2
+        target: "PRIMARY"
+      - type: "damage"
+        amount: 4
+        cause: "MAGIC"
+    requirements: {}
+    icon:
+      material: "FLINT_AND_STEEL"
+      customModelData: 12004
+
+  - id: "inferno_nova"
+    type: "RAY_DAMAGE"
+    nameKey: "magic.spell.inferno_nova.name"
+    descKey: "magic.spell.inferno_nova.desc"
+    school: "FIRE"
+    tier: "T3"
+    mana: 16
+    cooldownTicks: 140
+    range: 18
+    damage: 11
+    cast:
+      trigger: "RIGHT_CLICK"
+      delivery: "AOE"
+      aoe:
+        radius: 5
+        maxTargets: 12
+        includePlayers: true
+        includeMobs: true
+    target:
+      type: "LOCATION"
+      maxDistance: 18
+      lineOfSight: true
+      allowPlayers: true
+      allowMobs: true
+    reagents:
+      items:
+        - itemId: "fire_powder"
+          amount: 2
+    effects:
+      - type: "particles"
+        particle: "FLAME"
+        count: 36
+        spread: 0.5
+        target: "IMPACT"
+      - type: "sound"
+        sound: "ENTITY_BLAZE_SHOOT"
+        volume: 1.0
+        pitch: 0.8
+        target: "IMPACT"
+      - type: "damage"
+        amount: 11
+        cause: "MAGIC"
+        mode: "ALL"
+    requirements: {}
+    icon:
+      material: "MAGMA_CREAM"
+      customModelData: 12005

@@ -10,6 +10,8 @@ import ru.realite.core.api.Module;
 import ru.realite.core.api.logging.Banners;
 import ru.realite.core.api.quests.QuestService;
 import ru.realite.quests.command.QuestCommand;
+import ru.realite.quests.integration.magic.MagicQuestBridge;
+import ru.realite.quests.integration.magic.MagicQuestListener;
 import ru.realite.quests.service.QuestObjectiveListener;
 
 public final class RealiteQuestsPlugin extends JavaPlugin implements CoreModuleEntrypoint {
@@ -66,6 +68,16 @@ public final class RealiteQuestsPlugin extends JavaPlugin implements CoreModuleE
                 new QuestObjectiveListener(() -> core.services().get(QuestService.class)),
                 this);
 
+        if (isMagicApiPresent()) {
+            MagicQuestBridge magicBridge = core.services().get(MagicQuestBridge.class);
+            if (magicBridge != null) {
+                magicBridge.refresh();
+            }
+            Bukkit.getPluginManager().registerEvents(
+                    new MagicQuestListener(() -> core.services().get(QuestService.class)),
+                    this);
+        }
+
         initialized = true;
 
         if (initTaskId != -1) {
@@ -82,5 +94,14 @@ public final class RealiteQuestsPlugin extends JavaPlugin implements CoreModuleE
             return null;
         }
         return provider.getProvider();
+    }
+
+    private boolean isMagicApiPresent() {
+        try {
+            Class.forName("ru.realite.magic.api.MagicApi", false, getClassLoader());
+            return true;
+        } catch (ClassNotFoundException ex) {
+            return false;
+        }
     }
 }
