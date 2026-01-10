@@ -3,15 +3,15 @@
 # 🧩 Realite — Minecraft RPG Platform
 
 **Realite** is a modular RPG platform for Minecraft (**Paper**), built as a set of
-interconnected plugins unified by a shared core (**RealiteCore**).
+interconnected plugins united by a shared core (**RealiteCore**).
 
 The project focuses on:
 
 - long-term player progression
 - deep RPG systems (classes, evolutions, economy, cities, guilds, quests, items, magic)
-- scalability without constant refactoring
-- clean architecture and developer-friendly design
-- monorepo workflow (all modules developed & versioned together)
+- scalability without endless rewrites
+- clean architecture and developer convenience
+- monorepo approach (all modules are developed and versioned together)
 
 ---
 
@@ -21,124 +21,241 @@ The project focuses on:
 Realite/
 ├── RealiteCore/                        # Platform core (API / services / bridges)
 └── plugins/
-    ├── RealiteClasses/                 # RPG classes, evolutions, mastery (integration hooks)
+    ├── RealiteClasses/                 # Classes, evolutions, mastery (integration hooks)
     ├── RealiteChat/                    # Chat formatting + guild chat bridge
     ├── RealiteGuilds/                  # Guilds, ranks, progression, bonuses
-    ├── RealiteCityInfrastructure/      # Cities, plots, shops, market, region rules
+    ├── RealiteCityInfrastructure/      # Cities, plots, shops, markets, region rules
     ├── RealiteQuests/                  # Quest engine + content packs
-    ├── RealiteItems/                   # Custom items system + Items API/Bridge
-    └── RealiteMagic/                   # Spell system, casting engine, schools, reagents, HUD
+    ├── RealiteItems/                   # Custom items + Items API/Bridge
+    ├── RealiteMagic/                   # Magic: casting, schools, reagents, HUD
+    ├── RealiteFamiliars/               # Companions and familiars (planned)
 ```
 
 ### 🔑 Core Idea
 
-- **RealiteCore** is the single source of truth (APIs, shared services, bridge contracts)
-- modules should **not** depend on each other directly
-- integrations happen via **bridges/interfaces** provided by the Core (or module APIs)
-- modules can be added/removed and iterated independently
+- **RealiteCore** is the single source of truth (API, shared services, bridge contracts)
+- modules **must not** depend on each other directly
+- integrations are done via **bridges/interfaces** provided by Core (or module APIs)
+- modules can be added, removed, and evolved independently
 
 ---
 
-## ✨ Current Gameplay Systems
+## ✨ Gameplay Features Available
 
-> Realite is still evolving — the goal is a coherent, extensible RPG ecosystem, not a one-off plugin dump.
+> Realite is developed iteratively — the goal is a cohesive, extensible RPG ecosystem, not a set of disconnected plugins.
 
-### 🧬 Classes & Progression (RealiteClasses)
+### 🧬 Classes and Progression (RealiteClasses)
 - class selection via GUI
-- XP/levels and progression rules
-- evolutions / branching paths
-- mastery modifiers & balance hooks
-- integrations for magic, items, quests, guilds
+- XP, levels, and progression rules
+- evolutions and branching paths
+- mastery modifiers and balance hooks
+- integrations with magic, items, quests, and guilds
 
 ### 🎒 Custom Items (RealiteItems)
-A centralized item provider for the whole platform.
+Centralized item provider for the entire platform.
 
-- YAML-defined item registry (stable item IDs)
-- supports:
+- YAML-based item registry (stable itemId)
+- support for:
   - `material`
   - `customModelData`
-  - localized name & lore keys
+  - localization keys for name and lore
   - glow
   - unstackable items
-- strict identification (server-side, not “guessing by name”)
-- public integration surface through an `ItemsBridge`
+- strict server-side identification (not chat-name based)
+- public integration via `ItemsBridge`
 
-### 🔮 Magic & Spells (RealiteMagic)
-Spell casting system designed for expansion and balance.
+### 🔮 Magic and Spells (RealiteMagic)
+A magic system designed for extensibility and balance.
 
-- spell registry (YAML-driven definitions)
-- GUI-based spell selection and quick-cast slots (1–9)
-- casting checks:
+- spell registry (YAML definitions)
+- cast checks:
   - permissions
-  - cooldowns (global + per-spell)
+  - cooldowns (global + per spell)
   - mana cost
-  - staff/focus requirement (optional)
-  - reagents requirement (optional)
+  - staff/focus (optional)
+  - reagents (optional)
   - economy cost (optional)
-  - region policies (deny/allow + modifiers)
-- spell targeting & delivery:
+  - regional rules (allow/deny + modifiers)
+- targeting and delivery:
   - self / entity / block / location
-  - instant, AOE, chain (depending on the spell)
-- effect execution pipeline (executor registry)
-  - supports pluggable effect types (e.g. particles/knockback/potions/etc.)
-- HUD feedback for success/fail + diagnostics logging
-- safe “smoke tests” (optional debug mode)
+  - instant, AOE, chain (depending on spell)
+- effect pipeline (executor registry)
+  - pluggable effects by type (e.g. particles / knockback / potions / etc.)
+- HUD feedback for success/failure + diagnostics (cast logging)
+- safe smoke tests (optional, for debugging)
+- spell selection GUI and focus requirement
+- integrations: Classes, Items, Economy, Regions, Guilds
 
-### 🏰 Cities, Guilds, Quests
-- **Guilds**: ranks, progression and hooks for bonuses
-- **City infrastructure**: plots/shops/market scaffolding + region rules
-- **Quests**: quest engine + content packs and integration hooks
+### 🗺️ Quests (RealiteQuests)
+- YAML-driven quest engine with strict schema and validation
+- quest types:
+  - global
+  - class-based
+  - guild-based
+  - city-based
+  - hidden (evolutions / conditions)
+- objectives:
+  - item collection
+  - entity kills
+  - item usage
+  - magic casting
+  - mastery / class progression
+  - region and city conditions
+- start triggers:
+  - manual
+  - entering a region
+  - acquiring a class or evolution
+  - events from other modules
+- rewards:
+  - items
+  - currency
+  - experience
+  - unlocking classes, evolutions, spells
+- GUI progress tracking
+- integrations:
+  - RealiteClasses (classes, evolutions, hidden conditions)
+  - RealiteMagic (casts, mastery, magic events)
+  - RealiteItems (requirements and rewards)
+  - RealiteGuilds (guild quests)
+  - RealiteCityInfrastructure (city and region conditions)
+
+### 🏰 Guilds (RealiteGuilds)
+- guild creation and management
+- ranks, permissions, and hierarchy
+- guild chat (via RealiteChat bridge)
+- guild progression
+- bonuses and hooks for classes, magic, and economy
+- integrations:
+  - RealiteChat
+  - RealiteClasses
+  - RealiteQuests
+  - RealiteCityInfrastructure
+
+### 🏙️ Cities and Regional Infrastructure (RealiteCityInfrastructure)
+- cities as gameplay entities
+- city plots:
+  - purchase and rent
+  - owned by players or guilds
+  - plot types (residential, commercial, special)
+- shops and trading zones
+- city economy:
+  - taxes
+  - recurring fees
+  - plot upkeep
+- regional rules:
+  - allow/deny magic
+  - damage and effect modifiers
+  - PvE / PvP restrictions
+- balance hooks for other modules
+
+Integrations:
+- RealiteGuilds — guild ownership of cities and plots
+- RealiteQuests — city and region-based quests
+- RealiteMagic — regional casting rules and magic modifiers
+- RealiteItems — trading, shops, rewards
+- RealiteCore — unified access to regional data
+
+Purpose:
+- make cities part of RPG progression
+- connect territory, economy, and gameplay
+- replace legacy solutions (WorldGuard-like) with RPG logic
+
+### 💬 Chat and Communication (RealiteChat)
+Chat is implemented as a standalone module and used across the platform.
+
+- message formatting via **Kyori Adventure**
+- unified message pipeline (no legacy ChatColor)
+- guild chat via bridge (integration with RealiteGuilds)
+- prefixes:
+  - class
+  - guild rank
+  - custom tags
+- hover tooltips and clickable elements
+- message interception by other modules (quests, magic, events)
+
+Integrations:
+- **RealiteGuilds** — guild chat, spy mode, ranks
+- **RealiteClasses** — class display
+- **RealiteCore** — centralized message delivery
+
+Purpose:
+- remove duplicated chat logic from gameplay plugins
+- ensure consistent message style across the RPG ecosystem
 
 ---
 
-## 🧩 Localization
-
-Realite supports multi-language messaging. Most modules ship with `messages_ru.yml` and `messages_en.yml`.
-
-Repository-level README language switch:
-- English: `README.md`
-- Russian: `README.ru.md`
+### 🐾 Companions and Familiars (RealiteFamiliars - Planned)
+- companion and familiar system
+- familiar progression (levels, skills, roles)
+- PvE participation (PvP rules later)
+- GUI and control commands
+- integrations:
+  - RealiteItems (summoning items, equipment)
+  - RealiteMagic (spells, auras, synergies)
+  - RealiteClasses (class passives)
+  - RealiteQuests (unlock and progression quests)
+  - Cities/Guilds (limits)
+- familiar roles:
+  - combat (damage, control)
+  - support (healing, buffs, auras)
+  - utility (aggro, protection, out-of-combat effects)
 
 ---
 
-## 🛠️ Build & Development
+## 👥 Project Team
+
+- **perm1ss10n** — architect and lead developer  
+  Platform architecture, Core API, magic, items, module integrations, CI, technical direction.
+
+- **satanidea** — testing and QA  
+  Gameplay testing, mechanic validation, bug hunting, regression testing after major changes.
+
+- **mbutovsky** — narrative and lore  
+  Storylines, world lore, quest chains, class and evolution descriptions, RPG context.
+
+---
+
+## 🛠️ Build and Development
 
 ### Requirements
+
 - Java **21**
 - Gradle Wrapper (`./gradlew`)
 
 ### Build
+
 ```bash
 ./gradlew clean build
 ```
+> Verified on Java 21 and Paper 1.21.x
 
-### Run locally (Paper)
-- build module(s)
-- copy resulting `.jar` into your Paper `plugins/` directory
-- start the server, then configure modules under `plugins/<ModuleName>/`
+### Local Run (Paper)
+
+- build required modules
+- copy `.jar` files into Paper `plugins/`
+- start the server, then configure modules in `plugins/<ModuleName>/`
 
 ---
 
-## 🧭 Repository Guidelines
+## 🧭 Repository Rules
 
-- keep module boundaries clean (no direct hard dependency between gameplay modules)
-- prefer **Kyori Adventure** for text/components (avoid legacy chat APIs)
-- configs are YAML, with localization keys instead of hardcoded strings
-- integrate through bridges (ItemsBridge, EconomyBridge, ClassesBridge, etc.)
+- respect module boundaries (no hard dependencies between gameplay plugins)
+- use **Kyori Adventure** for text/messages (no legacy API)
+- configs are YAML; messages use localization keys instead of hardcoded text
+- integrations must go through bridges (ItemsBridge, EconomyBridge, ClassesBridge, etc.)
 
 ---
 
 ## 📜 License
 
-TBD (project is actively evolving).
+TBD.
 
 ---
 
 ## 📌 Status
 
-This is an actively developed monorepo.
+Active development. **Current stable milestone:** magic and items release (`v0.6.0-magic-release`).
 
-**Current stable milestone:** `v0.6.0-magic-release`  
-(RealiteMagic + RealiteItems fully integrated, build verified on Java 21 / Paper 1.21.x)
-
-Expect iteration, refactors, balance passes, and expanding content packs.
+- Magic and items integrated into the platform core
+- Builds pass locally and in CI
+- Architecture stabilized for further content development
