@@ -11,6 +11,7 @@ import ru.realite.items.listener.ItemRefreshListener;
 import ru.realite.items.listener.ResourcePackListener;
 import ru.realite.items.service.ItemRegistry;
 import ru.realite.items.service.ItemService;
+import ru.realite.core.api.logging.Banners;
 
 import java.io.File;
 import java.io.InputStream;
@@ -44,7 +45,7 @@ public final class RealiteItemsPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new ItemRefreshListener(this, itemService), this);
         Bukkit.getPluginManager().registerEvents(new ResourcePackListener(this, messages), this);
         Bukkit.getServicesManager().register(ItemService.class, itemService, this, ServicePriority.Normal);
-        messages.send(getServer().getConsoleSender(), "items.enabled", "");
+        Banners.REALITE_ITEMS(this);
     }
 
     @Override

@@ -65,6 +65,7 @@ import ru.realite.magic.service.PlayerSpellServiceImpl;
 import ru.realite.magic.spell.SpellRegistry;
 import ru.realite.magic.storage.PlayerSpellStorage;
 import ru.realite.magic.storage.YamlPlayerSpellStorage;
+import ru.realite.core.api.logging.Banners;
 
 public final class RealiteMagicPlugin extends JavaPlugin {
 
@@ -101,7 +102,8 @@ public final class RealiteMagicPlugin extends JavaPlugin {
                 }
                 if (error.placeholders().containsKey("path")) {
                     String errorMessage = error.messageKey() == null
-                            ? (error.message() == null ? messages.raw("magic.cmd.spells.errors.unknown") : error.message())
+                            ? (error.message() == null ? messages.raw("magic.cmd.spells.errors.unknown")
+                                    : error.message())
                             : messages.raw(error.messageKey(), error.placeholders());
                     getLogger().warning(messages.raw("magic.cmd.spells.errors.schema",
                             Map.of("file", error.fileName(),
@@ -112,7 +114,8 @@ public final class RealiteMagicPlugin extends JavaPlugin {
                 getLogger().warning(messages.raw("magic.cmd.spells.errors.entry",
                         "file", error.fileName(),
                         "error", error.messageKey() == null
-                                ? (error.message() == null ? messages.raw("magic.cmd.spells.errors.unknown") : error.message())
+                                ? (error.message() == null ? messages.raw("magic.cmd.spells.errors.unknown")
+                                        : error.message())
                                 : messages.raw(error.messageKey(), error.placeholders())));
             }
             if (!strictValidation) {
@@ -121,8 +124,8 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         }
         PlayerSpellStorage storage = new YamlPlayerSpellStorage(this, messages);
         MagicEventPublisher eventPublisher = resolveEventPublisher();
-        PlayerSpellServiceImpl playerSpellServiceImpl =
-                new PlayerSpellServiceImpl(storage, spellRegistry, messages, eventPublisher);
+        PlayerSpellServiceImpl playerSpellServiceImpl = new PlayerSpellServiceImpl(storage, spellRegistry, messages,
+                eventPublisher);
         playerSpellService = playerSpellServiceImpl;
         ItemsBridge itemsBridge = ItemsBridgeFactory.create();
         ClassesBridge classesBridge = resolveClassesBridge();
@@ -156,6 +159,9 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         registerCommand();
         registerListeners();
         registerCraftingRecipes();
+        
+        // === Startup log (after full init) ===
+        Banners.REALITE_MAGIC(this);
     }
 
     public MagicMessages getMessages() {
@@ -202,20 +208,21 @@ public final class RealiteMagicPlugin extends JavaPlugin {
 
     private void registerListeners() {
         Bukkit.getPluginManager().registerEvents(new CombatListener(magicService), this);
-        MagicInteractListener interactListener =
-                new MagicInteractListener(magicService);
+        MagicInteractListener interactListener = new MagicInteractListener(magicService);
         Bukkit.getPluginManager().registerEvents(
                 new SpellUnlockListener(magicService, playerSpellService, messages), this);
         Bukkit.getPluginManager().registerEvents(
                 new PlayerCleanupListener(magicService, playerSpellService), this);
         Bukkit.getPluginManager().registerEvents(
-                new MagicMenuListener(magicService.spellSelectMenu(), spellRegistry, playerSpellService, messages), this);
+                new MagicMenuListener(magicService.spellSelectMenu(), spellRegistry, playerSpellService, messages),
+                this);
         Bukkit.getPluginManager().registerEvents(interactListener, this);
         Bukkit.getPluginManager().registerEvents(
                 new SpellBarListener(playerSpellService, hudService), this);
         Bukkit.getPluginManager().registerEvents(new MasteryListener(masteryService), this);
         Bukkit.getPluginManager().registerEvents(
-                new StaffRechargeListener(this, messages, magicService.itemsBridge(), magicService.staffChargeService()),
+                new StaffRechargeListener(this, messages, magicService.itemsBridge(),
+                        magicService.staffChargeService()),
                 this);
     }
 
@@ -341,8 +348,8 @@ public final class RealiteMagicPlugin extends JavaPlugin {
     }
 
     private ItemService resolveItemService() {
-        RegisteredServiceProvider<ItemService> provider =
-                Bukkit.getServicesManager().getRegistration(ItemService.class);
+        RegisteredServiceProvider<ItemService> provider = Bukkit.getServicesManager()
+                .getRegistration(ItemService.class);
         if (provider == null || provider.getProvider() == null) {
             return null;
         }
@@ -350,8 +357,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
     }
 
     private MagicEventPublisher resolveEventPublisher() {
-        RegisteredServiceProvider<CoreApi> provider =
-                Bukkit.getServicesManager().getRegistration(CoreApi.class);
+        RegisteredServiceProvider<CoreApi> provider = Bukkit.getServicesManager().getRegistration(CoreApi.class);
         if (provider != null && provider.getProvider() != null) {
             return new CoreEventPublisher(provider.getProvider().events());
         }

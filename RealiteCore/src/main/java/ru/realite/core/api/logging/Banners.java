@@ -79,6 +79,56 @@ public final class Banners {
 
     /*
      * =========================
+     * ITEMS
+     * =========================
+     */
+
+    public static void REALITE_ITEMS(JavaPlugin plugin) {
+        banner(
+                plugin,
+                "Realite Items",
+                "Custom Items",
+                "Status  : ENABLED",
+                "Registry, models, lore");
+    }
+
+    // Пока что не нужно
+    // public static void REALITE_ITEMS_WAITING(JavaPlugin plugin) {
+    //     banner(
+    //             plugin,
+    //             "Realite Items",
+    //             "Custom Items",
+    //             "Status  : LOADED",
+    //             "Waiting for RealiteCore module enable");
+    // }
+
+    /*
+     * =========================
+     * MAGIC
+     * =========================
+     */
+
+    public static void REALITE_MAGIC(JavaPlugin plugin) {
+        banner(
+                plugin,
+                "Realite Magic",
+                "Spells & Effects",
+                "Status  : ENABLED",
+                "Spells, casting, particles");
+    }
+
+    // Пока что не нужно
+    // public static void REALITE_MAGIC_WAITING(JavaPlugin plugin) {
+    //     banner(
+    //             plugin,
+    //             "Realite Magic",
+    //             "Spells & Effects",
+    //             "Status  : LOADED",
+    //             "Waiting for RealiteCore module enable");
+    // }
+
+    /*
+     * =========================
      * CLASSES
      * =========================
      */
@@ -139,7 +189,7 @@ public final class Banners {
             String footer) {
         String version = plugin.getPluginMeta().getVersion();
 
-        StartupBanner.print(plugin.getLogger(), new BannerSpec(
+        StartupBanner.startupLine(plugin.getLogger(), new BannerSpec(
                 productName,
                 subtitle,
                 version,
