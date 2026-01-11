@@ -7,6 +7,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import ru.realite.guilds.i18n.GuildMessages;
+import ru.realite.guilds.menu.GuildMenuManager;
 import ru.realite.guilds.service.GuildChatService;
 import ru.realite.guilds.service.GuildProgressionService;
 import ru.realite.guilds.service.GuildSalaryService;
@@ -21,6 +22,7 @@ public final class GuildCommand implements CommandExecutor {
     private final GuildChatService chatService;
     private final GuildProgressionService progressionService;
     private final GuildUpgradeService upgradeService;
+    private final GuildMenuManager menuManager;
 
     public GuildCommand(
             GuildService service,
@@ -28,20 +30,22 @@ public final class GuildCommand implements CommandExecutor {
             GuildSalaryService salaryService,
             GuildChatService chatService,
             GuildProgressionService progressionService,
-            GuildUpgradeService upgradeService) {
+            GuildUpgradeService upgradeService,
+            GuildMenuManager menuManager) {
         this.service = service;
         this.messages = messages;
         this.salaryService = salaryService;
         this.chatService = chatService;
         this.progressionService = progressionService;
         this.upgradeService = upgradeService;
+        this.menuManager = menuManager;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
             if (sender instanceof Player player) {
-                messages.send(player, "usage.root");
+                menuManager.openRoot(player);
             } else {
                 sender.sendMessage(messages.msg("error.player_only"));
             }
@@ -49,6 +53,14 @@ public final class GuildCommand implements CommandExecutor {
         }
 
         String sub = args[0].toLowerCase(Locale.ROOT);
+        if ("help".equals(sub)) {
+            if (sender instanceof Player player) {
+                menuManager.openRoot(player);
+            } else {
+                sender.sendMessage(messages.msg("usage.help"));
+            }
+            return true;
+        }
         if ("admin".equals(sub)) {
             handleAdmin(sender, args);
             return true;

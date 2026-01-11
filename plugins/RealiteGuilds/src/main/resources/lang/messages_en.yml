@@ -171,3 +171,58 @@ chat:
 xp:
   added: "{prefix}&aGuild &f[{tag}]&a received &f{amount}&a XP. Total: &f{total}&a, level: &f{level}&a. Reason: &f{reason}&a."
   levelup: "{prefix}&aGuild &f[{tag}]&a has reached level &f{level}&a!"
+
+gui:
+  title:
+    root: "&6&lRealiteGuilds &7— commands"
+    basics: "&a▸ Basics"
+    members: "&a▸ Members & roles"
+    territory: "&a▸ Territory & base"
+    claim: "&a▸ Territory — claim"
+    economy: "&a▸ Economy & chat"
+
+  button:
+    basics: "&aBasics"
+    members: "&aMembers & roles"
+    territory: "&aTerritory & base"
+    economy: "&aEconomy & chat"
+    back: "&7Back"
+    close: "&cClose"
+
+    create: "&e/g create"
+    info: "&e/g info"
+    join: "&e/g join"
+    leave: "&e/g leave"
+    disband: "&e/g disband"
+
+    invite: "&e/g invite"
+    ranks: "&e/g ranks"
+    setrank: "&e/g setrank"
+
+    claim: "&e/g claim"
+    claim_pos1: "&eclaim pos1"
+    claim_pos2: "&eclaim pos2"
+    claim_apply: "&eclaim apply"
+    claim_clear: "&eclaim clear"
+
+    home: "&e/g home"
+    sethome: "&e/g sethome"
+    tp: "&e/g tp"
+
+    salary: "&e/g salary"
+    upgrades: "&e/g upgrades"
+    upgrade_buy: "&e/g upgrade buy"
+    toggle: "&e/g toggle"
+
+  lore:
+    run: "&7LMB — run"
+    open: "&7LMB — open"
+    input: "&7LMB — enter in chat"
+
+  input:
+    cancel_hint: "{prefix}&7Type &ccancel&7 to exit input."
+    create: "{prefix}&eEnter: &f<tag> <name...>&e (example: &6ABC &fMy guild&e)"
+    invite: "{prefix}&eEnter the player name to invite."
+    setrank: "{prefix}&eEnter: &f<player> <rankId>&e (example: &6Steve member&e)"
+    tp: "{prefix}&eEnter the guild member name to teleport to."
+    upgrade_buy: "{prefix}&eEnter the upgrade id to purchase."
