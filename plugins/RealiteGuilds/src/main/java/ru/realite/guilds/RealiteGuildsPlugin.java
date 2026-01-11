@@ -21,6 +21,8 @@ import ru.realite.guilds.listener.GuildAccessProtectionListener;
 import ru.realite.guilds.listener.GuildHomeWarmupListener;
 import ru.realite.guilds.listener.GuildPveDamageListener;
 import ru.realite.guilds.listener.GuildSalaryJoinListener;
+import ru.realite.guilds.menu.GuildChatInputService;
+import ru.realite.guilds.menu.GuildMenuManager;
 import ru.realite.guilds.service.EconomyService;
 import ru.realite.guilds.service.GuildChatBridgeImpl;
 import ru.realite.guilds.service.GuildChatService;
@@ -89,6 +91,9 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
                 this::resolveCoreApi
         );
 
+        GuildChatInputService inputService = new GuildChatInputService(this, messages);
+        GuildMenuManager menuManager = new GuildMenuManager(messages, service, inputService);
+
         // command
         PluginCommand command = getCommand("g");
         if (command != null) {
@@ -98,7 +103,8 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
                     salaryService,
                     chatService,
                     progressionService,
-                    upgradeService
+                    upgradeService,
+                    menuManager
             ));
         } else {
             getLogger().severe("Command /g not found in plugin.yml; executor not registered.");
@@ -106,6 +112,8 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
 
         // listeners
         getServer().getPluginManager().registerEvents(new GuildHomeWarmupListener(service), this);
+        getServer().getPluginManager().registerEvents(inputService, this);
+        getServer().getPluginManager().registerEvents(menuManager, this);
 
         CityAccessHook cityAccessHook = resolveCityAccessHook();
         getServer().getPluginManager().registerEvents(
