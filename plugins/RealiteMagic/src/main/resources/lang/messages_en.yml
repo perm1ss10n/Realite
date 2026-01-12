@@ -4,10 +4,11 @@ format:
 magic:
   enabled: "{prefix}&aRealiteMagic plugin enabled."
   cmd:
-    usage: "&eUsage: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery|admin|reload>"
+    usage: "&eUsage: &f/magic <menu|spell|spells|mana|status|debug|slot|mastery|admin|reload>"
+    deprecated: "&eCommand /rmagic is deprecated. Use &f/magic&e instead."
     player_not_found: "&cPlayer not found: &f{player}"
     debug:
-      usage: "&eUsage: &f/rmagic debug <on|off|cast|stats> [player]"
+      usage: "&eUsage: &f/magic debug <on|off|cast|stats> [player]"
       on: "&aDebug enabled."
       off: "&eDebug disabled."
       player_on: "&aCast debug enabled for &f{player}&a."
@@ -17,7 +18,7 @@ magic:
         header: "&eDebug stats ({type}):"
         entry: "&7- {key}: {value}"
     spell:
-      usage: "&eUsage: &f/rmagic spell <give|remove|list|select|clear> <player> [spellId]"
+      usage: "&eUsage: &f/magic spell <give|remove|list|select|clear> <player> [spellId]"
       give:
         ok: "&aGave spell &f{spell}&a to &f{player}&a."
       remove:
@@ -28,7 +29,7 @@ magic:
         header: "&eSpells for &f{player}&e:"
         entry: "&7- {spell} &8({id})"
     spells:
-      usage: "&eUsage: &f/rmagic spells <reload|validate>"
+      usage: "&eUsage: &f/magic spells <reload|validate>"
       reload:
         ok: "&aLoaded &f{count}&a, errors &f{errors}&a."
       validate:
@@ -60,15 +61,15 @@ magic:
         unknown: "&cUnknown error."
       no_errors: "&aNo errors found."
     slot:
-      usage: "&eUsage: &f/rmagic slot <set|clear|use> <1-9> [spellId]"
+      usage: "&eUsage: &f/magic slot <set|clear|use> <1-9> [spellId]"
     mastery:
-      usage: "&eUsage: &f/rmagic mastery <spellId|selected>"
+      usage: "&eUsage: &f/magic mastery <spellId|selected>"
       header: "&eMastery: &f{spell}"
       line_level: "&7Level: &f{level}"
       line_xp: "&7XP: &f{xp}&7/&f{next}"
       line_bonus: "&7Bonus: &f{damage} dmg, {mana} mana, {cooldown} cd"
     admin:
-      usage: "&eUsage: &f/rmagic admin <stats|log|inspect|bypass|export>"
+      usage: "&eUsage: &f/magic admin <stats|log|inspect|bypass|export>"
       stats:
         header: "&eDiagnostics top {count}:"
         casts: "&6Top casts:"
@@ -79,7 +80,7 @@ magic:
       log:
         header: "&eLast {count} casts:"
       inspect:
-        usage: "&eUsage: &f/rmagic admin inspect <player>"
+        usage: "&eUsage: &f/magic admin inspect <player>"
         header: "&eInspect: &f{player}"
         slot: "&7Slot {slot}: &f{spell}"
         school: "&7School: &f{school}"
@@ -111,8 +112,8 @@ magic:
       cooldown: "&7Cooldown: &f{time}&7s"
   command:
     usage:
-      root: "&eUsage: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery|admin|reload>"
-      spell: "&eUsage: &f/rmagic spell <select|clear|get> [player] [spellId]"
+      root: "&eUsage: &f/magic <menu|spell|spells|mana|status|debug|slot|mastery|admin|reload>"
+      spell: "&eUsage: &f/magic spell <select|clear|get> [player] [spellId]"
     only-player: "{prefix}&cCommand is only for players."
     spell:
       selected_self: "&aYou selected a spell: &f{spell}"
@@ -168,7 +169,7 @@ magic:
     hint:
       select: "&7LMB: select"
   error:
-    no_selected_spell: "&cNo spell selected. Open &f/rmagic&c and choose one."
+    no_selected_spell: "&cNo spell selected. Open &f/magic&c and choose one."
     cannot_select_spell: "&cYou cannot select this spell: &f{reason}"
     not_enough_mana: "&cNot enough mana: &f{current}&c/&f{need}"
     on_cooldown: "&cCooldown: &f{seconds}&c s"
@@ -205,7 +206,7 @@ magic:
     bypass:
       enabled: "&aBypass enabled for &f{player}&a ({what}, {ttl}m)."
       disabled: "&eBypass disabled for &f{player}&e ({what})."
-      usage: "&eUsage: &f/rmagic admin bypass <player> <on|off> [what] [ttlMinutes]"
+      usage: "&eUsage: &f/magic admin bypass <player> <on|off> [what] [ttlMinutes]"
       list:
         header: "&eBypass list ({count}):"
   rune:
