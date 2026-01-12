@@ -919,7 +919,8 @@ public final class MagicService {
             if (amount == 0) {
                 continue;
             }
-            target.merge(item.itemId(), amount, Integer::sum);
+            String id = item.itemId();
+            target.put(id, target.getOrDefault(id, 0) + amount);
         }
     }
 
