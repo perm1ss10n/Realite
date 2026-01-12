@@ -15,6 +15,8 @@ import ru.realite.core.api.Scheduler;
 import ru.realite.core.api.Services;
 import ru.realite.core.api.StorageService;
 import ru.realite.core.api.logging.Banners;
+import ru.realite.core.api.ui.UiRegistry;
+import ru.realite.core.impl.ui.UiRegistryImpl;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,6 +60,7 @@ public final class RealiteCorePlugin extends JavaPlugin {
             services.register(CoreApi.class, core);
             services.register(ConfigService.class, new ConfigServiceImpl(platform));
             services.register(StorageService.class, new StorageServiceImpl(platform));
+            services.register(UiRegistry.class, new UiRegistryImpl());
         } catch (Exception e) {
             // если вдруг при /reload что-то осталось
             platform.warn("Services already had some entries. Clearing and re-registering...");
@@ -66,6 +69,7 @@ public final class RealiteCorePlugin extends JavaPlugin {
             services.register(CoreApi.class, core);
             services.register(ConfigService.class, new ConfigServiceImpl(platform));
             services.register(StorageService.class, new StorageServiceImpl(platform));
+            services.register(UiRegistry.class, new UiRegistryImpl());
         }
 
         getServer().getServicesManager()
