@@ -7,6 +7,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.city.command.CityCommand;
 import ru.realite.city.gui.GuiService;
 import ru.realite.city.gui.GuiSessionStore;
+import ru.realite.city.gui.CityMainMenu;
+import ru.realite.city.gui.CityMenuClickListener;
 import ru.realite.city.gui.MenuFactory;
 import ru.realite.city.gui.MenuListener;
 import ru.realite.city.i18n.CityMessages;
@@ -200,6 +202,7 @@ public final class CityInfrastructureModule implements Module {
                                 menuFactory,
                                 plotRepository,
                                 plotMemberRepository);
+                CityMainMenu.init(messages, plotRepository, plotMemberRepository, shopPointService);
                 javaPlugin.getServer().getServicesManager().register(
                                 CityAccessHook.class,
                                 new CityInfrastructureAccessHook(plotService),
@@ -219,6 +222,9 @@ public final class CityInfrastructureModule implements Module {
                                 javaPlugin);
                 Bukkit.getPluginManager().registerEvents(
                                 new MenuListener(guiService, menuFactory),
+                                javaPlugin);
+                Bukkit.getPluginManager().registerEvents(
+                                new CityMenuClickListener(),
                                 javaPlugin);
                 Bukkit.getPluginManager().registerEvents(
                                 new ChatInputListener(javaPlugin, config, chatInputService),

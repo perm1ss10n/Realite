@@ -101,35 +101,30 @@ public final class CityCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length < 1) {
-            sendUsage(sender);
+            openMainMenu(sender);
             return true;
         }
         String root = args[0].toLowerCase();
+        if ("gui".equals(root)) {
+            openMainMenu(sender);
+            return true;
+        }
         switch (root) {
             case "area" -> handleArea(sender, args);
             case "plot" -> handlePlot(sender, args);
             case "shop" -> handleShop(sender, args);
             case "market" -> handleMarket(sender, args);
-            case "gui" -> handleGui(sender);
             default -> sendUsage(sender);
         }
         return true;
     }
 
-    private void handleGui(CommandSender sender) {
+    private void openMainMenu(CommandSender sender) {
         Player player = requirePlayer(sender);
         if (player == null) {
             return;
         }
-        if (guiService == null || !guiService.guiEnabled()) {
-            messages.send(player, "gui.error.disabled", "");
-            return;
-        }
-        if (!player.hasPermission(ADMIN_PERMISSION)) {
-            messages.send(player, "gui.error.no_permission", "");
-            return;
-        }
-        guiService.openMain(player);
+        ru.realite.city.gui.CityMainMenu.open(player);
     }
 
     private void handleArea(CommandSender sender, String[] args) {
