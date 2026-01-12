@@ -84,6 +84,9 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if ("rmagic".equalsIgnoreCase(label)) {
+            sender.sendMessage(messages.msg("magic.cmd.deprecated"));
+        }
         if (args.length == 0) {
             return openMenu(sender);
         }
