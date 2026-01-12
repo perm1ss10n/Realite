@@ -1,5 +1,5 @@
 plugins {
-    id 'java'
+    id 'java-library'
     id 'com.gradleup.shadow' version '8.3.1'
 }
 
@@ -29,7 +29,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 tasks.jar {
-    enabled = false
+    enabled = true
 }
 
 tasks.shadowJar {
