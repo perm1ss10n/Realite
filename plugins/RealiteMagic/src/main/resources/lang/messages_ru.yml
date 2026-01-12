@@ -4,10 +4,11 @@ format:
 magic:
   enabled: "{prefix}&aПлагин RealiteMagic включён."
   cmd:
-    usage: "&eИспользование: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery|admin|reload>"
+    usage: "&eИспользование: &f/magic <menu|spell|spells|mana|status|debug|slot|mastery|admin|reload>"
+    deprecated: "&eКоманда /rmagic устарела. Используй &f/magic&e."
     player_not_found: "&cИгрок не найден: &f{player}"
     debug:
-      usage: "&eИспользование: &f/rmagic debug <on|off|cast|stats> [player]"
+      usage: "&eИспользование: &f/magic debug <on|off|cast|stats> [player]"
       on: "&aDebug включён."
       off: "&eDebug выключен."
       player_on: "&aDebug каста включён для &f{player}&a."
@@ -17,7 +18,7 @@ magic:
         header: "&eСтатистика debug ({type}):"
         entry: "&7- {key}: {value}"
     spell:
-      usage: "&eИспользование: &f/rmagic spell <give|remove|list|select|clear> <player> [spellId]"
+      usage: "&eИспользование: &f/magic spell <give|remove|list|select|clear> <player> [spellId]"
       give:
         ok: "&aВыдали заклинание &f{spell}&a игроку &f{player}&a."
       remove:
@@ -28,7 +29,7 @@ magic:
         header: "&eЗаклинания игрока &f{player}&e:"
         entry: "&7- {spell} &8({id})"
     spells:
-      usage: "&eИспользование: &f/rmagic spells <reload|validate>"
+      usage: "&eИспользование: &f/magic spells <reload|validate>"
       reload:
         ok: "&aЗагружено &f{count}&a, ошибок &f{errors}&a."
       validate:
@@ -60,15 +61,15 @@ magic:
         unknown: "&cНеизвестная ошибка."
       no_errors: "&aОшибок не найдено."
     slot:
-      usage: "&eИспользование: &f/rmagic slot <set|clear|use> <1-9> [spellId]"
+      usage: "&eИспользование: &f/magic slot <set|clear|use> <1-9> [spellId]"
     mastery:
-      usage: "&eИспользование: &f/rmagic mastery <spellId|selected>"
+      usage: "&eИспользование: &f/magic mastery <spellId|selected>"
       header: "&eМастерство: &f{spell}"
       line_level: "&7Уровень: &f{level}"
       line_xp: "&7XP: &f{xp}&7/&f{next}"
       line_bonus: "&7Бонус: &f{damage} урона, {mana} маны, {cooldown} кд"
     admin:
-      usage: "&eИспользование: &f/rmagic admin <stats|log|inspect|bypass|export>"
+      usage: "&eИспользование: &f/magic admin <stats|log|inspect|bypass|export>"
       stats:
         header: "&eДиагностика топ {count}:"
         casts: "&6Топ кастов:"
@@ -79,7 +80,7 @@ magic:
       log:
         header: "&eПоследние {count} кастов:"
       inspect:
-        usage: "&eИспользование: &f/rmagic admin inspect <player>"
+        usage: "&eИспользование: &f/magic admin inspect <player>"
         header: "&eИнспект: &f{player}"
         slot: "&7Слот {slot}: &f{spell}"
         school: "&7Школа: &f{school}"
@@ -111,8 +112,8 @@ magic:
       cooldown: "&7КД: &f{time}&7с"
   command:
     usage:
-      root: "&eИспользование: &f/rmagic <menu|spell|spells|mana|status|debug|slot|mastery|admin|reload>"
-      spell: "&eИспользование: &f/rmagic spell <select|clear|get> [player] [spellId]"
+      root: "&eИспользование: &f/magic <menu|spell|spells|mana|status|debug|slot|mastery|admin|reload>"
+      spell: "&eИспользование: &f/magic spell <select|clear|get> [player] [spellId]"
     only-player: "{prefix}&cКоманда доступна только игрокам."
     spell:
       selected_self: "&aВы выбрали заклинание: &f{spell}"
@@ -168,7 +169,7 @@ magic:
     hint:
       select: "&7ЛКМ: выбрать"
   error:
-    no_selected_spell: "&cЗаклинание не выбрано. Открой &f/rmagic&c и выбери."
+    no_selected_spell: "&cЗаклинание не выбрано. Открой &f/magic&c и выбери."
     cannot_select_spell: "&cТы не можешь выбрать это заклинание: &f{reason}"
     not_enough_mana: "&cНедостаточно маны: &f{current}&c/&f{need}"
     on_cooldown: "&cПерезарядка: &f{seconds}&cс"
@@ -205,7 +206,7 @@ magic:
     bypass:
       enabled: "&aBypass включен для &f{player}&a ({what}, {ttl}m)."
       disabled: "&eBypass выключен для &f{player}&e ({what})."
-      usage: "&eИспользование: &f/rmagic admin bypass <player> <on|off> [what] [ttlMinutes]"
+      usage: "&eИспользование: &f/magic admin bypass <player> <on|off> [what] [ttlMinutes]"
       list:
         header: "&eСписок bypass ({count}):"
   rune:

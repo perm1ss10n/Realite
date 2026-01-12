@@ -4,9 +4,10 @@ main: ru.realite.magic.RealiteMagicPlugin
 api-version: "1.21"
 
 commands:
-  rmagic:
+  magic:
     description: "RealiteMagic command"
-    usage: "/rmagic"
+    usage: "/magic"
+    aliases: [rmagic]
 
 softdepend:
   - RealiteItems

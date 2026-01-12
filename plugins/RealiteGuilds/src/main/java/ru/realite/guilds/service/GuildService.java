@@ -1,6 +1,7 @@
 package ru.realite.guilds.service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -626,6 +627,19 @@ public final class GuildService {
     private void pruneExpiredInvites() {
         long now = System.currentTimeMillis();
         invites.entrySet().removeIf(entry -> entry.getValue().expiresAt() < now);
+    }
+
+    public List<String> getActiveInvites(Player player) {
+        if (player == null) {
+            return List.of();
+        }
+        pruneExpiredInvites();
+        GuildInvite invite = invites.get(player.getUniqueId());
+        if (invite == null || invite.expiresAt() < System.currentTimeMillis()) {
+            invites.remove(player.getUniqueId());
+            return List.of();
+        }
+        return List.of(invite.tag());
     }
 
     private int countActiveInvites(String tag) {

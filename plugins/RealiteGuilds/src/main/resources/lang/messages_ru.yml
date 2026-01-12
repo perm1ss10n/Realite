@@ -171,3 +171,58 @@ chat:
 xp:
   added: "{prefix}&aГильдия &f[{tag}]&a получила &f{amount}&a XP. Всего: &f{total}&a, уровень: &f{level}&a. Причина: &f{reason}&a."
   levelup: "{prefix}&aГильдия &f[{tag}]&a достигла уровня &f{level}&a!"
+
+gui:
+  title:
+    root: "&6&lRealiteGuilds &7— команды"
+    basics: "&a▸ Основные"
+    members: "&a▸ Участники и роли"
+    territory: "&a▸ Территория и база"
+    claim: "&a▸ Территория — claim"
+    economy: "&a▸ Экономика и чат"
+
+  button:
+    basics: "&aОсновные"
+    members: "&aУчастники и роли"
+    territory: "&aТерритория и база"
+    economy: "&aЭкономика и чат"
+    back: "&7Назад"
+    close: "&cЗакрыть"
+
+    create: "&e/g create"
+    info: "&e/g info"
+    join: "&e/g join"
+    leave: "&e/g leave"
+    disband: "&e/g disband"
+
+    invite: "&e/g invite"
+    ranks: "&e/g ranks"
+    setrank: "&e/g setrank"
+
+    claim: "&e/g claim"
+    claim_pos1: "&eclaim pos1"
+    claim_pos2: "&eclaim pos2"
+    claim_apply: "&eclaim apply"
+    claim_clear: "&eclaim clear"
+
+    home: "&e/g home"
+    sethome: "&e/g sethome"
+    tp: "&e/g tp"
+
+    salary: "&e/g salary"
+    upgrades: "&e/g upgrades"
+    upgrade_buy: "&e/g upgrade buy"
+    toggle: "&e/g toggle"
+
+  lore:
+    run: "&7ЛКМ — выполнить"
+    open: "&7ЛКМ — открыть"
+    input: "&7ЛКМ — ввести в чат"
+
+  input:
+    cancel_hint: "{prefix}&7Напишите &cотмена&7 чтобы выйти из ввода."
+    create: "{prefix}&eВведите: &f<tag> <name...>&e (пример: &6ABC &fМоя гильдия&e)"
+    invite: "{prefix}&eВведите ник игрока для приглашения."
+    setrank: "{prefix}&eВведите: &f<player> <rankId>&e (пример: &6Steve member&e)"
+    tp: "{prefix}&eВведите ник участника гильдии для телепорта."
+    upgrade_buy: "{prefix}&eВведите id апгрейда для покупки."
