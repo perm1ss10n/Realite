@@ -2,15 +2,10 @@ package ru.realite.guilds.menu;
 
 import java.util.List;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.inventory.InventoryHolder;
 import ru.realite.guilds.i18n.GuildMessages;
 import ru.realite.guilds.service.GuildService;
 
-public final class GuildMenuManager implements Listener {
+public final class GuildMenuManager {
 
     private final GuildMessages messages;
     private final GuildService service;
@@ -71,31 +66,4 @@ public final class GuildMenuManager implements Listener {
         player.performCommand(command);
     }
 
-    @EventHandler
-    public void onClick(InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player)) {
-            return;
-        }
-        InventoryHolder holder = event.getView().getTopInventory().getHolder();
-        if (!(holder instanceof GuildMenu menu)) {
-            return;
-        }
-        event.setCancelled(true);
-        if (event.getClickedInventory() == null) {
-            return;
-        }
-        if (event.getClickedInventory().equals(player.getInventory())) {
-            return;
-        }
-        int slot = event.getRawSlot();
-        menu.handleClick(player, slot);
-    }
-
-    @EventHandler
-    public void onDrag(InventoryDragEvent event) {
-        InventoryHolder holder = event.getView().getTopInventory().getHolder();
-        if (holder instanceof GuildMenu) {
-            event.setCancelled(true);
-        }
-    }
 }
