@@ -23,8 +23,8 @@ public final class GuildCommandsJoinMenu extends GuildMenu {
         for (String tag : invites) {
             List<Component> lore = new ArrayList<>();
             lore.add(messages.msg("gui.lore.run"));
-            setButton(slot, Material.PAPER, colored(messages.raw("gui.button.join") + " " + tag), lore,
-                    player -> manager.runCommand(player, "g join " + tag));
+            Component name = messages.msg("gui.button.join").append(Component.text(" " + tag));
+            setButton(slot, Material.PAPER, name, lore, player -> manager.runCommand(player, "g join " + tag));
             slot++;
             if (slot == 17) {
                 break;

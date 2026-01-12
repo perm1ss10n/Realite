@@ -1,0 +1,7 @@
+name: RealiteUI
+version: 0.1.0
+main: ru.realite.ui.RealiteUIPlugin
+api-version: "1.21"
+
+depend:
+  - RealiteCore
