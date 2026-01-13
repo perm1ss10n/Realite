@@ -8,6 +8,9 @@ commands:
     description: "RealiteMagic command"
     usage: "/magic"
     aliases: [rmagic]
+  spells:
+    description: "Open the spellbook"
+    usage: "/spells"
 
 softdepend:
   - RealiteItems
