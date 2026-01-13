@@ -1,10 +1,8 @@
 package ru.realite.classes.service;
 
+import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
-import org.bukkit.boss.BarColor;
-import org.bukkit.boss.BarStyle;
-import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.*;
 import ru.realite.classes.model.HudMode;
@@ -21,15 +19,21 @@ public class ClassHudService {
     private final ClassService classService;
     private final ClassConfigRepository classConfig;
     private final EvolutionService evolutionService;
+    private final ClassLevelXpService levelXpService;
+    private final boolean legacyBossBarEnabled;
 
     private final Map<UUID, BossBar> bossBars = new HashMap<>();
 
     public ClassHudService(ClassService classService,
             ClassConfigRepository classConfig,
-            EvolutionService evolutionService) {
+            EvolutionService evolutionService,
+            ClassLevelXpService levelXpService,
+            boolean legacyBossBarEnabled) {
         this.classService = classService;
         this.classConfig = classConfig;
         this.evolutionService = evolutionService;
+        this.levelXpService = levelXpService;
+        this.legacyBossBarEnabled = legacyBossBarEnabled;
     }
 
     public void tick(Player p) {
@@ -39,27 +43,38 @@ public class ClassHudService {
             return;
         }
 
+        var progressDataOpt = levelXpService.getLevelXp(p);
+        if (progressDataOpt.isEmpty()) {
+            clearAll(p);
+            return;
+        }
+        var progressData = progressDataOpt.get();
+
         HudMode mode = prof.getHudMode();
 
         // вычисления прогресса
         var def = classConfig.get(prof.getClassId());
-        int xpPerLevel = (def != null ? Math.max(1, def.xpPerLevel) : 100);
-
-        long totalXp = prof.getClassXp();
-        long inLevel = totalXp % xpPerLevel;
+        int xpPerLevel = progressData.maxXpForLevel();
+        int inLevel = progressData.currentXp();
         double progress = (double) inLevel / (double) xpPerLevel;
 
         int evoNum = evolutionService.getEvolutionNumber(prof);
         String evoRoman = toRoman(evoNum);
 
         String className = (def != null ? def.name : prof.getClassId().name());
-        String title = "§6" + className + " §7(" + evoRoman + ")  §bУр. " + prof.getClassLevel()
+        String title = "§6" + className + " §7(" + evoRoman + ")  §bУр. " + progressData.level()
                 + "  §7XP §b" + inLevel + "§7/§b" + xpPerLevel;
+        Component bossBarTitle = Component.text(
+                "Уровень " + progressData.level() + " \u2022 XP " + inLevel + "/" + xpPerLevel);
 
         // переключение режимов
         switch (mode) {
             case BOSSBAR -> {
-                showBossBar(p, title, progress);
+                if (legacyBossBarEnabled) {
+                    showBossBar(p, bossBarTitle, progress);
+                } else {
+                    clearBossBar(p);
+                }
                 clearActionBar(p);
                 clearSidebar(p);
             }
@@ -87,22 +102,20 @@ public class ClassHudService {
         clearSidebar(p);
     }
 
-    private void showBossBar(Player p, String title, double progress01) {
+    private void showBossBar(Player p, Component title, double progress01) {
         BossBar bar = bossBars.computeIfAbsent(p.getUniqueId(),
-                id -> Bukkit.createBossBar(title, BarColor.BLUE, BarStyle.SOLID));
+                id -> BossBar.bossBar(title, (float) clamp(progress01), BossBar.Color.BLUE,
+                        BossBar.Overlay.PROGRESS));
 
-        bar.setTitle(title);
-        bar.setProgress(clamp(progress01));
-        if (!bar.getPlayers().contains(p))
-            bar.addPlayer(p);
-        bar.setVisible(true);
+        bar.name(title);
+        bar.progress((float) clamp(progress01));
+        p.showBossBar(bar);
     }
 
     private void clearBossBar(Player p) {
         BossBar bar = bossBars.remove(p.getUniqueId());
         if (bar != null) {
-            bar.removeAll();
-            bar.setVisible(false);
+            p.hideBossBar(bar);
         }
     }
 

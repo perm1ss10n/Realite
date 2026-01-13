@@ -12,6 +12,7 @@ import ru.realite.classes.listener.PlayerJoinListener;
 import ru.realite.classes.listener.PlayerQuitListener;
 
 import ru.realite.classes.service.ClassHudService;
+import ru.realite.classes.service.ClassLevelXpService;
 import ru.realite.classes.service.ClassService;
 import ru.realite.classes.service.ClassProfileProviderImpl;
 import ru.realite.classes.service.ClassTagProviderImpl;
@@ -22,6 +23,7 @@ import ru.realite.classes.service.EvolutionRequirementAdapter;
 import ru.realite.classes.service.HiddenClassGate;
 import ru.realite.classes.service.ProgressionService;
 import ru.realite.classes.service.TalentService;
+import ru.realite.classes.ui.ClassLevelXpUiProvider;
 
 import ru.realite.classes.storage.ClassConfigRepository;
 import ru.realite.classes.storage.ClassLoreRepository;
@@ -39,6 +41,7 @@ import ru.realite.core.api.classes.ClassTagProvider;
 import ru.realite.core.api.classes.ClassXpService;
 import ru.realite.core.api.logging.Banners;
 import ru.realite.core.api.talents.TalentProvider;
+import ru.realite.core.api.ui.UiRegistry;
 
 import java.io.File;
 import java.io.InputStream;
@@ -64,12 +67,14 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
     private ProgressionService progressionService;
     private EffectService effectService;
     private ClassHudService hudService;
+    private ClassLevelXpService classLevelXpService;
     private ClassProfileProvider classProfileProvider;
     private ClassTagProvider classTagProvider;
     private ClassXpService classXpService;
     private TalentProvider talentProvider;
     private EvolutionRequirementAdapter evolutionRequirementAdapter;
     private HiddenClassGate hiddenClassGate;
+    private ClassLevelXpUiProvider levelXpUiProvider;
 
     // ===== gui =====
     private ClassSelectMenu menu;
@@ -210,8 +215,13 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         boolean clearManaged = getConfig().getBoolean("clear-managed-effects", true);
         this.effectService = new EffectService(classService, classConfig, clearManaged);
 
+        // --- level/xp ---
+        this.classLevelXpService = new ClassLevelXpService(classService, classConfig);
+
         // --- HUD ---
-        this.hudService = new ClassHudService(classService, classConfig, evolutionService);
+        boolean legacyBossBarEnabled = getConfig().getBoolean("hud.legacy-bossbar", false);
+        this.hudService = new ClassHudService(classService, classConfig, evolutionService, classLevelXpService,
+                legacyBossBarEnabled);
 
         this.evolutionRequirementAdapter = new EvolutionRequirementAdapter(classService);
         this.hiddenClassGate = new HiddenClassGate(
@@ -226,6 +236,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         registerClassProfileProvider();
         registerClassXpService();
         registerTalentProvider();
+        registerUiProvider();
 
         platform.info("reloadAll completed");
     }
@@ -242,6 +253,10 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
 
     public ClassService getClassService() {
         return classService;
+    }
+
+    public ClassLevelXpService getClassLevelXpService() {
+        return classLevelXpService;
     }
 
     public Messages getMessages() {
@@ -364,6 +379,18 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         }
         classXpService = new ClassXpServiceAdapter(progressionService);
         core.services().replace(ClassXpService.class, classXpService);
+    }
+
+    private void registerUiProvider() {
+        if (core == null || levelXpUiProvider != null) {
+            return;
+        }
+        UiRegistry registry = core.services().get(UiRegistry.class);
+        if (registry == null) {
+            return;
+        }
+        levelXpUiProvider = new ClassLevelXpUiProvider(this);
+        registry.register(levelXpUiProvider);
     }
 
     private void unregisterClassXpService() {
