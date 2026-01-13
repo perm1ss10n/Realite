@@ -4,12 +4,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import ru.realite.classes.command.ClassCommand;
-import ru.realite.classes.gui.ClassSelectMenu;
 import ru.realite.classes.integration.ClassXpServiceAdapter;
 import ru.realite.classes.listener.ClassActionXpListener;
-import ru.realite.classes.listener.MenuListener;
 import ru.realite.classes.listener.PlayerJoinListener;
 import ru.realite.classes.listener.PlayerQuitListener;
+import ru.realite.classes.menu.ClassMenuManager;
 
 import ru.realite.classes.service.ClassHudService;
 import ru.realite.classes.service.ClassLevelXpService;
@@ -77,7 +76,7 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
     private ClassLevelXpUiProvider levelXpUiProvider;
 
     // ===== gui =====
-    private ClassSelectMenu menu;
+    private ClassMenuManager menuManager;
     private final RealiteClassesEntrypoint entrypoint = new RealiteClassesEntrypoint(this);
     private boolean initialized;
     private boolean shuttingDown;
@@ -144,9 +143,6 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         }
 
         // --- listeners ---
-        Bukkit.getPluginManager().registerEvents(
-                new MenuListener(classService, classConfig, evolutionService, hiddenClassGate, messages, hudService),
-                this);
         Bukkit.getPluginManager().registerEvents(new PlayerJoinListener(classService, effectService), this);
         Bukkit.getPluginManager().registerEvents(new PlayerQuitListener(classService, hudService), this);
         Bukkit.getPluginManager().registerEvents(new ClassActionXpListener(classService, progressionService, xpConfig),
@@ -230,7 +226,14 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
                 () -> core.services().get(ru.realite.core.api.quests.QuestUnlockService.class));
 
         // --- menu ---
-        this.menu = new ClassSelectMenu(this, classConfig, classLore, hiddenClassGate);
+        this.menuManager = new ClassMenuManager(
+                classService,
+                evolutionService,
+                classConfig,
+                classLore,
+                hiddenClassGate,
+                messages,
+                hudService);
 
         registerClassTagProvider();
         registerClassProfileProvider();
@@ -263,8 +266,8 @@ public final class RealiteClassesPlugin extends JavaPlugin implements CoreModule
         return messages;
     }
 
-    public ClassSelectMenu getMenu() {
-        return menu;
+    public ClassMenuManager getMenuManager() {
+        return menuManager;
     }
 
     public HiddenClassGate getHiddenClassGate() {

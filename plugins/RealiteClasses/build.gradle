@@ -24,6 +24,7 @@ dependencies {
 
     // Вариант 1: Core отдельным плагином. Только для компиляции!
     compileOnly project(":RealiteCore")
+    compileOnly project(":plugins:RealiteUI")
 }
 
 tasks.withType(JavaCompile).configureEach {
