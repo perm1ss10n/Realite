@@ -5,3 +5,8 @@ api-version: "1.21"
 
 depend:
   - RealiteCore
+
+commands:
+  ui:
+    description: "UI settings"
+    usage: "/ui"
