@@ -202,7 +202,7 @@ public final class CityInfrastructureModule implements Module {
                                 menuFactory,
                                 plotRepository,
                                 plotMemberRepository);
-                CityMainMenu.init(messages, plotRepository, plotMemberRepository, shopPointService);
+                CityMainMenu.init(messages, config, plotRepository, plotMemberRepository, cityAreaRepository);
                 javaPlugin.getServer().getServicesManager().register(
                                 CityAccessHook.class,
                                 new CityInfrastructureAccessHook(plotService),

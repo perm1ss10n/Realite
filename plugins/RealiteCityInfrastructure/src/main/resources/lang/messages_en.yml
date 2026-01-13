@@ -227,6 +227,77 @@ gui:
     admin_plot_actions: "&eAdmin: plot"
     player_main: "&ePlot"
     player_access: "&ePlot access"
+  hub:
+    title: "&6City"
+    status:
+      name: "&eStatus"
+      resident: "&aResident"
+      non_resident: "&cNot resident"
+      city: "&7City: &f{city}"
+      city_none: "none"
+    item:
+      plots:
+        name: "&ePlots"
+        lore1: "&7City plots list"
+        lore2: "&7Open list and filters"
+      residency:
+        name: "&eResidency"
+        lore1: "&7Residency quests/requirements"
+        lore2: "&7Open quests menu"
+      market:
+        name: "&eMarket"
+        lore1: "&7Shop listings"
+        lore2: "&7Command: /city market"
+      info:
+        name: "&eInfo"
+        lore1: "&7Rules and tips"
+        lore2: "&7Command: /city"
+    unavailable:
+      no-quests: "&7Unavailable: quests not installed"
+  plots:
+    title: "&6City plots"
+    empty: "&eNo plots available"
+    filter:
+      all: "&eAll"
+      available: "&aAvailable"
+      occupied: "&cOccupied"
+      selected: "&7Selected"
+    page: "&ePage {current}/{total}"
+    prev: "&ePrevious"
+    next: "&eNext"
+    back: "&cBack to hub"
+    status:
+      available: "&aAvailable"
+      occupied: "&cOccupied"
+    item:
+      name: "&e#{number} &7({id})"
+      lore1: "&7Type: {type}"
+      lore2: "&7Price: {price}"
+      lore3: "&7Owner: {owner}"
+  plot:
+    title: "&ePlot #{number}"
+    info:
+      name: "&eDetails"
+      lore1: "&7ID: {id}"
+      lore2: "&7Type: {type}"
+      lore3: "&7Price: {price}"
+      lore4: "&7Owner: {owner}"
+      lore5: "&7World: {world}"
+    action:
+      buy: "&aBuy"
+      rent: "&ePay rent"
+      owner: "&eOwner"
+      teleport: "&bTeleport"
+      members: "&eMembers"
+      release: "&cRelease"
+      back: "&cBack"
+    action_lore:
+      buy: "&7Buy this plot"
+      rent: "&7Pay shop rent"
+      owner: "&7View owner"
+      teleport: "&7Teleport to plot"
+      members: "&7View members"
+      release: "&7Release the plot"
   btn:
     regions: "&7Regions"
     plots: "&ePlots"
