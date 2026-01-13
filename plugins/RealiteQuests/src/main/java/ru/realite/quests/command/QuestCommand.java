@@ -9,6 +9,8 @@ import org.bukkit.entity.Player;
 import ru.realite.core.api.quests.QuestProgress;
 import ru.realite.core.api.quests.QuestService;
 import ru.realite.core.api.quests.QuestStartTrigger;
+import ru.realite.quests.gui.QuestMenuState;
+import ru.realite.quests.gui.QuestsHubMenu;
 import ru.realite.quests.model.ObjectiveDefinition;
 import ru.realite.quests.model.QuestDefinition;
 import ru.realite.quests.service.ConditionCheckResult;
@@ -29,25 +31,25 @@ public final class QuestCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 0) {
-            sender.sendMessage(c("Usage: /quest <start|active|debug|reload>", NamedTextColor.RED));
-            return true;
-        }
-
-        String sub = args[0].toLowerCase();
         QuestService questService = questServiceSupplier.get();
         if (questService == null) {
             sender.sendMessage(c("Quest service not available.", NamedTextColor.RED));
             return true;
         }
+        if (args.length == 0) {
+            return handleMenu(sender, questService);
+        }
+
+        String sub = args[0].toLowerCase();
 
         return switch (sub) {
+            case "menu", "gui" -> handleMenu(sender, questService);
             case "start" -> handleStart(sender, questService, args);
             case "active" -> handleActive(sender, questService);
             case "debug" -> handleDebug(sender, questService, args);
             case "reload" -> handleReload(sender, questService);
             default -> {
-                sender.sendMessage(c("Unknown subcommand.", NamedTextColor.RED));
+                sender.sendMessage(c("Usage: /quest [menu|start|active|debug|reload]", NamedTextColor.RED));
                 yield true;
             }
         };
@@ -145,6 +147,20 @@ public final class QuestCommand implements CommandExecutor {
         }
         questServiceImpl.reloadQuests();
         sender.sendMessage(c("Quest definitions reloaded.", NamedTextColor.GREEN));
+        return true;
+    }
+
+    private boolean handleMenu(CommandSender sender, QuestService questService) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(c("Only players can open quest menu.", NamedTextColor.RED));
+            return true;
+        }
+        if (!(questService instanceof QuestServiceImpl questServiceImpl)) {
+            sender.sendMessage(c("Quest service not ready.", NamedTextColor.RED));
+            return true;
+        }
+        new QuestsHubMenu(questServiceImpl, questServiceImpl.messages(), player,
+                QuestMenuState.defaultState()).open(player);
         return true;
     }
 

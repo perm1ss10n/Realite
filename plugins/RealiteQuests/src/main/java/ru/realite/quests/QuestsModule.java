@@ -158,7 +158,7 @@ public final class QuestsModule implements Module {
             boolean countMember = config.getBoolean("quests.residency.countMember", true);
             questService = new QuestServiceImpl(ctx.logger(), ctx.events(), questsDir, repository,
                     progressRepository, questUnlockService, cityAdapter, guildAdapter, classXpService,
-                    mustBeInsideCity, countOwner, countMember, magicBridge);
+                    mustBeInsideCity, countOwner, countMember, magicBridge, messages);
             ctx.services().register(QuestService.class, questService);
         }
 

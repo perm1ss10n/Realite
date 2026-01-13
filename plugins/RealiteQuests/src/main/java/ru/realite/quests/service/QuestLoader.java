@@ -69,6 +69,8 @@ public final class QuestLoader {
         }
 
         QuestConditions questConditions = parseConditions(yml);
+        String title = yml.getString("title", id);
+        String description = yml.getString("description", "");
         List<ObjectiveDefinition> objectives = loadObjectives(file.getName(), yml);
         if (objectives.isEmpty()) {
             logger.warn("[Quests] Quest " + id + " has no valid objectives");
@@ -84,7 +86,7 @@ public final class QuestLoader {
         // FIX: читать из yml, а не из config
         QuestType type = parseType(yml.getString("type", null));
 
-        return new QuestDefinition(id.trim(), type, objectives, rewards, questConditions);
+        return new QuestDefinition(id.trim(), type, title, description, objectives, rewards, questConditions);
     }
 
     private QuestType parseType(String raw) {
@@ -115,17 +117,18 @@ public final class QuestLoader {
                 id = type.name().toLowerCase(Locale.ROOT) + "_" + index;
             }
             QuestConditions objectiveConditions = parseConditions(map);
+            String text = asString(map.get("text"));
             ObjectiveDefinition definition = switch (type) {
-                case INTERACT_NPC -> parseInteractNpc(fileName, id, map, objectiveConditions);
-                case KILL -> parseKill(fileName, id, map, objectiveConditions);
-                case GO_TO_LOCATION -> parseLocation(fileName, id, map, objectiveConditions);
-                case PLACE_BLOCK -> parsePlaceBlock(fileName, id, map, objectiveConditions);
-                case BREAK_BLOCK -> parseBreakBlock(fileName, id, map, objectiveConditions);
-                case HOLD_ITEM -> parseHoldItem(fileName, id, map, objectiveConditions);
-                case CITY_PLOT_RESIDENCY -> parseCityPlotResidency(id, objectiveConditions);
-                case UNLOCK_SPELL -> parseUnlockSpell(fileName, id, map, objectiveConditions);
-                case CAST_SPELL -> parseCastSpell(fileName, id, map, objectiveConditions);
-                case MASTERY_LEVEL -> parseMasteryLevel(fileName, id, map, objectiveConditions);
+                case INTERACT_NPC -> parseInteractNpc(fileName, id, text, map, objectiveConditions);
+                case KILL -> parseKill(fileName, id, text, map, objectiveConditions);
+                case GO_TO_LOCATION -> parseLocation(fileName, id, text, map, objectiveConditions);
+                case PLACE_BLOCK -> parsePlaceBlock(fileName, id, text, map, objectiveConditions);
+                case BREAK_BLOCK -> parseBreakBlock(fileName, id, text, map, objectiveConditions);
+                case HOLD_ITEM -> parseHoldItem(fileName, id, text, map, objectiveConditions);
+                case CITY_PLOT_RESIDENCY -> parseCityPlotResidency(id, text, objectiveConditions);
+                case UNLOCK_SPELL -> parseUnlockSpell(fileName, id, text, map, objectiveConditions);
+                case CAST_SPELL -> parseCastSpell(fileName, id, text, map, objectiveConditions);
+                case MASTERY_LEVEL -> parseMasteryLevel(fileName, id, text, map, objectiveConditions);
             };
             if (definition != null) {
                 objectives.add(definition);
@@ -135,18 +138,18 @@ public final class QuestLoader {
         return objectives;
     }
 
-    private ObjectiveDefinition parseInteractNpc(String fileName, String id, Map<?, ?> map,
+    private ObjectiveDefinition parseInteractNpc(String fileName, String id, String text, Map<?, ?> map,
                                                  QuestConditions conditions) {
         String npcId = asString(map.get("npcId"));
         if (npcId == null || npcId.isBlank()) {
             logger.warn("[Quests] INTERACT_NPC objective missing npcId in " + fileName);
             return null;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.INTERACT_NPC, null, npcId.trim(), null, null, 1,
+        return new ObjectiveDefinition(id, ObjectiveType.INTERACT_NPC, text, null, npcId.trim(), null, null, 1,
                 null, 0, 0, 0, 0, conditions);
     }
 
-    private ObjectiveDefinition parseKill(String fileName, String id, Map<?, ?> map,
+    private ObjectiveDefinition parseKill(String fileName, String id, String text, Map<?, ?> map,
                                           QuestConditions conditions) {
         String entityRaw = asString(map.get("entity"));
         if (entityRaw == null) {
@@ -161,11 +164,11 @@ public final class QuestLoader {
         if (amount <= 0) {
             amount = 1;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.KILL, null, null, type, null, amount,
+        return new ObjectiveDefinition(id, ObjectiveType.KILL, text, null, null, type, null, amount,
                 null, 0, 0, 0, 0, conditions);
     }
 
-    private ObjectiveDefinition parseLocation(String fileName, String id, Map<?, ?> map,
+    private ObjectiveDefinition parseLocation(String fileName, String id, String text, Map<?, ?> map,
                                               QuestConditions conditions) {
         String world = asString(map.get("world"));
         Double x = asDouble(map.get("x"));
@@ -179,11 +182,11 @@ public final class QuestLoader {
         if (radius <= 0) {
             radius = 2.0;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.GO_TO_LOCATION, null, null, null, null, 1,
+        return new ObjectiveDefinition(id, ObjectiveType.GO_TO_LOCATION, text, null, null, null, null, 1,
                 world.trim(), x, y, z, radius, conditions);
     }
 
-    private ObjectiveDefinition parsePlaceBlock(String fileName, String id, Map<?, ?> map,
+    private ObjectiveDefinition parsePlaceBlock(String fileName, String id, String text, Map<?, ?> map,
                                                 QuestConditions conditions) {
         List<Material> materials = parseMaterials(map);
         if (materials.isEmpty()) {
@@ -194,11 +197,11 @@ public final class QuestLoader {
         if (amount <= 0) {
             amount = 1;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.PLACE_BLOCK, null, null, null, materials, amount,
+        return new ObjectiveDefinition(id, ObjectiveType.PLACE_BLOCK, text, null, null, null, materials, amount,
                 null, 0, 0, 0, 0, conditions);
     }
 
-    private ObjectiveDefinition parseBreakBlock(String fileName, String id, Map<?, ?> map,
+    private ObjectiveDefinition parseBreakBlock(String fileName, String id, String text, Map<?, ?> map,
                                                 QuestConditions conditions) {
         List<Material> materials = parseMaterials(map);
         if (materials.isEmpty()) {
@@ -209,11 +212,11 @@ public final class QuestLoader {
         if (amount <= 0) {
             amount = 1;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.BREAK_BLOCK, null, null, null, materials, amount,
+        return new ObjectiveDefinition(id, ObjectiveType.BREAK_BLOCK, text, null, null, null, materials, amount,
                 null, 0, 0, 0, 0, conditions);
     }
 
-    private ObjectiveDefinition parseHoldItem(String fileName, String id, Map<?, ?> map,
+    private ObjectiveDefinition parseHoldItem(String fileName, String id, String text, Map<?, ?> map,
                                               QuestConditions conditions) {
         List<Material> materials = parseMaterials(map);
         if (materials.isEmpty()) {
@@ -224,16 +227,16 @@ public final class QuestLoader {
         if (amount <= 0) {
             amount = 1;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.HOLD_ITEM, null, null, null, materials, amount,
+        return new ObjectiveDefinition(id, ObjectiveType.HOLD_ITEM, text, null, null, null, materials, amount,
                 null, 0, 0, 0, 0, conditions);
     }
 
-    private ObjectiveDefinition parseCityPlotResidency(String id, QuestConditions conditions) {
-        return new ObjectiveDefinition(id, ObjectiveType.CITY_PLOT_RESIDENCY, null, null, null, null, 1,
+    private ObjectiveDefinition parseCityPlotResidency(String id, String text, QuestConditions conditions) {
+        return new ObjectiveDefinition(id, ObjectiveType.CITY_PLOT_RESIDENCY, text, null, null, null, null, 1,
                 null, 0, 0, 0, 0, conditions);
     }
 
-    private ObjectiveDefinition parseUnlockSpell(String fileName, String id, Map<?, ?> map,
+    private ObjectiveDefinition parseUnlockSpell(String fileName, String id, String text, Map<?, ?> map,
                                                  QuestConditions conditions) {
         String spellId = asString(map.get("spellId"));
         if (spellId == null || spellId.isBlank()) {
@@ -245,11 +248,11 @@ public final class QuestLoader {
         if (!validateMagicSpell(fileName, normalized)) {
             return null;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.UNLOCK_SPELL, normalized, null, null, null, 1,
+        return new ObjectiveDefinition(id, ObjectiveType.UNLOCK_SPELL, text, normalized, null, null, null, 1,
                 null, 0, 0, 0, 0, conditions);
     }
 
-    private ObjectiveDefinition parseCastSpell(String fileName, String id, Map<?, ?> map,
+    private ObjectiveDefinition parseCastSpell(String fileName, String id, String text, Map<?, ?> map,
                                                QuestConditions conditions) {
         String spellId = asString(map.get("spellId"));
         if (spellId == null || spellId.isBlank()) {
@@ -267,11 +270,11 @@ public final class QuestLoader {
         if (!validateMagicSpell(fileName, normalized)) {
             return null;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.CAST_SPELL, normalized, null, null, null, amount,
+        return new ObjectiveDefinition(id, ObjectiveType.CAST_SPELL, text, normalized, null, null, null, amount,
                 null, 0, 0, 0, 0, conditions);
     }
 
-    private ObjectiveDefinition parseMasteryLevel(String fileName, String id, Map<?, ?> map,
+    private ObjectiveDefinition parseMasteryLevel(String fileName, String id, String text, Map<?, ?> map,
                                                   QuestConditions conditions) {
         String spellId = asString(map.get("spellId"));
         if (spellId == null || spellId.isBlank()) {
@@ -289,7 +292,7 @@ public final class QuestLoader {
         if (!validateMagicSpell(fileName, normalized)) {
             return null;
         }
-        return new ObjectiveDefinition(id, ObjectiveType.MASTERY_LEVEL, normalized, null, null, null, level,
+        return new ObjectiveDefinition(id, ObjectiveType.MASTERY_LEVEL, text, normalized, null, null, null, level,
                 null, 0, 0, 0, 0, conditions);
     }
 

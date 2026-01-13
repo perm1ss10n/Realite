@@ -12,4 +12,4 @@ softdepend:
 commands:
   quest:
     description: Quest commands
-    usage: /quest <start|active|debug|reload>
+    usage: /quest [menu|start|active|debug|reload]

@@ -20,6 +20,7 @@ import ru.realite.core.api.quests.QuestStartTrigger;
 import ru.realite.core.api.quests.QuestUnlockService;
 import ru.realite.core.api.quests.CityAdapter;
 import ru.realite.core.api.quests.GuildAdapter;
+import ru.realite.quests.i18n.QuestsMessages;
 import ru.realite.quests.model.ObjectiveDefinition;
 import ru.realite.quests.model.ObjectiveType;
 import ru.realite.quests.model.QuestConditions;
@@ -51,6 +52,7 @@ public final class QuestServiceImpl implements QuestService {
     private final boolean residencyCountOwner;
     private final boolean residencyCountMember;
     private final MagicQuestBridge magicBridge;
+    private final QuestsMessages messages;
 
     private static final String FEATURE_UNAVAILABLE_REASON = "feature unavailable";
 
@@ -66,7 +68,8 @@ public final class QuestServiceImpl implements QuestService {
             boolean residencyMustBeInsideCity,
             boolean residencyCountOwner,
             boolean residencyCountMember,
-            MagicQuestBridge magicBridge) {
+            MagicQuestBridge magicBridge,
+            QuestsMessages messages) {
         this.logger = Objects.requireNonNull(logger, "logger");
         this.eventBus = Objects.requireNonNull(eventBus, "eventBus");
         this.questsDir = Objects.requireNonNull(questsDir, "questsDir");
@@ -80,6 +83,11 @@ public final class QuestServiceImpl implements QuestService {
         this.residencyCountOwner = residencyCountOwner;
         this.residencyCountMember = residencyCountMember;
         this.magicBridge = magicBridge;
+        this.messages = messages;
+    }
+
+    public QuestsMessages messages() {
+        return messages;
     }
 
     @Override
@@ -718,6 +726,9 @@ public final class QuestServiceImpl implements QuestService {
         if (objective == null) {
             return "";
         }
+        if (objective.text() != null && !objective.text().isBlank()) {
+            return objective.text();
+        }
         return switch (objective.type()) {
             case INTERACT_NPC -> "Talk to " + objective.npcId();
             case KILL -> "Kill " + objective.amount() + " " + formatEntity(objective.entityType());
@@ -730,6 +741,89 @@ public final class QuestServiceImpl implements QuestService {
             case CAST_SPELL -> "Cast " + formatSpellId(objective.spellId()) + " " + objective.amount() + " times";
             case MASTERY_LEVEL -> "Master " + formatSpellId(objective.spellId()) + " to level " + objective.amount();
         };
+    }
+
+    public List<QuestSort> getSupportedSorts() {
+        return List.of(QuestSort.TYPE);
+    }
+
+    public List<QuestListEntry> getQuestList(Player player, QuestAvailability filter, QuestSort sort) {
+        List<QuestListEntry> result = new ArrayList<>();
+        if (player == null) {
+            return result;
+        }
+        for (QuestDefinition quest : repository.all()) {
+            QuestProgressData progress = progressRepository.getProgress(player.getUniqueId(), quest.id());
+            QuestAvailability availability = resolveAvailability(progress);
+            if (filter != null && availability != filter) {
+                continue;
+            }
+            result.add(new QuestListEntry(
+                    quest.id(),
+                    quest.title(),
+                    quest.description(),
+                    quest.type(),
+                    availability));
+        }
+        result.sort(buildSortComparator(sort));
+        return result;
+    }
+
+    public QuestDetails getQuestDetails(Player player, String questId) {
+        QuestDefinition quest = getQuestDefinition(questId);
+        if (quest == null) {
+            return null;
+        }
+        QuestProgressData progress = null;
+        if (player != null) {
+            progress = progressRepository.getProgress(player.getUniqueId(), quest.id());
+        }
+        QuestAvailability availability = resolveAvailability(progress);
+        List<QuestObjectiveStatus> objectives = new ArrayList<>();
+        for (ObjectiveDefinition objective : quest.objectives()) {
+            boolean completed = progress != null && progress.completedObjectives().contains(objective.id());
+            int target = Math.max(1, objective.amount());
+            int current = completed ? target : getObjectiveProgressCount(player, objective, progress);
+            objectives.add(new QuestObjectiveStatus(
+                    objective.id(),
+                    describeObjective(objective),
+                    current,
+                    target,
+                    completed));
+        }
+        List<QuestRewardView> rewards = new ArrayList<>();
+        for (RewardDefinition reward : quest.rewards()) {
+            rewards.add(new QuestRewardView(reward.type(), reward.amount(), reward.material(), reward.unlockId()));
+        }
+        return new QuestDetails(
+                quest.id(),
+                quest.title(),
+                quest.description(),
+                quest.type(),
+                availability,
+                objectives,
+                rewards);
+    }
+
+    private QuestAvailability resolveAvailability(QuestProgressData progress) {
+        if (progress == null) {
+            return QuestAvailability.AVAILABLE;
+        }
+        if (progress.state() == QuestState.COMPLETED) {
+            return QuestAvailability.COMPLETED;
+        }
+        return QuestAvailability.ACTIVE;
+    }
+
+    private java.util.Comparator<QuestListEntry> buildSortComparator(QuestSort sort) {
+        QuestSort effective = sort == null ? QuestSort.TYPE : sort;
+        java.util.Comparator<QuestListEntry> base = switch (effective) {
+            case TYPE -> java.util.Comparator.comparing(entry -> entry.type().name());
+            case DIFFICULTY, LEVEL -> java.util.Comparator.comparing(QuestListEntry::title,
+                    String.CASE_INSENSITIVE_ORDER);
+        };
+        return base.thenComparing(QuestListEntry::title, String.CASE_INSENSITIVE_ORDER)
+                .thenComparing(QuestListEntry::id, String.CASE_INSENSITIVE_ORDER);
     }
 
     private boolean hasPlotResidency(Player player) {
