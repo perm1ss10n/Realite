@@ -25,10 +25,10 @@ import ru.realite.core.api.ui.UiPaginationService;
 import ru.realite.core.api.ui.UiScreenRegistry;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.requirements.CheckResult;
+import ru.realite.magic.service.EquipSpellFailure;
+import ru.realite.magic.service.EquipSpellResult;
 import ru.realite.magic.service.MagicService;
 import ru.realite.magic.service.PlayerSpellService;
-import ru.realite.magic.service.SelectResult;
-import ru.realite.magic.service.SpellActionReason;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellRegistry;
 
@@ -85,7 +85,7 @@ public final class MagicSpellbookMenu implements InventoryHolder, MagicUiMenu {
     }
 
     private Inventory build(Player player) {
-        inventory = Bukkit.createInventory(this, SIZE, messages.msg("magic.ui.spells.title"));
+        inventory = Bukkit.createInventory(this, SIZE, messages.msg("ui.magic.spells.title"));
         fill(player);
         return inventory;
     }
@@ -138,37 +138,20 @@ public final class MagicSpellbookMenu implements InventoryHolder, MagicUiMenu {
     }
 
     private void handleQuickEquip(Player player, SpellDefinition spell) {
-        if (!playerSpellService.hasSpell(player.getUniqueId(), spell.id())) {
-            player.sendMessage(messages.msg("magic.spell.select.not_learned",
-                    "spell", messages.raw(spell.nameKey())));
+        EquipSpellResult result = magicService.equipSpell(player, spell);
+        if (result instanceof EquipSpellResult.Ok ok) {
+            player.sendMessage(messages.msg("ui.magic.success.equipped", "slot", String.valueOf(ok.slot())));
+            new MagicSpellbookMenu(magicService, spellRegistry, playerSpellService,
+                    messages, paginationService, screenRegistry, currentPage).open(player);
             return;
         }
-        CheckResult result = magicService.checkRequirements(player, spell);
-        if (result instanceof CheckResult.Fail fail) {
-            String reason = formatRequirementReason(fail);
-            player.sendMessage(messages.msg("magic.command.spell.locked",
-                    "reason", reason == null ? "" : reason));
-            return;
-        }
-        SelectResult selection = playerSpellService.select(player.getUniqueId(), spell.id());
-        if (selection instanceof SelectResult.Ok) {
-            player.sendMessage(messages.msg("magic.spell.select.ok",
-                    "spell", messages.raw(spell.nameKey())));
-            return;
-        }
-        if (selection instanceof SelectResult.Fail fail) {
-            SpellActionReason reason = fail.reason();
-            if (reason == SpellActionReason.NOT_LEARNED) {
-                player.sendMessage(messages.msg("magic.spell.select.not_learned",
-                        "spell", messages.raw(spell.nameKey())));
+        if (result instanceof EquipSpellResult.Fail fail) {
+            if (fail.reason() == EquipSpellFailure.NOT_AVAILABLE) {
+                String reason = fail.requirement() == null ? "" : formatRequirementReason(fail.requirement());
+                player.sendMessage(messages.msg("ui.magic.error.not_available", "reason", reason));
                 return;
             }
-            if (reason == SpellActionReason.UNKNOWN_SPELL) {
-                player.sendMessage(messages.msg("magic.spell.unknown",
-                        "spell", spell.id()));
-                return;
-            }
-            player.sendMessage(messages.msg("magic.command.errors.no_permission"));
+            player.sendMessage(messages.msg("ui.magic.error.cannot_equip"));
         }
     }
 
@@ -181,12 +164,12 @@ public final class MagicSpellbookMenu implements InventoryHolder, MagicUiMenu {
                 null);
 
         if (page.hasPrevious()) {
-            setButton(SLOT_PREV, Material.ARROW, messages.msg("magic.ui.common.prev"), null,
+            setButton(SLOT_PREV, Material.ARROW, messages.msg("ui.common.prev"), null,
                     (player, event) -> new MagicSpellbookMenu(magicService, spellRegistry, playerSpellService,
                             messages, paginationService, screenRegistry, currentPage - 1).open(player));
         }
         if (page.hasNext()) {
-            setButton(SLOT_NEXT, Material.ARROW, messages.msg("magic.ui.common.next"), null,
+            setButton(SLOT_NEXT, Material.ARROW, messages.msg("ui.common.next"), null,
                     (player, event) -> new MagicSpellbookMenu(magicService, spellRegistry, playerSpellService,
                             messages, paginationService, screenRegistry, currentPage + 1).open(player));
         }

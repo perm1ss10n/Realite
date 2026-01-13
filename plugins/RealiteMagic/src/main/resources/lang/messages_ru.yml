@@ -360,3 +360,32 @@ magic:
     evolution_mismatch: "&cТребуется эволюция: &f{evolution}"
     item_missing: "&cНужен предмет: &f{item}"
     missing_items_module: "&cМодуль предметов недоступен."
+
+ui:
+  common:
+    back: "&eНазад"
+    close: "&cЗакрыть"
+    next: "&eДалее"
+    prev: "&eНазад"
+  magic:
+    spells:
+      title: "&5Книга заклинаний"
+    spell:
+      details:
+        title: "&5Заклинание: {spell}"
+      cost: "&7Стоимость: &6{cost}"
+    action:
+      equip: "&aЭкипировать"
+      unequip: "&cСнять"
+    requirements:
+      title: "&eТребования"
+      not_met: "&cНе выполнено: &f{reason}"
+      class: "&7Класс: &f{value}"
+      evolution: "&7Эволюция: &f{value}"
+      item: "&7Предмет: &f{value}"
+    success:
+      equipped: "&aЭкипировано в слот {slot}."
+      unequipped: "&eЗаклинание снято."
+    error:
+      not_available: "&cНедоступно: &f{reason}"
+      cannot_equip: "&cНе удалось экипировать заклинание."
