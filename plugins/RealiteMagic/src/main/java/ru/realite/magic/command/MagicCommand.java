@@ -22,7 +22,10 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import ru.realite.core.api.CoreApi;
+import ru.realite.core.api.ui.UiScreenRegistry;
 import ru.realite.magic.debug.DebugService;
 import ru.realite.magic.hud.MagicHudService;
 import ru.realite.magic.i18n.MagicMessages;
@@ -40,6 +43,7 @@ import ru.realite.magic.service.MagicService;
 import ru.realite.magic.service.PlayerSpellService;
 import ru.realite.magic.service.RevokeResult;
 import ru.realite.magic.service.SelectResult;
+import ru.realite.magic.service.SetSlotResult;
 import ru.realite.magic.service.SpellActionReason;
 import ru.realite.magic.service.SpellUnlockSource;
 import ru.realite.magic.service.UnlockResult;
@@ -161,10 +165,31 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
                 return Collections.emptyList();
             }
             if (args.length == 2) {
-                return List.of("stats", "log", "inspect", "bypass", "export");
+                return List.of("stats", "log", "inspect", "bypass", "export", "spells");
             }
             if (args.length == 3 && args[1].equalsIgnoreCase("inspect")) {
                 return tabCompletePlayers();
+            }
+            if (args.length == 3 && args[1].equalsIgnoreCase("spells")) {
+                return List.of("open", "equip", "unequip", "give");
+            }
+            if (args.length == 4 && args[1].equalsIgnoreCase("spells")) {
+                return tabCompletePlayers();
+            }
+            if (args.length == 5 && args[1].equalsIgnoreCase("spells")) {
+                String sub = args[2].toLowerCase(Locale.ROOT);
+                if ("equip".equals(sub) || "give".equals(sub)) {
+                    return spellIds();
+                }
+                if ("unequip".equals(sub)) {
+                    List<String> slots = new ArrayList<>();
+                    slots.add("all");
+                    slots.addAll(tabCompleteSlotNumbers());
+                    return slots;
+                }
+            }
+            if (args.length == 6 && args[1].equalsIgnoreCase("spells") && args[2].equalsIgnoreCase("equip")) {
+                return tabCompleteSlotNumbers();
             }
             if (args.length == 3 && args[1].equalsIgnoreCase("bypass")) {
                 List<String> options = new ArrayList<>();
@@ -220,7 +245,19 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(messages.msg("magic.command.errors.no_permission"));
             return true;
         }
-        magicService.spellSelectMenu().open(player);
+        UiScreenRegistry registry = resolveUiRegistry();
+        if (registry == null) {
+            player.sendMessage(messages.msg("magic.ui.spells.unavailable"));
+            return true;
+        }
+        String target = magicService.slotCount() > 0 ? "magic.loadout" : "magic.spells";
+        if (registry.open(player, target)) {
+            return true;
+        }
+        if (!"magic.spells".equals(target) && registry.open(player, "magic.spells")) {
+            return true;
+        }
+        player.sendMessage(messages.msg("magic.ui.spells.unavailable"));
         return true;
     }
 
@@ -480,12 +517,16 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
             return List.of("set", "clear", "use");
         }
         if (argsLength == 3) {
-            return List.of("1", "2", "3", "4", "5", "6", "7", "8", "9");
+            return tabCompleteSlotNumbers();
         }
         if (argsLength == 4) {
             return spellIds();
         }
         return Collections.emptyList();
+    }
+
+    private List<String> tabCompleteSlotNumbers() {
+        return List.of("1", "2", "3", "4", "5", "6", "7", "8", "9");
     }
 
     private List<String> tabCompleteMastery(int argsLength) {
@@ -575,11 +616,163 @@ public final class MagicCommand implements CommandExecutor, TabCompleter {
             case "inspect" -> handleAdminInspect(sender, args);
             case "bypass" -> handleAdminBypass(sender, args);
             case "export" -> handleAdminExport(sender, args);
+            case "spells" -> handleAdminSpells(sender, args);
             default -> {
                 sender.sendMessage(messages.msg("magic.cmd.admin.usage"));
                 yield true;
             }
         };
+    }
+
+    private boolean handleAdminSpells(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(messages.msg("magic.cmd.admin.spells.usage"));
+            return true;
+        }
+        String action = args[2].toLowerCase(Locale.ROOT);
+        return switch (action) {
+            case "open" -> handleAdminSpellsOpen(sender, args);
+            case "equip" -> handleAdminSpellsEquip(sender, args);
+            case "unequip" -> handleAdminSpellsUnequip(sender, args);
+            case "give" -> handleAdminSpellsGive(sender, args);
+            default -> {
+                sender.sendMessage(messages.msg("magic.cmd.admin.spells.usage"));
+                yield true;
+            }
+        };
+    }
+
+    private boolean handleAdminSpellsOpen(CommandSender sender, String[] args) {
+        if (args.length < 4) {
+            sender.sendMessage(messages.msg("magic.cmd.admin.spells.usage"));
+            return true;
+        }
+        Player target = Bukkit.getPlayerExact(args[3]);
+        if (target == null) {
+            sender.sendMessage(messages.msg("magic.cmd.player_not_found",
+                    "player", args[3]));
+            return true;
+        }
+        UiScreenRegistry registry = resolveUiRegistry();
+        if (registry == null || !registry.open(target, "magic.spells")) {
+            sender.sendMessage(messages.msg("magic.ui.spells.unavailable"));
+            return true;
+        }
+        sender.sendMessage(messages.msg("magic.cmd.admin.spells.open.ok", "player", target.getName()));
+        return true;
+    }
+
+    private boolean handleAdminSpellsEquip(CommandSender sender, String[] args) {
+        if (args.length < 6) {
+            sender.sendMessage(messages.msg("magic.cmd.admin.spells.usage"));
+            return true;
+        }
+        Player target = Bukkit.getPlayerExact(args[3]);
+        if (target == null) {
+            sender.sendMessage(messages.msg("magic.cmd.player_not_found",
+                    "player", args[3]));
+            return true;
+        }
+        SpellDefinition spell = magicService.spellRegistry().get(args[4]);
+        if (spell == null) {
+            sender.sendMessage(messages.msg("magic.command.spell.unknown_spell",
+                    "spellId", args[4]));
+            return true;
+        }
+        int slot = parseOptionalInt(args, 5, -1);
+        if (slot <= 0) {
+            sender.sendMessage(messages.msg("magic.slot.invalid", "slot", args[5]));
+            return true;
+        }
+        SetSlotResult result = playerSpellService.setSlot(target.getUniqueId(), slot, spell.id());
+        if (result instanceof SetSlotResult.Fail fail) {
+            sender.sendMessage(messages.msg(fail.reasonKey(), "slot", String.valueOf(slot)));
+            return true;
+        }
+        sender.sendMessage(messages.msg("magic.cmd.admin.spells.equip.ok",
+                "player", target.getName(),
+                "spell", displaySpellName(spell.id()),
+                "slot", String.valueOf(slot)));
+        return true;
+    }
+
+    private boolean handleAdminSpellsUnequip(CommandSender sender, String[] args) {
+        if (args.length < 5) {
+            sender.sendMessage(messages.msg("magic.cmd.admin.spells.usage"));
+            return true;
+        }
+        Player target = Bukkit.getPlayerExact(args[3]);
+        if (target == null) {
+            sender.sendMessage(messages.msg("magic.cmd.player_not_found",
+                    "player", args[3]));
+            return true;
+        }
+        String slotRaw = args[4];
+        if ("all".equalsIgnoreCase(slotRaw)) {
+            for (int slot = 1; slot <= magicService.slotCount(); slot++) {
+                playerSpellService.setSlot(target.getUniqueId(), slot, null);
+            }
+            sender.sendMessage(messages.msg("magic.cmd.admin.spells.unequip.all",
+                    "player", target.getName()));
+            return true;
+        }
+        int slot = parseOptionalInt(args, 4, -1);
+        if (slot <= 0) {
+            sender.sendMessage(messages.msg("magic.slot.invalid", "slot", slotRaw));
+            return true;
+        }
+        SetSlotResult result = playerSpellService.setSlot(target.getUniqueId(), slot, null);
+        if (result instanceof SetSlotResult.Fail fail) {
+            sender.sendMessage(messages.msg(fail.reasonKey(), "slot", String.valueOf(slot)));
+            return true;
+        }
+        sender.sendMessage(messages.msg("magic.cmd.admin.spells.unequip.slot",
+                "player", target.getName(),
+                "slot", String.valueOf(slot)));
+        return true;
+    }
+
+    private boolean handleAdminSpellsGive(CommandSender sender, String[] args) {
+        if (args.length < 5) {
+            sender.sendMessage(messages.msg("magic.cmd.admin.spells.usage"));
+            return true;
+        }
+        Player target = Bukkit.getPlayerExact(args[3]);
+        if (target == null) {
+            sender.sendMessage(messages.msg("magic.cmd.player_not_found",
+                    "player", args[3]));
+            return true;
+        }
+        SpellDefinition spell = magicService.spellRegistry().get(args[4]);
+        if (spell == null) {
+            sender.sendMessage(messages.msg("magic.command.spell.unknown_spell",
+                    "spellId", args[4]));
+            return true;
+        }
+        UnlockResult result = playerSpellService.unlock(target.getUniqueId(), spell.id(), SpellUnlockSource.COMMAND);
+        if (result instanceof UnlockResult.Fail fail) {
+            return handleSpellActionFailure(sender, fail.reason(), spell.id());
+        }
+        sender.sendMessage(messages.msg("magic.cmd.admin.spells.give.ok",
+                "player", target.getName(),
+                "spell", displaySpellName(spell.id())));
+        return true;
+    }
+
+    private UiScreenRegistry resolveUiRegistry() {
+        CoreApi core = resolveCore();
+        if (core == null) {
+            return null;
+        }
+        return core.services().get(UiScreenRegistry.class);
+    }
+
+    private CoreApi resolveCore() {
+        RegisteredServiceProvider<CoreApi> provider = Bukkit.getServicesManager().getRegistration(CoreApi.class);
+        if (provider == null || provider.getProvider() == null) {
+            return null;
+        }
+        return provider.getProvider();
     }
 
     private boolean handleReload(CommandSender sender, String[] args) {

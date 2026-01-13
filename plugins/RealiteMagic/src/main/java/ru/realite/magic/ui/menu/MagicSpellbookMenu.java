@@ -29,6 +29,7 @@ import ru.realite.magic.service.EquipSpellFailure;
 import ru.realite.magic.service.EquipSpellResult;
 import ru.realite.magic.service.MagicService;
 import ru.realite.magic.service.PlayerSpellService;
+import ru.realite.magic.service.SetSlotResult;
 import ru.realite.magic.spell.SpellDefinition;
 import ru.realite.magic.spell.SpellRegistry;
 
@@ -36,6 +37,7 @@ public final class MagicSpellbookMenu implements InventoryHolder, MagicUiMenu {
 
     private static final int SIZE = 54;
     private static final int SLOT_PREV = 45;
+    private static final int SLOT_BACK = 48;
     private static final int SLOT_PAGE = 49;
     private static final int SLOT_NEXT = 53;
 
@@ -46,6 +48,7 @@ public final class MagicSpellbookMenu implements InventoryHolder, MagicUiMenu {
     private final UiPaginationService paginationService;
     private final UiScreenRegistry screenRegistry;
     private final int requestedPage;
+    private final Integer selectionSlot;
     private final Map<Integer, BiConsumer<Player, InventoryClickEvent>> actions = new HashMap<>();
     private Inventory inventory;
     private int currentPage;
@@ -56,7 +59,8 @@ public final class MagicSpellbookMenu implements InventoryHolder, MagicUiMenu {
             MagicMessages messages,
             UiPaginationService paginationService,
             UiScreenRegistry screenRegistry,
-            int page) {
+            int page,
+            Integer selectionSlot) {
         this.magicService = Objects.requireNonNull(magicService, "magicService");
         this.spellRegistry = Objects.requireNonNull(spellRegistry, "spellRegistry");
         this.playerSpellService = Objects.requireNonNull(playerSpellService, "playerSpellService");
@@ -64,6 +68,7 @@ public final class MagicSpellbookMenu implements InventoryHolder, MagicUiMenu {
         this.paginationService = Objects.requireNonNull(paginationService, "paginationService");
         this.screenRegistry = Objects.requireNonNull(screenRegistry, "screenRegistry");
         this.requestedPage = Math.max(0, page);
+        this.selectionSlot = selectionSlot;
     }
 
     public void open(Player player) {
@@ -128,6 +133,12 @@ public final class MagicSpellbookMenu implements InventoryHolder, MagicUiMenu {
     }
 
     private void handleSpellClick(Player player, InventoryClickEvent event, SpellDefinition spell) {
+        if (selectionSlot != null) {
+            if (event.isLeftClick()) {
+                handleSlotEquip(player, spell);
+            }
+            return;
+        }
         if (event.getClick() == ClickType.SHIFT_LEFT) {
             handleQuickEquip(player, spell);
             return;
@@ -142,7 +153,7 @@ public final class MagicSpellbookMenu implements InventoryHolder, MagicUiMenu {
         if (result instanceof EquipSpellResult.Ok ok) {
             player.sendMessage(messages.msg("ui.magic.success.equipped", "slot", String.valueOf(ok.slot())));
             new MagicSpellbookMenu(magicService, spellRegistry, playerSpellService,
-                    messages, paginationService, screenRegistry, currentPage).open(player);
+                    messages, paginationService, screenRegistry, currentPage, selectionSlot).open(player);
             return;
         }
         if (result instanceof EquipSpellResult.Fail fail) {
@@ -155,6 +166,30 @@ public final class MagicSpellbookMenu implements InventoryHolder, MagicUiMenu {
         }
     }
 
+    private void handleSlotEquip(Player player, SpellDefinition spell) {
+        if (selectionSlot == null) {
+            return;
+        }
+        if (!playerSpellService.hasSpell(player.getUniqueId(), spell.id())) {
+            player.sendMessage(messages.msg("ui.magic.error.not_learned",
+                    "spell", messages.raw(spell.nameKey())));
+            return;
+        }
+        CheckResult requirements = magicService.checkRequirements(player, spell);
+        if (requirements instanceof CheckResult.Fail fail) {
+            String reason = formatRequirementReason(fail);
+            player.sendMessage(messages.msg("ui.magic.error.not_available", "reason", reason));
+            return;
+        }
+        SetSlotResult result = playerSpellService.setSlot(player.getUniqueId(), selectionSlot, spell.id());
+        if (result instanceof SetSlotResult.Fail fail) {
+            player.sendMessage(messages.msg(fail.reasonKey(), "slot", String.valueOf(selectionSlot)));
+            return;
+        }
+        player.sendMessage(messages.msg("ui.magic.success.equipped", "slot", String.valueOf(selectionSlot)));
+        screenRegistry.open(player, "magic.loadout");
+    }
+
     private void applyNavigation(UiPage<SpellDefinition> page) {
         setButton(SLOT_PAGE, Material.PAPER,
                 messages.msg("magic.ui.spells.page",
@@ -163,15 +198,19 @@ public final class MagicSpellbookMenu implements InventoryHolder, MagicUiMenu {
                 null,
                 null);
 
+        if (selectionSlot != null) {
+            setButton(SLOT_BACK, Material.ARROW, messages.msg("ui.common.back"), null,
+                    (player, event) -> screenRegistry.open(player, "magic.loadout"));
+        }
         if (page.hasPrevious()) {
             setButton(SLOT_PREV, Material.ARROW, messages.msg("ui.common.prev"), null,
                     (player, event) -> new MagicSpellbookMenu(magicService, spellRegistry, playerSpellService,
-                            messages, paginationService, screenRegistry, currentPage - 1).open(player));
+                            messages, paginationService, screenRegistry, currentPage - 1, selectionSlot).open(player));
         }
         if (page.hasNext()) {
             setButton(SLOT_NEXT, Material.ARROW, messages.msg("ui.common.next"), null,
                     (player, event) -> new MagicSpellbookMenu(magicService, spellRegistry, playerSpellService,
-                            messages, paginationService, screenRegistry, currentPage + 1).open(player));
+                            messages, paginationService, screenRegistry, currentPage + 1, selectionSlot).open(player));
         }
     }
 
@@ -220,8 +259,12 @@ public final class MagicSpellbookMenu implements InventoryHolder, MagicUiMenu {
             }
         }
 
-        lore.add(messages.msg("magic.ui.spells.hint.details"));
-        lore.add(messages.msg("magic.ui.spells.hint.quick_equip"));
+        if (selectionSlot != null) {
+            lore.add(messages.msg("magic.ui.spells.hint.select_slot", "slot", String.valueOf(selectionSlot)));
+        } else {
+            lore.add(messages.msg("magic.ui.spells.hint.details"));
+            lore.add(messages.msg("magic.ui.spells.hint.quick_equip"));
+        }
         meta.lore(lore);
         item.setItemMeta(meta);
         return item;

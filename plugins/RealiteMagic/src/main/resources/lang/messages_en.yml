@@ -69,7 +69,18 @@ magic:
       line_xp: "&7XP: &f{xp}&7/&f{next}"
       line_bonus: "&7Bonus: &f{damage} dmg, {mana} mana, {cooldown} cd"
     admin:
-      usage: "&eUsage: &f/magic admin <stats|log|inspect|bypass|export>"
+      usage: "&eUsage: &f/magic admin <stats|log|inspect|bypass|export|spells>"
+      spells:
+        usage: "&eUsage: &f/magic admin spells <open|equip|unequip|give> <player> [spellId] [slot|all]"
+        open:
+          ok: "&aOpened spellbook for &f{player}&a."
+        equip:
+          ok: "&aEquipped &f{spell}&a into slot &f{slot}&a for &f{player}&a."
+        unequip:
+          slot: "&eCleared slot &f{slot}&e for &f{player}&e."
+          all: "&eCleared all slots for &f{player}&e."
+        give:
+          ok: "&aGranted spell &f{spell}&a to &f{player}&a."
       stats:
         header: "&eDiagnostics top {count}:"
         casts: "&6Top casts:"
@@ -183,6 +194,7 @@ magic:
       hint:
         details: "&7LMB: details"
         quick_equip: "&7Shift+LMB: equip"
+        select_slot: "&7LMB: choose for slot {slot}"
       status:
         available: "&aAvailable"
         unavailable: "&cUnavailable"
@@ -191,7 +203,20 @@ magic:
         not_learned: "&cNot learned"
         equipped: "&eEquipped in slot {slot}"
         active_slot: "&6Active slot"
-      unavailable: "&cSpellbook screen is unavailable."
+    loadout:
+      title: "&5Loadout"
+      slot:
+        name: "&eSlot {slot}"
+        filled: "&eSlot {slot}: &f{spell}"
+        spell: "&7Spell: &f{spell}"
+        empty: "&7Empty"
+        unknown: "&cUnknown spell: &f{spell}"
+        active: "&6Active slot"
+        hint: "&7LMB: choose spell"
+      clear:
+        name: "&cClear slot"
+        hint: "&7Clears active slot {slot}"
+    unavailable: "&cSpellbook screen is unavailable."
   error:
     no_selected_spell: "&cNo spell selected. Open &f/magic&c and choose one."
     cannot_select_spell: "&cYou cannot select this spell: &f{reason}"
@@ -371,6 +396,19 @@ ui:
   magic:
     spells:
       title: "&5Spellbook"
+    loadout:
+      title: "&5Loadout"
+      slot:
+        name: "&eSlot {slot}"
+        filled: "&eSlot {slot}: &f{spell}"
+        spell: "&7Spell: &f{spell}"
+        empty: "&7Empty"
+        unknown: "&cUnknown spell: &f{spell}"
+        active: "&6Active slot"
+        hint: "&7LMB: choose spell"
+      clear:
+        name: "&cClear slot"
+        hint: "&7Clears active slot {slot}"
     spell:
       details:
         title: "&5Spell: {spell}"
@@ -390,3 +428,4 @@ ui:
     error:
       not_available: "&cNot available: &f{reason}"
       cannot_equip: "&cUnable to equip spell."
+      not_learned: "&cSpell not learned: &f{spell}"
