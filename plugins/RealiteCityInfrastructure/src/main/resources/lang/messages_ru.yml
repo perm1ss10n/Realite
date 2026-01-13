@@ -491,6 +491,295 @@ area:
     disabled: "&cGUI отключена."
     no_permission: "&cУ вас нет прав."
     action_failed: "&cНе удалось выполнить действие: {reason}"
+
+ui:
+  common:
+    back: "&7Назад"
+    close: "&cЗакрыть"
+    prev: "&7Предыдущая"
+    next: "&7Следующая"
+    confirm: "&aПодтвердить"
+    cancel: "&cОтмена"
+    coming_soon: "&8Скоро."
+  city:
+    shop:
+      point:
+        menu:
+          title: "&eНастройка магазина"
+          toggle:
+            enabled: "&aВыключить точку"
+            disabled: "&cВключить точку"
+    title:
+      admin_main: "&eАдмин: город"
+      admin_selection: "&eАдмин: выделение"
+      admin_plots: "&eАдмин: участки"
+      admin_plot_actions: "&eАдмин: участок"
+      player_main: "&eУчасток"
+      player_access: "&eДоступ к участку"
+    hub:
+      title: "&6Город"
+      status:
+        name: "&eСтатус"
+        resident: "&aРезидент"
+        non_resident: "&cНе резидент"
+        city: "&7Город: &f{city}"
+        city_none: "нет"
+      item:
+        plots:
+          name: "&eУчастки"
+          lore1: "&7Список участков города"
+          lore2: "&7Открыть список и фильтры"
+        residency:
+          name: "&eРезидентство"
+          lore1: "&7Квесты/условия резидентства"
+          lore2: "&7Открыть меню квестов"
+        market:
+          name: "&eРынок"
+          lore1: "&7Список магазинов"
+          lore2: "&7Команда: /city market"
+        info:
+          name: "&eИнфо"
+          lore1: "&7Правила и подсказки"
+          lore2: "&7Команда: /city"
+      unavailable:
+        no-quests: "&7Недоступно: квесты не установлены"
+    available: "&aДоступно"
+    unavailable:
+      no-permission: "&7Недоступно: нет прав"
+      condition: "&7Недоступно: условие не выполнено"
+    plots:
+      title: "&6Участки города"
+      empty: "&eУчастков нет"
+      filter:
+        all: "&eВсе"
+        available: "&aСвободные"
+        occupied: "&cЗанятые"
+        selected: "&7Выбрано"
+      page: "&eСтраница {current}/{total}"
+      back: "&cНазад в хаб"
+      status:
+        available: "&aСвободен"
+        occupied: "&cЗанят"
+      item:
+        name: "&e#{number} &7({id})"
+        lore1: "&7Тип: {type}"
+        lore2: "&7Цена: {price}"
+        lore3: "&7Владелец: {owner}"
+    plot:
+      title: "&eУчасток #{number}"
+      info:
+        name: "&eИнформация"
+        lore1: "&7ID: {id}"
+        lore2: "&7Тип: {type}"
+        lore3: "&7Цена: {price}"
+        lore4: "&7Владелец: {owner}"
+        lore5: "&7Мир: {world}"
+      action:
+        buy: "&aКупить"
+        rent: "&eОплатить аренду"
+        owner: "&eВладелец"
+        teleport: "&bТелепорт"
+        members: "&eУчастники"
+        release: "&cОсвободить"
+      action_lore:
+        buy: "&7Купить этот участок"
+        rent: "&7Оплатить аренду магазина"
+        owner: "&7Показать владельца"
+        teleport: "&7Телепортироваться на участок"
+        members: "&7Список участников"
+        release: "&7Отказаться от участка"
+      none: "&cУ вас нет участка. &7Подсказка: /city plot buy #<номер> или /city plot nearby."
+    btn:
+      show_border: "&aПоказать границу"
+      regions: "&7Регионы"
+      plots: "&eУчастки"
+      selection: "&eВыделение"
+      help: "&7Помощь"
+      access: "&eДоступ"
+      info: "&eИнфо"
+      teleport: "&bТелепорт"
+      set_owner_player: "&eНазначить владельца: игрок"
+      set_owner_guild: "&eНазначить владельца: гильдия"
+    gui:
+      title: "&6Город"
+      hint: "&7Выбери действие"
+      available: "&aДоступно"
+      unavailable:
+        no-permission: "&7Недоступно: нет прав"
+        no-plot: "&7Недоступно: нет участка"
+        condition: "&7Недоступно: условие не выполнено"
+      item:
+        help:
+          name: "&eПомощь"
+          lore1: "&7Открыть подсказки по командам"
+          lore2: "&7Команда: /city"
+        plot-nearby:
+          name: "&eУчастки рядом"
+          lore1: "&7Показать ближайшие участки"
+          lore2: "&7Команда: /city plot nearby"
+        plot-info:
+          name: "&eИнфо участка"
+          lore1: "&7Показать информацию об участке"
+          lore2: "&7Команда: /city plot info"
+        plot-buy:
+          name: "&eКупить участок"
+          lore1: "&7Купить участок, на котором вы стоите"
+          lore2: "&7Команда: /city plot buy"
+        plot-members:
+          name: "&eУчастники участка"
+          lore1: "&7Список участников участка"
+          lore2: "&7Команда: /city plot members"
+        plot-addmember:
+          name: "&eДобавить участника"
+          lore1: "&7Добавить игрока в доступ"
+          lore2: "&7Команда: /city plot addmember"
+        plot-removemember:
+          name: "&eУдалить участника"
+          lore1: "&7Удалить игрока из доступа"
+          lore2: "&7Команда: /city plot removemember"
+        plot-release:
+          name: "&eОсвободить участок"
+          lore1: "&7Отказаться от участка"
+          lore2: "&7Команда: /city plot release"
+        plot-trust:
+          name: "&eДоверить участок"
+          lore1: "&7Добавить доверенного игрока"
+          lore2: "&7Команда: /city plot trust"
+        plot-untrust:
+          name: "&eСнять доверие"
+          lore1: "&7Удалить доверенного игрока"
+          lore2: "&7Команда: /city plot untrust"
+        plot-list:
+          name: "&eСписок участков"
+          lore1: "&7Показать все участки"
+          lore2: "&7Команда: /city plot list"
+        plot-create:
+          name: "&eСоздать участок"
+          lore1: "&7Создать участок по выделению"
+          lore2: "&7Команда: /city plot create"
+        plot-delete:
+          name: "&eУдалить участок"
+          lore1: "&7Удалить участок по id"
+          lore2: "&7Команда: /city plot delete"
+        plot-transfer:
+          name: "&eПередать участок"
+          lore1: "&7Передать участок игроку"
+          lore2: "&7Команда: /city plot transfer"
+        plot-sell:
+          name: "&eПродать участок"
+          lore1: "&7Продать участок игроку"
+          lore2: "&7Команда: /city plot sell"
+        plot-accept:
+          name: "&eПринять сделку"
+          lore1: "&7Принять предложение покупки"
+          lore2: "&7Команда: /city plot accept"
+        plot-goto:
+          name: "&eТелепорт к участку"
+          lore1: "&7Телепортироваться на участок"
+          lore2: "&7Команда: /city plot goto"
+        plot-setowner:
+          name: "&eНазначить владельца"
+          lore1: "&7Назначить владельца участка"
+          lore2: "&7Команда: /city plot setowner"
+        area-list:
+          name: "&eСписок городских зон"
+          lore1: "&7Показать зоны города"
+          lore2: "&7Команда: /city area list"
+        area-wand:
+          name: "&eТопор выделения"
+          lore1: "&7Включить инструмент выделения"
+          lore2: "&7Команда: /city area wand"
+        area-create:
+          name: "&eСоздать зону"
+          lore1: "&7Создать городскую зону"
+          lore2: "&7Команда: /city area create"
+        area-delete:
+          name: "&eУдалить зону"
+          lore1: "&7Удалить городскую зону"
+          lore2: "&7Команда: /city area delete"
+        market-list:
+          name: "&eРынок"
+          lore1: "&7Показать список магазинов"
+          lore2: "&7Команда: /city market"
+        market-near:
+          name: "&eРынок рядом"
+          lore1: "&7Найти магазины поблизости"
+          lore2: "&7Команда: /city market near"
+        market-search:
+          name: "&eПоиск на рынке"
+          lore1: "&7Поиск по товарам"
+          lore2: "&7Команда: /city market search"
+        market-category:
+          name: "&eКатегория рынка"
+          lore1: "&7Список по категории"
+          lore2: "&7Команда: /city market category"
+        market-info:
+          name: "&eИнфо магазина"
+          lore1: "&7Информация по магазину"
+          lore2: "&7Команда: /city market info"
+        market-goto:
+          name: "&eТелепорт к магазину"
+          lore1: "&7Телепортироваться к магазину"
+          lore2: "&7Команда: /city market goto"
+        market-hub:
+          name: "&eХаб рынка"
+          lore1: "&7Телепорт на рыночный хаб"
+          lore2: "&7Команда: /city market hub"
+        shop-setup:
+          name: "&eНастройка магазина"
+          lore1: "&7Показать информацию о магазине"
+          lore2: "&7Команда: /city shop setup"
+        shop-open:
+          name: "&eОткрыть магазин"
+          lore1: "&7Открыть магазин для покупателей"
+          lore2: "&7Команда: /city shop open"
+        shop-close:
+          name: "&eЗакрыть магазин"
+          lore1: "&7Закрыть магазин для покупателей"
+          lore2: "&7Команда: /city shop close"
+        shop-set:
+          name: "&eНастроить магазин"
+          lore1: "&7Изменить параметры магазина"
+          lore2: "&7Команда: /city shop set"
+        shop-list:
+          name: "&eТочки магазина"
+          lore1: "&7Список точек магазина"
+          lore2: "&7Команда: /city shop list"
+        shop-info:
+          name: "&eИнфо точки магазина"
+          lore1: "&7Информация о точке магазина"
+          lore2: "&7Команда: /city shop info"
+        shop-remove:
+          name: "&eУдалить точку"
+          lore1: "&7Удалить точку магазина"
+          lore2: "&7Команда: /city shop remove"
+        shop-rent-status:
+          name: "&eСтатус аренды"
+          lore1: "&7Проверить аренду магазина"
+          lore2: "&7Команда: /city shop rent status"
+        shop-rent-pay:
+          name: "&eОплатить аренду"
+          lore1: "&7Оплатить аренду магазина"
+          lore2: "&7Команда: /city shop rent pay"
+    access:
+      add: "&aДобавить доверенного"
+      remove: "&cКлик: убрать доступ"
+      remove_all:
+        button: "&cУбрать всех доверенных"
+        confirm: "&eНажмите ещё раз, чтобы убрать всех доверенных."
+        success: "&aВсе доверенные удалены."
+        cancelled: "&cПодтверждение удаления отменено."
+    selection:
+      pos1:
+        set: "&aУстановить позицию 1"
+      pos2:
+        set: "&aУстановить позицию 2"
+      clear: "&cОчистить выделение"
+      status: "&eСтатус выделения"
+    error:
+      disabled: "&cGUI отключена."
+      no_permission: "&cУ вас нет прав."
+      action_failed: "&cНе удалось выполнить действие: {reason}"
 chatinput:
   cancelled: "&eВвод отменён."
   timeout: "&cВремя ввода истекло."

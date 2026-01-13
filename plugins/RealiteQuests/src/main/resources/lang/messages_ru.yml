@@ -14,7 +14,17 @@ quests:
     magic_missing: "Для магических целей квестов требуется модуль Magic."
     magic_unknown_spell: "Неизвестный spellId для магической цели квеста."
     magic_invalid_amount: "Некорректное значение amount/level для магической цели квеста."
-  gui:
+
+ui:
+  common:
+    back: "&7Назад"
+    close: "&cЗакрыть"
+    prev: "&7Назад"
+    next: "&7Вперёд"
+    confirm: "&aПодтвердить"
+    cancel: "&cОтмена"
+    coming_soon: "&8Скоро."
+  quests:
     hub:
       title: "&6Квесты"
       tab:
@@ -26,14 +36,10 @@ quests:
         status: "&7Статус: &f{status}"
         view: "&eОткрыть детали"
       empty: "&7В этой вкладке нет квестов."
-      prev: "&7Назад"
-      next: "&7Вперёд"
       page: "&7Страница &f{page}&7/&f{total}"
-      close: "&cЗакрыть"
     sort:
       title: "&6Сортировка"
       current: "&7Сейчас: &f{sort}"
-      coming_soon: "&8Сортировка по сложности/уровню появится позже."
       type: "Тип"
       difficulty: "Сложность"
       level: "Уровень"
@@ -45,7 +51,6 @@ quests:
       reward_amount: "&7Количество: &f{amount}"
       track: "&aОтслеживать"
       abandon: "&cОтказаться"
-      back: "&7Назад"
       more: "&7Ещё цели..."
       not_found: "&cКвест не найден."
       status:
@@ -57,5 +62,3 @@ quests:
       class_xp: "&dОпыт класса"
       item: "&eПредмет &7({item})"
       quest_unlock: "&bРазблокировка &7({unlock})"
-    common:
-      coming_soon: "&8Скоро."

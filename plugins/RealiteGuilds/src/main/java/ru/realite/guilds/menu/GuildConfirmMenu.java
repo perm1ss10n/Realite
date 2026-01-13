@@ -30,12 +30,12 @@ public final class GuildConfirmMenu extends GuildMenu {
 
     private void build(Component description) {
         fillFiller(Material.BLACK_STAINED_GLASS_PANE);
-        setButton(13, Material.PAPER, messages.msg("gui.confirm.info"), List.of(description), null);
-        setButton(11, Material.LIME_CONCRETE, messages.msg("gui.confirm.confirm"), List.of(), player -> {
+        setButton(13, Material.PAPER, messages.msg("ui.guild.confirm.info"), List.of(description), null);
+        setButton(11, Material.LIME_CONCRETE, messages.msg("ui.common.confirm"), List.of(), player -> {
             player.closeInventory();
             onConfirm.accept(player);
         });
-        setButton(15, Material.RED_CONCRETE, messages.msg("gui.confirm.cancel"), List.of(), player -> {
+        setButton(15, Material.RED_CONCRETE, messages.msg("ui.common.cancel"), List.of(), player -> {
             if (onCancel != null) {
                 player.closeInventory();
                 onCancel.accept(player);
@@ -49,8 +49,8 @@ public final class GuildConfirmMenu extends GuildMenu {
         GuildConfirmMenu menu = new GuildConfirmMenu(
                 manager,
                 manager.messages(),
-                "gui.confirm.leave.title",
-                manager.messages().msg("gui.confirm.leave.desc"),
+                "ui.guild.confirm.leave.title",
+                manager.messages().msg("ui.guild.confirm.leave.desc"),
                 target -> manager.service().leave(target),
                 manager::openRoot
         );
@@ -61,8 +61,8 @@ public final class GuildConfirmMenu extends GuildMenu {
         GuildConfirmMenu menu = new GuildConfirmMenu(
                 manager,
                 manager.messages(),
-                "gui.confirm.disband.title",
-                manager.messages().msg("gui.confirm.disband.desc"),
+                "ui.guild.confirm.disband.title",
+                manager.messages().msg("ui.guild.confirm.disband.desc"),
                 target -> manager.service().disband(target),
                 manager::openRoot
         );
@@ -76,13 +76,13 @@ public final class GuildConfirmMenu extends GuildMenu {
             String upgradeName,
             String cost,
             int returnPage) {
-        Component description = manager.messages().msg("gui.confirm.upgrade.desc",
+        Component description = manager.messages().msg("ui.guild.confirm.upgrade.desc",
                 "name", upgradeName,
                 "cost", cost);
         GuildConfirmMenu menu = new GuildConfirmMenu(
                 manager,
                 manager.messages(),
-                "gui.confirm.upgrade.title",
+                "ui.guild.confirm.upgrade.title",
                 description,
                 target -> handleUpgradePurchase(manager, target, upgradeId, returnPage),
                 target -> manager.openUpgrades(target, returnPage)

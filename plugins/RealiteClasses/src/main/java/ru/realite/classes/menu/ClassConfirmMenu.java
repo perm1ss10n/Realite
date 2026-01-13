@@ -45,11 +45,11 @@ public final class ClassConfirmMenu extends BaseMenu {
                 null);
 
         setButton(21, Material.LIME_WOOL,
-                Components.cSection(manager.messages().get("menu.confirm.confirm")),
+                Components.cSection(manager.messages().get("ui.common.confirm")),
                 null,
                 p -> manager.assignClass(p, classId));
         setButton(23, Material.ARROW,
-                Components.cSection(manager.messages().get("menu.confirm.back")),
+                Components.cSection(manager.messages().get("ui.common.back")),
                 null,
                 p -> manager.openDetails(p, classId));
     }
@@ -58,7 +58,7 @@ public final class ClassConfirmMenu extends BaseMenu {
         var def = manager.classConfig().get(classId);
         var loreDef = manager.classLore() != null ? manager.classLore().get(classId) : null;
         return Components.cSection(manager.messages().format(
-                "menu.confirm.title",
+                "ui.classes.confirm.title",
                 Map.of("class", displayName(def, loreDef))));
     }
 

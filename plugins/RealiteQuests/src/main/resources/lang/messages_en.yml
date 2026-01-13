@@ -14,7 +14,17 @@ quests:
     magic_missing: "Magic module required for magic quest objectives."
     magic_unknown_spell: "Unknown spellId for magic quest objective."
     magic_invalid_amount: "Invalid amount/level for magic quest objective."
-  gui:
+
+ui:
+  common:
+    back: "&7Back"
+    close: "&cClose"
+    prev: "&7Previous"
+    next: "&7Next"
+    confirm: "&aConfirm"
+    cancel: "&cCancel"
+    coming_soon: "&8Coming soon."
+  quests:
     hub:
       title: "&6Quests Hub"
       tab:
@@ -26,14 +36,10 @@ quests:
         status: "&7Status: &f{status}"
         view: "&eClick to view details"
       empty: "&7No quests in this tab."
-      prev: "&7Previous"
-      next: "&7Next"
       page: "&7Page &f{page}&7/&f{total}"
-      close: "&cClose"
     sort:
       title: "&6Sort"
       current: "&7Current: &f{sort}"
-      coming_soon: "&8Difficulty/level sorting coming soon."
       type: "Type"
       difficulty: "Difficulty"
       level: "Level"
@@ -45,7 +51,6 @@ quests:
       reward_amount: "&7Amount: &f{amount}"
       track: "&aTrack"
       abandon: "&cAbandon"
-      back: "&7Back"
       more: "&7More objectives..."
       not_found: "&cQuest not found."
       status:
@@ -57,5 +62,3 @@ quests:
       class_xp: "&dClass XP"
       item: "&eItem &7({item})"
       quest_unlock: "&bUnlock &7({unlock})"
-    common:
-      coming_soon: "&8Coming soon."

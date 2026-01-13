@@ -11,7 +11,7 @@ public final class GuildJoinMenu extends GuildMenu {
     private static final int SIZE = 27;
 
     public GuildJoinMenu(GuildMenuManager manager, GuildMessages messages, List<String> invites) {
-        super(manager, messages, SIZE, "gui.join.title");
+        super(manager, messages, SIZE, "ui.guild.join.title");
         build(invites);
     }
 
@@ -19,14 +19,14 @@ public final class GuildJoinMenu extends GuildMenu {
         fillFiller(Material.BLACK_STAINED_GLASS_PANE);
         int index = 10;
         for (String tag : invites) {
-            Component name = messages.msg("gui.join.entry", "tag", tag);
-            setButton(index, Material.OAK_DOOR, name, List.of(messages.msg("gui.join.lore")), player -> {
+            Component name = messages.msg("ui.guild.join.entry", "tag", tag);
+            setButton(index, Material.OAK_DOOR, name, List.of(messages.msg("ui.guild.join.lore")), player -> {
                 manager.runCommand(player, "g join " + tag);
                 player.closeInventory();
             });
             index++;
         }
-        setButton(18, Material.ARROW, "gui.menu.back", List.of("gui.menu.back_lore"), manager::openRoot);
-        setButton(26, Material.BARRIER, "gui.menu.close", List.of(), Player::closeInventory);
+        setButton(18, Material.ARROW, "ui.common.back", List.of("ui.guild.menu.back_lore"), manager::openRoot);
+        setButton(26, Material.BARRIER, "ui.common.close", List.of(), Player::closeInventory);
     }
 }

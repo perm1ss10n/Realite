@@ -48,7 +48,7 @@ public final class UiSettingsMenu extends BaseMenu {
                 List.of(currentProviderLore(settings, UiSlot.ACTION_BAR), messages.get("ui.settings.choose")),
                 p -> new UiProviderSelectMenu(messages, settingsStore, hudService, registry, UiSlot.ACTION_BAR)
                         .open(p));
-        setButton(22, Material.OAK_DOOR, messages.get("ui.menu.close"), null, Player::closeInventory);
+        setButton(22, Material.OAK_DOOR, messages.get("ui.common.close"), null, Player::closeInventory);
     }
 
     private Component currentProviderLore(UiSettings settings, UiSlot slot) {

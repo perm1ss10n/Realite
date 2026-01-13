@@ -112,12 +112,12 @@ public final class CityAdminService {
         if (!access.isAllowed()) {
             return access;
         }
-        return AccessResult.deny("gui.error.action_failed");
+        return AccessResult.deny("ui.city.error.action_failed");
     }
 
     private AccessResult requireAdmin(Player player) {
         if (player == null || !player.hasPermission(ADMIN_PERMISSION)) {
-            return AccessResult.deny("gui.error.no_permission");
+            return AccessResult.deny("ui.city.error.no_permission");
         }
         return AccessResult.allow();
     }

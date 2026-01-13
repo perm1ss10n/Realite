@@ -127,7 +127,7 @@ public final class ShopPointListener implements Listener {
     }
 
     private void openMenu(Player player, ShopPoint point) {
-        Component title = messages.get("city.shop.point.menu.title", "");
+        Component title = messages.get("ui.city.shop.point.menu.title", "");
         Inventory inventory = Bukkit.createInventory(player, 9, title);
         updateToggleItem(inventory, point.enabled());
         menus.put(player.getUniqueId(), new MenuState(point.id(), inventory));
@@ -138,8 +138,8 @@ public final class ShopPointListener implements Listener {
         ItemStack item = new ItemStack(enabled ? Material.LIME_DYE : Material.GRAY_DYE);
         ItemMeta meta = item.getItemMeta();
         meta.displayName(messages.get(enabled
-                ? "city.shop.point.menu.toggle.enabled"
-                : "city.shop.point.menu.toggle.disabled", ""));
+                ? "ui.city.shop.point.menu.toggle.enabled"
+                : "ui.city.shop.point.menu.toggle.disabled", ""));
         item.setItemMeta(meta);
         inventory.setItem(TOGGLE_SLOT, item);
     }

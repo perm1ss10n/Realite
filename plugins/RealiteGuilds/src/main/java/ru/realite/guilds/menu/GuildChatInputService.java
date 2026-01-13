@@ -36,7 +36,7 @@ public final class GuildChatInputService implements Listener {
         UUID uuid = player.getUniqueId();
         BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> pendingInputs.remove(uuid), timeoutTicks);
         pendingInputs.put(uuid, new PendingInput(type, task));
-        messages.send(player, "gui.input.cancel_hint");
+        messages.send(player, "ui.guild.input.cancel_hint");
         messages.send(player, type.promptKey());
     }
 
@@ -79,11 +79,11 @@ public final class GuildChatInputService implements Listener {
     }
 
     public enum InputType {
-        CREATE("gui.input.create", "g create "),
-        INVITE("gui.input.invite", "g invite "),
-        SETRANK("gui.input.setrank", "g setrank "),
-        TP("gui.input.tp", "g tp "),
-        UPGRADE_BUY("gui.input.upgrade_buy", "g upgrade buy ");
+        CREATE("ui.guild.input.create", "g create "),
+        INVITE("ui.guild.input.invite", "g invite "),
+        SETRANK("ui.guild.input.setrank", "g setrank "),
+        TP("ui.guild.input.tp", "g tp "),
+        UPGRADE_BUY("ui.guild.input.upgrade_buy", "g upgrade buy ");
 
         private final String promptKey;
         private final String commandPrefix;

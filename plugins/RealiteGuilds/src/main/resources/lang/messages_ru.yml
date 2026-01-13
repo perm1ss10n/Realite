@@ -173,122 +173,124 @@ xp:
   added: "{prefix}&aГильдия &f[{tag}]&a получила &f{amount}&a XP. Всего: &f{total}&a, уровень: &f{level}&a. Причина: &f{reason}&a."
   levelup: "{prefix}&aГильдия &f[{tag}]&a достигла уровня &f{level}&a!"
 
-gui:
-  main:
-    title: "&6&lГильдия"
-    no_guild: "&cВы не состоите в гильдии."
-    create: "&eСоздать гильдию"
-    join: "&eВступить в гильдию"
-    close: "&cЗакрыть"
-    info:
-      title: "&eИнфо о гильдии"
-      name: "&7Название: &f{name}"
-      tag: "&7Тег: &f[{tag}]"
-      level: "&7Уровень: &f{level}"
-      xp: "&7XP: &f{xp}"
-      members: "&7Участники: &f{count}/{max}"
-      treasury: "&7Казна: &f{amount}"
-    members: "&aУчастники"
-    ranks: "&aРанги и права"
-    ranks_disabled: "&7Ранги недоступны"
-    upgrades: "&aАпгрейды"
-    upgrades_disabled: "&7Апгрейды недоступны"
-    treasury: "&aКазна"
-    settings_disabled: "&7Настройки"
-    invite: "&eПригласить"
-    leave: "&cПокинуть гильдию"
-    disband: "&cРасформировать гильдию"
-    lore:
-      open: "&7ЛКМ — открыть"
-      run: "&7ЛКМ — выполнить"
-      input: "&7ЛКМ — ввод в чат"
-      confirm: "&7ЛКМ — подтвердить"
-      unavailable: "&7Недоступно"
-
-  members:
-    title: "&aУчастники гильдии"
-    invite: "&eПригласить"
-    invite_disabled: "&7Приглашения недоступны"
-    entry:
-      title: "&f{name}"
-      rank: "&7Ранг: &f{rank}"
-      online: "&aВ сети"
-      offline: "&7Не в сети"
-      owner: "&6Лидер"
-      member: "&7Участник"
-
-  member:
-    title: "&aПрофиль участника"
-    name: "&f{name}"
-    rank: "&7Ранг: &f{rank}"
-    online: "&aВ сети"
-    offline: "&7Не в сети"
-    promote: "&aПовысить"
-    demote: "&eПонизить"
-    promote_lore: "&7ЛКМ — повысить"
-    demote_lore: "&7ЛКМ — понизить"
-    rank_target: "&7Новый ранг: &f{rank}"
-    promote_disabled: "&7Нельзя повысить"
-    demote_disabled: "&7Нельзя понизить"
-    kick_disabled: "&7Кик (недоступно)"
-    unavailable: "&7Недоступно"
-
-  upgrades:
-    title: "&aАпгрейды гильдии"
-    description: "&7{description}"
-    level: "&7Уровень: &f{level}/{max}"
-    cost: "&7Стоимость: &f{amount}"
-    cost_maxed: "&aМакс. уровень"
-    cost_unavailable: "&7Стоимость недоступна"
-    req_level: "&7Требуется уровень: &f{level}"
-    click_to_buy: "&eЛКМ — купить"
-    disabled: "&7Апгрейд отключён"
-    unavailable: "{prefix}&cАпгрейды недоступны."
-
-  treasury:
-    title: "&aКазна гильдии"
-    balance_title: "&eБаланс"
-    balance: "&7Баланс: &f{amount}"
-    deposit_disabled: "&7Внести"
-    withdraw_disabled: "&7Снять"
-    history_disabled: "&7История"
-    unavailable: "&7Функция недоступна"
-    no_permission: "&cНет прав"
-
-  confirm:
-    info: "&eПодтвердите действие"
-    confirm: "&aПодтвердить"
-    cancel: "&cОтмена"
-    leave:
-      title: "&cПокинуть гильдию?"
-      desc: "&7Вы уверены, что хотите покинуть гильдию?"
-    disband:
-      title: "&cРасформировать гильдию?"
-      desc: "&7Вы уверены, что хотите расформировать гильдию?"
-    upgrade:
-      title: "&6Купить апгрейд?"
-      desc: "&7Купить &f{name} &7за &f{cost}&7?"
-
-  join:
-    title: "&aВыберите гильдию"
-    entry: "&eВступить в &f[{tag}]"
-    lore: "&7ЛКМ — вступить"
-
-  menu:
+ui:
+  common:
     back: "&7Назад"
     close: "&cЗакрыть"
     prev: "&7Предыдущая"
     next: "&7Следующая"
-    back_lore: "&7ЛКМ — назад"
-    page_lore: "&7ЛКМ — страница"
-    input_lore: "&7ЛКМ — ввод в чат"
-    prev_disabled: "&7Нет предыдущей"
-    next_disabled: "&7Нет следующей"
+    confirm: "&aПодтвердить"
+    cancel: "&cОтмена"
+    coming_soon: "&8Скоро будет."
+  guild:
+    main:
+      title: "&6&lГильдия"
+      no_guild: "&cВы не состоите в гильдии."
+      create: "&eСоздать гильдию"
+      join: "&eВступить в гильдию"
+      info:
+        title: "&eИнфо о гильдии"
+        name: "&7Название: &f{name}"
+        tag: "&7Тег: &f[{tag}]"
+        level: "&7Уровень: &f{level}"
+        xp: "&7XP: &f{xp}"
+        members: "&7Участники: &f{count}/{max}"
+        treasury: "&7Казна: &f{amount}"
+      members: "&aУчастники"
+      ranks: "&aРанги и права"
+      ranks_disabled: "&7Ранги недоступны"
+      upgrades: "&aАпгрейды"
+      upgrades_disabled: "&7Апгрейды недоступны"
+      treasury: "&aКазна"
+      settings_disabled: "&7Настройки"
+      invite: "&eПригласить"
+      leave: "&cПокинуть гильдию"
+      disband: "&cРасформировать гильдию"
+      lore:
+        open: "&7ЛКМ — открыть"
+        run: "&7ЛКМ — выполнить"
+        input: "&7ЛКМ — ввод в чат"
+        confirm: "&7ЛКМ — подтвердить"
+        unavailable: "&7Недоступно"
 
-  input:
-    cancel_hint: "{prefix}&7Напишите &cотмена&7 чтобы выйти из ввода."
-    create: "{prefix}&eВведите: &f<tag> <name...>&e (пример: &6ABC &fМоя гильдия&e)"
-    invite: "{prefix}&eВведите ник игрока для приглашения."
-    setrank: "{prefix}&eВведите: &f<player> <rankId>&e (пример: &6Steve member&e)"
-    tp: "{prefix}&eВведите ник участника гильдии для телепорта."
-    upgrade_buy: "{prefix}&eВведите id апгрейда для покупки."
+    members:
+      title: "&aУчастники гильдии"
+      invite: "&eПригласить"
+      invite_disabled: "&7Приглашения недоступны"
+      entry:
+        title: "&f{name}"
+        rank: "&7Ранг: &f{rank}"
+        online: "&aВ сети"
+        offline: "&7Не в сети"
+        owner: "&6Лидер"
+        member: "&7Участник"
+
+    member:
+      title: "&aПрофиль участника"
+      name: "&f{name}"
+      rank: "&7Ранг: &f{rank}"
+      online: "&aВ сети"
+      offline: "&7Не в сети"
+      promote: "&aПовысить"
+      demote: "&eПонизить"
+      promote_lore: "&7ЛКМ — повысить"
+      demote_lore: "&7ЛКМ — понизить"
+      rank_target: "&7Новый ранг: &f{rank}"
+      promote_disabled: "&7Нельзя повысить"
+      demote_disabled: "&7Нельзя понизить"
+      kick_disabled: "&7Кик (недоступно)"
+      unavailable: "&7Недоступно"
+
+    upgrades:
+      title: "&aАпгрейды гильдии"
+      description: "&7{description}"
+      level: "&7Уровень: &f{level}/{max}"
+      cost: "&7Стоимость: &f{amount}"
+      cost_maxed: "&aМакс. уровень"
+      cost_unavailable: "&7Стоимость недоступна"
+      req_level: "&7Требуется уровень: &f{level}"
+      click_to_buy: "&eЛКМ — купить"
+      disabled: "&7Апгрейд отключён"
+      unavailable: "{prefix}&cАпгрейды недоступны."
+
+    treasury:
+      title: "&aКазна гильдии"
+      balance_title: "&eБаланс"
+      balance: "&7Баланс: &f{amount}"
+      deposit_disabled: "&7Внести"
+      withdraw_disabled: "&7Снять"
+      history_disabled: "&7История"
+      unavailable: "&7Функция недоступна"
+      no_permission: "&cНет прав"
+
+    confirm:
+      info: "&eПодтвердите действие"
+      leave:
+        title: "&cПокинуть гильдию?"
+        desc: "&7Вы уверены, что хотите покинуть гильдию?"
+      disband:
+        title: "&cРасформировать гильдию?"
+        desc: "&7Вы уверены, что хотите расформировать гильдию?"
+      upgrade:
+        title: "&6Купить апгрейд?"
+        desc: "&7Купить &f{name} &7за &f{cost}&7?"
+
+    join:
+      title: "&aВыберите гильдию"
+      entry: "&eВступить в &f[{tag}]"
+      lore: "&7ЛКМ — вступить"
+
+    menu:
+      back_lore: "&7ЛКМ — назад"
+      page_lore: "&7ЛКМ — страница"
+      input_lore: "&7ЛКМ — ввод в чат"
+      prev_disabled: "&7Нет предыдущей"
+      next_disabled: "&7Нет следующей"
+
+    input:
+      cancel_hint: "{prefix}&7Напишите &cотмена&7 чтобы выйти из ввода."
+      create: "{prefix}&eВведите: &f<tag> <name...>&e (пример: &6ABC &fМоя гильдия&e)"
+      invite: "{prefix}&eВведите ник игрока для приглашения."
+      setrank: "{prefix}&eВведите: &f<player> <rankId>&e (пример: &6Steve member&e)"
+      tp: "{prefix}&eВведите ник участника гильдии для телепорта."
+      upgrade_buy: "{prefix}&eВведите id апгрейда для покупки."

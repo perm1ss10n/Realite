@@ -74,7 +74,7 @@ public final class ClassMenuManager {
         if (hudService != null) {
             hudService.refreshNow(player);
         }
-        player.sendMessage(messages.format("menu.settings.updated",
+        player.sendMessage(messages.format("ui.classes.settings.updated",
                 Map.of("mode", mode.name())));
         player.closeInventory();
     }

@@ -32,7 +32,7 @@ public final class GuildMembersMenu extends GuildMenu {
             GuildRankService rankService,
             int page,
             Player viewer) {
-        super(manager, messages, SIZE, "gui.members.title");
+        super(manager, messages, SIZE, "ui.guild.members.title");
         this.repository = repository;
         this.rankService = rankService;
         this.viewer = viewer;
@@ -70,26 +70,26 @@ public final class GuildMembersMenu extends GuildMenu {
             setMemberItem(member, guild, slot);
         }
 
-        setButton(45, Material.ARROW, "gui.menu.back", List.of("gui.menu.back_lore"), manager::openRoot);
+        setButton(45, Material.ARROW, "ui.common.back", List.of("ui.guild.menu.back_lore"), manager::openRoot);
         if (page > 0) {
-            setButton(48, Material.ARROW, "gui.menu.prev", List.of("gui.menu.page_lore"),
+            setButton(48, Material.ARROW, "ui.common.prev", List.of("ui.guild.menu.page_lore"),
                     player -> manager.openMembers(player, page - 1));
         } else {
-            setButton(48, Material.GRAY_DYE, messages.msg("gui.menu.prev_disabled"), null, null);
+            setButton(48, Material.GRAY_DYE, messages.msg("ui.guild.menu.prev_disabled"), null, null);
         }
         if (end < members.size()) {
-            setButton(50, Material.ARROW, "gui.menu.next", List.of("gui.menu.page_lore"),
+            setButton(50, Material.ARROW, "ui.common.next", List.of("ui.guild.menu.page_lore"),
                     player -> manager.openMembers(player, page + 1));
         } else {
-            setButton(50, Material.GRAY_DYE, messages.msg("gui.menu.next_disabled"), null, null);
+            setButton(50, Material.GRAY_DYE, messages.msg("ui.guild.menu.next_disabled"), null, null);
         }
 
         boolean canInvite = rankService.hasPermission(viewerMember.role(), GuildRankPermission.INVITE);
         if (canInvite) {
-            setButton(53, Material.PAPER, "gui.members.invite", List.of("gui.menu.input_lore"),
+            setButton(53, Material.PAPER, "ui.guild.members.invite", List.of("ui.guild.menu.input_lore"),
                     player -> manager.requestInput(player, GuildChatInputService.InputType.INVITE));
         } else {
-            setButton(53, Material.GRAY_DYE, messages.msg("gui.members.invite_disabled"), null, null);
+            setButton(53, Material.GRAY_DYE, messages.msg("ui.guild.members.invite_disabled"), null, null);
         }
     }
 
@@ -98,13 +98,15 @@ public final class GuildMembersMenu extends GuildMenu {
         String name = offline.getName() == null ? member.uuid().toString() : offline.getName();
         GuildRankService.GuildRank rank = rankService.getRank(member.role());
         String rankName = rank == null ? member.role() : messages.raw(rank.displayNameKey());
-        Component title = messages.msg("gui.members.entry.title", "name", name);
+        Component title = messages.msg("ui.guild.members.entry.title", "name", name);
         List<Component> lore = List.of(
-                messages.msg("gui.members.entry.rank", "rank", rankName),
-                messages.msg(offline.isOnline() ? "gui.members.entry.online" : "gui.members.entry.offline"),
+                messages.msg("ui.guild.members.entry.rank", "rank", rankName),
+                messages.msg(offline.isOnline()
+                        ? "ui.guild.members.entry.online"
+                        : "ui.guild.members.entry.offline"),
                 guild.owner().equals(member.uuid())
-                        ? messages.msg("gui.members.entry.owner")
-                        : messages.msg("gui.members.entry.member")
+                        ? messages.msg("ui.guild.members.entry.owner")
+                        : messages.msg("ui.guild.members.entry.member")
         );
         setButton(slot, Material.PLAYER_HEAD, title, lore,
                 player -> manager.openMemberProfile(player, member.uuid(), page));

@@ -30,7 +30,7 @@ public final class PlotCommand implements CommandExecutor {
             return true;
         }
         if (guiService == null || !guiService.playerGuiEnabled()) {
-            messages.send(player, "gui.error.disabled", "");
+            messages.send(player, "ui.city.error.disabled", "");
             return true;
         }
         guiService.openPlayerMain(player);

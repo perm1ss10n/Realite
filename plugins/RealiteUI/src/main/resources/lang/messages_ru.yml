@@ -2,6 +2,14 @@ format:
   prefix: "<gray>[UI]</gray> "
 
 ui:
+  common:
+    back: "<yellow>Назад</yellow>"
+    close: "<red>Закрыть</red>"
+    next: "<green>Далее</green>"
+    prev: "<green>Назад</green>"
+    confirm: "<green>Подтвердить</green>"
+    cancel: "<red>Отмена</red>"
+    coming_soon: "<gray>Скоро.</gray>"
   command:
     player_only: "<red>Только для игроков.</red>"
   hud:
@@ -9,10 +17,6 @@ ui:
     actionbar: "<yellow>{provider}</yellow> <gray>{current}/{max}</gray>"
   menu:
     filler: "<gray> </gray>"
-    back: "<yellow>Назад</yellow>"
-    close: "<red>Закрыть</red>"
-    next: "<green>Далее</green>"
-    previous: "<green>Назад</green>"
     page: "<gray>Страница <white>{page}</white>/<white>{pages}</white></gray>"
   settings:
     title: "<gold>Настройки интерфейса</gold>"

@@ -126,41 +126,46 @@ info-body:
   - "&7Стоимость: &e{nextCostMoney} &7| предметы: &e{nextCostItems}"
   - "&7Мастерство: {mastered}"
 
-menu:
-  close: "&7Закрыть"
-  classes:
-    title: "&6Классы"
-    progress: "&eПрогресс"
-    progress-lore:
-      - "&7Информация о текущем классе"
-      - "&7и эволюциях"
-  details:
-    title: "&6Класс: &e{class}"
-    choose: "&aВыбрать класс"
+ui:
+  common:
     back: "&7Назад"
-    effects-title: "&6Бонусы"
-    evolutions-title: "&6Эволюции"
-    evolutions-empty: "&7Эволюций нет."
-    evolution-entry: "&7- &e{evolution} &7(ур. {level})"
-  confirm:
-    title: "&6Подтверждение: &e{class}"
+    close: "&7Закрыть"
+    prev: "&7Предыдущая"
+    next: "&7Следующая"
     confirm: "&aПодтвердить"
-    back: "&7Назад"
-  settings:
-    title: "&6Настройки HUD"
-    bossbar: "&6BossBar"
-    bossbar-lore:
-      - "&7Полоска сверху экрана"
-      - "&7Рекомендуется (дефолт)"
-    actionbar: "&aActionBar"
-    actionbar-lore:
-      - "&7Текст над хотбаром снизу"
-      - "&7Может перетираться другими плагинами"
-    sidebar: "&bSidebar"
-    sidebar-lore:
-      - "&7Список справа (scoreboard)"
-      - "&7Может конфликтовать с другими scoreboard"
-    off: "&cOff"
-    off-lore:
-      - "&7Скрыть HUD класса"
-    updated: "&aHUD класса: &f{mode}"
+    cancel: "&cОтмена"
+    coming_soon: "&8Скоро будет."
+  classes:
+    main:
+      title: "&6Классы"
+      progress: "&eПрогресс"
+      progress-lore:
+        - "&7Информация о текущем классе"
+        - "&7и эволюциях"
+    details:
+      title: "&6Класс: &e{class}"
+      choose: "&aВыбрать класс"
+      effects-title: "&6Бонусы"
+      evolutions-title: "&6Эволюции"
+      evolutions-empty: "&7Эволюций нет."
+      evolution-entry: "&7- &e{evolution} &7(ур. {level})"
+    confirm:
+      title: "&6Подтверждение: &e{class}"
+    settings:
+      title: "&6Настройки HUD"
+      bossbar: "&6BossBar"
+      bossbar-lore:
+        - "&7Полоска сверху экрана"
+        - "&7Рекомендуется (дефолт)"
+      actionbar: "&aActionBar"
+      actionbar-lore:
+        - "&7Текст над хотбаром снизу"
+        - "&7Может перетираться другими плагинами"
+      sidebar: "&bSidebar"
+      sidebar-lore:
+        - "&7Список справа (scoreboard)"
+        - "&7Может конфликтовать с другими scoreboard"
+      off: "&cOff"
+      off-lore:
+        - "&7Скрыть HUD класса"
+      updated: "&aHUD класса: &f{mode}"

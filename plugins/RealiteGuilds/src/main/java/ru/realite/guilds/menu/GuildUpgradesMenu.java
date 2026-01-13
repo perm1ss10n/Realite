@@ -34,7 +34,7 @@ public final class GuildUpgradesMenu extends GuildMenu {
             GuildUpgradeConfigRepository upgradeConfig,
             int page,
             Player viewer) {
-        super(manager, messages, SIZE, "gui.upgrades.title");
+        super(manager, messages, SIZE, "ui.guild.upgrades.title");
         this.repository = repository;
         this.upgradeService = upgradeService;
         this.upgradeConfig = upgradeConfig;
@@ -58,7 +58,7 @@ public final class GuildUpgradesMenu extends GuildMenu {
 
         GuildUpgradeService.UpgradeListResult listResult = upgradeService.list(viewer);
         if (listResult.status() != GuildUpgradeService.UpgradeListStatus.SUCCESS) {
-            messages.send(viewer, "gui.upgrades.unavailable");
+            messages.send(viewer, "ui.guild.upgrades.unavailable");
             return;
         }
         java.util.Map<String, GuildUpgradeService.UpgradeEntry> entryMap = listResult.entries().stream()
@@ -83,18 +83,18 @@ public final class GuildUpgradesMenu extends GuildMenu {
             setUpgradeItem(viewer, guild, definition, entryMap.get(definition.id().toLowerCase(java.util.Locale.ROOT)), slot);
         }
 
-        setButton(45, Material.ARROW, "gui.menu.back", List.of("gui.menu.back_lore"), manager::openRoot);
+        setButton(45, Material.ARROW, "ui.common.back", List.of("ui.guild.menu.back_lore"), manager::openRoot);
         if (page > 0) {
-            setButton(48, Material.ARROW, "gui.menu.prev", List.of("gui.menu.page_lore"),
+            setButton(48, Material.ARROW, "ui.common.prev", List.of("ui.guild.menu.page_lore"),
                     player -> manager.openUpgrades(player, page - 1));
         } else {
-            setButton(48, Material.GRAY_DYE, messages.msg("gui.menu.prev_disabled"), null, null);
+            setButton(48, Material.GRAY_DYE, messages.msg("ui.guild.menu.prev_disabled"), null, null);
         }
         if (end < upgrades.size()) {
-            setButton(50, Material.ARROW, "gui.menu.next", List.of("gui.menu.page_lore"),
+            setButton(50, Material.ARROW, "ui.common.next", List.of("ui.guild.menu.page_lore"),
                     player -> manager.openUpgrades(player, page + 1));
         } else {
-            setButton(50, Material.GRAY_DYE, messages.msg("gui.menu.next_disabled"), null, null);
+            setButton(50, Material.GRAY_DYE, messages.msg("ui.guild.menu.next_disabled"), null, null);
         }
     }
 
@@ -105,23 +105,23 @@ public final class GuildUpgradesMenu extends GuildMenu {
         double nextCost = entry == null ? 0.0d : entry.nextCost();
         List<Component> lore = new ArrayList<>();
         if (definition.description() != null && !definition.description().isBlank()) {
-            lore.add(messages.msg("gui.upgrades.description", "description", definition.description()));
+            lore.add(messages.msg("ui.guild.upgrades.description", "description", definition.description()));
         }
-        lore.add(messages.msg("gui.upgrades.level", "level", String.valueOf(currentLevel),
+        lore.add(messages.msg("ui.guild.upgrades.level", "level", String.valueOf(currentLevel),
                 "max", String.valueOf(definition.maxLevel())));
         if (maxed) {
-            lore.add(messages.msg("gui.upgrades.cost_maxed"));
+            lore.add(messages.msg("ui.guild.upgrades.cost_maxed"));
         } else if (nextCost <= 0.0d) {
-            lore.add(messages.msg("gui.upgrades.cost_unavailable"));
+            lore.add(messages.msg("ui.guild.upgrades.cost_unavailable"));
         } else {
-            lore.add(messages.msg("gui.upgrades.cost", "amount", formatAmount(nextCost)));
+            lore.add(messages.msg("ui.guild.upgrades.cost", "amount", formatAmount(nextCost)));
         }
 
         appendRequirements(lore, definition);
         if (!definition.enabled()) {
-            lore.add(messages.msg("gui.upgrades.disabled"));
+            lore.add(messages.msg("ui.guild.upgrades.disabled"));
         } else if (!maxed && nextCost > 0.0d) {
-            lore.add(messages.msg("gui.upgrades.click_to_buy"));
+            lore.add(messages.msg("ui.guild.upgrades.click_to_buy"));
         }
 
         setButton(slot, Material.ENCHANTED_BOOK, Component.text(definition.name()), lore,
@@ -150,7 +150,7 @@ public final class GuildUpgradesMenu extends GuildMenu {
         for (Map.Entry<String, Integer> entry : requirements.entrySet()) {
             if ("guildlevelatleast".equalsIgnoreCase(entry.getKey())) {
                 int value = entry.getValue() == null ? 0 : entry.getValue();
-                lore.add(messages.msg("gui.upgrades.req_level", "level", String.valueOf(value)));
+                lore.add(messages.msg("ui.guild.upgrades.req_level", "level", String.valueOf(value)));
             }
         }
     }
