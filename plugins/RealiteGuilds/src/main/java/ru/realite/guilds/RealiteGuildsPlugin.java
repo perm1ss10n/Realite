@@ -93,7 +93,16 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
         );
 
         GuildChatInputService inputService = new GuildChatInputService(this, messages);
-        GuildMenuManager menuManager = new GuildMenuManager(messages, service, inputService);
+        GuildMenuManager menuManager = new GuildMenuManager(
+                messages,
+                service,
+                repository,
+                rankService,
+                upgradeService,
+                upgradeConfigRepository,
+                treasuryService,
+                inputService
+        );
 
         // command
         PluginCommand command = getCommand("g");
