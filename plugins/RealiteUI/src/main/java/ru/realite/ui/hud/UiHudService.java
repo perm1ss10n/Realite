@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -43,6 +44,12 @@ public final class UiHudService implements Listener {
     public void refresh(Player player) {
         refresh(player, UiSlot.BOSSBAR);
         refresh(player, UiSlot.ACTION_BAR);
+    }
+
+    public void refreshOnline() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            refresh(player);
+        }
     }
 
     public void refresh(Player player, UiSlot slot) {
