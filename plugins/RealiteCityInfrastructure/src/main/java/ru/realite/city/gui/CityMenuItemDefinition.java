@@ -12,11 +12,11 @@ public record CityMenuItemDefinition(
         int slot,
         Material material,
         String permission,
-        Predicate<CityMainMenu.PlotContext> condition,
+        Predicate<CityMainMenu.HubContext> condition,
         Function<CityMessages, String> unavailableReasonKey,
         CityMenuAction action
 ) {
-    public boolean isAvailable(Player player, CityMainMenu.PlotContext context) {
+    public boolean isAvailable(Player player, CityMainMenu.HubContext context) {
         boolean hasPermission = permission == null || permission.isBlank() || player.hasPermission(permission);
         boolean conditionOk = condition == null || condition.test(context);
         return hasPermission && conditionOk;

@@ -219,28 +219,99 @@ area:
   list:
     header: "&eГородские зоны:"
     line: "- {id} ({world}) [{minX},{minY},{minZ}] -> [{maxX},{maxY},{maxZ}]"
-gui:
-  title:
-    admin_main: "&eАдмин: город"
-    admin_selection: "&eАдмин: выделение"
-    admin_plots: "&eАдмин: участки"
-    admin_plot_actions: "&eАдмин: участок"
-    player_main: "&eУчасток"
-    player_access: "&eДоступ к участку"
-  btn:
-    regions: "&7Регионы"
-    plots: "&eУчастки"
-    selection: "&eВыделение"
-    help: "&7Помощь"
+  gui:
+    title:
+      admin_main: "&eАдмин: город"
+      admin_selection: "&eАдмин: выделение"
+      admin_plots: "&eАдмин: участки"
+      admin_plot_actions: "&eАдмин: участок"
+      player_main: "&eУчасток"
+      player_access: "&eДоступ к участку"
+    hub:
+      title: "&6Город"
+      status:
+        name: "&eСтатус"
+        resident: "&aРезидент"
+        non_resident: "&cНе резидент"
+        city: "&7Город: &f{city}"
+        city_none: "нет"
+      item:
+        plots:
+          name: "&eУчастки"
+          lore1: "&7Список участков города"
+          lore2: "&7Открыть список и фильтры"
+        residency:
+          name: "&eРезидентство"
+          lore1: "&7Квесты/условия резидентства"
+          lore2: "&7Открыть меню квестов"
+        market:
+          name: "&eРынок"
+          lore1: "&7Список магазинов"
+          lore2: "&7Команда: /city market"
+        info:
+          name: "&eИнфо"
+          lore1: "&7Правила и подсказки"
+          lore2: "&7Команда: /city"
+      unavailable:
+        no-quests: "&7Недоступно: квесты не установлены"
+    plots:
+      title: "&6Участки города"
+      empty: "&eУчастков нет"
+      filter:
+        all: "&eВсе"
+        available: "&aСвободные"
+        occupied: "&cЗанятые"
+        selected: "&7Выбрано"
+      page: "&eСтраница {current}/{total}"
+      prev: "&eНазад"
+      next: "&eВперёд"
+      back: "&cНазад в хаб"
+      status:
+        available: "&aСвободен"
+        occupied: "&cЗанят"
+      item:
+        name: "&e#{number} &7({id})"
+        lore1: "&7Тип: {type}"
+        lore2: "&7Цена: {price}"
+        lore3: "&7Владелец: {owner}"
+    plot:
+      title: "&eУчасток #{number}"
+      info:
+        name: "&eИнформация"
+        lore1: "&7ID: {id}"
+        lore2: "&7Тип: {type}"
+        lore3: "&7Цена: {price}"
+        lore4: "&7Владелец: {owner}"
+        lore5: "&7Мир: {world}"
+      action:
+        buy: "&aКупить"
+        rent: "&eОплатить аренду"
+        owner: "&eВладелец"
+        teleport: "&bТелепорт"
+        members: "&eУчастники"
+        release: "&cОсвободить"
+        back: "&cНазад"
+      action_lore:
+        buy: "&7Купить этот участок"
+        rent: "&7Оплатить аренду магазина"
+        owner: "&7Показать владельца"
+        teleport: "&7Телепортироваться на участок"
+        members: "&7Список участников"
+        release: "&7Отказаться от участка"
+    btn:
+      regions: "&7Регионы"
+      plots: "&eУчастки"
+      selection: "&eВыделение"
+      help: "&7Помощь"
     back: "&cНазад"
     access: "&eДоступ"
     info: "&eИнфо"
     teleport: "&bТелепорт"
     set_owner_player: "&eНазначить владельца: игрок"
     set_owner_guild: "&eНазначить владельца: гильдия"
-  plot:
-    none: "&cУ вас нет участка. &7Подсказка: /city plot buy #<номер> или /city plot nearby."
-  gui:
+    plot:
+      none: "&cУ вас нет участка. &7Подсказка: /city plot buy #<номер> или /city plot nearby."
+    gui:
     title: "&6Город"
     hint: "&7Выбери действие"
     available: "&aДоступно"
