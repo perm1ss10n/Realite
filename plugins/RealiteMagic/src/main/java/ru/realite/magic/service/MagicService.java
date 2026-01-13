@@ -560,6 +560,45 @@ public final class MagicService {
         return debugService;
     }
 
+    public EquipSpellResult equipSpell(Player player, SpellDefinition spell) {
+        if (player == null || spell == null) {
+            return new EquipSpellResult.Fail(EquipSpellFailure.UNKNOWN_SPELL, null);
+        }
+        UUID playerId = player.getUniqueId();
+        if (!playerSpellService.hasSpell(playerId, spell.id())) {
+            return new EquipSpellResult.Fail(EquipSpellFailure.NOT_LEARNED, null);
+        }
+        CheckResult requirements = checkRequirements(player, spell);
+        if (requirements instanceof CheckResult.Fail fail) {
+            return new EquipSpellResult.Fail(EquipSpellFailure.NOT_AVAILABLE, fail);
+        }
+        SelectResult selection = playerSpellService.select(playerId, spell.id());
+        if (selection instanceof SelectResult.Fail fail) {
+            EquipSpellFailure reason = fail.reason() == SpellActionReason.NOT_LEARNED
+                    ? EquipSpellFailure.NOT_LEARNED
+                    : EquipSpellFailure.UNKNOWN_SPELL;
+            return new EquipSpellResult.Fail(reason, null);
+        }
+        return new EquipSpellResult.Ok(playerSpellService.getActiveSlot(playerId));
+    }
+
+    public UnequipSpellResult unequipSpell(Player player, SpellDefinition spell) {
+        if (player == null || spell == null) {
+            return new UnequipSpellResult.Fail(EquipSpellFailure.UNKNOWN_SPELL);
+        }
+        UUID playerId = player.getUniqueId();
+        String targetId = spell.id();
+        int removed = 0;
+        for (int slot = 1; slot <= 9; slot++) {
+            String equipped = playerSpellService.getSlot(playerId, slot).orElse(null);
+            if (equipped != null && equipped.equalsIgnoreCase(targetId)) {
+                playerSpellService.setSlot(playerId, slot, null);
+                removed++;
+            }
+        }
+        return new UnequipSpellResult.Ok(removed);
+    }
+
     public ItemsBridge itemsBridge() {
         return itemsBridge;
     }
