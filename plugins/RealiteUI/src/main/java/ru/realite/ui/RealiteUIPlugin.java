@@ -3,6 +3,7 @@ package ru.realite.ui;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.Subscription;
 import ru.realite.core.api.ui.UiInvalidateEvent;
@@ -19,6 +20,7 @@ public final class RealiteUIPlugin extends JavaPlugin {
     private UiSettingsStore settingsStore;
     private UiHudService hudService;
     private Subscription uiSubscription;
+    private BukkitTask pollingTask;
 
     @Override
     public void onEnable() {
@@ -36,6 +38,11 @@ public final class RealiteUIPlugin extends JavaPlugin {
             getServer().getPluginManager().registerEvents(hudService, this);
             uiSubscription = core.events().subscribe(UiInvalidateEvent.class,
                     event -> hudService.refreshIfMatches(event.player(), event.providerId()));
+            long pollingTicks = getConfig().getLong("hud.pollingTicks", 40L);
+            if (pollingTicks > 0) {
+                pollingTask = getServer().getScheduler().runTaskTimer(this, hudService::refreshOnline,
+                        pollingTicks, pollingTicks);
+            }
             if (getCommand("ui") != null) {
                 getCommand("ui").setExecutor(new UiCommand(messages, settingsStore, hudService, registry));
             }
@@ -51,6 +58,10 @@ public final class RealiteUIPlugin extends JavaPlugin {
         if (uiSubscription != null) {
             uiSubscription.unsubscribe();
             uiSubscription = null;
+        }
+        if (pollingTask != null) {
+            pollingTask.cancel();
+            pollingTask = null;
         }
         if (settingsStore != null) {
             settingsStore.saveAll();

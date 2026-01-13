@@ -1,1 +1,3 @@
 lang: ru
+hud:
+  pollingTicks: 40
