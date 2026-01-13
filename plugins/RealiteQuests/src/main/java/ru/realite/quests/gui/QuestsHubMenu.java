@@ -27,7 +27,7 @@ public final class QuestsHubMenu extends QuestMenu {
     private final Player viewer;
 
     public QuestsHubMenu(QuestServiceImpl questService, QuestsMessages messages, Player viewer, QuestMenuState state) {
-        super(SIZE, LEGACY.deserialize(messages.raw("quests.gui.hub.title")));
+        super(SIZE, LEGACY.deserialize(messages.raw("ui.quests.hub.title")));
         this.questService = questService;
         this.messages = messages;
         this.state = state == null ? QuestMenuState.defaultState() : state;
@@ -64,9 +64,9 @@ public final class QuestsHubMenu extends QuestMenu {
             case COMPLETED -> selected ? Material.LIGHT_BLUE_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE;
         };
         String key = switch (availability) {
-            case ACTIVE -> "quests.gui.hub.tab.active";
-            case AVAILABLE -> "quests.gui.hub.tab.available";
-            case COMPLETED -> "quests.gui.hub.tab.completed";
+            case ACTIVE -> "ui.quests.hub.tab.active";
+            case AVAILABLE -> "ui.quests.hub.tab.available";
+            case COMPLETED -> "ui.quests.hub.tab.completed";
         };
         return item(material, LEGACY.deserialize(messages.raw(key)), List.of());
     }
@@ -76,10 +76,10 @@ public final class QuestsHubMenu extends QuestMenu {
         QuestSort current = supported.contains(state.sort()) ? state.sort()
                 : supported.isEmpty() ? QuestSort.TYPE : supported.getFirst();
         List<Component> lore = new ArrayList<>();
-        lore.add(LEGACY.deserialize(messages.formatRaw("quests.gui.sort.current",
+        lore.add(LEGACY.deserialize(messages.formatRaw("ui.quests.sort.current",
                 java.util.Map.of("sort", sortLabel(current)))));
-        lore.add(LEGACY.deserialize(messages.raw("quests.gui.sort.coming_soon")));
-        ItemStack sortItem = item(Material.HOPPER, LEGACY.deserialize(messages.raw("quests.gui.sort.title")), lore);
+        lore.add(LEGACY.deserialize(messages.raw("ui.common.coming_soon")));
+        ItemStack sortItem = item(Material.HOPPER, LEGACY.deserialize(messages.raw("ui.quests.sort.title")), lore);
         setButton(49, sortItem, player -> {
             QuestSort next = nextSort(supported, current);
             new QuestsHubMenu(questService, messages, player,
@@ -99,7 +99,7 @@ public final class QuestsHubMenu extends QuestMenu {
     }
 
     private String sortLabel(QuestSort sort) {
-        return messages.raw("quests.gui.sort." + sort.name().toLowerCase(Locale.ROOT));
+        return messages.raw("ui.quests.sort." + sort.name().toLowerCase(Locale.ROOT));
     }
 
     private void renderQuests() {
@@ -111,7 +111,7 @@ public final class QuestsHubMenu extends QuestMenu {
             endIndex = Math.min(LIST_SIZE, quests.size());
         }
         if (quests.isEmpty()) {
-            ItemStack empty = item(Material.BARRIER, LEGACY.deserialize(messages.raw("quests.gui.hub.empty")),
+            ItemStack empty = item(Material.BARRIER, LEGACY.deserialize(messages.raw("ui.quests.hub.empty")),
                     List.of());
             setButton(22, empty, null);
             return;
@@ -131,16 +131,16 @@ public final class QuestsHubMenu extends QuestMenu {
         if (entry.description() != null && !entry.description().isBlank()) {
             lore.add(LEGACY.deserialize(entry.description()));
         }
-        lore.add(LEGACY.deserialize(messages.formatRaw("quests.gui.hub.quest.type",
+        lore.add(LEGACY.deserialize(messages.formatRaw("ui.quests.hub.quest.type",
                 java.util.Map.of("type", entry.type().name()))));
-        lore.add(LEGACY.deserialize(messages.formatRaw("quests.gui.hub.quest.status",
+        lore.add(LEGACY.deserialize(messages.formatRaw("ui.quests.hub.quest.status",
                 java.util.Map.of("status", availabilityLabel(entry.availability())))));
-        lore.add(LEGACY.deserialize(messages.raw("quests.gui.hub.quest.view")));
+        lore.add(LEGACY.deserialize(messages.raw("ui.quests.hub.quest.view")));
         return item(material, LEGACY.deserialize(entry.title()), lore);
     }
 
     private String availabilityLabel(QuestAvailability availability) {
-        return messages.raw("quests.gui.details.status." + availability.name().toLowerCase(Locale.ROOT));
+        return messages.raw("ui.quests.details.status." + availability.name().toLowerCase(Locale.ROOT));
     }
 
     private void renderPaging() {
@@ -148,22 +148,22 @@ public final class QuestsHubMenu extends QuestMenu {
         int totalPages = (int) Math.ceil(quests.size() / (double) LIST_SIZE);
         int currentPage = Math.min(state.page(), Math.max(totalPages - 1, 0));
         if (currentPage > 0) {
-            setButton(51, item(Material.ARROW, LEGACY.deserialize(messages.raw("quests.gui.hub.prev")),
+            setButton(51, item(Material.ARROW, LEGACY.deserialize(messages.raw("ui.common.prev")),
                     List.of()), player -> new QuestsHubMenu(questService, messages, player,
                     new QuestMenuState(state.filter(), state.sort(), currentPage - 1)).open(player));
         }
         if (currentPage + 1 < totalPages) {
-            setButton(52, item(Material.ARROW, LEGACY.deserialize(messages.raw("quests.gui.hub.next")),
+            setButton(52, item(Material.ARROW, LEGACY.deserialize(messages.raw("ui.common.next")),
                     List.of()), player -> new QuestsHubMenu(questService, messages, player,
                     new QuestMenuState(state.filter(), state.sort(), currentPage + 1)).open(player));
         }
-        setButton(50, item(Material.PAPER, LEGACY.deserialize(messages.formatRaw("quests.gui.hub.page",
+        setButton(50, item(Material.PAPER, LEGACY.deserialize(messages.formatRaw("ui.quests.hub.page",
                 java.util.Map.of("page", String.valueOf(currentPage + 1),
                         "total", String.valueOf(Math.max(totalPages, 1))))), List.of()), null);
     }
 
     private void renderClose() {
-        setButton(53, item(Material.BARRIER, LEGACY.deserialize(messages.raw("quests.gui.hub.close")),
+        setButton(53, item(Material.BARRIER, LEGACY.deserialize(messages.raw("ui.common.close")),
                 List.of()), Player::closeInventory);
     }
 }

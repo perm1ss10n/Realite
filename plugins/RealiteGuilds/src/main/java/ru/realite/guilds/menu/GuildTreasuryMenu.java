@@ -28,7 +28,7 @@ public final class GuildTreasuryMenu extends GuildMenu {
             GuildRankService rankService,
             GuildTreasuryService treasuryService,
             Player viewer) {
-        super(manager, messages, SIZE, "gui.treasury.title");
+        super(manager, messages, SIZE, "ui.guild.treasury.title");
         this.repository = repository;
         this.rankService = rankService;
         this.treasuryService = treasuryService;
@@ -49,24 +49,24 @@ public final class GuildTreasuryMenu extends GuildMenu {
             return;
         }
         double balance = treasuryService.getBalance(guild.tag());
-        List<Component> lore = List.of(messages.msg("gui.treasury.balance", "amount", formatAmount(balance)));
-        setButton(13, Material.SUNFLOWER, messages.msg("gui.treasury.balance_title"), lore, null);
+        List<Component> lore = List.of(messages.msg("ui.guild.treasury.balance", "amount", formatAmount(balance)));
+        setButton(13, Material.SUNFLOWER, messages.msg("ui.guild.treasury.balance_title"), lore, null);
 
         boolean canSpend = rankService.hasPermission(member.role(), GuildRankPermission.TREASURY_SPEND);
         if (canSpend) {
-            setButton(11, Material.EMERALD, messages.msg("gui.treasury.deposit_disabled"),
-                    List.of(messages.msg("gui.treasury.unavailable")), null);
-            setButton(15, Material.REDSTONE, messages.msg("gui.treasury.withdraw_disabled"),
-                    List.of(messages.msg("gui.treasury.unavailable")), null);
+            setButton(11, Material.EMERALD, messages.msg("ui.guild.treasury.deposit_disabled"),
+                    List.of(messages.msg("ui.guild.treasury.unavailable")), null);
+            setButton(15, Material.REDSTONE, messages.msg("ui.guild.treasury.withdraw_disabled"),
+                    List.of(messages.msg("ui.guild.treasury.unavailable")), null);
         } else {
-            setButton(11, Material.GRAY_DYE, messages.msg("gui.treasury.deposit_disabled"),
-                    List.of(messages.msg("gui.treasury.no_permission")), null);
-            setButton(15, Material.GRAY_DYE, messages.msg("gui.treasury.withdraw_disabled"),
-                    List.of(messages.msg("gui.treasury.no_permission")), null);
+            setButton(11, Material.GRAY_DYE, messages.msg("ui.guild.treasury.deposit_disabled"),
+                    List.of(messages.msg("ui.guild.treasury.no_permission")), null);
+            setButton(15, Material.GRAY_DYE, messages.msg("ui.guild.treasury.withdraw_disabled"),
+                    List.of(messages.msg("ui.guild.treasury.no_permission")), null);
         }
-        setButton(16, Material.BOOK, messages.msg("gui.treasury.history_disabled"),
-                List.of(messages.msg("gui.treasury.unavailable")), null);
-        setButton(22, Material.ARROW, "gui.menu.back", List.of("gui.menu.back_lore"), manager::openRoot);
+        setButton(16, Material.BOOK, messages.msg("ui.guild.treasury.history_disabled"),
+                List.of(messages.msg("ui.guild.treasury.unavailable")), null);
+        setButton(22, Material.ARROW, "ui.common.back", List.of("ui.guild.menu.back_lore"), manager::openRoot);
     }
 
     private String formatAmount(double amount) {

@@ -82,14 +82,14 @@ public final class CityMainMenu {
                 Map<Integer, CityMenuAction> actions = new HashMap<>();
                 CityMenuHolder holder = new CityMenuHolder(actions);
 
-                Component title = messages.get("city.gui.plots.title", "Plots");
+                Component title = messages.get("ui.city.plots.title", "Plots");
                 Inventory inventory = Bukkit.createInventory(holder, SIZE, title);
                 fillBackground(inventory);
 
                 if (plots.isEmpty()) {
                         inventory.setItem(22, simpleItem(
                                         Material.BARRIER,
-                                        messages.get("city.gui.plots.empty", "No plots"),
+                                        messages.get("ui.city.plots.empty", "No plots"),
                                         List.of()));
                 } else {
                         int startIndex = safePage * PLOTS_PER_PAGE;
@@ -129,7 +129,7 @@ public final class CityMainMenu {
                 Map<Integer, CityMenuAction> actions = new HashMap<>();
                 CityMenuHolder holder = new CityMenuHolder(actions);
 
-                Component title = formatComponent("city.gui.plot.title", "Plot #" + plot.number(),
+                Component title = formatComponent("ui.city.plot.title", "Plot #" + plot.number(),
                                 Map.of("number", String.valueOf(plot.number())));
                 Inventory inventory = Bukkit.createInventory(holder, DETAILS_SIZE, title);
                 fillBackground(inventory);
@@ -139,58 +139,58 @@ public final class CityMainMenu {
                 boolean isAvailable = plot.ownerId() == null;
                 if (isAvailable) {
                         inventory.setItem(10, actionItem(Material.EMERALD,
-                                        "city.gui.plot.action.buy",
+                                        "ui.city.plot.action.buy",
                                         "Buy plot",
-                                        "city.gui.plot.action_lore.buy",
+                                        "ui.city.plot.action_lore.buy",
                                         "Buy this plot"));
                         actions.put(10, p -> p.performCommand("city plot buy " + plot.id()));
                 }
 
                 if (isShopRentAvailable(player, plot)) {
                         inventory.setItem(11, actionItem(Material.GOLD_INGOT,
-                                        "city.gui.plot.action.rent",
+                                        "ui.city.plot.action.rent",
                                         "Pay rent",
-                                        "city.gui.plot.action_lore.rent",
+                                        "ui.city.plot.action_lore.rent",
                                         "Pay shop rent"));
                         actions.put(11, p -> p.performCommand("city shop rent pay " + plot.id()));
                 }
 
                 inventory.setItem(15, actionItem(Material.BOOK,
-                                "city.gui.plot.action.owner",
+                                "ui.city.plot.action.owner",
                                 "Owner",
-                                "city.gui.plot.action_lore.owner",
+                                "ui.city.plot.action_lore.owner",
                                 "View owner"));
                 actions.put(15, p -> p.performCommand("city plot info " + plot.id()));
 
                 if (player.hasPermission("realite.city.admin")) {
                         inventory.setItem(16, actionItem(Material.ENDER_PEARL,
-                                        "city.gui.plot.action.teleport",
+                                        "ui.city.plot.action.teleport",
                                         "Teleport",
-                                        "city.gui.plot.action_lore.teleport",
+                                        "ui.city.plot.action_lore.teleport",
                                         "Teleport to plot"));
                         actions.put(16, p -> p.performCommand("city plot goto " + plot.id()));
                 }
 
                 if (canManagePlot(player, plot)) {
                         inventory.setItem(22, actionItem(Material.PLAYER_HEAD,
-                                        "city.gui.plot.action.members",
+                                        "ui.city.plot.action.members",
                                         "Members",
-                                        "city.gui.plot.action_lore.members",
+                                        "ui.city.plot.action_lore.members",
                                         "View members"));
                         actions.put(22, p -> p.performCommand("city plot members " + plot.id()));
                 }
 
                 if (isOwnerOrAdmin(player, plot)) {
                         inventory.setItem(21, actionItem(Material.BARRIER,
-                                        "city.gui.plot.action.release",
+                                        "ui.city.plot.action.release",
                                         "Release",
-                                        "city.gui.plot.action_lore.release",
+                                        "ui.city.plot.action_lore.release",
                                         "Release plot"));
                         actions.put(21, p -> p.performCommand("city plot release " + plot.id()));
                 }
 
                 inventory.setItem(26, actionItem(Material.ARROW,
-                                "city.gui.plot.action.back",
+                                "ui.common.back",
                                 "Back",
                                 null,
                                 null));
@@ -206,7 +206,7 @@ public final class CityMainMenu {
                 Map<Integer, CityMenuAction> actions = new HashMap<>();
                 CityMenuHolder holder = new CityMenuHolder(actions);
 
-                Component title = messages.get("city.gui.hub.title", "City");
+                Component title = messages.get("ui.city.hub.title", "City");
                 Inventory inventory = Bukkit.createInventory(holder, SIZE, title);
                 fillBackground(inventory);
                 inventory.setItem(4, statusItem(player));
@@ -216,7 +216,7 @@ public final class CityMainMenu {
                 for (CityMenuItemDefinition def : definitions()) {
                         boolean available = def.isAvailable(player, ctx);
                         List<Component> lore = buildLore(def, available, player, ctx);
-                        Component name = messages.get("city.gui.hub.item." + def.id() + ".name", def.id());
+                        Component name = messages.get("ui.city.hub.item." + def.id() + ".name", def.id());
                         ItemStack item = CityMenuItemFactory.create(def.material(), name, lore, available);
                         inventory.setItem(def.slot(), item);
                         actions.put(def.slot(), p -> {
@@ -244,8 +244,8 @@ public final class CityMainMenu {
                         HubContext ctx) {
                 List<Component> lore = new ArrayList<>();
 
-                String k1 = "city.gui.hub.item." + def.id() + ".lore1";
-                String k2 = "city.gui.hub.item." + def.id() + ".lore2";
+                String k1 = "ui.city.hub.item." + def.id() + ".lore1";
+                String k2 = "ui.city.hub.item." + def.id() + ".lore2";
 
                 if (!messages.getRaw(k1, "").isBlank()) {
                         lore.add(messages.get(k1, ""));
@@ -255,27 +255,27 @@ public final class CityMainMenu {
                 }
 
                 if (available) {
-                        lore.add(messages.get("city.gui.available", ""));
+                        lore.add(messages.get("ui.city.available", ""));
                 } else {
                         lore.add(
                                         CityMenuItemFactory.unavailableReason(
                                                         messages,
                                                         resolveUnavailableKey(def, player, ctx),
-                                                        messages.getRaw("city.gui.unavailable.condition", "")));
+                                                        messages.getRaw("ui.city.unavailable.condition", "")));
                 }
                 return lore;
         }
 
         private static String resolveUnavailableKey(CityMenuItemDefinition def, Player player, HubContext ctx) {
                 if (def.permission() != null && player != null && !player.hasPermission(def.permission())) {
-                        return "city.gui.unavailable.no-permission";
+                        return "ui.city.unavailable.no-permission";
                 }
                 if (def.condition() != null && !def.condition().test(ctx)) {
                         if (def.unavailableReasonKey() != null) {
                                 return def.unavailableReasonKey().apply(messages);
                         }
                 }
-                return "city.gui.unavailable.condition";
+                return "ui.city.unavailable.condition";
         }
 
         private static void fillBackground(Inventory inventory) {
@@ -297,7 +297,7 @@ public final class CityMainMenu {
                 items.add(new CityMenuItemDefinition(
                                 "residency", 22, Material.BOOK,
                                 null, HubContext::questsAvailable,
-                                m -> "city.gui.hub.unavailable.no-quests",
+                                m -> "ui.city.hub.unavailable.no-quests",
                                 p -> p.performCommand("quest")));
 
                 items.add(new CityMenuItemDefinition(
@@ -402,19 +402,19 @@ public final class CityMainMenu {
         private static ItemStack statusItem(Player player) {
                 HubContext ctx = HubContext.from(player, plotRepository, plotMemberRepository, cityAreaRepository);
                 String residencyKey = ctx.isResident()
-                                ? "city.gui.hub.status.resident"
-                                : "city.gui.hub.status.non_resident";
+                                ? "ui.city.hub.status.resident"
+                                : "ui.city.hub.status.non_resident";
                 Component residency = messages.get(residencyKey, ctx.isResident() ? "Resident" : "Not resident");
 
-                String cityValue = ctx.cityId().orElse(messages.getRaw("city.gui.hub.status.city_none", "none"));
-                Component cityLine = formatComponent("city.gui.hub.status.city", "City: {city}",
+                String cityValue = ctx.cityId().orElse(messages.getRaw("ui.city.hub.status.city_none", "none"));
+                Component cityLine = formatComponent("ui.city.hub.status.city", "City: {city}",
                                 Map.of("city", cityValue));
 
                 List<Component> lore = List.of(residency, cityLine);
 
                 return CityMenuItemFactory.create(
                                 Material.NAME_TAG,
-                                messages.get("city.gui.hub.status.name", "Status"),
+                                messages.get("ui.city.hub.status.name", "Status"),
                                 lore,
                                 true);
         }
@@ -436,21 +436,21 @@ public final class CityMainMenu {
                 inventory.setItem(49, pageIndicatorItem(page, maxPage));
 
                 inventory.setItem(51, actionItem(Material.ARROW,
-                                "city.gui.plots.prev",
+                                "ui.common.prev",
                                 "<",
                                 null,
                                 null));
                 actions.put(51, p -> openPlotsList(p, filter, Math.max(0, page - 1)));
 
                 inventory.setItem(53, actionItem(Material.ARROW,
-                                "city.gui.plots.next",
+                                "ui.common.next",
                                 ">",
                                 null,
                                 null));
                 actions.put(53, p -> openPlotsList(p, filter, page + 1));
 
                 inventory.setItem(52, actionItem(Material.BARRIER,
-                                "city.gui.plots.back",
+                                "ui.city.plots.back",
                                 "Back",
                                 null,
                                 null));
@@ -465,13 +465,13 @@ public final class CityMainMenu {
                         case OCCUPIED -> selected ? Material.RED_STAINED_GLASS_PANE : Material.RED_DYE;
                 };
                 String key = switch (itemFilter) {
-                        case ALL -> "city.gui.plots.filter.all";
-                        case AVAILABLE -> "city.gui.plots.filter.available";
-                        case OCCUPIED -> "city.gui.plots.filter.occupied";
+                        case ALL -> "ui.city.plots.filter.all";
+                        case AVAILABLE -> "ui.city.plots.filter.available";
+                        case OCCUPIED -> "ui.city.plots.filter.occupied";
                 };
                 List<Component> lore = new ArrayList<>();
                 if (selected) {
-                        lore.add(messages.get("city.gui.plots.filter.selected", "Selected"));
+                        lore.add(messages.get("ui.city.plots.filter.selected", "Selected"));
                 }
                 return CityMenuItemFactory.create(material, messages.get(key, itemFilter.name()), lore, true);
         }
@@ -479,17 +479,17 @@ public final class CityMainMenu {
         private static ItemStack plotListItem(Plot plot) {
                 String owner = formatOwner(plot);
                 String statusKey = plot.ownerId() == null
-                                ? "city.gui.plots.status.available"
-                                : "city.gui.plots.status.occupied";
+                                ? "ui.city.plots.status.available"
+                                : "ui.city.plots.status.occupied";
                 Component status = messages.get(statusKey, plot.ownerId() == null ? "Available" : "Occupied");
-                Component name = formatComponent("city.gui.plots.item.name", "#{number} ({id})",
+                Component name = formatComponent("ui.city.plots.item.name", "#{number} ({id})",
                                 Map.of("number", String.valueOf(plot.number()), "id", plot.id()));
                 List<Component> lore = List.of(
-                                formatComponent("city.gui.plots.item.lore1", "Type: {type}",
+                                formatComponent("ui.city.plots.item.lore1", "Type: {type}",
                                                 Map.of("type", plot.type() == null ? "?" : plot.type().displayName())),
-                                formatComponent("city.gui.plots.item.lore2", "Price: {price}",
+                                formatComponent("ui.city.plots.item.lore2", "Price: {price}",
                                                 Map.of("price", String.valueOf(plot.price()))),
-                                formatComponent("city.gui.plots.item.lore3", "Owner: {owner}",
+                                formatComponent("ui.city.plots.item.lore3", "Owner: {owner}",
                                                 Map.of("owner", owner)),
                                 status);
                 return CityMenuItemFactory.create(plotMaterial(plot), name, lore, true);
@@ -498,19 +498,19 @@ public final class CityMainMenu {
         private static ItemStack plotDetailsItem(Plot plot) {
                 String owner = formatOwner(plot);
                 List<Component> lore = List.of(
-                                formatComponent("city.gui.plot.info.lore1", "ID: {id}",
+                                formatComponent("ui.city.plot.info.lore1", "ID: {id}",
                                                 Map.of("id", plot.id())),
-                                formatComponent("city.gui.plot.info.lore2", "Type: {type}",
+                                formatComponent("ui.city.plot.info.lore2", "Type: {type}",
                                                 Map.of("type", plot.type() == null ? "?" : plot.type().displayName())),
-                                formatComponent("city.gui.plot.info.lore3", "Price: {price}",
+                                formatComponent("ui.city.plot.info.lore3", "Price: {price}",
                                                 Map.of("price", String.valueOf(plot.price()))),
-                                formatComponent("city.gui.plot.info.lore4", "Owner: {owner}",
+                                formatComponent("ui.city.plot.info.lore4", "Owner: {owner}",
                                                 Map.of("owner", owner)),
-                                formatComponent("city.gui.plot.info.lore5", "World: {world}",
+                                formatComponent("ui.city.plot.info.lore5", "World: {world}",
                                                 Map.of("world", plot.world())));
                 return CityMenuItemFactory.create(
                                 Material.OAK_SIGN,
-                                messages.get("city.gui.plot.info.name", "Plot info"),
+                                messages.get("ui.city.plot.info.name", "Plot info"),
                                 lore,
                                 true);
         }
@@ -533,7 +533,7 @@ public final class CityMainMenu {
 
         private static ItemStack pageIndicatorItem(int page, int maxPage) {
                 Component name = formatComponent(
-                                "city.gui.plots.page",
+                                "ui.city.plots.page",
                                 "Page {current}/{total}",
                                 Map.of(
                                                 "current", String.valueOf(page + 1),

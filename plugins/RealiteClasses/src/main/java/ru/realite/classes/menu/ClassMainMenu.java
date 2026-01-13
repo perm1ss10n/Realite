@@ -95,11 +95,11 @@ public final class ClassMainMenu extends BaseMenu {
         }
 
         setButton(22, Material.ENCHANTED_BOOK,
-                Components.cSection(manager.messages().get("menu.classes.progress")),
-                componentsFromMessages("menu.classes.progress-lore"),
+                Components.cSection(manager.messages().get("ui.classes.main.progress")),
+                componentsFromMessages("ui.classes.main.progress-lore"),
                 manager::openProgress);
         setButton(26, Material.OAK_DOOR,
-                Components.cSection(manager.messages().get("menu.close")),
+                Components.cSection(manager.messages().get("ui.common.close")),
                 null,
                 Player::closeInventory);
     }
@@ -114,7 +114,7 @@ public final class ClassMainMenu extends BaseMenu {
     }
 
     private static Component title(ClassMenuManager manager) {
-        return Components.cSection(manager.messages().get("menu.classes.title"));
+        return Components.cSection(manager.messages().get("ui.classes.main.title"));
     }
 
     private static String defaultLockedName(ClassLoreRepository.ClassLoreDef loreDef) {

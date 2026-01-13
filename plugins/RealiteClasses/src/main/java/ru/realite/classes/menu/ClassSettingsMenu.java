@@ -14,7 +14,7 @@ public final class ClassSettingsMenu extends BaseMenu {
     private final ClassMenuManager manager;
 
     public ClassSettingsMenu(ClassMenuManager manager) {
-        super(SIZE, Components.cSection(manager.messages().get("menu.settings.title")));
+        super(SIZE, Components.cSection(manager.messages().get("ui.classes.settings.title")));
         this.manager = manager;
     }
 
@@ -27,20 +27,20 @@ public final class ClassSettingsMenu extends BaseMenu {
         fillFiller(Material.BLACK_STAINED_GLASS_PANE);
 
         setButton(1, Material.DRAGON_BREATH,
-                Components.cSection(manager.messages().get("menu.settings.bossbar")),
-                lore("menu.settings.bossbar-lore"),
+                Components.cSection(manager.messages().get("ui.classes.settings.bossbar")),
+                lore("ui.classes.settings.bossbar-lore"),
                 p -> manager.applyHudMode(p, HudMode.BOSSBAR));
         setButton(3, Material.PAPER,
-                Components.cSection(manager.messages().get("menu.settings.actionbar")),
-                lore("menu.settings.actionbar-lore"),
+                Components.cSection(manager.messages().get("ui.classes.settings.actionbar")),
+                lore("ui.classes.settings.actionbar-lore"),
                 p -> manager.applyHudMode(p, HudMode.ACTIONBAR));
         setButton(5, Material.OAK_SIGN,
-                Components.cSection(manager.messages().get("menu.settings.sidebar")),
-                lore("menu.settings.sidebar-lore"),
+                Components.cSection(manager.messages().get("ui.classes.settings.sidebar")),
+                lore("ui.classes.settings.sidebar-lore"),
                 p -> manager.applyHudMode(p, HudMode.SIDEBAR));
         setButton(7, Material.BARRIER,
-                Components.cSection(manager.messages().get("menu.settings.off")),
-                lore("menu.settings.off-lore"),
+                Components.cSection(manager.messages().get("ui.classes.settings.off")),
+                lore("ui.classes.settings.off-lore"),
                 p -> manager.applyHudMode(p, HudMode.OFF));
     }
 

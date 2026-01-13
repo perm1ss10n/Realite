@@ -47,14 +47,14 @@ public final class QuestDetailsMenu extends QuestMenu {
                                    String questId) {
         QuestDetails details = questService.getQuestDetails(viewer, questId);
         String title = details == null ? questId : details.title();
-        return LEGACY.deserialize(messages.formatRaw("quests.gui.details.title",
+        return LEGACY.deserialize(messages.formatRaw("ui.quests.details.title",
                 java.util.Map.of("title", title)));
     }
 
     private void render() {
         QuestDetails details = questService.getQuestDetails(viewer, questId);
         if (details == null) {
-            viewer.sendMessage(LEGACY.deserialize(messages.raw("quests.gui.details.not_found")));
+            viewer.sendMessage(LEGACY.deserialize(messages.raw("ui.quests.details.not_found")));
             viewer.closeInventory();
             return;
         }
@@ -70,34 +70,34 @@ public final class QuestDetailsMenu extends QuestMenu {
         if (details.description() != null && !details.description().isBlank()) {
             lore.add(LEGACY.deserialize(details.description()));
         }
-        lore.add(LEGACY.deserialize(messages.formatRaw("quests.gui.hub.quest.type",
+        lore.add(LEGACY.deserialize(messages.formatRaw("ui.quests.hub.quest.type",
                 java.util.Map.of("type", details.type().name()))));
-        lore.add(LEGACY.deserialize(messages.formatRaw("quests.gui.hub.quest.status",
+        lore.add(LEGACY.deserialize(messages.formatRaw("ui.quests.hub.quest.status",
                 java.util.Map.of("status", availabilityLabel(details)))));
         ItemStack summary = item(Material.WRITABLE_BOOK, LEGACY.deserialize(details.title()), lore);
         setButton(4, summary, null);
     }
 
     private String availabilityLabel(QuestDetails details) {
-        return messages.raw("quests.gui.details.status." + details.availability().name().toLowerCase(Locale.ROOT));
+        return messages.raw("ui.quests.details.status." + details.availability().name().toLowerCase(Locale.ROOT));
     }
 
     private void renderObjectives(List<QuestObjectiveStatus> objectives) {
         int slotIndex = 0;
         for (QuestObjectiveStatus objective : objectives) {
             if (slotIndex >= OBJECTIVE_SLOTS.size()) {
-                ItemStack more = item(Material.BOOK, LEGACY.deserialize(messages.raw("quests.gui.details.more")),
+                ItemStack more = item(Material.BOOK, LEGACY.deserialize(messages.raw("ui.quests.details.more")),
                         List.of());
                 setButton(OBJECTIVE_SLOTS.getLast(), more, null);
                 break;
             }
             List<Component> lore = new ArrayList<>();
-            lore.add(LEGACY.deserialize(messages.formatRaw("quests.gui.details.progress",
+            lore.add(LEGACY.deserialize(messages.formatRaw("ui.quests.details.progress",
                     java.util.Map.of("current", String.valueOf(objective.current()),
                             "target", String.valueOf(objective.target())))));
             lore.add(LEGACY.deserialize(objective.completed()
-                    ? messages.raw("quests.gui.details.completed")
-                    : messages.raw("quests.gui.details.incomplete")));
+                    ? messages.raw("ui.quests.details.completed")
+                    : messages.raw("ui.quests.details.incomplete")));
             ItemStack item = item(Material.PAPER, objectiveName(objective), lore);
             setButton(OBJECTIVE_SLOTS.get(slotIndex), item, null);
             slotIndex++;
@@ -117,7 +117,7 @@ public final class QuestDetailsMenu extends QuestMenu {
             }
             ItemStack item = item(rewardMaterial(reward),
                     LEGACY.deserialize(rewardName(reward)),
-                    List.of(LEGACY.deserialize(messages.formatRaw("quests.gui.details.reward_amount",
+                    List.of(LEGACY.deserialize(messages.formatRaw("ui.quests.details.reward_amount",
                             java.util.Map.of("amount", String.valueOf(reward.amount()))))));
             setButton(REWARD_SLOTS.get(slotIndex), item, null);
             slotIndex++;
@@ -137,7 +137,7 @@ public final class QuestDetailsMenu extends QuestMenu {
     }
 
     private String rewardName(QuestRewardView reward) {
-        String key = "quests.gui.reward." + reward.type().name().toLowerCase(Locale.ROOT);
+        String key = "ui.quests.reward." + reward.type().name().toLowerCase(Locale.ROOT);
         if (reward.type() == RewardType.ITEM && reward.material() != null) {
             return messages.formatRaw(key, java.util.Map.of("item", reward.material().name()));
         }
@@ -148,11 +148,11 @@ public final class QuestDetailsMenu extends QuestMenu {
     }
 
     private void renderActions() {
-        ItemStack track = item(Material.COMPASS, LEGACY.deserialize(messages.raw("quests.gui.details.track")),
-                List.of(LEGACY.deserialize(messages.raw("quests.gui.common.coming_soon"))));
-        ItemStack abandon = item(Material.BARRIER, LEGACY.deserialize(messages.raw("quests.gui.details.abandon")),
-                List.of(LEGACY.deserialize(messages.raw("quests.gui.common.coming_soon"))));
-        ItemStack back = item(Material.ARROW, LEGACY.deserialize(messages.raw("quests.gui.details.back")), List.of());
+        ItemStack track = item(Material.COMPASS, LEGACY.deserialize(messages.raw("ui.quests.details.track")),
+                List.of(LEGACY.deserialize(messages.raw("ui.common.coming_soon"))));
+        ItemStack abandon = item(Material.BARRIER, LEGACY.deserialize(messages.raw("ui.quests.details.abandon")),
+                List.of(LEGACY.deserialize(messages.raw("ui.common.coming_soon"))));
+        ItemStack back = item(Material.ARROW, LEGACY.deserialize(messages.raw("ui.common.back")), List.of());
         setButton(45, track, null);
         setButton(46, abandon, null);
         setButton(53, back, player ->

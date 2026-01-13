@@ -2,6 +2,14 @@ format:
   prefix: "<gray>[UI]</gray> "
 
 ui:
+  common:
+    back: "<yellow>Back</yellow>"
+    close: "<red>Close</red>"
+    next: "<green>Next</green>"
+    prev: "<green>Previous</green>"
+    confirm: "<green>Confirm</green>"
+    cancel: "<red>Cancel</red>"
+    coming_soon: "<gray>Coming soon.</gray>"
   command:
     player_only: "<red>Players only.</red>"
   hud:
@@ -9,10 +17,6 @@ ui:
     actionbar: "<yellow>{provider}</yellow> <gray>{current}/{max}</gray>"
   menu:
     filler: "<gray> </gray>"
-    back: "<yellow>Back</yellow>"
-    close: "<red>Close</red>"
-    next: "<green>Next</green>"
-    previous: "<green>Previous</green>"
     page: "<gray>Page <white>{page}</white>/<white>{pages}</white></gray>"
   settings:
     title: "<gold>Interface Settings</gold>"

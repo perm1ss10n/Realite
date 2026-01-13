@@ -32,7 +32,7 @@ public final class GuildMemberProfileMenu extends GuildMenu {
             UUID targetId,
             int returnPage,
             Player viewer) {
-        super(manager, messages, SIZE, "gui.member.title");
+        super(manager, messages, SIZE, "ui.guild.member.title");
         this.repository = repository;
         this.rankService = rankService;
         this.targetId = targetId;
@@ -61,10 +61,10 @@ public final class GuildMemberProfileMenu extends GuildMenu {
         String rankName = targetRank == null ? targetMember.role() : messages.raw(targetRank.displayNameKey());
 
         List<Component> lore = List.of(
-                messages.msg("gui.member.rank", "rank", rankName),
-                messages.msg(target.isOnline() ? "gui.member.online" : "gui.member.offline")
+                messages.msg("ui.guild.member.rank", "rank", rankName),
+                messages.msg(target.isOnline() ? "ui.guild.member.online" : "ui.guild.member.offline")
         );
-        setButton(13, Material.PLAYER_HEAD, messages.msg("gui.member.name", "name", displayName), lore, null);
+        setButton(13, Material.PLAYER_HEAD, messages.msg("ui.guild.member.name", "name", displayName), lore, null);
 
         GuildRankService.GuildRank viewerRank = rankService.getRank(viewerMember.role());
         boolean canPromote = rankService.hasPermission(viewerMember.role(), GuildRankPermission.PROMOTE);
@@ -73,35 +73,35 @@ public final class GuildMemberProfileMenu extends GuildMenu {
             if (promoteIndex >= 0) {
                 GuildRankService.GuildRank promoteRank = rankService.getRanksByPriority().get(promoteIndex);
                 List<Component> promoteLore = List.of(
-                        messages.msg("gui.member.promote_lore"),
-                        messages.msg("gui.member.rank_target", "rank", messages.raw(promoteRank.displayNameKey()))
+                        messages.msg("ui.guild.member.promote_lore"),
+                        messages.msg("ui.guild.member.rank_target", "rank", messages.raw(promoteRank.displayNameKey()))
                 );
-                setButton(11, Material.LIME_WOOL, messages.msg("gui.member.promote"), promoteLore,
+                setButton(11, Material.LIME_WOOL, messages.msg("ui.guild.member.promote"), promoteLore,
                         player -> manager.runCommand(player, "g setrank " + commandTarget + " " + promoteRank.id()));
             } else {
-                setButton(11, Material.GRAY_DYE, messages.msg("gui.member.promote_disabled"), null, null);
+                setButton(11, Material.GRAY_DYE, messages.msg("ui.guild.member.promote_disabled"), null, null);
             }
 
             int demoteIndex = nextLowerRankIndex(targetRank);
             if (demoteIndex >= 0) {
                 GuildRankService.GuildRank demoteRank = rankService.getRanksByPriority().get(demoteIndex);
                 List<Component> demoteLore = List.of(
-                        messages.msg("gui.member.demote_lore"),
-                        messages.msg("gui.member.rank_target", "rank", messages.raw(demoteRank.displayNameKey()))
+                        messages.msg("ui.guild.member.demote_lore"),
+                        messages.msg("ui.guild.member.rank_target", "rank", messages.raw(demoteRank.displayNameKey()))
                 );
-                setButton(15, Material.ORANGE_WOOL, messages.msg("gui.member.demote"), demoteLore,
+                setButton(15, Material.ORANGE_WOOL, messages.msg("ui.guild.member.demote"), demoteLore,
                         player -> manager.runCommand(player, "g setrank " + commandTarget + " " + demoteRank.id()));
             } else {
-                setButton(15, Material.GRAY_DYE, messages.msg("gui.member.demote_disabled"), null, null);
+                setButton(15, Material.GRAY_DYE, messages.msg("ui.guild.member.demote_disabled"), null, null);
             }
         } else {
-            setButton(11, Material.GRAY_DYE, messages.msg("gui.member.promote_disabled"), null, null);
-            setButton(15, Material.GRAY_DYE, messages.msg("gui.member.demote_disabled"), null, null);
+            setButton(11, Material.GRAY_DYE, messages.msg("ui.guild.member.promote_disabled"), null, null);
+            setButton(15, Material.GRAY_DYE, messages.msg("ui.guild.member.demote_disabled"), null, null);
         }
 
-        setButton(21, Material.BARRIER, messages.msg("gui.member.kick_disabled"),
-                List.of(messages.msg("gui.member.unavailable")), null);
-        setButton(22, Material.ARROW, "gui.menu.back", List.of("gui.menu.back_lore"),
+        setButton(21, Material.BARRIER, messages.msg("ui.guild.member.kick_disabled"),
+                List.of(messages.msg("ui.guild.member.unavailable")), null);
+        setButton(22, Material.ARROW, "ui.common.back", List.of("ui.guild.menu.back_lore"),
                 player -> manager.openMembers(player, returnPage));
     }
 

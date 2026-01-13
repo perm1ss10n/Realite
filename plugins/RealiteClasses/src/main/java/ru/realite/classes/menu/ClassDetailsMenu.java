@@ -56,21 +56,21 @@ public final class ClassDetailsMenu extends BaseMenu {
 
         if (def != null && def.effects != null && !def.effects.isEmpty()) {
             lore.add(Component.empty());
-            lore.add(Components.cSection(manager.messages().get("menu.details.effects-title")));
+            lore.add(Components.cSection(manager.messages().get("ui.classes.details.effects-title")));
             for (String effect : def.effects) {
                 lore.add(Components.c(effect));
             }
         }
 
         lore.add(Component.empty());
-        lore.add(Components.cSection(manager.messages().get("menu.details.evolutions-title")));
+        lore.add(Components.cSection(manager.messages().get("ui.classes.details.evolutions-title")));
         List<EvolutionDef> evolutions = def != null ? def.evolutions : List.of();
         if (evolutions == null || evolutions.isEmpty()) {
-            lore.add(Components.cSection(manager.messages().get("menu.details.evolutions-empty")));
+            lore.add(Components.cSection(manager.messages().get("ui.classes.details.evolutions-empty")));
         } else {
             for (EvolutionDef evolution : evolutions) {
                 lore.add(Components.cSection(manager.messages().format(
-                        "menu.details.evolution-entry",
+                        "ui.classes.details.evolution-entry",
                         Map.of(
                                 "evolution", evolution.title,
                                 "level", String.valueOf(evolution.requiredLevel)))));
@@ -84,11 +84,11 @@ public final class ClassDetailsMenu extends BaseMenu {
                 null);
 
         setButton(21, Material.LIME_DYE,
-                Components.cSection(manager.messages().get("menu.details.choose")),
+                Components.cSection(manager.messages().get("ui.classes.details.choose")),
                 null,
                 p -> manager.openConfirm(p, classId));
         setButton(23, Material.ARROW,
-                Components.cSection(manager.messages().get("menu.details.back")),
+                Components.cSection(manager.messages().get("ui.common.back")),
                 null,
                 manager::openMain);
     }
@@ -98,7 +98,7 @@ public final class ClassDetailsMenu extends BaseMenu {
         var loreDef = manager.classLore() != null ? manager.classLore().get(classId) : null;
         String name = displayName(def, loreDef);
         return Components.cSection(manager.messages().format(
-                "menu.details.title",
+                "ui.classes.details.title",
                 Map.of("class", name)));
     }
 

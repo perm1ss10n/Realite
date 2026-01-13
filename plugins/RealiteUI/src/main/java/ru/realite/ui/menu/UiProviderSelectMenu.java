@@ -77,8 +77,8 @@ public final class UiProviderSelectMenu extends BaseMenu {
             hudService.refresh(p, slot);
             new UiSettingsMenu(messages, settingsStore, hudService, registry).open(p);
         });
-        setButton(LAST_ROW_START + 4, Material.ARROW, messages.get("ui.menu.back"), null,
+        setButton(LAST_ROW_START + 4, Material.ARROW, messages.get("ui.common.back"), null,
                 p -> new UiSettingsMenu(messages, settingsStore, hudService, registry).open(p));
-        setButton(LAST_ROW_START + 8, Material.OAK_DOOR, messages.get("ui.menu.close"), null, Player::closeInventory);
+        setButton(LAST_ROW_START + 8, Material.OAK_DOOR, messages.get("ui.common.close"), null, Player::closeInventory);
     }
 }

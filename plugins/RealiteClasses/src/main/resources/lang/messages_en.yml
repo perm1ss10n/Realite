@@ -126,41 +126,46 @@ info-body:
   - "&7Cost: &e{nextCostMoney} &7| items: &e{nextCostItems}"
   - "&7Mastery: {mastered}"
 
-menu:
-  close: "&7Close"
-  classes:
-    title: "&6Classes"
-    progress: "&eProgress"
-    progress-lore:
-      - "&7Details about your current class"
-      - "&7and evolutions"
-  details:
-    title: "&6Class: &e{class}"
-    choose: "&aChoose class"
+ui:
+  common:
     back: "&7Back"
-    effects-title: "&6Bonuses"
-    evolutions-title: "&6Evolutions"
-    evolutions-empty: "&7No evolutions available."
-    evolution-entry: "&7- &e{evolution} &7(lv. {level})"
-  confirm:
-    title: "&6Confirm: &e{class}"
+    close: "&7Close"
+    prev: "&7Previous"
+    next: "&7Next"
     confirm: "&aConfirm"
-    back: "&7Back"
-  settings:
-    title: "&6HUD settings"
-    bossbar: "&6BossBar"
-    bossbar-lore:
-      - "&7Bar at the top of the screen"
-      - "&7Recommended (default)"
-    actionbar: "&aActionBar"
-    actionbar-lore:
-      - "&7Text above the hotbar"
-      - "&7May be overwritten by other plugins"
-    sidebar: "&bSidebar"
-    sidebar-lore:
-      - "&7Right-side list (scoreboard)"
-      - "&7May conflict with other scoreboards"
-    off: "&cOff"
-    off-lore:
-      - "&7Hide class HUD"
-    updated: "&aClass HUD: &f{mode}"
+    cancel: "&cCancel"
+    coming_soon: "&8Coming soon."
+  classes:
+    main:
+      title: "&6Classes"
+      progress: "&eProgress"
+      progress-lore:
+        - "&7Details about your current class"
+        - "&7and evolutions"
+    details:
+      title: "&6Class: &e{class}"
+      choose: "&aChoose class"
+      effects-title: "&6Bonuses"
+      evolutions-title: "&6Evolutions"
+      evolutions-empty: "&7No evolutions available."
+      evolution-entry: "&7- &e{evolution} &7(lv. {level})"
+    confirm:
+      title: "&6Confirm: &e{class}"
+    settings:
+      title: "&6HUD settings"
+      bossbar: "&6BossBar"
+      bossbar-lore:
+        - "&7Bar at the top of the screen"
+        - "&7Recommended (default)"
+      actionbar: "&aActionBar"
+      actionbar-lore:
+        - "&7Text above the hotbar"
+        - "&7May be overwritten by other plugins"
+      sidebar: "&bSidebar"
+      sidebar-lore:
+        - "&7Right-side list (scoreboard)"
+        - "&7May conflict with other scoreboards"
+      off: "&cOff"
+      off-lore:
+        - "&7Hide class HUD"
+      updated: "&aClass HUD: &f{mode}"
