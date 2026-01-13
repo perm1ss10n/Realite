@@ -125,3 +125,42 @@ info-body:
   - "&7След. эволюция: &e{nextEvolution} &7(ур. {nextRequired})"
   - "&7Стоимость: &e{nextCostMoney} &7| предметы: &e{nextCostItems}"
   - "&7Мастерство: {mastered}"
+
+menu:
+  close: "&7Закрыть"
+  classes:
+    title: "&6Классы"
+    progress: "&eПрогресс"
+    progress-lore:
+      - "&7Информация о текущем классе"
+      - "&7и эволюциях"
+  details:
+    title: "&6Класс: &e{class}"
+    choose: "&aВыбрать класс"
+    back: "&7Назад"
+    effects-title: "&6Бонусы"
+    evolutions-title: "&6Эволюции"
+    evolutions-empty: "&7Эволюций нет."
+    evolution-entry: "&7- &e{evolution} &7(ур. {level})"
+  confirm:
+    title: "&6Подтверждение: &e{class}"
+    confirm: "&aПодтвердить"
+    back: "&7Назад"
+  settings:
+    title: "&6Настройки HUD"
+    bossbar: "&6BossBar"
+    bossbar-lore:
+      - "&7Полоска сверху экрана"
+      - "&7Рекомендуется (дефолт)"
+    actionbar: "&aActionBar"
+    actionbar-lore:
+      - "&7Текст над хотбаром снизу"
+      - "&7Может перетираться другими плагинами"
+    sidebar: "&bSidebar"
+    sidebar-lore:
+      - "&7Список справа (scoreboard)"
+      - "&7Может конфликтовать с другими scoreboard"
+    off: "&cOff"
+    off-lore:
+      - "&7Скрыть HUD класса"
+    updated: "&aHUD класса: &f{mode}"

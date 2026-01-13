@@ -8,7 +8,6 @@ import org.bukkit.entity.Player;
 import ru.realite.classes.RealiteClassesPlugin;
 import ru.realite.classes.core.CoreAccess;
 import ru.realite.classes.event.EvolutionUnlockedEvent;
-import ru.realite.classes.gui.ClassSettingsMenu;
 import ru.realite.classes.model.ClassId;
 import ru.realite.classes.model.PlayerProfile;
 import ru.realite.classes.service.ClassService;
@@ -116,7 +115,7 @@ public class ClassCommand implements CommandExecutor {
             return true;
 
         if (args.length == 0) {
-            p.openInventory(plugin.getMenu().create(p));
+            plugin.getMenuManager().openMain(p);
             return true;
         }
 
@@ -678,7 +677,7 @@ public class ClassCommand implements CommandExecutor {
                     return true;
                 }
 
-                p.openInventory(plugin.getMenu().create(p));
+                plugin.getMenuManager().openMain(p);
                 return true;
             }
 
@@ -687,12 +686,12 @@ public class ClassCommand implements CommandExecutor {
                     p.sendMessage(messages.get("cant-change"));
                     return true;
                 }
-                p.openInventory(plugin.getMenu().create(p));
+                plugin.getMenuManager().openMain(p);
                 return true;
             }
 
             case "settings" -> {
-                new ClassSettingsMenu().open(p);
+                plugin.getMenuManager().openSettings(p);
                 return true;
             }
             case "unlocks" -> {
@@ -826,59 +825,59 @@ public class ClassCommand implements CommandExecutor {
                 return true;
             }
 
-            // case "lore" -> {
-            //     if (!p.hasPermission("realite.classes.admin.lore")) {
-            //         p.sendMessage(messages.get("no-permission"));
-            //         return true;
-            //     }
-            //     ClassBackstoryService backstoryService =
-            //             CoreAccess.core().services().get(ClassBackstoryService.class);
+            case "lore" -> {
+                if (!p.hasPermission("realite.classes.admin.lore")) {
+                    p.sendMessage(messages.get("no-permission"));
+                    return true;
+                }
+                ClassBackstoryService backstoryService =
+                        CoreAccess.core().services().get(ClassBackstoryService.class);
 
-            //     if (backstoryService == null) {
-            //         return true;
-            //     }
+                if (backstoryService == null) {
+                    return true;
+                }
 
-            //     if (args.length == 1) {
-            //         if (!prof.hasClass()) {
-            //             p.sendMessage(messages.get("no-class"));
-            //             return true;
-            //         }
-            //         backstoryService.show(p, prof.getClassId().name(), true);
-            //         return true;
-            //     }
+                if (args.length == 1) {
+                    if (!prof.hasClass()) {
+                        p.sendMessage(messages.get("no-class"));
+                        return true;
+                    }
+                    backstoryService.show(p, prof.getClassId().name(), true);
+                    return true;
+                }
 
-            //     String action = args[1].toLowerCase();
-            //     switch (action) {
-            //         case "accept" -> {
-            //             if (args.length < 3) {
-            //                 p.sendMessage(messages.get("lore.accept"));
-            //                 return true;
-            //             }
-            //             backstoryService.accept(p, args[2]);
-            //             return true;
-            //         }
-            //         case "skip" -> {
-            //             if (args.length < 3) {
-            //                 p.sendMessage(messages.get("lore.skip"));
-            //                 return true;
-            //             }
-            //             backstoryService.skip(p, args[2]);
-            //             return true;
-            //         }
-            //         case "later" -> {
-            //             if (args.length < 3) {
-            //                 p.sendMessage(messages.get("lore.later"));
-            //                 return true;
-            //             }
-            //             backstoryService.later(p, args[2]);
-            //             return true;
-            //         }
-            //         default -> {
-            //             backstoryService.show(p, args[1], true);
-            //             return true;
-            //         }
-            //     }
-            // }
+                String action = args[1].toLowerCase();
+                switch (action) {
+                    case "accept" -> {
+                        if (args.length < 3) {
+                            p.sendMessage(messages.get("lore.accept"));
+                            return true;
+                        }
+                        backstoryService.accept(p, args[2]);
+                        return true;
+                    }
+                    case "skip" -> {
+                        if (args.length < 3) {
+                            p.sendMessage(messages.get("lore.skip"));
+                            return true;
+                        }
+                        backstoryService.skip(p, args[2]);
+                        return true;
+                    }
+                    case "later" -> {
+                        if (args.length < 3) {
+                            p.sendMessage(messages.get("lore.later"));
+                            return true;
+                        }
+                        backstoryService.later(p, args[2]);
+                        return true;
+                    }
+                    default -> {
+                        backstoryService.show(p, args[1], true);
+                        return true;
+                    }
+                }
+            }
 
             default -> {
                 p.sendMessage(messages.get("usage"));
