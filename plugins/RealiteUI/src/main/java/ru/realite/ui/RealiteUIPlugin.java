@@ -32,22 +32,36 @@ public final class RealiteUIPlugin extends JavaPlugin {
         settingsStore = new UiSettingsStore(this);
 
         CoreApi core = resolveCore();
-        UiRegistry registry = core == null ? null : core.services().get(UiRegistry.class);
-        if (registry != null) {
-            hudService = new UiHudService(this, messages, registry, settingsStore);
-            getServer().getPluginManager().registerEvents(hudService, this);
-            uiSubscription = core.events().subscribe(UiInvalidateEvent.class,
-                    event -> hudService.refreshIfMatches(event.player(), event.providerId()));
-            long pollingTicks = getConfig().getLong("hud.pollingTicks", 40L);
-            if (pollingTicks > 0) {
-                pollingTask = getServer().getScheduler().runTaskTimer(this, hudService::refreshOnline,
-                        pollingTicks, pollingTicks);
-            }
-            if (getCommand("ui") != null) {
-                getCommand("ui").setExecutor(new UiCommand(messages, settingsStore, hudService, registry));
-            }
-        } else {
+        if (core == null) {
+            getLogger().warning("CoreApi service not found. UI settings are disabled.");
+            // UI без CoreApi не работает — можно просто выйти
+            getServer().getPluginManager().registerEvents(new MenuListener(), this);
+            return;
+        }
+
+        UiRegistry registry = core.services().get(UiRegistry.class);
+        if (registry == null) {
             getLogger().warning("UiRegistry not found. UI settings will be unavailable.");
+            getServer().getPluginManager().registerEvents(new MenuListener(), this);
+            return;
+        }
+
+        hudService = new UiHudService(this, messages, registry, settingsStore);
+        getServer().getPluginManager().registerEvents(hudService, this);
+
+        uiSubscription = core.events().subscribe(
+                UiInvalidateEvent.class,
+                event -> hudService.refreshIfMatches(event.player(), event.providerId()));
+
+        long pollingTicks = getConfig().getLong("hud.pollingTicks", 40L);
+        if (pollingTicks > 0) {
+            pollingTask = getServer().getScheduler().runTaskTimer(
+                    this, hudService::refreshOnline, pollingTicks, pollingTicks);
+        }
+
+        var cmd = getCommand("ui");
+        if (cmd != null) {
+            cmd.setExecutor(new UiCommand(messages, settingsStore, hudService, registry));
         }
 
         getServer().getPluginManager().registerEvents(new MenuListener(), this);
