@@ -88,9 +88,9 @@ public final class CityMainMenu {
 
                 if (plots.isEmpty()) {
                         inventory.setItem(22, simpleItem(
-                                Material.BARRIER,
-                                messages.get("city.gui.plots.empty", "No plots"),
-                                List.of()));
+                                        Material.BARRIER,
+                                        messages.get("city.gui.plots.empty", "No plots"),
+                                        List.of()));
                 } else {
                         int startIndex = safePage * PLOTS_PER_PAGE;
                         int endIndex = Math.min(plots.size(), startIndex + PLOTS_PER_PAGE);
@@ -130,7 +130,7 @@ public final class CityMainMenu {
                 CityMenuHolder holder = new CityMenuHolder(actions);
 
                 Component title = formatComponent("city.gui.plot.title", "Plot #" + plot.number(),
-                        Map.of("number", String.valueOf(plot.number())));
+                                Map.of("number", String.valueOf(plot.number())));
                 Inventory inventory = Bukkit.createInventory(holder, DETAILS_SIZE, title);
                 fillBackground(inventory);
 
@@ -139,61 +139,61 @@ public final class CityMainMenu {
                 boolean isAvailable = plot.ownerId() == null;
                 if (isAvailable) {
                         inventory.setItem(10, actionItem(Material.EMERALD,
-                                "city.gui.plot.action.buy",
-                                "Buy plot",
-                                "city.gui.plot.action_lore.buy",
-                                "Buy this plot"));
+                                        "city.gui.plot.action.buy",
+                                        "Buy plot",
+                                        "city.gui.plot.action_lore.buy",
+                                        "Buy this plot"));
                         actions.put(10, p -> p.performCommand("city plot buy " + plot.id()));
                 }
 
                 if (isShopRentAvailable(player, plot)) {
                         inventory.setItem(11, actionItem(Material.GOLD_INGOT,
-                                "city.gui.plot.action.rent",
-                                "Pay rent",
-                                "city.gui.plot.action_lore.rent",
-                                "Pay shop rent"));
+                                        "city.gui.plot.action.rent",
+                                        "Pay rent",
+                                        "city.gui.plot.action_lore.rent",
+                                        "Pay shop rent"));
                         actions.put(11, p -> p.performCommand("city shop rent pay " + plot.id()));
                 }
 
                 inventory.setItem(15, actionItem(Material.BOOK,
-                        "city.gui.plot.action.owner",
-                        "Owner",
-                        "city.gui.plot.action_lore.owner",
-                        "View owner"));
+                                "city.gui.plot.action.owner",
+                                "Owner",
+                                "city.gui.plot.action_lore.owner",
+                                "View owner"));
                 actions.put(15, p -> p.performCommand("city plot info " + plot.id()));
 
                 if (player.hasPermission("realite.city.admin")) {
                         inventory.setItem(16, actionItem(Material.ENDER_PEARL,
-                                "city.gui.plot.action.teleport",
-                                "Teleport",
-                                "city.gui.plot.action_lore.teleport",
-                                "Teleport to plot"));
+                                        "city.gui.plot.action.teleport",
+                                        "Teleport",
+                                        "city.gui.plot.action_lore.teleport",
+                                        "Teleport to plot"));
                         actions.put(16, p -> p.performCommand("city plot goto " + plot.id()));
                 }
 
                 if (canManagePlot(player, plot)) {
                         inventory.setItem(22, actionItem(Material.PLAYER_HEAD,
-                                "city.gui.plot.action.members",
-                                "Members",
-                                "city.gui.plot.action_lore.members",
-                                "View members"));
+                                        "city.gui.plot.action.members",
+                                        "Members",
+                                        "city.gui.plot.action_lore.members",
+                                        "View members"));
                         actions.put(22, p -> p.performCommand("city plot members " + plot.id()));
                 }
 
                 if (isOwnerOrAdmin(player, plot)) {
                         inventory.setItem(21, actionItem(Material.BARRIER,
-                                "city.gui.plot.action.release",
-                                "Release",
-                                "city.gui.plot.action_lore.release",
-                                "Release plot"));
+                                        "city.gui.plot.action.release",
+                                        "Release",
+                                        "city.gui.plot.action_lore.release",
+                                        "Release plot"));
                         actions.put(21, p -> p.performCommand("city plot release " + plot.id()));
                 }
 
                 inventory.setItem(26, actionItem(Material.ARROW,
-                        "city.gui.plot.action.back",
-                        "Back",
-                        null,
-                        null));
+                                "city.gui.plot.action.back",
+                                "Back",
+                                null,
+                                null));
                 actions.put(26, p -> openPlotsList(p, filter, page));
 
                 player.openInventory(inventory);
@@ -231,10 +231,10 @@ public final class CityMainMenu {
 
         private static boolean isReady() {
                 return messages != null
-                        && config != null
-                        && plotRepository != null
-                        && plotMemberRepository != null
-                        && cityAreaRepository != null;
+                                && config != null
+                                && plotRepository != null
+                                && plotMemberRepository != null
+                                && cityAreaRepository != null;
         }
 
         private static List<Component> buildLore(
@@ -343,14 +343,18 @@ public final class CityMainMenu {
                                 PlotRepository plotRepository,
                                 PlotMemberRepository plotMemberRepository,
                                 CityAreaRepository cityAreaRepository) {
+
                         if (player == null) {
                                 return new HubContext(false, Optional.empty(), false);
                         }
-                        boolean resident = isResident(player, plotRepository, plotMemberRepository);
+
+                        boolean resident = CityMainMenu.isResident(player, plotRepository, plotMemberRepository);
+
                         Optional<String> cityId = Optional.empty();
                         if (cityAreaRepository != null) {
                                 cityId = cityAreaRepository.findContaining(player.getLocation()).map(CityArea::id);
                         }
+
                         boolean questsAvailable = isQuestsAvailable();
                         return new HubContext(resident, cityId, questsAvailable);
                 }
@@ -374,8 +378,8 @@ public final class CityMainMenu {
         }
 
         private static boolean isResident(Player player,
-                                          PlotRepository plotRepository,
-                                          PlotMemberRepository plotMemberRepository) {
+                        PlotRepository plotRepository,
+                        PlotMemberRepository plotMemberRepository) {
                 if (player == null) {
                         return false;
                 }
@@ -398,28 +402,28 @@ public final class CityMainMenu {
         private static ItemStack statusItem(Player player) {
                 HubContext ctx = HubContext.from(player, plotRepository, plotMemberRepository, cityAreaRepository);
                 String residencyKey = ctx.isResident()
-                        ? "city.gui.hub.status.resident"
-                        : "city.gui.hub.status.non_resident";
+                                ? "city.gui.hub.status.resident"
+                                : "city.gui.hub.status.non_resident";
                 Component residency = messages.get(residencyKey, ctx.isResident() ? "Resident" : "Not resident");
 
                 String cityValue = ctx.cityId().orElse(messages.getRaw("city.gui.hub.status.city_none", "none"));
                 Component cityLine = formatComponent("city.gui.hub.status.city", "City: {city}",
-                        Map.of("city", cityValue));
+                                Map.of("city", cityValue));
 
                 List<Component> lore = List.of(residency, cityLine);
 
                 return CityMenuItemFactory.create(
-                        Material.NAME_TAG,
-                        messages.get("city.gui.hub.status.name", "Status"),
-                        lore,
-                        true);
+                                Material.NAME_TAG,
+                                messages.get("city.gui.hub.status.name", "Status"),
+                                lore,
+                                true);
         }
 
         private static void renderPlotsFooter(Inventory inventory,
-                                              Map<Integer, CityMenuAction> actions,
-                                              PlotFilter filter,
-                                              int page,
-                                              int maxPage) {
+                        Map<Integer, CityMenuAction> actions,
+                        PlotFilter filter,
+                        int page,
+                        int maxPage) {
                 inventory.setItem(45, filterItem(filter, PlotFilter.ALL));
                 actions.put(45, p -> openPlotsList(p, PlotFilter.ALL, 0));
 
@@ -432,24 +436,24 @@ public final class CityMainMenu {
                 inventory.setItem(49, pageIndicatorItem(page, maxPage));
 
                 inventory.setItem(51, actionItem(Material.ARROW,
-                        "city.gui.plots.prev",
-                        "<",
-                        null,
-                        null));
+                                "city.gui.plots.prev",
+                                "<",
+                                null,
+                                null));
                 actions.put(51, p -> openPlotsList(p, filter, Math.max(0, page - 1)));
 
                 inventory.setItem(53, actionItem(Material.ARROW,
-                        "city.gui.plots.next",
-                        ">",
-                        null,
-                        null));
+                                "city.gui.plots.next",
+                                ">",
+                                null,
+                                null));
                 actions.put(53, p -> openPlotsList(p, filter, page + 1));
 
                 inventory.setItem(52, actionItem(Material.BARRIER,
-                        "city.gui.plots.back",
-                        "Back",
-                        null,
-                        null));
+                                "city.gui.plots.back",
+                                "Back",
+                                null,
+                                null));
                 actions.put(52, CityMainMenu::openHub);
         }
 
@@ -475,49 +479,47 @@ public final class CityMainMenu {
         private static ItemStack plotListItem(Plot plot) {
                 String owner = formatOwner(plot);
                 String statusKey = plot.ownerId() == null
-                        ? "city.gui.plots.status.available"
-                        : "city.gui.plots.status.occupied";
+                                ? "city.gui.plots.status.available"
+                                : "city.gui.plots.status.occupied";
                 Component status = messages.get(statusKey, plot.ownerId() == null ? "Available" : "Occupied");
                 Component name = formatComponent("city.gui.plots.item.name", "#{number} ({id})",
-                        Map.of("number", String.valueOf(plot.number()), "id", plot.id()));
+                                Map.of("number", String.valueOf(plot.number()), "id", plot.id()));
                 List<Component> lore = List.of(
-                        formatComponent("city.gui.plots.item.lore1", "Type: {type}",
-                                Map.of("type", plot.type() == null ? "?" : plot.type().displayName())),
-                        formatComponent("city.gui.plots.item.lore2", "Price: {price}",
-                                Map.of("price", String.valueOf(plot.price()))),
-                        formatComponent("city.gui.plots.item.lore3", "Owner: {owner}",
-                                Map.of("owner", owner)),
-                        status
-                );
+                                formatComponent("city.gui.plots.item.lore1", "Type: {type}",
+                                                Map.of("type", plot.type() == null ? "?" : plot.type().displayName())),
+                                formatComponent("city.gui.plots.item.lore2", "Price: {price}",
+                                                Map.of("price", String.valueOf(plot.price()))),
+                                formatComponent("city.gui.plots.item.lore3", "Owner: {owner}",
+                                                Map.of("owner", owner)),
+                                status);
                 return CityMenuItemFactory.create(plotMaterial(plot), name, lore, true);
         }
 
         private static ItemStack plotDetailsItem(Plot plot) {
                 String owner = formatOwner(plot);
                 List<Component> lore = List.of(
-                        formatComponent("city.gui.plot.info.lore1", "ID: {id}",
-                                Map.of("id", plot.id())),
-                        formatComponent("city.gui.plot.info.lore2", "Type: {type}",
-                                Map.of("type", plot.type() == null ? "?" : plot.type().displayName())),
-                        formatComponent("city.gui.plot.info.lore3", "Price: {price}",
-                                Map.of("price", String.valueOf(plot.price()))),
-                        formatComponent("city.gui.plot.info.lore4", "Owner: {owner}",
-                                Map.of("owner", owner)),
-                        formatComponent("city.gui.plot.info.lore5", "World: {world}",
-                                Map.of("world", plot.world()))
-                );
+                                formatComponent("city.gui.plot.info.lore1", "ID: {id}",
+                                                Map.of("id", plot.id())),
+                                formatComponent("city.gui.plot.info.lore2", "Type: {type}",
+                                                Map.of("type", plot.type() == null ? "?" : plot.type().displayName())),
+                                formatComponent("city.gui.plot.info.lore3", "Price: {price}",
+                                                Map.of("price", String.valueOf(plot.price()))),
+                                formatComponent("city.gui.plot.info.lore4", "Owner: {owner}",
+                                                Map.of("owner", owner)),
+                                formatComponent("city.gui.plot.info.lore5", "World: {world}",
+                                                Map.of("world", plot.world())));
                 return CityMenuItemFactory.create(
-                        Material.OAK_SIGN,
-                        messages.get("city.gui.plot.info.name", "Plot info"),
-                        lore,
-                        true);
+                                Material.OAK_SIGN,
+                                messages.get("city.gui.plot.info.name", "Plot info"),
+                                lore,
+                                true);
         }
 
         private static ItemStack actionItem(Material material,
-                                            String nameKey,
-                                            String fallbackName,
-                                            String loreKey,
-                                            String loreFallback) {
+                        String nameKey,
+                        String fallbackName,
+                        String loreKey,
+                        String loreFallback) {
                 Component name = messages.get(nameKey, fallbackName);
                 List<Component> lore = new ArrayList<>();
                 if (loreKey != null) {
@@ -531,11 +533,11 @@ public final class CityMainMenu {
 
         private static ItemStack pageIndicatorItem(int page, int maxPage) {
                 Component name = formatComponent(
-                        "city.gui.plots.page",
-                        "Page {current}/{total}",
-                        Map.of(
-                                "current", String.valueOf(page + 1),
-                                "total", String.valueOf(maxPage + 1)));
+                                "city.gui.plots.page",
+                                "Page {current}/{total}",
+                                Map.of(
+                                                "current", String.valueOf(page + 1),
+                                                "total", String.valueOf(maxPage + 1)));
                 return CityMenuItemFactory.create(Material.PAPER, name, List.of(), true);
         }
 
@@ -610,20 +612,20 @@ public final class CityMainMenu {
                         return true;
                 }
                 return plotMemberRepository
-                        .findRole(plot.id(), player.getUniqueId())
-                        .map(role -> role == PlotMemberRole.TRUSTED)
-                        .orElse(false);
+                                .findRole(plot.id(), player.getUniqueId())
+                                .map(role -> role == PlotMemberRole.TRUSTED)
+                                .orElse(false);
         }
 
         private static boolean canManagePlot(Player player, Plot plot) {
                 return isOwnerOrAdmin(player, plot)
-                        && plot.ownerType() == PlotOwnerType.PLAYER;
+                                && plot.ownerType() == PlotOwnerType.PLAYER;
         }
 
         private static boolean isOwnerOrAdmin(Player player, Plot plot) {
                 return player != null
-                        && plot != null
-                        && (player.hasPermission("realite.city.admin")
-                        || plot.isOwnedByPlayer(player.getUniqueId()));
+                                && plot != null
+                                && (player.hasPermission("realite.city.admin")
+                                                || plot.isOwnedByPlayer(player.getUniqueId()));
         }
 }
