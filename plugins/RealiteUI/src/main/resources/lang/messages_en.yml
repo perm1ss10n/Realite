@@ -2,6 +2,11 @@ format:
   prefix: "<gray>[UI]</gray> "
 
 ui:
+  command:
+    player_only: "<red>Players only.</red>"
+  hud:
+    bossbar: "<yellow>{provider}</yellow> <gray>{current}/{max}</gray>"
+    actionbar: "<yellow>{provider}</yellow> <gray>{current}/{max}</gray>"
   menu:
     filler: "<gray> </gray>"
     back: "<yellow>Back</yellow>"
@@ -9,5 +14,15 @@ ui:
     next: "<green>Next</green>"
     previous: "<green>Previous</green>"
     page: "<gray>Page <white>{page}</white>/<white>{pages}</white></gray>"
+  settings:
+    title: "<gold>Interface Settings</gold>"
+    bossbar: "<yellow>BossBar slot</yellow>"
+    actionbar: "<yellow>ActionBar slot</yellow>"
+    choose: "<gray>Click to choose</gray>"
+    current: "<gray>Current: <white>{provider}</white></gray>"
+    select_title: "<gold>Select provider</gold>"
+    provider_item: "<white>{provider}</white>"
+    selected: "<green>Selected</green>"
+    none: "<red>Hide</red>"
   action:
     unavailable: "<gray>Unavailable</gray>"
