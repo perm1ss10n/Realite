@@ -168,6 +168,30 @@ magic:
       locked: "&cNot learned"
     hint:
       select: "&7LMB: select"
+  ui:
+    common:
+      back: "&eBack"
+      next: "&eNext"
+      prev: "&ePrev"
+    spell:
+      details:
+        title: "&5Spell: {spell}"
+    spells:
+      title: "&5Spellbook"
+      empty: "&cNo spells available."
+      page: "&ePage {current}/{total}"
+      hint:
+        details: "&7LMB: details"
+        quick_equip: "&7Shift+LMB: equip"
+      status:
+        available: "&aAvailable"
+        unavailable: "&cUnavailable"
+        unavailable_reason: "&cRequires: &f{reason}"
+        learned: "&aLearned"
+        not_learned: "&cNot learned"
+        equipped: "&eEquipped in slot {slot}"
+        active_slot: "&6Active slot"
+      unavailable: "&cSpellbook screen is unavailable."
   error:
     no_selected_spell: "&cNo spell selected. Open &f/magic&c and choose one."
     cannot_select_spell: "&cYou cannot select this spell: &f{reason}"

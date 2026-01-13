@@ -26,6 +26,7 @@ import ru.realite.magic.effect.SoundEffectExecutor;
 import ru.realite.magic.effect.TeleportEffectExecutor;
 import ru.realite.magic.hud.MagicHudService;
 import ru.realite.magic.i18n.MagicMessages;
+import ru.realite.magic.integration.MagicUiScreensRegistrar;
 import ru.realite.magic.integration.classes.ClassesBridge;
 import ru.realite.magic.integration.classes.CoreClassesBridge;
 import ru.realite.magic.integration.classes.NoopClassesBridge;
@@ -50,6 +51,7 @@ import ru.realite.magic.integration.talents.TalentsBridge;
 import ru.realite.magic.listener.CombatListener;
 import ru.realite.magic.listener.MagicInteractListener;
 import ru.realite.magic.listener.MagicMenuListener;
+import ru.realite.magic.listener.MagicSpellbookMenuListener;
 import ru.realite.magic.listener.MasteryListener;
 import ru.realite.magic.listener.PlayerCleanupListener;
 import ru.realite.magic.listener.SpellBarListener;
@@ -58,6 +60,7 @@ import ru.realite.magic.listener.StaffRechargeListener;
 import ru.realite.magic.mastery.MasteryService;
 import ru.realite.magic.region.RegionRuleService;
 import ru.realite.magic.command.MagicCommand;
+import ru.realite.magic.command.SpellsCommand;
 import ru.realite.magic.service.GuildBonusService;
 import ru.realite.magic.service.MagicService;
 import ru.realite.magic.service.PlayerSpellService;
@@ -162,6 +165,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         registerListeners();
         registerCraftingRecipes();
         registerUiProvider();
+        registerUiScreens();
         
         // === Startup log (after full init) ===
         Banners.REALITE_MAGIC(this);
@@ -207,6 +211,11 @@ public final class RealiteMagicPlugin extends JavaPlugin {
                 debugService, hudService);
         command.setExecutor(magicCommand);
         command.setTabCompleter(magicCommand);
+
+        var spellsCommand = getCommand("spells");
+        if (spellsCommand != null) {
+            spellsCommand.setExecutor(new SpellsCommand(messages));
+        }
     }
 
     private void registerListeners() {
@@ -219,6 +228,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(
                 new MagicMenuListener(magicService.spellSelectMenu(), spellRegistry, playerSpellService, messages),
                 this);
+        Bukkit.getPluginManager().registerEvents(new MagicSpellbookMenuListener(), this);
         Bukkit.getPluginManager().registerEvents(interactListener, this);
         Bukkit.getPluginManager().registerEvents(
                 new SpellBarListener(playerSpellService, hudService), this);
@@ -377,6 +387,10 @@ public final class RealiteMagicPlugin extends JavaPlugin {
             return;
         }
         registry.register(new MagicManaUiProvider(magicService, playerSpellService));
+    }
+
+    private void registerUiScreens() {
+        new MagicUiScreensRegistrar(this, magicService, spellRegistry, playerSpellService, messages).register();
     }
 
     private EffectExecutorRegistry buildEffectRegistry() {

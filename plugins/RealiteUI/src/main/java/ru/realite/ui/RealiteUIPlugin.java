@@ -7,11 +7,15 @@ import org.bukkit.scheduler.BukkitTask;
 import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.Subscription;
 import ru.realite.core.api.ui.UiInvalidateEvent;
+import ru.realite.core.api.ui.UiPaginationService;
 import ru.realite.core.api.ui.UiRegistry;
+import ru.realite.core.api.ui.UiScreenRegistry;
 import ru.realite.core.i18n.MiniMessageMessages;
 import ru.realite.ui.command.UiCommand;
 import ru.realite.ui.hud.UiHudService;
 import ru.realite.ui.menu.MenuListener;
+import ru.realite.ui.pagination.UiPaginationServiceImpl;
+import ru.realite.ui.screen.UiScreenRegistryImpl;
 import ru.realite.ui.settings.UiSettingsStore;
 
 public final class RealiteUIPlugin extends JavaPlugin {
@@ -38,6 +42,9 @@ public final class RealiteUIPlugin extends JavaPlugin {
             getServer().getPluginManager().registerEvents(new MenuListener(), this);
             return;
         }
+
+        core.services().registerIfAbsent(UiScreenRegistry.class, new UiScreenRegistryImpl());
+        core.services().registerIfAbsent(UiPaginationService.class, new UiPaginationServiceImpl());
 
         UiRegistry registry = core.services().get(UiRegistry.class);
         if (registry == null) {

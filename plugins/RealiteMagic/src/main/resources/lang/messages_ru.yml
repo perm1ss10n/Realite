@@ -168,6 +168,30 @@ magic:
       locked: "&cНе изучено"
     hint:
       select: "&7ЛКМ: выбрать"
+  ui:
+    common:
+      back: "&eНазад"
+      next: "&eДалее"
+      prev: "&eНазад"
+    spell:
+      details:
+        title: "&5Заклинание: {spell}"
+    spells:
+      title: "&5Книга заклинаний"
+      empty: "&cНет доступных заклинаний."
+      page: "&eСтраница {current}/{total}"
+      hint:
+        details: "&7ЛКМ: детали"
+        quick_equip: "&7Shift+ЛКМ: экипировать"
+      status:
+        available: "&aДоступно"
+        unavailable: "&cНедоступно"
+        unavailable_reason: "&cТребуется: &f{reason}"
+        learned: "&aИзучено"
+        not_learned: "&cНе изучено"
+        equipped: "&eЭкипировано в слот {slot}"
+        active_slot: "&6Активный слот"
+      unavailable: "&cЭкран заклинаний недоступен."
   error:
     no_selected_spell: "&cЗаклинание не выбрано. Открой &f/magic&c и выбери."
     cannot_select_spell: "&cТы не можешь выбрать это заклинание: &f{reason}"
