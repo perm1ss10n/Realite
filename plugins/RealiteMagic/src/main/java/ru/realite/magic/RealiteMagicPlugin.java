@@ -50,7 +50,6 @@ import ru.realite.magic.integration.talents.NoopTalentsBridge;
 import ru.realite.magic.integration.talents.TalentsBridge;
 import ru.realite.magic.listener.CombatListener;
 import ru.realite.magic.listener.MagicInteractListener;
-import ru.realite.magic.listener.MagicMenuListener;
 import ru.realite.magic.listener.MagicSpellbookMenuListener;
 import ru.realite.magic.listener.MasteryListener;
 import ru.realite.magic.listener.PlayerCleanupListener;
@@ -225,9 +224,6 @@ public final class RealiteMagicPlugin extends JavaPlugin {
                 new SpellUnlockListener(magicService, playerSpellService, messages), this);
         Bukkit.getPluginManager().registerEvents(
                 new PlayerCleanupListener(magicService, playerSpellService), this);
-        Bukkit.getPluginManager().registerEvents(
-                new MagicMenuListener(magicService.spellSelectMenu(), spellRegistry, playerSpellService, messages),
-                this);
         Bukkit.getPluginManager().registerEvents(new MagicSpellbookMenuListener(), this);
         Bukkit.getPluginManager().registerEvents(interactListener, this);
         Bukkit.getPluginManager().registerEvents(

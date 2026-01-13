@@ -10,6 +10,7 @@ import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.service.MagicService;
 import ru.realite.magic.service.PlayerSpellService;
 import ru.realite.magic.spell.SpellRegistry;
+import ru.realite.magic.ui.screen.MagicLoadoutScreen;
 import ru.realite.magic.ui.screen.MagicSpellDetailsScreen;
 import ru.realite.magic.ui.screen.MagicSpellsScreen;
 
@@ -47,6 +48,8 @@ public final class MagicUiScreensRegistrar {
         registry.register(new MagicSpellsScreen(magicService, spellRegistry, playerSpellService,
                 messages, paginationService, registry));
         registry.register(new MagicSpellDetailsScreen(magicService, spellRegistry, playerSpellService,
+                messages, registry));
+        registry.register(new MagicLoadoutScreen(magicService, spellRegistry, playerSpellService,
                 messages, registry));
     }
 

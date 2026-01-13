@@ -41,7 +41,29 @@ public final class MagicSpellsScreen implements UiScreen {
 
     @Override
     public void open(Player player, @Nullable String payload) {
+        Integer selectionSlot = parseSelectionSlot(payload);
         new MagicSpellbookMenu(magicService, spellRegistry, playerSpellService, messages,
-                paginationService, screenRegistry, 0).open(player);
+                paginationService, screenRegistry, 0, selectionSlot).open(player);
+    }
+
+    private Integer parseSelectionSlot(@Nullable String payload) {
+        if (payload == null || payload.isBlank()) {
+            return null;
+        }
+        String raw = payload.trim();
+        if (raw.startsWith("slot=")) {
+            raw = raw.substring("slot=".length());
+        } else if (raw.startsWith("slot:")) {
+            raw = raw.substring("slot:".length());
+        }
+        try {
+            int slot = Integer.parseInt(raw);
+            if (slot <= 0 || slot > magicService.slotCount()) {
+                return null;
+            }
+            return slot;
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 }

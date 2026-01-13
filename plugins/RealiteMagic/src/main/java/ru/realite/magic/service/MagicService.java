@@ -37,7 +37,6 @@ import ru.realite.magic.effect.EffectContext;
 import ru.realite.magic.effect.EffectExecutorRegistry;
 import ru.realite.magic.effect.SpellEffectDefinition;
 import ru.realite.magic.effect.SpellEffectExecutor;
-import ru.realite.magic.gui.SpellSelectMenu;
 import ru.realite.magic.hud.MagicHudService;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.integration.classes.ClassesBridge;
@@ -106,7 +105,6 @@ public final class MagicService {
     private final MagicOverrideService overrideService;
     private final Map<UUID, MageState> states = new HashMap<>();
     private final WarnLimiter warnLimiter = new WarnLimiter();
-    private final SpellSelectMenu spellSelectMenu;
     private final TargetResolver targetResolver = new TargetResolver();
     private CastEngine castEngine;
     private BukkitTask regenTask;
@@ -165,8 +163,6 @@ public final class MagicService {
                 this.messages,
                 this::warnMissingItemBridge,
                 this.failWhenItemsUnavailable);
-        this.spellSelectMenu = new SpellSelectMenu(plugin, spellRegistry, playerSpellService, requirementChecker,
-                messages);
         this.itemModifiersService = new ItemModifiersService(plugin, itemsBridge);
         this.staffChargeService = new StaffChargeService(itemsBridge);
     }
@@ -552,12 +548,12 @@ public final class MagicService {
         }
     }
 
-    public SpellSelectMenu spellSelectMenu() {
-        return spellSelectMenu;
-    }
-
     public DebugService debugService() {
         return debugService;
+    }
+
+    public int slotCount() {
+        return 9;
     }
 
     public EquipSpellResult equipSpell(Player player, SpellDefinition spell) {
