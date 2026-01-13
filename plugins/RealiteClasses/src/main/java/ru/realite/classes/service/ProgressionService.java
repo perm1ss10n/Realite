@@ -9,6 +9,8 @@ import ru.realite.classes.util.Messages;
 import ru.realite.classes.util.ChatTemplate;
 import ru.realite.classes.util.ItemComponents;
 import ru.realite.core.api.events.ClassLevelUpEvent;
+import ru.realite.core.api.ui.UiInvalidateEvent;
+import ru.realite.classes.ui.ClassLevelXpUiProvider;
 
 import java.util.Map;
 
@@ -94,5 +96,6 @@ public class ProgressionService {
         }
 
         classService.save(p);
+        CoreAccess.core().events().publish(new UiInvalidateEvent(player, ClassLevelXpUiProvider.ID));
     }
 }
