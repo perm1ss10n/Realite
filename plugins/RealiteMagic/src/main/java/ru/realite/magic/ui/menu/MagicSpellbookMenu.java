@@ -51,12 +51,12 @@ public final class MagicSpellbookMenu implements InventoryHolder, MagicUiMenu {
     private int currentPage;
 
     public MagicSpellbookMenu(MagicService magicService,
-                              SpellRegistry spellRegistry,
-                              PlayerSpellService playerSpellService,
-                              MagicMessages messages,
-                              UiPaginationService paginationService,
-                              UiScreenRegistry screenRegistry,
-                              int page) {
+            SpellRegistry spellRegistry,
+            PlayerSpellService playerSpellService,
+            MagicMessages messages,
+            UiPaginationService paginationService,
+            UiScreenRegistry screenRegistry,
+            int page) {
         this.magicService = Objects.requireNonNull(magicService, "magicService");
         this.spellRegistry = Objects.requireNonNull(spellRegistry, "spellRegistry");
         this.playerSpellService = Objects.requireNonNull(playerSpellService, "playerSpellService");
@@ -109,12 +109,15 @@ public final class MagicSpellbookMenu implements InventoryHolder, MagicUiMenu {
 
         int index = 0;
         for (SpellDefinition spell : page.items()) {
-            int slot = slots.get(index++);
-            boolean learned = playerSpellService.hasSpell(player.getUniqueId(), spell.id());
-            CheckResult result = magicService.checkRequirements(player, spell);
-            Integer equippedSlot = slotMap.get(spell.id().toLowerCase(Locale.ROOT));
-            inventory.setItem(slot, createSpellItem(spell, learned, result, equippedSlot, activeSlot));
-            actions.put(slot, (viewer, event) -> handleSpellClick(viewer, event, spell));
+            final int slot = slots.get(index++);
+            final SpellDefinition clickedSpell = spell;
+
+            boolean learned = playerSpellService.hasSpell(player.getUniqueId(), clickedSpell.id());
+            CheckResult result = magicService.checkRequirements(player, clickedSpell);
+            Integer equippedSlot = slotMap.get(clickedSpell.id().toLowerCase(Locale.ROOT));
+
+            inventory.setItem(slot, createSpellItem(clickedSpell, learned, result, equippedSlot, activeSlot));
+            actions.put(slot, (viewer, event) -> handleSpellClick(viewer, event, clickedSpell));
         }
 
         if (spells.isEmpty()) {
@@ -190,10 +193,10 @@ public final class MagicSpellbookMenu implements InventoryHolder, MagicUiMenu {
     }
 
     private ItemStack createSpellItem(SpellDefinition spell,
-                                      boolean learned,
-                                      CheckResult availability,
-                                      Integer equippedSlot,
-                                      int activeSlot) {
+            boolean learned,
+            CheckResult availability,
+            Integer equippedSlot,
+            int activeSlot) {
         ItemStack item = new ItemStack(spell.iconMaterial());
         ItemMeta meta = item.getItemMeta();
         if (meta == null) {
@@ -253,10 +256,10 @@ public final class MagicSpellbookMenu implements InventoryHolder, MagicUiMenu {
     }
 
     private void setButton(int slot,
-                           Material material,
-                           Component name,
-                           List<Component> lore,
-                           BiConsumer<Player, InventoryClickEvent> action) {
+            Material material,
+            Component name,
+            List<Component> lore,
+            BiConsumer<Player, InventoryClickEvent> action) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
@@ -283,8 +286,9 @@ public final class MagicSpellbookMenu implements InventoryHolder, MagicUiMenu {
     private Map<String, Integer> resolveSlots(UUID playerId) {
         Map<String, Integer> map = new HashMap<>();
         for (int slot = 1; slot <= 9; slot++) {
+            final int equippedSlot = slot;
             playerSpellService.getSlot(playerId, slot)
-                    .ifPresent(spellId -> map.put(spellId.toLowerCase(Locale.ROOT), slot));
+                    .ifPresent(spellId -> map.put(spellId.toLowerCase(Locale.ROOT), equippedSlot));
         }
         return map;
     }
