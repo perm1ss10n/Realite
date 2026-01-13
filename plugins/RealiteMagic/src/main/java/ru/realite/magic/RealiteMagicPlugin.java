@@ -65,7 +65,9 @@ import ru.realite.magic.service.PlayerSpellServiceImpl;
 import ru.realite.magic.spell.SpellRegistry;
 import ru.realite.magic.storage.PlayerSpellStorage;
 import ru.realite.magic.storage.YamlPlayerSpellStorage;
+import ru.realite.magic.ui.MagicManaUiProvider;
 import ru.realite.core.api.logging.Banners;
+import ru.realite.core.api.ui.UiRegistry;
 
 public final class RealiteMagicPlugin extends JavaPlugin {
 
@@ -159,6 +161,7 @@ public final class RealiteMagicPlugin extends JavaPlugin {
         registerCommand();
         registerListeners();
         registerCraftingRecipes();
+        registerUiProvider();
         
         // === Startup log (after full init) ===
         Banners.REALITE_MAGIC(this);
@@ -362,6 +365,18 @@ public final class RealiteMagicPlugin extends JavaPlugin {
             return new CoreEventPublisher(provider.getProvider().events());
         }
         return new BukkitEventPublisher();
+    }
+
+    private void registerUiProvider() {
+        RegisteredServiceProvider<CoreApi> provider = Bukkit.getServicesManager().getRegistration(CoreApi.class);
+        if (provider == null || provider.getProvider() == null) {
+            return;
+        }
+        UiRegistry registry = provider.getProvider().services().get(UiRegistry.class);
+        if (registry == null) {
+            return;
+        }
+        registry.register(new MagicManaUiProvider(magicService, playerSpellService));
     }
 
     private EffectExecutorRegistry buildEffectRegistry() {

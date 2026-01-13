@@ -71,6 +71,8 @@ import ru.realite.magic.talent.TalentMagicService;
 import ru.realite.magic.target.SpellTarget;
 import ru.realite.magic.target.SpellTargetDefinition;
 import ru.realite.magic.target.SpellTargetType;
+import ru.realite.magic.ui.MagicManaUiProvider;
+import ru.realite.core.api.ui.UiInvalidateEvent;
 import ru.realite.magic.target.TargetResolver;
 
 public final class MagicService {
@@ -211,7 +213,12 @@ public final class MagicService {
 
     public void setMana(Player player, double mana) {
         MageState state = state(player);
-        state.mana(clamp(mana, 0, state.maxMana()));
+        double next = clamp(mana, 0, state.maxMana());
+        if (Double.compare(state.mana(), next) == 0) {
+            return;
+        }
+        state.mana(next);
+        eventPublisher.publish(new UiInvalidateEvent(player, MagicManaUiProvider.ID));
     }
 
     public void addMana(Player player, double amount) {
