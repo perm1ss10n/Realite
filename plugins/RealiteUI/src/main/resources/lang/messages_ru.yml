@@ -1,0 +1,13 @@
+format:
+  prefix: "<gray>[UI]</gray> "
+
+ui:
+  menu:
+    filler: "<gray> </gray>"
+    back: "<yellow>Назад</yellow>"
+    close: "<red>Закрыть</red>"
+    next: "<green>Далее</green>"
+    previous: "<green>Назад</green>"
+    page: "<gray>Страница <white>{page}</white>/<white>{pages}</white></gray>"
+  action:
+    unavailable: "<gray>Недоступно</gray>"

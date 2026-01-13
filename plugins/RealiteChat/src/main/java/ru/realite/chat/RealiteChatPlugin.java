@@ -26,6 +26,7 @@ import ru.realite.core.api.classes.ClassTagProvider;
 import ru.realite.core.api.guilds.GuildChatBridge;
 import ru.realite.core.api.guilds.GuildTagProvider;
 import ru.realite.core.api.logging.Banners;
+import ru.realite.core.i18n.MiniMessageMessages;
 
 public final class RealiteChatPlugin extends JavaPlugin implements Listener {
 
@@ -45,7 +46,7 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
     private GuildTagProvider guildTagProvider;
     private GuildChatBridge guildChatBridge;
 
-    private ChatMessages messages;
+    private MiniMessageMessages messages;
     private ChatFormat chatFormat;
     private ChatFormat guildChatFormat;
 
@@ -99,7 +100,7 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
         Banners.REALITE_CHAT(this);
 
         String language = resolveLanguage();
-        messages = new ChatMessages(this, language);
+        messages = new MiniMessageMessages(this, language);
 
         prefixProvider = resolvePrefixProvider();
         classTagProvider = resolveClassTagProvider();
@@ -127,7 +128,7 @@ public final class RealiteChatPlugin extends JavaPlugin implements Listener {
         }
     }
 
-    ChatMessages getMessages() {
+    MiniMessageMessages getMessages() {
         return messages;
     }
 
