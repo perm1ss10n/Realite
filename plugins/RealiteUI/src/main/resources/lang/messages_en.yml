@@ -1,0 +1,13 @@
+format:
+  prefix: "<gray>[UI]</gray> "
+
+ui:
+  menu:
+    filler: "<gray> </gray>"
+    back: "<yellow>Back</yellow>"
+    close: "<red>Close</red>"
+    next: "<green>Next</green>"
+    previous: "<green>Previous</green>"
+    page: "<gray>Page <white>{page}</white>/<white>{pages}</white></gray>"
+  action:
+    unavailable: "<gray>Unavailable</gray>"
