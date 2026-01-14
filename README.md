@@ -28,6 +28,7 @@ Realite/
     ├── RealiteQuests/                  # Quest engine + content packs
     ├── RealiteItems/                   # Custom items + Items API/Bridge
     ├── RealiteMagic/                   # Magic: casting, schools, reagents, HUD
+    ├── RealiteUI/                      # UI: unified HUD, ActionBar, BossBar rendering
     ├── RealiteFamiliars/               # Companions and familiars (planned)
 ```
 
@@ -182,6 +183,50 @@ Purpose:
 - remove duplicated chat logic from gameplay plugins
 - ensure consistent message style across the RPG ecosystem
 
+### 🖥️ UI and HUD System (RealiteUI)
+
+RealiteUI is a centralized UI module of the Realite platform, responsible for rendering
+HUD elements, ActionBar, BossBar and screen-based interfaces.
+
+RealiteUI fully separates presentation from gameplay logic and acts as the single
+UI rendering entry point for all Realite modules.
+
+Core principles:
+- unified UI pipeline across the entire platform
+- strict separation between data and presentation
+- no direct UI rendering logic inside gameplay plugins
+
+Architecture:
+- gameplay modules (Classes, Magic, Quests, Guilds, etc.) do not render UI directly
+- modules provide structured UI data through RealiteCore
+- RealiteUI is responsible for:
+  - layout
+  - formatting
+  - pagination
+  - updating and rendering
+
+Features:
+- HUD elements (stats, mana, experience, states)
+- ActionBar and BossBar with unified formatting
+- GUI screens with shared navigation and pagination
+- HUD fallback mechanism (polling when events are unavailable)
+- unified UI localization system
+- extensible UI providers for modules
+
+Integrations:
+- RealiteClasses — class, level and progression
+- RealiteMagic — mana, spells, casting, diagnostics
+- RealiteQuests — quest hub and progress details
+- RealiteGuilds — guild information
+- RealiteCityInfrastructure — city and plot menus
+- RealiteCore — UI provider registration and data delivery
+
+Purpose:
+- ensure a consistent visual style across the entire RPG ecosystem
+- simplify UI iteration without touching gameplay logic
+- reduce duplicated HUD logic between modules
+- prepare the platform for further UI scaling
+
 ---
 
 ### 🐾 Companions and Familiars (RealiteFamiliars - Planned)
@@ -254,8 +299,4 @@ TBD.
 
 ## 📌 Status
 
-Active development. **Current stable milestone:** magic and items release (`v0.6.0-magic-release`).
-
-- Magic and items integrated into the platform core
-- Builds pass locally and in CI
-- Architecture stabilized for further content development
+Active development.
