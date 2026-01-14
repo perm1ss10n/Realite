@@ -194,64 +194,56 @@ classes:
             - "EMERALD:8"
 
   ALCHEMIST:
-    icon: BREWING_STAND
+    icon: AMETHYST_SHARD
     name: "Алхимик"
     lore:
-      - "+ бонусы к зельям"
-      - "+ ночное зрение"
+      - "+ светлая магия"
+      - "+ усиленные зелья"
+      - "+ ауры поддержки"
       - "- меньше здоровья"
     effects:
       - "NIGHT_VISION:0"
-      - "HUNGER:0"
-    xp-per-level: 100
+      - "GLOWING:0"
+      - "HEALTH_BOOST:-2"
+    xp-per-level: 120
+
     evolutions:
-      - id: apprentice
-        title: "Ученик"
+      - id: initiate
+        title: "Посвящённый"
         rewards:
-          money: 100
           items:
             - "GLASS_BOTTLE:16"
-            - "NETHER_WART:8"
+            - "GLOWSTONE_DUST:8"
 
-      - id: alchemist
-        title: "Алхимик"
-        required-level: 10
+      - id: light_alchemist
+        title: "Алхимик Света"
+        required-level: 15
         cost:
           items:
-            - "BLAZE_ROD:8"
-            - "NETHER_WART:32"
+            - "GHAST_TEAR:4"
+            - "AMETHYST_SHARD:8"
         rewards:
-          money: 400
           items:
-            - "REDSTONE:32"
-            - "GLOWSTONE_DUST:16"
+            - "BOOK:1" # книга формул
+            - "GOLDEN_CARROT:8"
 
-      - id: archmage
-        title: "Архимаг"
-        required-level: 25
-        cost:
-          items:
-            - "BLAZE_ROD:24"
-            - "GHAST_TEAR:8"
+      - id: transmuter
+        title: "Трансмутационный маг"
+        required-level: 30
         rewards:
-          money: 900
           items:
-            - "GUNPOWDER:32"
-            - "FERMENTED_SPIDER_EYE:8"
+            - "TOTEM_OF_UNDYING:1"
 
-      - id: overlord
-        title: "Владыка зелий"
-        required-level: 50
+      - id: forbidden_scholar
+        title: "Запретный учёный"
+        required-level: 45
         cost:
-          money: 8000
+          money: 3000
           items:
-            - "BLAZE_ROD:64"
-            - "DRAGON_BREATH:8"
+            - "NETHER_STAR:1"
         rewards:
-          money: 1500
           items:
-            - "GOLDEN_APPLE:2"
-            - "ENDER_PEARL:16"
+            - "ENCHANTED_GOLDEN_APPLE:10"
 
   MERCHANT:
     icon: EMERALD
