@@ -5,7 +5,9 @@ import ru.realite.classes.core.CoreAccess;
 import ru.realite.classes.model.ClassId;
 import ru.realite.classes.model.PlayerProfile;
 import ru.realite.classes.storage.YamlProfileRepository;
+import ru.realite.classes.ui.ClassLevelXpUiProvider;
 import ru.realite.core.api.events.ClassSelectedEvent;
+import ru.realite.core.api.ui.UiInvalidateEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -100,5 +102,6 @@ public class ClassService {
 
         // важно: можно расширить событие позже, но хотя бы текущее не ломаем
         CoreAccess.core().events().publish(new ClassSelectedEvent(player.getUniqueId(), newClass.name()));
+        CoreAccess.core().events().publish(new UiInvalidateEvent(player, ClassLevelXpUiProvider.ID));
     }
 }

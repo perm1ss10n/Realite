@@ -36,6 +36,7 @@ import ru.realite.guilds.service.GuildUpgradeEffectService;
 import ru.realite.guilds.service.GuildUpgradeService;
 import ru.realite.guilds.storage.GuildRepository;
 import ru.realite.guilds.storage.GuildUpgradeConfigRepository;
+import ru.realite.ui.menu.MenuListener;
 
 import java.io.File;
 import java.io.InputStream;
@@ -92,7 +93,16 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
         );
 
         GuildChatInputService inputService = new GuildChatInputService(this, messages);
-        GuildMenuManager menuManager = new GuildMenuManager(messages, service, inputService);
+        GuildMenuManager menuManager = new GuildMenuManager(
+                messages,
+                service,
+                repository,
+                rankService,
+                upgradeService,
+                upgradeConfigRepository,
+                treasuryService,
+                inputService
+        );
 
         // command
         PluginCommand command = getCommand("g");
@@ -113,7 +123,7 @@ public final class RealiteGuildsPlugin extends JavaPlugin {
         // listeners
         getServer().getPluginManager().registerEvents(new GuildHomeWarmupListener(service), this);
         getServer().getPluginManager().registerEvents(inputService, this);
-        getServer().getPluginManager().registerEvents(menuManager, this);
+        getServer().getPluginManager().registerEvents(new MenuListener(), this);
 
         CityAccessHook cityAccessHook = resolveCityAccessHook();
         getServer().getPluginManager().registerEvents(

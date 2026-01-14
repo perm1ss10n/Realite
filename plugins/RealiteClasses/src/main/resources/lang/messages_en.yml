@@ -6,6 +6,11 @@ cant-change: "&cYou can change class only at the final evolution or with a donor
 
 usage: "&eUsage: &f/class&7, &f/class choose&7, &f/class change&7, &f/class info&7, &f/class evolve&7, &f/class lore&7, &f/class unlocks"
 
+lore.usage: "&eUsage: &f/class lore <accept|later|skip>"
+lore.accept: "&aUsage: /class accept."
+lore.skip: "&aYou skipped the class backstory."
+lore.later: "&aYou postponed reading the class backstory."
+
 class-help-header: "&6&lRealiteClasses &7— commands:"
 
 class-help:
@@ -13,13 +18,9 @@ class-help:
   - "&e/class change &7— change your class (if allowed)"
   - "&e/class info &7— class and progression information"
   - "&e/class evolve &7— attempt to evolve your class"
-<<<<<<< HEAD
   - "&e/class lore &7— read class backstory"
   - "&e/class unlocks &7— hidden class status"
   - "&e/class settings &7— interface and HUD settings"
-=======
-  - "&e/class settings &7— interface settings"
->>>>>>> origin/main
 
 class-help-admin:
   - "&e/class reload &7— reload configs"
@@ -99,7 +100,6 @@ evolve-not-enough-level: "&cYou do not have enough levels to evolve."
 evolve-no-money: "&cYou do not have enough money."
 evolve-no-items: "&cYou do not have the required items to evolve."
 
-<<<<<<< HEAD
 class-locked: "&5This path is sealed for now. &dYou have yet to uncover all the secrets of the required classes."
 class-locked-quest: "&7Complete the unlock quest: &e{quest}"
 class-locked-evolution: "&dYou must finish the required class evolutions."
@@ -116,13 +116,6 @@ class-unlocks-empty: "&7No hidden classes configured."
 
 mastered-yes: "&acompleted"
 mastered-no: "&cnot completed"
-=======
-class-locked: "&5This path is sealed for now. &dYou have not yet mastered all the required classes."
-class-locked-requirements: "&7You must fully master: &e{req}"
-
-mastered-yes: "&afully mastered"
-mastered-no: "&cnot mastered"
->>>>>>> origin/main
 
 info-header: "&6&lClass: &e{class}"
 info-body:
@@ -132,3 +125,47 @@ info-body:
   - "&7Next evolution: &e{nextEvolution} &7(lv. {nextRequired})"
   - "&7Cost: &e{nextCostMoney} &7| items: &e{nextCostItems}"
   - "&7Mastery: {mastered}"
+
+ui:
+  common:
+    back: "&7Back"
+    close: "&7Close"
+    prev: "&7Previous"
+    next: "&7Next"
+    confirm: "&aConfirm"
+    cancel: "&cCancel"
+    coming_soon: "&8Coming soon."
+  classes:
+    main:
+      title: "&6Classes"
+      progress: "&eProgress"
+      progress-lore:
+        - "&7Details about your current class"
+        - "&7and evolutions"
+    details:
+      title: "&6Class: &e{class}"
+      choose: "&aChoose class"
+      effects-title: "&6Bonuses"
+      evolutions-title: "&6Evolutions"
+      evolutions-empty: "&7No evolutions available."
+      evolution-entry: "&7- &e{evolution} &7(lv. {level})"
+    confirm:
+      title: "&6Confirm: &e{class}"
+    settings:
+      title: "&6HUD settings"
+      bossbar: "&6BossBar"
+      bossbar-lore:
+        - "&7Bar at the top of the screen"
+        - "&7Recommended (default)"
+      actionbar: "&aActionBar"
+      actionbar-lore:
+        - "&7Text above the hotbar"
+        - "&7May be overwritten by other plugins"
+      sidebar: "&bSidebar"
+      sidebar-lore:
+        - "&7Right-side list (scoreboard)"
+        - "&7May conflict with other scoreboards"
+      off: "&cOff"
+      off-lore:
+        - "&7Hide class HUD"
+      updated: "&aClass HUD: &f{mode}"

@@ -6,6 +6,9 @@ effects:
 storage:
   autosave-minutes: 5
 
+hud:
+  legacy-bossbar: false
+
 testerMode:
   enabled: false
 

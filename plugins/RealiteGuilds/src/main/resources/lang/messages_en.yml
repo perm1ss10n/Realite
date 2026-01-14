@@ -159,6 +159,7 @@ upgrade:
     max_level: "{prefix}&cAlready at maximum level."
     not_found: "{prefix}&cUnknown upgrade."
     requirements: "{prefix}&cRequirements not met."
+    unavailable: "{prefix}&cUpgrade purchase is unavailable."
 
 chat:
   guild:
@@ -172,57 +173,124 @@ xp:
   added: "{prefix}&aGuild &f[{tag}]&a received &f{amount}&a XP. Total: &f{total}&a, level: &f{level}&a. Reason: &f{reason}&a."
   levelup: "{prefix}&aGuild &f[{tag}]&a has reached level &f{level}&a!"
 
-gui:
-  title:
-    root: "&6&lRealiteGuilds &7— commands"
-    basics: "&a▸ Basics"
-    members: "&a▸ Members & roles"
-    territory: "&a▸ Territory & base"
-    claim: "&a▸ Territory — claim"
-    economy: "&a▸ Economy & chat"
-
-  button:
-    basics: "&aBasics"
-    members: "&aMembers & roles"
-    territory: "&aTerritory & base"
-    economy: "&aEconomy & chat"
+ui:
+  common:
     back: "&7Back"
     close: "&cClose"
+    prev: "&7Previous"
+    next: "&7Next"
+    confirm: "&aConfirm"
+    cancel: "&cCancel"
+    coming_soon: "&8Coming soon."
+  guild:
+    main:
+      title: "&6&lGuild"
+      no_guild: "&cYou are not a member of a guild."
+      create: "&eCreate guild"
+      join: "&eJoin guild"
+      info:
+        title: "&eGuild info"
+        name: "&7Name: &f{name}"
+        tag: "&7Tag: &f[{tag}]"
+        level: "&7Level: &f{level}"
+        xp: "&7XP: &f{xp}"
+        members: "&7Members: &f{count}/{max}"
+        treasury: "&7Treasury: &f{amount}"
+      members: "&aMembers"
+      ranks: "&aRanks & permissions"
+      ranks_disabled: "&7Ranks unavailable"
+      upgrades: "&aUpgrades"
+      upgrades_disabled: "&7Upgrades unavailable"
+      treasury: "&aTreasury"
+      settings_disabled: "&7Settings"
+      invite: "&eInvite member"
+      leave: "&cLeave guild"
+      disband: "&cDisband guild"
+      lore:
+        open: "&7LMB — open"
+        run: "&7LMB — run"
+        input: "&7LMB — enter in chat"
+        confirm: "&7LMB — confirm"
+        unavailable: "&7Unavailable"
 
-    create: "&e/g create"
-    info: "&e/g info"
-    join: "&e/g join"
-    leave: "&e/g leave"
-    disband: "&e/g disband"
+    members:
+      title: "&aGuild members"
+      invite: "&eInvite"
+      invite_disabled: "&7Invite unavailable"
+      entry:
+        title: "&f{name}"
+        rank: "&7Rank: &f{rank}"
+        online: "&aOnline"
+        offline: "&7Offline"
+        owner: "&6Owner"
+        member: "&7Member"
 
-    invite: "&e/g invite"
-    ranks: "&e/g ranks"
-    setrank: "&e/g setrank"
+    member:
+      title: "&aMember profile"
+      name: "&f{name}"
+      rank: "&7Rank: &f{rank}"
+      online: "&aOnline"
+      offline: "&7Offline"
+      promote: "&aPromote"
+      demote: "&eDemote"
+      promote_lore: "&7LMB — promote"
+      demote_lore: "&7LMB — demote"
+      rank_target: "&7Target rank: &f{rank}"
+      promote_disabled: "&7Cannot promote"
+      demote_disabled: "&7Cannot demote"
+      kick_disabled: "&7Kick (N/A)"
+      unavailable: "&7Not available"
 
-    claim: "&e/g claim"
-    claim_pos1: "&eclaim pos1"
-    claim_pos2: "&eclaim pos2"
-    claim_apply: "&eclaim apply"
-    claim_clear: "&eclaim clear"
+    upgrades:
+      title: "&aGuild upgrades"
+      description: "&7{description}"
+      level: "&7Level: &f{level}/{max}"
+      cost: "&7Cost: &f{amount}"
+      cost_maxed: "&aMax level"
+      cost_unavailable: "&7Cost unavailable"
+      req_level: "&7Requires level: &f{level}"
+      click_to_buy: "&eLMB — purchase"
+      disabled: "&7Upgrade disabled"
+      unavailable: "{prefix}&cUpgrades unavailable."
 
-    home: "&e/g home"
-    sethome: "&e/g sethome"
-    tp: "&e/g tp"
+    treasury:
+      title: "&aGuild treasury"
+      balance_title: "&eBalance"
+      balance: "&7Balance: &f{amount}"
+      deposit_disabled: "&7Deposit"
+      withdraw_disabled: "&7Withdraw"
+      history_disabled: "&7History"
+      unavailable: "&7Feature unavailable"
+      no_permission: "&cNo permission"
 
-    salary: "&e/g salary"
-    upgrades: "&e/g upgrades"
-    upgrade_buy: "&e/g upgrade buy"
-    toggle: "&e/g toggle"
+    confirm:
+      info: "&eConfirm action"
+      leave:
+        title: "&cLeave guild?"
+        desc: "&7Are you sure you want to leave the guild?"
+      disband:
+        title: "&cDisband guild?"
+        desc: "&7Are you sure you want to disband the guild?"
+      upgrade:
+        title: "&6Purchase upgrade?"
+        desc: "&7Buy &f{name} &7for &f{cost}&7?"
 
-  lore:
-    run: "&7LMB — run"
-    open: "&7LMB — open"
-    input: "&7LMB — enter in chat"
+    join:
+      title: "&aChoose guild"
+      entry: "&eJoin &f[{tag}]"
+      lore: "&7LMB — join"
 
-  input:
-    cancel_hint: "{prefix}&7Type &ccancel&7 to exit input."
-    create: "{prefix}&eEnter: &f<tag> <name...>&e (example: &6ABC &fMy guild&e)"
-    invite: "{prefix}&eEnter the player name to invite."
-    setrank: "{prefix}&eEnter: &f<player> <rankId>&e (example: &6Steve member&e)"
-    tp: "{prefix}&eEnter the guild member name to teleport to."
-    upgrade_buy: "{prefix}&eEnter the upgrade id to purchase."
+    menu:
+      back_lore: "&7LMB — back"
+      page_lore: "&7LMB — page"
+      input_lore: "&7LMB — enter in chat"
+      prev_disabled: "&7No previous"
+      next_disabled: "&7No next"
+
+    input:
+      cancel_hint: "{prefix}&7Type &ccancel&7 to exit input."
+      create: "{prefix}&eEnter: &f<tag> <name...>&e (example: &6ABC &fMy guild&e)"
+      invite: "{prefix}&eEnter the player name to invite."
+      setrank: "{prefix}&eEnter: &f<player> <rankId>&e (example: &6Steve member&e)"
+      tp: "{prefix}&eEnter the guild member name to teleport to."
+      upgrade_buy: "{prefix}&eEnter the upgrade id to purchase."

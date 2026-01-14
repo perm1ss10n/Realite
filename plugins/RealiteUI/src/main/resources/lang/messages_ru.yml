@@ -1,0 +1,32 @@
+format:
+  prefix: "<gray>[UI]</gray> "
+
+ui:
+  common:
+    back: "<yellow>Назад</yellow>"
+    close: "<red>Закрыть</red>"
+    next: "<green>Далее</green>"
+    prev: "<green>Назад</green>"
+    confirm: "<green>Подтвердить</green>"
+    cancel: "<red>Отмена</red>"
+    coming_soon: "<gray>Скоро.</gray>"
+  command:
+    player_only: "<red>Только для игроков.</red>"
+  hud:
+    bossbar: "<yellow>{provider}</yellow> <gray>{current}/{max}</gray>"
+    actionbar: "<yellow>{provider}</yellow> <gray>{current}/{max}</gray>"
+  menu:
+    filler: "<gray> </gray>"
+    page: "<gray>Страница <white>{page}</white>/<white>{pages}</white></gray>"
+  settings:
+    title: "<gold>Настройки интерфейса</gold>"
+    bossbar: "<yellow>BossBar слот</yellow>"
+    actionbar: "<yellow>ActionBar слот</yellow>"
+    choose: "<gray>Нажмите, чтобы выбрать</gray>"
+    current: "<gray>Текущий: <white>{provider}</white></gray>"
+    select_title: "<gold>Выбор провайдера</gold>"
+    provider_item: "<white>{provider}</white>"
+    selected: "<green>Выбрано</green>"
+    none: "<red>Не показывать</red>"
+  action:
+    unavailable: "<gray>Недоступно</gray>"

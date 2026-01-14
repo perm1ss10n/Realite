@@ -10,6 +10,7 @@ import ru.realite.core.api.Module;
 import ru.realite.core.api.logging.Banners;
 import ru.realite.core.api.quests.QuestService;
 import ru.realite.quests.command.QuestCommand;
+import ru.realite.quests.gui.QuestMenuListener;
 import ru.realite.quests.integration.magic.MagicQuestBridge;
 import ru.realite.quests.integration.magic.MagicQuestListener;
 import ru.realite.quests.service.QuestObjectiveListener;
@@ -67,6 +68,7 @@ public final class RealiteQuestsPlugin extends JavaPlugin implements CoreModuleE
         Bukkit.getPluginManager().registerEvents(
                 new QuestObjectiveListener(() -> core.services().get(QuestService.class)),
                 this);
+        Bukkit.getPluginManager().registerEvents(new QuestMenuListener(), this);
 
         if (isMagicApiPresent()) {
             MagicQuestBridge magicBridge = core.services().get(MagicQuestBridge.class);

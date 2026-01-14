@@ -37,7 +37,6 @@ import ru.realite.magic.effect.EffectContext;
 import ru.realite.magic.effect.EffectExecutorRegistry;
 import ru.realite.magic.effect.SpellEffectDefinition;
 import ru.realite.magic.effect.SpellEffectExecutor;
-import ru.realite.magic.gui.SpellSelectMenu;
 import ru.realite.magic.hud.MagicHudService;
 import ru.realite.magic.i18n.MagicMessages;
 import ru.realite.magic.integration.classes.ClassesBridge;
@@ -71,6 +70,8 @@ import ru.realite.magic.talent.TalentMagicService;
 import ru.realite.magic.target.SpellTarget;
 import ru.realite.magic.target.SpellTargetDefinition;
 import ru.realite.magic.target.SpellTargetType;
+import ru.realite.magic.ui.MagicManaUiProvider;
+import ru.realite.core.api.ui.UiInvalidateEvent;
 import ru.realite.magic.target.TargetResolver;
 
 public final class MagicService {
@@ -104,7 +105,6 @@ public final class MagicService {
     private final MagicOverrideService overrideService;
     private final Map<UUID, MageState> states = new HashMap<>();
     private final WarnLimiter warnLimiter = new WarnLimiter();
-    private final SpellSelectMenu spellSelectMenu;
     private final TargetResolver targetResolver = new TargetResolver();
     private CastEngine castEngine;
     private BukkitTask regenTask;
@@ -163,8 +163,6 @@ public final class MagicService {
                 this.messages,
                 this::warnMissingItemBridge,
                 this.failWhenItemsUnavailable);
-        this.spellSelectMenu = new SpellSelectMenu(plugin, spellRegistry, playerSpellService, requirementChecker,
-                messages);
         this.itemModifiersService = new ItemModifiersService(plugin, itemsBridge);
         this.staffChargeService = new StaffChargeService(itemsBridge);
     }
@@ -211,7 +209,12 @@ public final class MagicService {
 
     public void setMana(Player player, double mana) {
         MageState state = state(player);
-        state.mana(clamp(mana, 0, state.maxMana()));
+        double next = clamp(mana, 0, state.maxMana());
+        if (Double.compare(state.mana(), next) == 0) {
+            return;
+        }
+        state.mana(next);
+        eventPublisher.publish(new UiInvalidateEvent(player, MagicManaUiProvider.ID));
     }
 
     public void addMana(Player player, double amount) {
@@ -545,12 +548,51 @@ public final class MagicService {
         }
     }
 
-    public SpellSelectMenu spellSelectMenu() {
-        return spellSelectMenu;
-    }
-
     public DebugService debugService() {
         return debugService;
+    }
+
+    public int slotCount() {
+        return 9;
+    }
+
+    public EquipSpellResult equipSpell(Player player, SpellDefinition spell) {
+        if (player == null || spell == null) {
+            return new EquipSpellResult.Fail(EquipSpellFailure.UNKNOWN_SPELL, null);
+        }
+        UUID playerId = player.getUniqueId();
+        if (!playerSpellService.hasSpell(playerId, spell.id())) {
+            return new EquipSpellResult.Fail(EquipSpellFailure.NOT_LEARNED, null);
+        }
+        CheckResult requirements = checkRequirements(player, spell);
+        if (requirements instanceof CheckResult.Fail fail) {
+            return new EquipSpellResult.Fail(EquipSpellFailure.NOT_AVAILABLE, fail);
+        }
+        SelectResult selection = playerSpellService.select(playerId, spell.id());
+        if (selection instanceof SelectResult.Fail fail) {
+            EquipSpellFailure reason = fail.reason() == SpellActionReason.NOT_LEARNED
+                    ? EquipSpellFailure.NOT_LEARNED
+                    : EquipSpellFailure.UNKNOWN_SPELL;
+            return new EquipSpellResult.Fail(reason, null);
+        }
+        return new EquipSpellResult.Ok(playerSpellService.getActiveSlot(playerId));
+    }
+
+    public UnequipSpellResult unequipSpell(Player player, SpellDefinition spell) {
+        if (player == null || spell == null) {
+            return new UnequipSpellResult.Fail(EquipSpellFailure.UNKNOWN_SPELL);
+        }
+        UUID playerId = player.getUniqueId();
+        String targetId = spell.id();
+        int removed = 0;
+        for (int slot = 1; slot <= 9; slot++) {
+            String equipped = playerSpellService.getSlot(playerId, slot).orElse(null);
+            if (equipped != null && equipped.equalsIgnoreCase(targetId)) {
+                playerSpellService.setSlot(playerId, slot, null);
+                removed++;
+            }
+        }
+        return new UnequipSpellResult.Ok(removed);
     }
 
     public ItemsBridge itemsBridge() {

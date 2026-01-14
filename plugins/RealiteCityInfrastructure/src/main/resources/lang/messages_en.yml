@@ -227,6 +227,77 @@ gui:
     admin_plot_actions: "&eAdmin: plot"
     player_main: "&ePlot"
     player_access: "&ePlot access"
+  hub:
+    title: "&6City"
+    status:
+      name: "&eStatus"
+      resident: "&aResident"
+      non_resident: "&cNot resident"
+      city: "&7City: &f{city}"
+      city_none: "none"
+    item:
+      plots:
+        name: "&ePlots"
+        lore1: "&7City plots list"
+        lore2: "&7Open list and filters"
+      residency:
+        name: "&eResidency"
+        lore1: "&7Residency quests/requirements"
+        lore2: "&7Open quests menu"
+      market:
+        name: "&eMarket"
+        lore1: "&7Shop listings"
+        lore2: "&7Command: /city market"
+      info:
+        name: "&eInfo"
+        lore1: "&7Rules and tips"
+        lore2: "&7Command: /city"
+    unavailable:
+      no-quests: "&7Unavailable: quests not installed"
+  plots:
+    title: "&6City plots"
+    empty: "&eNo plots available"
+    filter:
+      all: "&eAll"
+      available: "&aAvailable"
+      occupied: "&cOccupied"
+      selected: "&7Selected"
+    page: "&ePage {current}/{total}"
+    prev: "&ePrevious"
+    next: "&eNext"
+    back: "&cBack to hub"
+    status:
+      available: "&aAvailable"
+      occupied: "&cOccupied"
+    item:
+      name: "&e#{number} &7({id})"
+      lore1: "&7Type: {type}"
+      lore2: "&7Price: {price}"
+      lore3: "&7Owner: {owner}"
+  plot:
+    title: "&ePlot #{number}"
+    info:
+      name: "&eDetails"
+      lore1: "&7ID: {id}"
+      lore2: "&7Type: {type}"
+      lore3: "&7Price: {price}"
+      lore4: "&7Owner: {owner}"
+      lore5: "&7World: {world}"
+    action:
+      buy: "&aBuy"
+      rent: "&ePay rent"
+      owner: "&eOwner"
+      teleport: "&bTeleport"
+      members: "&eMembers"
+      release: "&cRelease"
+      back: "&cBack"
+    action_lore:
+      buy: "&7Buy this plot"
+      rent: "&7Pay shop rent"
+      owner: "&7View owner"
+      teleport: "&7Teleport to plot"
+      members: "&7View members"
+      release: "&7Release the plot"
   btn:
     regions: "&7Regions"
     plots: "&ePlots"
@@ -420,6 +491,295 @@ gui:
     disabled: "&cGUI is disabled."
     no_permission: "&cYou don't have permission."
     action_failed: "&cAction failed: {reason}"
+
+ui:
+  common:
+    back: "&7Back"
+    close: "&cClose"
+    prev: "&7Previous"
+    next: "&7Next"
+    confirm: "&aConfirm"
+    cancel: "&cCancel"
+    coming_soon: "&8Coming soon."
+  city:
+    shop:
+      point:
+        menu:
+          title: "&eShop point settings"
+          toggle:
+            enabled: "&aDisable point"
+            disabled: "&cEnable point"
+    title:
+      admin_main: "&eAdmin: city"
+      admin_selection: "&eAdmin: selection"
+      admin_plots: "&eAdmin: plots"
+      admin_plot_actions: "&eAdmin: plot"
+      player_main: "&ePlot"
+      player_access: "&ePlot access"
+    hub:
+      title: "&6City"
+      status:
+        name: "&eStatus"
+        resident: "&aResident"
+        non_resident: "&cNot resident"
+        city: "&7City: &f{city}"
+        city_none: "none"
+      item:
+        plots:
+          name: "&ePlots"
+          lore1: "&7City plots list"
+          lore2: "&7Open list and filters"
+        residency:
+          name: "&eResidency"
+          lore1: "&7Residency quests/requirements"
+          lore2: "&7Open quests menu"
+        market:
+          name: "&eMarket"
+          lore1: "&7Shop listings"
+          lore2: "&7Command: /city market"
+        info:
+          name: "&eInfo"
+          lore1: "&7Rules and tips"
+          lore2: "&7Command: /city"
+      unavailable:
+        no-quests: "&7Unavailable: quests not installed"
+    available: "&aAvailable"
+    unavailable:
+      no-permission: "&7Unavailable: no permission"
+      condition: "&7Unavailable: condition not met"
+    plots:
+      title: "&6City plots"
+      empty: "&eNo plots available"
+      filter:
+        all: "&eAll"
+        available: "&aAvailable"
+        occupied: "&cOccupied"
+        selected: "&7Selected"
+      page: "&ePage {current}/{total}"
+      back: "&cBack to hub"
+      status:
+        available: "&aAvailable"
+        occupied: "&cOccupied"
+      item:
+        name: "&e#{number} &7({id})"
+        lore1: "&7Type: {type}"
+        lore2: "&7Price: {price}"
+        lore3: "&7Owner: {owner}"
+    plot:
+      title: "&ePlot #{number}"
+      info:
+        name: "&eDetails"
+        lore1: "&7ID: {id}"
+        lore2: "&7Type: {type}"
+        lore3: "&7Price: {price}"
+        lore4: "&7Owner: {owner}"
+        lore5: "&7World: {world}"
+      action:
+        buy: "&aBuy"
+        rent: "&ePay rent"
+        owner: "&eOwner"
+        teleport: "&bTeleport"
+        members: "&eMembers"
+        release: "&cRelease"
+      action_lore:
+        buy: "&7Buy this plot"
+        rent: "&7Pay shop rent"
+        owner: "&7View owner"
+        teleport: "&7Teleport to plot"
+        members: "&7View members"
+        release: "&7Release the plot"
+      none: "&cYou don't own a plot. &7Tip: /city plot buy #<number> or /city plot nearby."
+    btn:
+      show_border: "&aShow border"
+      regions: "&7Regions"
+      plots: "&ePlots"
+      selection: "&eSelection"
+      help: "&7Help"
+      access: "&eAccess"
+      info: "&eInfo"
+      teleport: "&bTeleport"
+      set_owner_player: "&eSet owner: player"
+      set_owner_guild: "&eSet owner: guild"
+    gui:
+      title: "&6City"
+      hint: "&7Choose an action"
+      available: "&aAvailable"
+      unavailable:
+        no-permission: "&7Unavailable: no permission"
+        no-plot: "&7Unavailable: no plot"
+        condition: "&7Unavailable: condition not met"
+      item:
+        help:
+          name: "&eHelp"
+          lore1: "&7Show command hints"
+          lore2: "&7Command: /city"
+        plot-nearby:
+          name: "&eNearby plots"
+          lore1: "&7Show nearby plots"
+          lore2: "&7Command: /city plot nearby"
+        plot-info:
+          name: "&ePlot info"
+          lore1: "&7Show plot information"
+          lore2: "&7Command: /city plot info"
+        plot-buy:
+          name: "&eBuy plot"
+          lore1: "&7Buy the plot you are standing in"
+          lore2: "&7Command: /city plot buy"
+        plot-members:
+          name: "&ePlot members"
+          lore1: "&7List plot members"
+          lore2: "&7Command: /city plot members"
+        plot-addmember:
+          name: "&eAdd member"
+          lore1: "&7Add a player to the plot"
+          lore2: "&7Command: /city plot addmember"
+        plot-removemember:
+          name: "&eRemove member"
+          lore1: "&7Remove a player from the plot"
+          lore2: "&7Command: /city plot removemember"
+        plot-release:
+          name: "&eRelease plot"
+          lore1: "&7Release your plot"
+          lore2: "&7Command: /city plot release"
+        plot-trust:
+          name: "&eTrust player"
+          lore1: "&7Add a trusted player"
+          lore2: "&7Command: /city plot trust"
+        plot-untrust:
+          name: "&eUntrust player"
+          lore1: "&7Remove a trusted player"
+          lore2: "&7Command: /city plot untrust"
+        plot-list:
+          name: "&ePlot list"
+          lore1: "&7Show all plots"
+          lore2: "&7Command: /city plot list"
+        plot-create:
+          name: "&eCreate plot"
+          lore1: "&7Create a plot from selection"
+          lore2: "&7Command: /city plot create"
+        plot-delete:
+          name: "&eDelete plot"
+          lore1: "&7Delete a plot by id"
+          lore2: "&7Command: /city plot delete"
+        plot-transfer:
+          name: "&eTransfer plot"
+          lore1: "&7Transfer a plot to a player"
+          lore2: "&7Command: /city plot transfer"
+        plot-sell:
+          name: "&eSell plot"
+          lore1: "&7Sell a plot to a player"
+          lore2: "&7Command: /city plot sell"
+        plot-accept:
+          name: "&eAccept offer"
+          lore1: "&7Accept a plot offer"
+          lore2: "&7Command: /city plot accept"
+        plot-goto:
+          name: "&eTeleport to plot"
+          lore1: "&7Teleport to a plot"
+          lore2: "&7Command: /city plot goto"
+        plot-setowner:
+          name: "&eSet owner"
+          lore1: "&7Set plot owner"
+          lore2: "&7Command: /city plot setowner"
+        area-list:
+          name: "&eCity areas"
+          lore1: "&7Show city areas"
+          lore2: "&7Command: /city area list"
+        area-wand:
+          name: "&eSelection wand"
+          lore1: "&7Enable selection wand"
+          lore2: "&7Command: /city area wand"
+        area-create:
+          name: "&eCreate area"
+          lore1: "&7Create a city area"
+          lore2: "&7Command: /city area create"
+        area-delete:
+          name: "&eDelete area"
+          lore1: "&7Delete a city area"
+          lore2: "&7Command: /city area delete"
+        market-list:
+          name: "&eMarket"
+          lore1: "&7Show shop listings"
+          lore2: "&7Command: /city market"
+        market-near:
+          name: "&eMarket nearby"
+          lore1: "&7Find nearby shops"
+          lore2: "&7Command: /city market near"
+        market-search:
+          name: "&eMarket search"
+          lore1: "&7Search the market"
+          lore2: "&7Command: /city market search"
+        market-category:
+          name: "&eMarket category"
+          lore1: "&7Filter by category"
+          lore2: "&7Command: /city market category"
+        market-info:
+          name: "&eMarket info"
+          lore1: "&7Show shop info"
+          lore2: "&7Command: /city market info"
+        market-goto:
+          name: "&eGo to shop"
+          lore1: "&7Teleport to a shop"
+          lore2: "&7Command: /city market goto"
+        market-hub:
+          name: "&eMarket hub"
+          lore1: "&7Teleport to market hub"
+          lore2: "&7Command: /city market hub"
+        shop-setup:
+          name: "&eShop setup"
+          lore1: "&7Show shop setup info"
+          lore2: "&7Command: /city shop setup"
+        shop-open:
+          name: "&eOpen shop"
+          lore1: "&7Open the shop"
+          lore2: "&7Command: /city shop open"
+        shop-close:
+          name: "&eClose shop"
+          lore1: "&7Close the shop"
+          lore2: "&7Command: /city shop close"
+        shop-set:
+          name: "&eEdit shop"
+          lore1: "&7Edit shop settings"
+          lore2: "&7Command: /city shop set"
+        shop-list:
+          name: "&eShop points"
+          lore1: "&7List shop points"
+          lore2: "&7Command: /city shop list"
+        shop-info:
+          name: "&eShop info"
+          lore1: "&7Show shop point info"
+          lore2: "&7Command: /city shop info"
+        shop-remove:
+          name: "&eRemove shop point"
+          lore1: "&7Remove a shop point"
+          lore2: "&7Command: /city shop remove"
+        shop-rent-status:
+          name: "&eRent status"
+          lore1: "&7Check shop rent status"
+          lore2: "&7Command: /city shop rent status"
+        shop-rent-pay:
+          name: "&ePay rent"
+          lore1: "&7Pay shop rent"
+          lore2: "&7Command: /city shop rent pay"
+    access:
+      add: "&aAdd trusted"
+      remove: "&cClick: remove access"
+      remove_all:
+        button: "&cRemove all trusted"
+        confirm: "&eClick again to remove all trusted players."
+        success: "&aAll trusted players removed."
+        cancelled: "&cRemoval confirmation cancelled."
+    selection:
+      pos1:
+        set: "&aSet position 1"
+      pos2:
+        set: "&aSet position 2"
+      clear: "&cClear selection"
+      status: "&eSelection status"
+    error:
+      disabled: "&cGUI is disabled."
+      no_permission: "&cYou don't have permission."
+      action_failed: "&cAction failed: {reason}"
 chatinput:
   cancelled: "&eInput cancelled."
   timeout: "&cInput timed out."

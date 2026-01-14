@@ -97,7 +97,7 @@ public final class GuiService {
         }
         Optional<Plot> plotOptional = adminService.findPlot(plotId);
         if (plotOptional.isEmpty()) {
-            messages.send(player, "gui.error.action_failed", "",
+            messages.send(player, "ui.city.error.action_failed", "",
                     Map.of("reason", formatReason("city.plot.not-found", Map.of("id", String.valueOf(plotId)))));
             return;
         }
@@ -152,7 +152,7 @@ public final class GuiService {
         GuiSessionStore.GuiSession session = sessionStore.getOrCreate(player.getUniqueId());
         String plotId = session.selectedPlotId();
         if (plotId == null) {
-            messages.send(player, "gui.error.action_failed", "",
+            messages.send(player, "ui.city.error.action_failed", "",
                     Map.of("reason", formatReason("city.plot.not-found", Map.of("id", "?"))));
             return;
         }
@@ -196,17 +196,17 @@ public final class GuiService {
             return;
         }
         if (!player.hasPermission(ADMIN_PERMISSION)) {
-            messages.send(player, "gui.error.no_permission", "");
+            messages.send(player, "ui.city.error.no_permission", "");
             return;
         }
         if (!config.plotsSetOwnerAllowViaGui()) {
-            messages.send(player, "gui.error.action_failed", "",
+            messages.send(player, "ui.city.error.action_failed", "",
                     Map.of("reason", messages.getRaw("plot.setowner.gui_disabled", "disabled")));
             return;
         }
         String plotId = sessionStore.getOrCreate(player.getUniqueId()).selectedPlotId();
         if (plotId == null) {
-            messages.send(player, "gui.error.action_failed", "",
+            messages.send(player, "ui.city.error.action_failed", "",
                     Map.of("reason", formatReason("city.plot.not-found", Map.of("id", "?"))));
             return;
         }
@@ -218,17 +218,17 @@ public final class GuiService {
             return;
         }
         if (!player.hasPermission(ADMIN_PERMISSION)) {
-            messages.send(player, "gui.error.no_permission", "");
+            messages.send(player, "ui.city.error.no_permission", "");
             return;
         }
         if (!config.plotsSetOwnerAllowViaGui()) {
-            messages.send(player, "gui.error.action_failed", "",
+            messages.send(player, "ui.city.error.action_failed", "",
                     Map.of("reason", messages.getRaw("plot.setowner.gui_disabled", "disabled")));
             return;
         }
         String plotId = sessionStore.getOrCreate(player.getUniqueId()).selectedPlotId();
         if (plotId == null) {
-            messages.send(player, "gui.error.action_failed", "",
+            messages.send(player, "ui.city.error.action_failed", "",
                     Map.of("reason", formatReason("city.plot.not-found", Map.of("id", "?"))));
             return;
         }
@@ -249,7 +249,7 @@ public final class GuiService {
         }
         Optional<Plot> plotOptional = findPlayerPlot(player);
         if (plotOptional.isEmpty()) {
-            messages.send(player, "gui.plot.none", "");
+            messages.send(player, "ui.city.plot.none", "");
             return false;
         }
         Plot plot = plotOptional.get();
@@ -337,15 +337,15 @@ public final class GuiService {
                     .map(Map.Entry::getKey)
                     .forEach(memberId -> plotMemberRepository.remove(plot.id(), memberId));
             session.removeAllConfirmationAt(0L);
-            messages.send(player, "gui.access.remove_all.success", "");
+            messages.send(player, "ui.city.access.remove_all.success", "");
             openPlayerAccess(player, session.accessPage());
             return;
         }
         if (confirmationAt > 0 && now - confirmationAt > 10_000L) {
-            messages.send(player, "gui.access.remove_all.cancelled", "");
+            messages.send(player, "ui.city.access.remove_all.cancelled", "");
         }
         session.removeAllConfirmationAt(now);
-        messages.send(player, "gui.access.remove_all.confirm", "");
+        messages.send(player, "ui.city.access.remove_all.confirm", "");
     }
 
     public void handlePlayerAccessAdd(Player player) {
@@ -407,7 +407,7 @@ public final class GuiService {
             return;
         }
         if (!player.hasPermission(PLAYER_TELEPORT_PERMISSION)) {
-            messages.send(player, "gui.error.no_permission", "");
+            messages.send(player, "ui.city.error.no_permission", "");
             return;
         }
         Plot plot = resolvePlayerPlot(player);
@@ -434,13 +434,13 @@ public final class GuiService {
         GuiSessionStore.GuiSession session = sessionStore.getOrCreate(player.getUniqueId());
         String plotId = session.selectedPlotId();
         if (plotId == null) {
-            messages.send(player, "gui.error.action_failed", "",
+            messages.send(player, "ui.city.error.action_failed", "",
                     Map.of("reason", formatReason("city.plot.not-found", Map.of("id", "?"))));
             return;
         }
         Optional<Plot> plotOptional = adminService.findPlot(plotId);
         if (plotOptional.isEmpty()) {
-            messages.send(player, "gui.error.action_failed", "",
+            messages.send(player, "ui.city.error.action_failed", "",
                     Map.of("reason", formatReason("city.plot.not-found", Map.of("id", plotId))));
             return;
         }
@@ -455,23 +455,23 @@ public final class GuiService {
             return true;
         }
         String reasonKey = result.reasonKey();
-        if (reasonKey != null && reasonKey.startsWith("gui.")) {
+        if (reasonKey != null && reasonKey.startsWith("ui.city.")) {
             messages.send(player, reasonKey, "");
             return false;
         }
         if (reasonKey != null) {
             String reason = formatReason(reasonKey, vars);
-            messages.send(player, "gui.error.action_failed", "", Map.of("reason", reason));
+            messages.send(player, "ui.city.error.action_failed", "", Map.of("reason", reason));
             return false;
         }
-        messages.send(player, "gui.error.action_failed", "", Map.of("reason", "unknown"));
+        messages.send(player, "ui.city.error.action_failed", "", Map.of("reason", "unknown"));
         return false;
     }
 
     private Plot resolvePlayerPlot(Player player) {
         Optional<Plot> plotOptional = findPlayerPlot(player);
         if (plotOptional.isEmpty()) {
-            messages.send(player, "gui.plot.none", "");
+            messages.send(player, "ui.city.plot.none", "");
             return null;
         }
         return plotOptional.get();

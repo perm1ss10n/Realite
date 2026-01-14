@@ -11,6 +11,7 @@ public final class ObjectiveDefinition {
 
     private final String id;
     private final ObjectiveType type;
+    private final String text;
     private final String spellId;
     private final String npcId;
     private final EntityType entityType;
@@ -25,6 +26,7 @@ public final class ObjectiveDefinition {
 
     public ObjectiveDefinition(String id,
                                ObjectiveType type,
+                               String text,
                                String spellId,
                                String npcId,
                                EntityType entityType,
@@ -38,6 +40,7 @@ public final class ObjectiveDefinition {
                                QuestConditions conditions) {
         this.id = Objects.requireNonNull(id, "id");
         this.type = Objects.requireNonNull(type, "type");
+        this.text = text;
         this.spellId = spellId;
         this.npcId = npcId;
         this.entityType = entityType;
@@ -57,6 +60,10 @@ public final class ObjectiveDefinition {
 
     public ObjectiveType type() {
         return type;
+    }
+
+    public String text() {
+        return text;
     }
 
     public String spellId() {

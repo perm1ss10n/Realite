@@ -14,3 +14,51 @@ quests:
     magic_missing: "Для магических целей квестов требуется модуль Magic."
     magic_unknown_spell: "Неизвестный spellId для магической цели квеста."
     magic_invalid_amount: "Некорректное значение amount/level для магической цели квеста."
+
+ui:
+  common:
+    back: "&7Назад"
+    close: "&cЗакрыть"
+    prev: "&7Назад"
+    next: "&7Вперёд"
+    confirm: "&aПодтвердить"
+    cancel: "&cОтмена"
+    coming_soon: "&8Скоро."
+  quests:
+    hub:
+      title: "&6Квесты"
+      tab:
+        active: "&aАктивные"
+        available: "&eДоступные"
+        completed: "&bЗавершённые"
+      quest:
+        type: "&7Тип: &f{type}"
+        status: "&7Статус: &f{status}"
+        view: "&eОткрыть детали"
+      empty: "&7В этой вкладке нет квестов."
+      page: "&7Страница &f{page}&7/&f{total}"
+    sort:
+      title: "&6Сортировка"
+      current: "&7Сейчас: &f{sort}"
+      type: "Тип"
+      difficulty: "Сложность"
+      level: "Уровень"
+    details:
+      title: "&6Квест: &f{title}"
+      progress: "&7Прогресс: &f{current}&7/&f{target}"
+      completed: "&aВыполнено"
+      incomplete: "&cНе выполнено"
+      reward_amount: "&7Количество: &f{amount}"
+      track: "&aОтслеживать"
+      abandon: "&cОтказаться"
+      more: "&7Ещё цели..."
+      not_found: "&cКвест не найден."
+      status:
+        active: "&aАктивный"
+        available: "&eДоступный"
+        completed: "&bЗавершённый"
+    reward:
+      xp: "&6Опыт"
+      class_xp: "&dОпыт класса"
+      item: "&eПредмет &7({item})"
+      quest_unlock: "&bРазблокировка &7({unlock})"

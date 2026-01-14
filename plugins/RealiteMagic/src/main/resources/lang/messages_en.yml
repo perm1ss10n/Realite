@@ -69,7 +69,18 @@ magic:
       line_xp: "&7XP: &f{xp}&7/&f{next}"
       line_bonus: "&7Bonus: &f{damage} dmg, {mana} mana, {cooldown} cd"
     admin:
-      usage: "&eUsage: &f/magic admin <stats|log|inspect|bypass|export>"
+      usage: "&eUsage: &f/magic admin <stats|log|inspect|bypass|export|spells>"
+      spells:
+        usage: "&eUsage: &f/magic admin spells <open|equip|unequip|give> <player> [spellId] [slot|all]"
+        open:
+          ok: "&aOpened spellbook for &f{player}&a."
+        equip:
+          ok: "&aEquipped &f{spell}&a into slot &f{slot}&a for &f{player}&a."
+        unequip:
+          slot: "&eCleared slot &f{slot}&e for &f{player}&e."
+          all: "&eCleared all slots for &f{player}&e."
+        give:
+          ok: "&aGranted spell &f{spell}&a to &f{player}&a."
       stats:
         header: "&eDiagnostics top {count}:"
         casts: "&6Top casts:"
@@ -168,6 +179,44 @@ magic:
       locked: "&cNot learned"
     hint:
       select: "&7LMB: select"
+  ui:
+    common:
+      back: "&eBack"
+      next: "&eNext"
+      prev: "&ePrev"
+    spell:
+      details:
+        title: "&5Spell: {spell}"
+    spells:
+      title: "&5Spellbook"
+      empty: "&cNo spells available."
+      page: "&ePage {current}/{total}"
+      hint:
+        details: "&7LMB: details"
+        quick_equip: "&7Shift+LMB: equip"
+        select_slot: "&7LMB: choose for slot {slot}"
+      status:
+        available: "&aAvailable"
+        unavailable: "&cUnavailable"
+        unavailable_reason: "&cRequires: &f{reason}"
+        learned: "&aLearned"
+        not_learned: "&cNot learned"
+        equipped: "&eEquipped in slot {slot}"
+        active_slot: "&6Active slot"
+    loadout:
+      title: "&5Loadout"
+      slot:
+        name: "&eSlot {slot}"
+        filled: "&eSlot {slot}: &f{spell}"
+        spell: "&7Spell: &f{spell}"
+        empty: "&7Empty"
+        unknown: "&cUnknown spell: &f{spell}"
+        active: "&6Active slot"
+        hint: "&7LMB: choose spell"
+      clear:
+        name: "&cClear slot"
+        hint: "&7Clears active slot {slot}"
+    unavailable: "&cSpellbook screen is unavailable."
   error:
     no_selected_spell: "&cNo spell selected. Open &f/magic&c and choose one."
     cannot_select_spell: "&cYou cannot select this spell: &f{reason}"
@@ -221,6 +270,7 @@ magic:
       FROST: "Frost"
       HOLY: "Holy"
       NATURE: "Nature"
+
   storage:
     load_fail: "&cFailed to load spell data."
     save_fail: "&cFailed to save spell data."
@@ -336,3 +386,46 @@ magic:
     evolution_mismatch: "&cRequired evolution: &f{evolution}"
     item_missing: "&cRequired item: &f{item}"
     missing_items_module: "&cItems module is unavailable."
+
+ui:
+  common:
+    back: "&eBack"
+    close: "&cClose"
+    next: "&eNext"
+    prev: "&ePrev"
+  magic:
+    spells:
+      title: "&5Spellbook"
+    loadout:
+      title: "&5Loadout"
+      slot:
+        name: "&eSlot {slot}"
+        filled: "&eSlot {slot}: &f{spell}"
+        spell: "&7Spell: &f{spell}"
+        empty: "&7Empty"
+        unknown: "&cUnknown spell: &f{spell}"
+        active: "&6Active slot"
+        hint: "&7LMB: choose spell"
+      clear:
+        name: "&cClear slot"
+        hint: "&7Clears active slot {slot}"
+    spell:
+      details:
+        title: "&5Spell: {spell}"
+      cost: "&7Cost: &6{cost}"
+    action:
+      equip: "&aEquip"
+      unequip: "&cUnequip"
+    requirements:
+      title: "&eRequirements"
+      not_met: "&cNot met: &f{reason}"
+      class: "&7Class: &f{value}"
+      evolution: "&7Evolution: &f{value}"
+      item: "&7Item: &f{value}"
+    success:
+      equipped: "&aEquipped in slot {slot}."
+      unequipped: "&eSpell unequipped."
+    error:
+      not_available: "&cNot available: &f{reason}"
+      cannot_equip: "&cUnable to equip spell."
+      not_learned: "&cSpell not learned: &f{spell}"

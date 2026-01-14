@@ -69,7 +69,18 @@ magic:
       line_xp: "&7XP: &f{xp}&7/&f{next}"
       line_bonus: "&7Бонус: &f{damage} урона, {mana} маны, {cooldown} кд"
     admin:
-      usage: "&eИспользование: &f/magic admin <stats|log|inspect|bypass|export>"
+      usage: "&eИспользование: &f/magic admin <stats|log|inspect|bypass|export|spells>"
+      spells:
+        usage: "&eИспользование: &f/magic admin spells <open|equip|unequip|give> <player> [spellId] [slot|all]"
+        open:
+          ok: "&aОткрыт список заклинаний для &f{player}&a."
+        equip:
+          ok: "&aЗаклинание &f{spell}&a установлено в слот &f{slot}&a для &f{player}&a."
+        unequip:
+          slot: "&eСлот &f{slot}&e очищен для &f{player}&e."
+          all: "&eОчищены все слоты для &f{player}&e."
+        give:
+          ok: "&aВыдано заклинание &f{spell}&a игроку &f{player}&a."
       stats:
         header: "&eДиагностика топ {count}:"
         casts: "&6Топ кастов:"
@@ -168,6 +179,44 @@ magic:
       locked: "&cНе изучено"
     hint:
       select: "&7ЛКМ: выбрать"
+  ui:
+    common:
+      back: "&eНазад"
+      next: "&eДалее"
+      prev: "&eНазад"
+    spell:
+      details:
+        title: "&5Заклинание: {spell}"
+    spells:
+      title: "&5Книга заклинаний"
+      empty: "&cНет доступных заклинаний."
+      page: "&eСтраница {current}/{total}"
+      hint:
+        details: "&7ЛКМ: детали"
+        quick_equip: "&7Shift+ЛКМ: экипировать"
+        select_slot: "&7ЛКМ: выбрать для слота {slot}"
+      status:
+        available: "&aДоступно"
+        unavailable: "&cНедоступно"
+        unavailable_reason: "&cТребуется: &f{reason}"
+        learned: "&aИзучено"
+        not_learned: "&cНе изучено"
+        equipped: "&eЭкипировано в слот {slot}"
+        active_slot: "&6Активный слот"
+      unavailable: "&cЭкран заклинаний недоступен."
+    loadout:
+      title: "&5Набор заклинаний"
+      slot:
+        name: "&eСлот {slot}"
+        filled: "&eСлот {slot}: &f{spell}"
+        spell: "&7Заклинание: &f{spell}"
+        empty: "&7Пусто"
+        unknown: "&cНеизвестное заклинание: &f{spell}"
+        active: "&6Активный слот"
+        hint: "&7ЛКМ: выбрать заклинание"
+      clear:
+        name: "&cОчистить слот"
+        hint: "&7Очищает активный слот {slot}"
   error:
     no_selected_spell: "&cЗаклинание не выбрано. Открой &f/magic&c и выбери."
     cannot_select_spell: "&cТы не можешь выбрать это заклинание: &f{reason}"
@@ -336,3 +385,46 @@ magic:
     evolution_mismatch: "&cТребуется эволюция: &f{evolution}"
     item_missing: "&cНужен предмет: &f{item}"
     missing_items_module: "&cМодуль предметов недоступен."
+
+ui:
+  common:
+    back: "&eНазад"
+    close: "&cЗакрыть"
+    next: "&eДалее"
+    prev: "&eНазад"
+  magic:
+    spells:
+      title: "&5Книга заклинаний"
+    loadout:
+      title: "&5Набор заклинаний"
+      slot:
+        name: "&eСлот {slot}"
+        filled: "&eСлот {slot}: &f{spell}"
+        spell: "&7Заклинание: &f{spell}"
+        empty: "&7Пусто"
+        unknown: "&cНеизвестное заклинание: &f{spell}"
+        active: "&6Активный слот"
+        hint: "&7ЛКМ: выбрать заклинание"
+      clear:
+        name: "&cОчистить слот"
+        hint: "&7Очищает активный слот {slot}"
+    spell:
+      details:
+        title: "&5Заклинание: {spell}"
+      cost: "&7Стоимость: &6{cost}"
+    action:
+      equip: "&aЭкипировать"
+      unequip: "&cСнять"
+    requirements:
+      title: "&eТребования"
+      not_met: "&cНе выполнено: &f{reason}"
+      class: "&7Класс: &f{value}"
+      evolution: "&7Эволюция: &f{value}"
+      item: "&7Предмет: &f{value}"
+    success:
+      equipped: "&aЭкипировано в слот {slot}."
+      unequipped: "&eЗаклинание снято."
+    error:
+      not_available: "&cНедоступно: &f{reason}"
+      cannot_equip: "&cНе удалось экипировать заклинание."
+      not_learned: "&cЗаклинание не изучено: &f{spell}"

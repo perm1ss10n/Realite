@@ -59,12 +59,12 @@ public final class MenuFactory {
         Inventory inventory = Bukkit.createInventory(
                 new MenuHolder(MenuType.ADMIN_MAIN),
                 MAIN_SIZE,
-                messages.get("gui.title.admin_main", "Admin"));
+                messages.get("ui.city.title.admin_main", "Admin"));
 
-        inventory.setItem(10, actionItem(Material.COMPASS, "gui.btn.selection", "open_selection"));
-        inventory.setItem(12, actionItem(Material.PAPER, "gui.btn.plots", "open_plots"));
-        inventory.setItem(14, actionItem(Material.MAP, "gui.btn.regions", "noop"));
-        inventory.setItem(16, actionItem(Material.BOOK, "gui.btn.help", "noop"));
+        inventory.setItem(10, actionItem(Material.COMPASS, "ui.city.btn.selection", "open_selection"));
+        inventory.setItem(12, actionItem(Material.PAPER, "ui.city.btn.plots", "open_plots"));
+        inventory.setItem(14, actionItem(Material.MAP, "ui.city.btn.regions", "noop"));
+        inventory.setItem(16, actionItem(Material.BOOK, "ui.city.btn.help", "noop"));
 
         return inventory;
     }
@@ -73,13 +73,13 @@ public final class MenuFactory {
         Inventory inventory = Bukkit.createInventory(
                 new MenuHolder(MenuType.ADMIN_SELECTION),
                 SELECTION_SIZE,
-                messages.get("gui.title.admin_selection", "Selection"));
+                messages.get("ui.city.title.admin_selection", "Selection"));
 
-        inventory.setItem(10, actionItem(Material.LIME_DYE, "gui.selection.pos1.set", "selection_pos1"));
-        inventory.setItem(12, actionItem(Material.LIGHT_BLUE_DYE, "gui.selection.pos2.set", "selection_pos2"));
-        inventory.setItem(14, actionItem(Material.BARRIER, "gui.selection.clear", "selection_clear"));
+        inventory.setItem(10, actionItem(Material.LIME_DYE, "ui.city.selection.pos1.set", "selection_pos1"));
+        inventory.setItem(12, actionItem(Material.LIGHT_BLUE_DYE, "ui.city.selection.pos2.set", "selection_pos2"));
+        inventory.setItem(14, actionItem(Material.BARRIER, "ui.city.selection.clear", "selection_clear"));
         inventory.setItem(16, selectionStatusItem(player));
-        inventory.setItem(22, actionItem(Material.ARROW, "gui.btn.back", "open_main"));
+        inventory.setItem(22, actionItem(Material.ARROW, "ui.common.back", "open_main"));
 
         return inventory;
     }
@@ -88,7 +88,7 @@ public final class MenuFactory {
         Inventory inventory = Bukkit.createInventory(
                 new MenuHolder(MenuType.ADMIN_PLOTS),
                 PLOTS_SIZE,
-                messages.get("gui.title.admin_plots", "Plots"));
+                messages.get("ui.city.title.admin_plots", "Plots"));
 
         List<Plot> plots = new ArrayList<>(plotRepository.findAll());
         plots.sort(Comparator.comparingInt(Plot::number));
@@ -107,7 +107,7 @@ public final class MenuFactory {
         inventory.setItem(45, actionItem(Material.ARROW, pageLabel("&e<"), "plots_prev"));
         inventory.setItem(49, pageIndicatorItem(safePage, maxPage));
         inventory.setItem(53, actionItem(Material.ARROW, pageLabel("&e>"), "plots_next"));
-        inventory.setItem(52, actionItem(Material.BARRIER, "gui.btn.back", "open_main"));
+        inventory.setItem(52, actionItem(Material.BARRIER, "ui.common.back", "open_main"));
 
         return inventory;
     }
@@ -122,17 +122,17 @@ public final class MenuFactory {
         Inventory inventory = Bukkit.createInventory(
                 new MenuHolder(MenuType.ADMIN_PLOT_ACTIONS),
                 ACTIONS_SIZE,
-                messages.get("gui.title.admin_plot_actions", "Plot"));
+                messages.get("ui.city.title.admin_plot_actions", "Plot"));
 
         inventory.setItem(10, plotInfoItem(plot));
         inventory.setItem(12, deleteItem(confirmDelete));
         inventory.setItem(14, teleportItem());
         if (allowSetOwnerViaGui) {
-            inventory.setItem(16, actionItemKey(Material.PLAYER_HEAD, "gui.btn.set_owner_player", "plot_set_owner_player"));
-            inventory.setItem(19, actionItemKey(Material.WRITABLE_BOOK, "gui.btn.set_owner_guild", "plot_set_owner_guild"));
+            inventory.setItem(16, actionItemKey(Material.PLAYER_HEAD, "ui.city.btn.set_owner_player", "plot_set_owner_player"));
+            inventory.setItem(19, actionItemKey(Material.WRITABLE_BOOK, "ui.city.btn.set_owner_guild", "plot_set_owner_guild"));
         }
-        inventory.setItem(21, actionItemKey(Material.LIME_DYE, "gui.btn.show_border", "plot_show_border"));
-        inventory.setItem(22, actionItemKey(Material.ARROW, "gui.btn.back", "open_plots"));
+        inventory.setItem(21, actionItemKey(Material.LIME_DYE, "ui.city.btn.show_border", "plot_show_border"));
+        inventory.setItem(22, actionItemKey(Material.ARROW, "ui.common.back", "open_plots"));
 
         return inventory;
     }
@@ -168,13 +168,13 @@ public final class MenuFactory {
         Inventory inventory = Bukkit.createInventory(
                 new MenuHolder(MenuType.PLAYER_MAIN),
                 PLAYER_MAIN_SIZE,
-                messages.get("gui.title.player_main", "Plot"));
+                messages.get("ui.city.title.player_main", "Plot"));
 
-        inventory.setItem(11, actionItemKey(Material.PAPER, "gui.btn.access", "player_open_access"));
-        inventory.setItem(13, actionItemKey(Material.BOOK, "gui.btn.info", "player_info"));
-        inventory.setItem(15, actionItemKey(Material.LIME_DYE, "gui.btn.show_border", "player_show_border"));
+        inventory.setItem(11, actionItemKey(Material.PAPER, "ui.city.btn.access", "player_open_access"));
+        inventory.setItem(13, actionItemKey(Material.BOOK, "ui.city.btn.info", "player_info"));
+        inventory.setItem(15, actionItemKey(Material.LIME_DYE, "ui.city.btn.show_border", "player_show_border"));
         if (canTeleport) {
-            inventory.setItem(16, actionItemKey(Material.ENDER_PEARL, "gui.btn.teleport", "player_teleport"));
+            inventory.setItem(16, actionItemKey(Material.ENDER_PEARL, "ui.city.btn.teleport", "player_teleport"));
         }
 
         return inventory;
@@ -189,7 +189,7 @@ public final class MenuFactory {
         Inventory inventory = Bukkit.createInventory(
                 new MenuHolder(MenuType.PLAYER_ACCESS),
                 PLAYER_ACCESS_SIZE,
-                messages.get("gui.title.player_access", "Access"));
+                messages.get("ui.city.title.player_access", "Access"));
 
         int startIndex = page * TRUSTED_PER_PAGE;
         int endIndex = Math.min(trusted.size(), startIndex + TRUSTED_PER_PAGE);
@@ -201,11 +201,11 @@ public final class MenuFactory {
         }
 
         inventory.setItem(45, actionItem(Material.ARROW, pageLabel("&e<"), "player_access_prev"));
-        inventory.setItem(48, actionItemKey(Material.RED_DYE, "gui.access.remove_all.button", "player_access_remove_all"));
+        inventory.setItem(48, actionItemKey(Material.RED_DYE, "ui.city.access.remove_all.button", "player_access_remove_all"));
         inventory.setItem(49, addTrustedItem(canAdd));
         inventory.setItem(50, pageIndicatorItem(page, maxPage));
         inventory.setItem(53, actionItem(Material.ARROW, pageLabel("&e>"), "player_access_next"));
-        inventory.setItem(52, actionItemKey(Material.BARRIER, "gui.btn.back", "player_back"));
+        inventory.setItem(52, actionItemKey(Material.BARRIER, "ui.common.back", "player_back"));
 
         return inventory;
     }
@@ -234,7 +234,7 @@ public final class MenuFactory {
             String name = player.getName() == null ? memberId.toString() : player.getName();
             meta.displayName(LEGACY.deserialize("&e" + name));
             List<Component> lore = new ArrayList<>();
-            lore.add(LEGACY.deserialize(messages.getRaw("gui.access.remove", "&cRemove")));
+            lore.add(LEGACY.deserialize(messages.getRaw("ui.city.access.remove", "&cRemove")));
             meta.lore(lore);
             meta.getPersistentDataContainer().set(actionKey, PersistentDataType.STRING, "player_access_remove");
             meta.getPersistentDataContainer().set(memberIdKey, PersistentDataType.STRING, memberId.toString());
@@ -248,19 +248,19 @@ public final class MenuFactory {
             ItemStack item = new ItemStack(Material.BARRIER);
             ItemMeta meta = item.getItemMeta();
             if (meta != null) {
-                meta.displayName(LEGACY.deserialize(messages.getRaw("gui.access.add", "Add trusted")));
+                meta.displayName(LEGACY.deserialize(messages.getRaw("ui.city.access.add", "Add trusted")));
                 item.setItemMeta(meta);
             }
             return item;
         }
-        return actionItemKey(Material.GREEN_DYE, "gui.access.add", "player_access_add");
+        return actionItemKey(Material.GREEN_DYE, "ui.city.access.add", "player_access_add");
     }
 
     private ItemStack selectionStatusItem(Player player) {
         ItemStack item = new ItemStack(Material.NAME_TAG);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.displayName(messages.get("gui.selection.status", "Selection"));
+            meta.displayName(messages.get("ui.city.selection.status", "Selection"));
             List<Component> lore = new ArrayList<>();
             var selection = selectionService.getSelection(player.getUniqueId()).orElse(null);
             lore.add(LEGACY.deserialize("&7Pos1: " + formatLocation(selection == null ? null : selection.pos1())));
