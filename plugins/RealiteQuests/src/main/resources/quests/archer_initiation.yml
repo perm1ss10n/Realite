@@ -1,4 +1,6 @@
 id: "archer_initiation"
+title: "Посвящение лучника"
+description: "Убей скелета и собери несколько стрел для начала своего пути."
 type: "INTRO"
 objectives:
   - type: "KILL"

@@ -1,4 +1,6 @@
 id: "merchant_initiation"
+title: "Посвящение торговца"
+description: "Убей свинью и собери несколько изумрудов для начала своего пути."
 type: "INTRO"
 objectives:
   - type: "KILL"

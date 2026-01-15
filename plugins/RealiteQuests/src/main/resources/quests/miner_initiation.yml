@@ -1,4 +1,6 @@
 id: "miner_initiation"
+title: "Посвящение шахтера"
+description: "Убей зомби и собери несколько факелов для начала своего пути."
 type: "INTRO"
 objectives:
   - type: "KILL"

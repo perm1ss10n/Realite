@@ -1,4 +1,6 @@
 id: "warrior_initiation"
+title: "Посвящение воина"
+description: "Убей зомби и приготовь немного мяса для начала своего пути."
 type: "INTRO"
 objectives:
   - type: "KILL"
