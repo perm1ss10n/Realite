@@ -1,4 +1,6 @@
 id: "alchemist_initiation"
+title: "Посвящение алхимика"
+description: "Убей паука и собери несколько бутылок для начала своего пути."
 type: "INTRO"
 objectives:
   - type: "KILL"

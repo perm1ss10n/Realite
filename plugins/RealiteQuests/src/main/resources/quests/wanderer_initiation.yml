@@ -1,4 +1,6 @@
-id: "wanderer_initiation"
+id: "wanderer_initiation" 
+title: "Посвящение странника"
+description: "Убей овцу и получи немного еды для начала своего пути."
 type: "INTRO"
 objectives:
   - type: "KILL"
