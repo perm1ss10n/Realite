@@ -22,6 +22,12 @@ public final class RealiteQuestsPlugin extends JavaPlugin implements CoreModuleE
     private boolean initialized;
     private int initTaskId = -1;
 
+    /**
+     * Количество попыток ожидания QuestService.
+     * 1 попытка = 1 секунда (scheduler с периодом 20 тиков)
+     */
+    private int waitAttempts = 0;
+
     @Override
     public void onEnable() {
         Banners.REALITE_QUESTS_WAITING(this);
@@ -41,6 +47,7 @@ public final class RealiteQuestsPlugin extends JavaPlugin implements CoreModuleE
             initTaskId = -1;
         }
         initialized = false;
+        waitAttempts = 0;
     }
 
     @Override
@@ -56,6 +63,36 @@ public final class RealiteQuestsPlugin extends JavaPlugin implements CoreModuleE
         CoreApi core = resolveCore();
         if (core == null) {
             return;
+        }
+
+        QuestService qs = core.services().get(QuestService.class);
+        if (qs == null) {
+            waitAttempts++;
+
+            // Не флудим лог — пишем раз в 10 секунд
+            if (waitAttempts == 1 || waitAttempts % 10 == 0) {
+                getLogger().info(
+                        "CoreApi найден, но QuestService ещё не зарегистрирован. Жду... (" +
+                                waitAttempts + "s)");
+            }
+
+            // Через минуту — жёсткое предупреждение
+            if (waitAttempts == 60) {
+                getLogger().severe(
+                        "QuestService так и не появился за 60 секунд. " +
+                                "Проверь, что модуль realite-quests включился в RealiteCore " +
+                                "и нет ошибок в QuestsModule#onEnable.");
+            }
+
+            return; // НЕ считаем инициализацию успешной
+        }
+
+        // ---- QuestService найден ----
+
+        if (waitAttempts > 0) {
+            getLogger().info(
+                    "QuestService зарегистрирован через " + waitAttempts +
+                            " секунд. Инициализация RealiteQuests продолжается.");
         }
 
         PluginCommand cmd = getCommand("quest");
@@ -81,13 +118,14 @@ public final class RealiteQuestsPlugin extends JavaPlugin implements CoreModuleE
         }
 
         initialized = true;
+        waitAttempts = 0;
 
         if (initTaskId != -1) {
             Bukkit.getScheduler().cancelTask(initTaskId);
             initTaskId = -1;
         }
 
-        getLogger().info("Initialized (QuestService bound, listeners registered)");
+        getLogger().info("Initialized (QuestService found, listeners registered)");
     }
 
     private CoreApi resolveCore() {
