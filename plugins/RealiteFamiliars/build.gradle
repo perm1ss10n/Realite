@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly "io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT"
+    compileOnly "io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT"
     compileOnly "net.kyori:adventure-api:4.17.0"
     compileOnly "net.kyori:adventure-text-minimessage:4.17.0"
 
@@ -26,9 +26,11 @@ dependencies {
     compileOnly project(":plugins:RealiteUI")
     compileOnly project(":plugins:RealiteItems")
 
+    testImplementation "io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT" // <-- добавь
     testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 }
+
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
