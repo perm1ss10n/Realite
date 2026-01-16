@@ -1,0 +1,10 @@
+prefix: "<gray>[Familiars]</gray> "
+
+debug:
+  usage: "{prefix}<yellow>/familiars debug <typeId></yellow>"
+  no-service: "{prefix}<red>Familiar service is not available.</red>"
+  header: "{prefix}<yellow>Debug for <type></yellow>"
+  can-tame: "{prefix}Can tame: {result}"
+  can-summon: "{prefix}Can summon: {result}"
+  reasons: "{prefix}<red>Reasons:</red>"
+  notes: "{prefix}<gray>Notes:</gray>"
