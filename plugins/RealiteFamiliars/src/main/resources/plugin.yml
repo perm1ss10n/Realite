@@ -1,0 +1,15 @@
+name: RealiteFamiliars
+version: 1.0.0
+main: ru.realite.familiars.RealiteFamiliarsPlugin
+api-version: "1.21"
+
+depend:
+  - RealiteCore
+softdepend:
+  - RealiteUI
+  - RealiteItems
+
+commands:
+  familiars:
+    description: "Familiar debug tools"
+    usage: /familiars debug <typeId>

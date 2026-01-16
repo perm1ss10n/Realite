@@ -1,0 +1,6 @@
+limits:
+  max-active: 3
+  max-summoned: 1
+cooldowns:
+  tame-seconds: 60
+  summon-seconds: 30
