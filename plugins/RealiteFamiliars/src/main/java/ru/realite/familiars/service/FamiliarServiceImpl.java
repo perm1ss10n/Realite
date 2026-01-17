@@ -15,12 +15,15 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
+import ru.realite.core.api.familiars.FamiliarUiService;
+import ru.realite.core.api.ui.UiInvalidateEvent;
 import ru.realite.familiars.config.FamiliarLimitsRepository;
 import ru.realite.familiars.config.FamiliarTypeRepository;
 import ru.realite.familiars.config.TamePolicy;
 import ru.realite.familiars.config.TamePolicyRepository;
 import ru.realite.familiars.config.TamingRules;
 import ru.realite.familiars.config.TamingRulesRepository;
+import ru.realite.familiars.core.CoreAccess;
 import ru.realite.familiars.event.FamiliarLeveledEvent;
 import ru.realite.familiars.integration.classes.ClassesBridge;
 import ru.realite.familiars.integration.limits.CityGuildBridge;
@@ -201,6 +204,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 player.getUniqueId(),
                 typeId,
                 instance.level()));
+        publishUiInvalidate(player);
         return new TameResult(check, instance);
     }
 
@@ -276,6 +280,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 instance.summonedEntityId());
         store.upsert(updated);
         save();
+        publishUiInvalidate(player);
     }
 
     @Override
@@ -338,6 +343,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 typeId,
                 summoned.level()));
         magicBridge.refresh(player, summoned);
+        publishUiInvalidate(player);
 
         return CheckResult.allowed(List.of());
     }
@@ -365,6 +371,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
         removeBehavior(instance.owner(), instance.typeId());
         magicBridge.clear(player, instance);
         save();
+        publishUiInvalidate(player);
         return CheckResult.allowed(List.of());
     }
 
@@ -407,6 +414,8 @@ public final class FamiliarServiceImpl implements FamiliarService {
         }
         lastCombat.remove(owner);
         save();
+        Player player = Bukkit.getPlayer(owner);
+        publishUiInvalidate(player);
     }
 
     @Override
@@ -425,6 +434,8 @@ public final class FamiliarServiceImpl implements FamiliarService {
         store.upsert(updated);
         removeBehavior(instance.owner(), instance.typeId());
         save();
+        Player player = Bukkit.getPlayer(owner);
+        publishUiInvalidate(player);
     }
 
     @Override
@@ -763,5 +774,12 @@ public final class FamiliarServiceImpl implements FamiliarService {
             return;
         }
         lastCombat.put(owner, Instant.now());
+    }
+
+    private void publishUiInvalidate(Player player) {
+        if (player == null) {
+            return;
+        }
+        CoreAccess.core().events().publish(new UiInvalidateEvent(player, FamiliarUiService.HUD_PROVIDER_ID));
     }
 }

@@ -9,7 +9,8 @@ import ru.realite.core.api.Platform;
 import ru.realite.core.api.Subscription;
 import ru.realite.core.api.classes.ClassProfileProvider;
 import ru.realite.core.api.classes.ClassTagProvider;
-import ru.realite.core.api.ui.UiRegistry;
+import ru.realite.core.api.familiars.FamiliarUiService;
+import ru.realite.core.api.ui.UiScreenRegistry;
 import ru.realite.familiars.command.FamiliarCommand;
 import ru.realite.familiars.command.FamiliarsCommand;
 import ru.realite.familiars.config.FamiliarLimitsRepository;
@@ -37,7 +38,6 @@ import ru.realite.familiars.listener.FamiliarCombatListener;
 import ru.realite.familiars.listener.FamiliarXpListener;
 import ru.realite.familiars.listener.FamiliarSummonListener;
 import ru.realite.familiars.listener.FamiliarTamingListener;
-import ru.realite.familiars.menu.FamiliarMenuManager;
 import ru.realite.familiars.service.FamiliarRepository;
 import ru.realite.familiars.service.FamiliarService;
 import ru.realite.familiars.service.FamiliarServiceImpl;
@@ -46,7 +46,7 @@ import ru.realite.familiars.service.FamiliarXpSource;
 import ru.realite.familiars.service.FamiliarLimitService;
 import ru.realite.familiars.service.YamlFamiliarRepository;
 import ru.realite.familiars.ui.FamiliarActionBarService;
-import ru.realite.familiars.ui.FamiliarHudProvider;
+import ru.realite.familiars.ui.FamiliarUiServiceImpl;
 import ru.realite.items.service.ItemService;
 
 import java.io.File;
@@ -66,8 +66,8 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
     private FamiliarRepository repository;
 
     private FamiliarServiceImpl service;
+    private FamiliarUiService uiService;
     private FamiliarActionBarService actionBarService;
-    private FamiliarMenuManager menuManager;
     private ItemsBridge itemsBridge;
     private ClassesBridge classesBridge;
     private QuestsBridge questsBridge;
@@ -128,14 +128,16 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
         service.updateRepositories(typeRepository, rulesRepository, limitsRepository, policyRepository);
         service.resetSummonedStates();
         core.services().replace(FamiliarService.class, service);
+        if (uiService == null) {
+            uiService = new FamiliarUiServiceImpl(service);
+        }
+        core.services().replace(FamiliarUiService.class, uiService);
         actionBarService = new FamiliarActionBarService(messages);
-        menuManager = new FamiliarMenuManager(this, service, messages);
 
         subscribeQuestXp();
 
         registerCommand();
         registerListeners();
-        registerUiProvider();
 
         initialized = true;
         platform.info("RealiteFamiliars enabled");
@@ -150,6 +152,12 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
             FamiliarService registered = core.services().get(FamiliarService.class);
             if (registered == service) {
                 core.services().unregister(FamiliarService.class);
+            }
+        }
+        if (core != null && uiService != null) {
+            FamiliarUiService registeredUi = core.services().get(FamiliarUiService.class);
+            if (registeredUi == uiService) {
+                core.services().unregister(FamiliarUiService.class);
             }
         }
         if (service != null) {
@@ -200,7 +208,8 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
             getLogger().warning("Command /familiar not found in plugin.yml; executor not registered.");
             return;
         }
-        familiarCommand.setExecutor(new FamiliarCommand(service, messages, actionBarService, menuManager));
+        UiScreenRegistry screenRegistry = core.services().get(UiScreenRegistry.class);
+        familiarCommand.setExecutor(new FamiliarCommand(service, messages, actionBarService, screenRegistry));
     }
 
     private void registerListeners() {
@@ -211,15 +220,6 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
         Bukkit.getPluginManager().registerEvents(new FamiliarSummonListener(service), this);
         Bukkit.getPluginManager().registerEvents(new FamiliarXpListener(service), this);
         Bukkit.getPluginManager().registerEvents(new FamiliarCombatListener(service), this);
-    }
-
-    private void registerUiProvider() {
-        UiRegistry registry = core.services().get(UiRegistry.class);
-        if (registry == null) {
-            getLogger().warning("UiRegistry not found. Familiar HUD provider not registered.");
-            return;
-        }
-        registry.register(new FamiliarHudProvider(service, messages));
     }
 
     private ClassesBridge resolveClassesBridge() {

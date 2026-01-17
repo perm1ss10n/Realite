@@ -23,7 +23,6 @@ dependencies {
     compileOnly "net.kyori:adventure-text-minimessage:4.17.0"
 
     compileOnly project(":RealiteCore")
-    compileOnly project(":plugins:RealiteUI")
     compileOnly project(":plugins:RealiteItems")
 
     testImplementation "io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT" // <-- добавь
