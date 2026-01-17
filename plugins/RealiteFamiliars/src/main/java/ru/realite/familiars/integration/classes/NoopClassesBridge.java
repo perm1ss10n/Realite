@@ -21,7 +21,7 @@ public final class NoopClassesBridge implements ClassesBridge {
     }
 
     @Override
-    public @Nullable String getActiveClassId(Player player) {
+    public @Nullable ClassTierInfo getActiveClassInfo(Player player) {
         warning.warnOnce();
         return null;
     }

@@ -8,9 +8,11 @@ import ru.realite.core.api.CoreModuleEntrypoint;
 import ru.realite.core.api.Platform;
 import ru.realite.core.api.Subscription;
 import ru.realite.core.api.classes.ClassProfileProvider;
+import ru.realite.core.api.classes.ClassTagProvider;
 import ru.realite.core.api.ui.UiRegistry;
 import ru.realite.familiars.command.FamiliarCommand;
 import ru.realite.familiars.command.FamiliarsCommand;
+import ru.realite.familiars.config.FamiliarLimitsRepository;
 import ru.realite.familiars.config.FamiliarTypeRepository;
 import ru.realite.familiars.config.Messages;
 import ru.realite.familiars.config.MessagesRepository;
@@ -40,6 +42,7 @@ import ru.realite.familiars.service.FamiliarService;
 import ru.realite.familiars.service.FamiliarServiceImpl;
 import ru.realite.familiars.service.FamiliarStore;
 import ru.realite.familiars.service.FamiliarXpSource;
+import ru.realite.familiars.service.FamiliarLimitService;
 import ru.realite.familiars.service.YamlFamiliarRepository;
 import ru.realite.familiars.ui.FamiliarActionBarService;
 import ru.realite.familiars.ui.FamiliarHudProvider;
@@ -56,6 +59,7 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
 
     private FamiliarTypeRepository typeRepository;
     private TamingRulesRepository rulesRepository;
+    private FamiliarLimitsRepository limitsRepository;
     private Messages messages;
     private FamiliarRepository repository;
 
@@ -67,6 +71,7 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
     private QuestsBridge questsBridge;
     private MagicBridge magicBridge;
     private CityGuildBridge cityGuildBridge;
+    private FamiliarLimitService limitService;
     private Subscription questXpSubscription;
     private final RealiteFamiliarsEntrypoint entrypoint = new RealiteFamiliarsEntrypoint(this);
     private boolean initialized;
@@ -98,6 +103,7 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
         saveDefaultConfig();
         saveIfNotExists("familiars.yml");
         saveIfNotExists("taming.yml");
+        saveIfNotExists("limits.yml");
         saveIfNotExists("messages.yml");
 
         reloadConfigs();
@@ -107,15 +113,16 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
         questsBridge = resolveQuestsBridge();
         magicBridge = resolveMagicBridge();
         cityGuildBridge = resolveCityGuildBridge();
+        limitService = new FamiliarLimitService(classesBridge, limitsRepository);
 
         if (service == null) {
             FamiliarStore store = new FamiliarStore();
             repository = new YamlFamiliarRepository(this, new File(getDataFolder(), "familiars-store.yml"));
             store.loadAll(repository.load());
             service = new FamiliarServiceImpl(this, store, repository, getLogger(),
-                    classesBridge, questsBridge, magicBridge, cityGuildBridge);
+                    classesBridge, questsBridge, magicBridge, cityGuildBridge, limitService);
         }
-        service.updateRepositories(typeRepository, rulesRepository);
+        service.updateRepositories(typeRepository, rulesRepository, limitsRepository);
         service.resetSummonedStates();
         core.services().replace(FamiliarService.class, service);
         actionBarService = new FamiliarActionBarService(messages);
@@ -161,9 +168,14 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
                 .orElse(null);
         rulesRepository = TamingRulesRepository.load(new File(dataFolder, "taming.yml"), getLogger())
                 .orElse(null);
+        limitsRepository = FamiliarLimitsRepository.load(new File(dataFolder, "limits.yml"), getLogger())
+                .orElse(null);
         messages = MessagesRepository.load(new File(dataFolder, "messages.yml"), getLogger())
                 .map(MessagesRepository::messages)
                 .orElseGet(this::defaultMessages);
+        if (limitService != null) {
+            limitService.updateRepository(limitsRepository);
+        }
     }
 
     @Override
@@ -206,7 +218,9 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
     }
 
     private ClassesBridge resolveClassesBridge() {
-        CoreClassesBridge coreBridge = new CoreClassesBridge(() -> core.services().get(ClassProfileProvider.class));
+        CoreClassesBridge coreBridge = new CoreClassesBridge(
+                () -> core.services().get(ClassProfileProvider.class),
+                () -> core.services().get(ClassTagProvider.class));
         if (coreBridge.isAvailable()) {
             return coreBridge;
         }
@@ -256,7 +270,8 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
     private Messages defaultMessages() {
         org.bukkit.configuration.file.YamlConfiguration config = new org.bukkit.configuration.file.YamlConfiguration();
         config.set("prefix", "<gray>[Familiars]</gray> ");
-        config.set("debug.usage", "{prefix}<yellow>/familiars debug <typeId></yellow>");
+        config.set("debug.usage", "{prefix}<yellow>/familiars debug <typeId|limits></yellow>");
+        config.set("debug.limits", "{prefix}<yellow>Limit: <white>{limit}</white> <gray>({source})</gray></yellow>");
         config.set("debug.no-service", "{prefix}<red>Familiar service is not available.</red>");
         config.set("debug.header", "{prefix}<yellow>Debug for <type></yellow>");
         config.set("debug.can-tame", "{prefix}Can tame: {result}");
