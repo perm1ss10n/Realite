@@ -28,8 +28,9 @@ Realite/
     ├── RealiteQuests/                  # Quest engine + content packs
     ├── RealiteItems/                   # Custom items + Items API/Bridge
     ├── RealiteMagic/                   # Magic: casting, schools, reagents, HUD
-    ├── RealiteUI/                      # UI: unified HUD, ActionBar, BossBar rendering
-    ├── RealiteFamiliars/               # Companions and familiars (planned)
+    ├── RealiteUI/                      # UI and HUD system
+    ├── RealiteFamiliars/               # Companions and combat pets
+    ├── RealiteModels/                  # Custom entity models
 ```
 
 ### 🔑 Core Idea
@@ -227,23 +228,30 @@ Purpose:
 - reduce duplicated HUD logic between modules
 - prepare the platform for further UI scaling
 
----
+### 🐾 Familiars (RealiteFamiliars)
 
-### 🐾 Companions and Familiars (RealiteFamiliars - Planned)
-- companion and familiar system
-- familiar progression (levels, skills, roles)
-- PvE participation (PvP rules later)
-- GUI and control commands
+- real entity-based companions
+- taming via consumable item (kill-confirm)
+- familiar limits based on class and evolution tier
+- multiple familiars per player
+- safe summon / dismiss / release lifecycle
+- familiar progression (levels, roles)
+- full HUD and GUI management via RealiteUI
+- PvE-oriented logic (PvP later)
 - integrations:
-  - RealiteItems (summoning items, equipment)
-  - RealiteMagic (spells, auras, synergies)
-  - RealiteClasses (class passives)
-  - RealiteQuests (unlock and progression quests)
-  - Cities/Guilds (limits)
-- familiar roles:
-  - combat (damage, control)
-  - support (healing, buffs, auras)
-  - utility (aggro, protection, out-of-combat effects)
+  - RealiteItems (taming, equipment)
+  - RealiteMagic (auras, synergies)
+  - RealiteClasses (limits, passives)
+  - RealiteQuests (quests for unlocking and progression)
+  - Cities / Guilds (limits)
+
+### 🎭 Custom Entity Models (RealiteModels)
+
+- standalone infrastructure plugin
+- registers `ModelsBridge` in RealiteCore
+- applies custom visual models to entities
+- uses assets from RealiteItems
+- optional with graceful fallback
 
 ---
 
