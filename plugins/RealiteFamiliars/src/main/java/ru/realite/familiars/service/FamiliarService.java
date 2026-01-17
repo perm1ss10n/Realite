@@ -3,6 +3,7 @@ package ru.realite.familiars.service;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import ru.realite.familiars.model.FamiliarBehavior;
 import ru.realite.familiars.model.FamiliarInstance;
 import ru.realite.familiars.model.FamiliarType;
@@ -51,4 +52,6 @@ public interface FamiliarService {
     Optional<FamiliarEntityData> getFamiliarEntityData(Entity entity);
 
     void recordOwnerCombat(UUID owner);
+
+    void updateInventory(UUID owner, String typeId, List<ItemStack> inventory);
 }

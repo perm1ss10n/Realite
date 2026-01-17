@@ -35,6 +35,7 @@ import ru.realite.familiars.integration.quests.FamiliarQuestXpEvent;
 import ru.realite.familiars.integration.quests.NoopQuestsBridge;
 import ru.realite.familiars.integration.quests.QuestsBridge;
 import ru.realite.familiars.listener.FamiliarCombatListener;
+import ru.realite.familiars.listener.FamiliarInventoryListener;
 import ru.realite.familiars.listener.FamiliarXpListener;
 import ru.realite.familiars.listener.FamiliarSummonListener;
 import ru.realite.familiars.listener.FamiliarTamingListener;
@@ -44,6 +45,8 @@ import ru.realite.familiars.service.FamiliarServiceImpl;
 import ru.realite.familiars.service.FamiliarStore;
 import ru.realite.familiars.service.FamiliarXpSource;
 import ru.realite.familiars.service.FamiliarLimitService;
+import ru.realite.familiars.service.VirtualInventoryService;
+import ru.realite.familiars.service.VirtualInventoryServiceImpl;
 import ru.realite.familiars.service.YamlFamiliarRepository;
 import ru.realite.familiars.ui.FamiliarActionBarService;
 import ru.realite.familiars.ui.FamiliarUiServiceImpl;
@@ -67,6 +70,7 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
 
     private FamiliarServiceImpl service;
     private FamiliarUiService uiService;
+    private VirtualInventoryService virtualInventoryService;
     private FamiliarActionBarService actionBarService;
     private ItemsBridge itemsBridge;
     private ClassesBridge classesBridge;
@@ -128,8 +132,11 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
         service.updateRepositories(typeRepository, rulesRepository, limitsRepository, policyRepository);
         service.resetSummonedStates();
         core.services().replace(FamiliarService.class, service);
+        if (virtualInventoryService == null) {
+            virtualInventoryService = new VirtualInventoryServiceImpl(service, itemsBridge);
+        }
         if (uiService == null) {
-            uiService = new FamiliarUiServiceImpl(service);
+            uiService = new FamiliarUiServiceImpl(service, virtualInventoryService);
         }
         core.services().replace(FamiliarUiService.class, uiService);
         actionBarService = new FamiliarActionBarService(messages);
@@ -220,6 +227,7 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
         Bukkit.getPluginManager().registerEvents(new FamiliarSummonListener(service), this);
         Bukkit.getPluginManager().registerEvents(new FamiliarXpListener(service), this);
         Bukkit.getPluginManager().registerEvents(new FamiliarCombatListener(service), this);
+        Bukkit.getPluginManager().registerEvents(new FamiliarInventoryListener(virtualInventoryService), this);
     }
 
     private ClassesBridge resolveClassesBridge() {

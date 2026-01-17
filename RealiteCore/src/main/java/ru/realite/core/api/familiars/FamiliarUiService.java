@@ -14,6 +14,8 @@ public interface FamiliarUiService {
 
     Optional<FamiliarDetailsData> detailsData(Player player, String typeId);
 
+    boolean openInventory(Player player, String typeId);
+
     FamiliarActionResult summon(Player player, String typeId);
 
     FamiliarActionResult dismiss(Player player, String typeId);
