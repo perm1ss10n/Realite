@@ -9,11 +9,19 @@ public record FamiliarActionResult(boolean allowed, List<String> reasons) {
         Objects.requireNonNull(reasons, "reasons");
     }
 
-    public static FamiliarActionResult allowed() {
+    /* ---------- Factory methods ---------- */
+
+    public static FamiliarActionResult success() {
         return new FamiliarActionResult(true, List.of());
     }
 
     public static FamiliarActionResult denied(List<String> reasons) {
         return new FamiliarActionResult(false, reasons == null ? List.of() : List.copyOf(reasons));
+    }
+
+    /* ---------- Convenience ---------- */
+
+    public boolean denied() {
+        return !allowed;
     }
 }

@@ -129,7 +129,7 @@ public final class FamiliarUiServiceImpl implements FamiliarUiService {
         }
         activeSelections.put(player.getUniqueId(), instance.typeId());
         publishInvalidate(player);
-        return FamiliarActionResult.allowed();
+        return FamiliarActionResult.success();
     }
 
     @Override
@@ -145,7 +145,7 @@ public final class FamiliarUiServiceImpl implements FamiliarUiService {
                 activeSelections.computeIfPresent(player.getUniqueId(), (key, value) -> value.equalsIgnoreCase(typeId) ? null : value);
             }
             publishInvalidate(player);
-            return FamiliarActionResult.allowed();
+            return FamiliarActionResult.success();
         }
         return FamiliarActionResult.denied(result.reasons());
     }
