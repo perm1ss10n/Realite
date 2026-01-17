@@ -1,6 +1,6 @@
 package ru.realite.models.service;
 
-import io.papermc.paper.event.entity.EntityRemoveFromWorldEvent;
+import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -15,8 +15,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.HandlerList;
 import org.bukkit.event.world.ChunkUnloadEvent;
+import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -40,7 +40,8 @@ public final class ModelWrapperService implements Listener {
     private final JavaPlugin plugin;
     private final Map<UUID, WrapperState> wrappers = new ConcurrentHashMap<>();
     private BukkitTask syncTask;
-    private Consumer<UUID> appliedRemover = id -> { };
+    private Consumer<UUID> appliedRemover = id -> {
+    };
 
     public ModelWrapperService(JavaPlugin plugin) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
@@ -57,8 +58,7 @@ public final class ModelWrapperService implements Listener {
                 plugin,
                 this::syncWrappers,
                 5L,
-                5L
-        );
+                5L);
     }
 
     public void stop() {
@@ -113,7 +113,7 @@ public final class ModelWrapperService implements Listener {
         wrappers.clear();
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityDeath(EntityDeathEvent event) {
         Entity entity = event.getEntity();
         if (wrappers.containsKey(entity.getUniqueId())) {
@@ -121,10 +121,11 @@ public final class ModelWrapperService implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityRemove(EntityRemoveFromWorldEvent event) {
         Entity entity = event.getEntity();
         UUID entityId = entity.getUniqueId();
+
         if (wrappers.containsKey(entityId)) {
             clear(entity);
         } else if (isWrapperEntity(entity)) {
@@ -132,7 +133,7 @@ public final class ModelWrapperService implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onChunkUnload(ChunkUnloadEvent event) {
         for (Entity entity : event.getChunk().getEntities()) {
             UUID entityId = entity.getUniqueId();
@@ -153,11 +154,15 @@ public final class ModelWrapperService implements Listener {
                 appliedRemover.accept(state.targetId());
                 continue;
             }
+
             Entity wrapperEntity = Bukkit.getEntity(state.wrapperId());
             if (!(wrapperEntity instanceof ItemDisplay wrapper)) {
                 ItemDisplay recreated = ensureWrapper(target, state.assetInfo());
                 if (recreated != null) {
-                    wrappers.put(state.targetId(), new WrapperState(state.targetId(), recreated.getUniqueId(), state.assetInfo()));
+                    wrappers.put(state.targetId(), new WrapperState(
+                            state.targetId(),
+                            recreated.getUniqueId(),
+                            state.assetInfo()));
                     markTarget(target, state.assetInfo().asset().modelId(), recreated.getUniqueId());
                     markWrapper(recreated, state.assetInfo().asset().modelId(), target.getUniqueId());
                 } else {
@@ -166,6 +171,7 @@ public final class ModelWrapperService implements Listener {
                 }
                 continue;
             }
+
             syncWrapper(target, wrapper, state.assetInfo().asset().visualProfile());
         }
     }
@@ -192,8 +198,7 @@ public final class ModelWrapperService implements Listener {
 
     private void syncWrapper(Entity target, ItemDisplay wrapper, ModelVisualProfile profile) {
         wrapper.teleport(target.getLocation());
-        Transformation transformation = buildTransformation(profile);
-        wrapper.setTransformation(transformation);
+        wrapper.setTransformation(buildTransformation(profile));
     }
 
     private void updateDisplayItem(ItemDisplay display, ModelDisplaySpec spec) {
@@ -211,14 +216,12 @@ public final class ModelWrapperService implements Listener {
         Vector3f translation = new Vector3f(
                 (float) profile.offset().x(),
                 (float) profile.offset().y(),
-                (float) profile.offset().z()
-        );
+                (float) profile.offset().z());
         return new Transformation(
                 translation,
                 new Quaternionf(),
                 new Vector3f(scale, scale, scale),
-                new Quaternionf()
-        );
+                new Quaternionf());
     }
 
     private void cleanupExistingWrappers() {
