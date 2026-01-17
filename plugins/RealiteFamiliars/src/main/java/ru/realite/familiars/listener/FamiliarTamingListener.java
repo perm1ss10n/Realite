@@ -16,6 +16,7 @@ import ru.realite.familiars.config.Messages;
 import ru.realite.familiars.event.FamiliarTamedEvent;
 import ru.realite.familiars.service.FamiliarService;
 import ru.realite.familiars.service.TameResult;
+import ru.realite.familiars.ui.FamiliarActionBarService;
 import ru.realite.items.service.ItemService;
 
 import java.util.Map;
@@ -32,12 +33,18 @@ public final class FamiliarTamingListener implements Listener {
     private final Messages messages;
     private final ItemService itemService;
     private final Logger logger;
+    private final FamiliarActionBarService actionBar;
 
-    public FamiliarTamingListener(FamiliarService service, Messages messages, ItemService itemService, Logger logger) {
+    public FamiliarTamingListener(FamiliarService service,
+                                  Messages messages,
+                                  ItemService itemService,
+                                  Logger logger,
+                                  FamiliarActionBarService actionBar) {
         this.service = service;
         this.messages = messages;
         this.itemService = itemService;
         this.logger = logger;
+        this.actionBar = actionBar;
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -80,6 +87,9 @@ public final class FamiliarTamingListener implements Listener {
                 debug("Taming failed without reasons for " + player.getName() + " type=" + typeId);
                 return;
             }
+            if (actionBar != null) {
+                actionBar.sendForReasons(player, result.result().reasons());
+            }
             for (String reason : result.result().reasons()) {
                 player.sendMessage(messages.get("taming.failure-reason", Map.of("reason", reason)));
                 debug("Taming failed for " + player.getName() + " type=" + typeId + " reason=" + reason);
@@ -92,6 +102,9 @@ public final class FamiliarTamingListener implements Listener {
         }
         consumeTag(player, stack);
         player.sendMessage(messages.get("taming.success", Map.of("type", typeId)));
+        if (actionBar != null) {
+            actionBar.send(player, "actionbar.tamed");
+        }
     }
 
     private boolean isTamingTag(ItemStack stack) {

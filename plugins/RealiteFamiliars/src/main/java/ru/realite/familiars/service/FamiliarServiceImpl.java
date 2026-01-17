@@ -146,6 +146,14 @@ public final class FamiliarServiceImpl implements FamiliarService {
     }
 
     @Override
+    public Optional<FamiliarType> getType(String typeId) {
+        if (typeRepository == null || typeId == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(typeRepository.get(typeId));
+    }
+
+    @Override
     public CheckResult summon(Player player, String typeId) {
         List<String> reasons = new ArrayList<>();
 

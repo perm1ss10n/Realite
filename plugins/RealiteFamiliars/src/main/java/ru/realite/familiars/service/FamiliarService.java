@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Entity;
 import ru.realite.familiars.model.FamiliarBehavior;
 import ru.realite.familiars.model.FamiliarInstance;
+import ru.realite.familiars.model.FamiliarType;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +18,8 @@ public interface FamiliarService {
     TameResult tame(Player player, String typeId);
 
     List<FamiliarInstance> getFamiliars(UUID owner);
+
+    Optional<FamiliarType> getType(String typeId);
 
     CheckResult summon(Player player, String typeId);
 

@@ -15,6 +15,9 @@ ui:
   hud:
     bossbar: "<yellow>{provider}</yellow> <gray>{current}/{max}</gray>"
     actionbar: "<yellow>{provider}</yellow> <gray>{current}/{max}</gray>"
+  provider:
+    familiars:
+      status: "<yellow>Фамильяр</yellow>"
   menu:
     filler: "<gray> </gray>"
     page: "<gray>Страница <white>{page}</white>/<white>{pages}</white></gray>"

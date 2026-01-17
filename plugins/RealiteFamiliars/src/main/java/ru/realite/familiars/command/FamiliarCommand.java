@@ -8,8 +8,10 @@ import org.bukkit.entity.Player;
 import ru.realite.familiars.config.Messages;
 import ru.realite.familiars.model.FamiliarBehavior;
 import ru.realite.familiars.model.FamiliarInstance;
+import ru.realite.familiars.menu.FamiliarMenuManager;
 import ru.realite.familiars.service.CheckResult;
 import ru.realite.familiars.service.FamiliarService;
+import ru.realite.familiars.ui.FamiliarActionBarService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -20,10 +22,17 @@ public final class FamiliarCommand implements CommandExecutor {
 
     private final FamiliarService service;
     private final Messages messages;
+    private final FamiliarActionBarService actionBar;
+    private final FamiliarMenuManager menuManager;
 
-    public FamiliarCommand(FamiliarService service, Messages messages) {
+    public FamiliarCommand(FamiliarService service,
+                           Messages messages,
+                           FamiliarActionBarService actionBar,
+                           FamiliarMenuManager menuManager) {
         this.service = service;
         this.messages = messages;
+        this.actionBar = actionBar;
+        this.menuManager = menuManager;
     }
 
     @Override
@@ -47,6 +56,7 @@ public final class FamiliarCommand implements CommandExecutor {
             case "dismiss" -> handleDismiss(player, resolveType(player, args, 1));
             case "follow" -> handleBehavior(player, resolveType(player, args, 1), FamiliarBehavior.FOLLOW);
             case "stay" -> handleBehavior(player, resolveType(player, args, 1), FamiliarBehavior.STAY);
+            case "ui", "menu" -> handleMenu(player);
             default -> sender.sendMessage(messages.get("familiar.usage"));
         }
 
@@ -114,6 +124,14 @@ public final class FamiliarCommand implements CommandExecutor {
         }
     }
 
+    private void handleMenu(Player player) {
+        if (menuManager == null) {
+            player.sendMessage(messages.get("familiar.menu.unavailable"));
+            return;
+        }
+        menuManager.openMain(player);
+    }
+
     private void sendSimple(Player player, String key, String typeId) {
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("type", typeId);
@@ -122,6 +140,9 @@ public final class FamiliarCommand implements CommandExecutor {
 
     private void sendFailure(Player player, String key, CheckResult result) {
         player.sendMessage(messages.get(key));
+        if (actionBar != null) {
+            actionBar.sendForReasons(player, result.reasons());
+        }
         if (!result.reasons().isEmpty()) {
             player.sendMessage(messages.get("familiar.reasons"));
             for (String reason : result.reasons()) {
