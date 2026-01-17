@@ -7,6 +7,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Sittable;
 import org.bukkit.entity.Tameable;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -49,7 +50,8 @@ public final class FamiliarServiceImpl implements FamiliarService {
     private final double followDistance = 3.5;
     private final double teleportDistance = 12.0;
 
-    public FamiliarServiceImpl(CoreApi core, Plugin plugin, FamiliarStore store, FamiliarRepository repository, Logger logger) {
+    public FamiliarServiceImpl(CoreApi core, Plugin plugin, FamiliarStore store, FamiliarRepository repository,
+            Logger logger) {
         this.core = core;
         this.plugin = plugin;
         this.store = store;
@@ -131,8 +133,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 1,
                 0,
                 FamiliarState.IDLE,
-                Optional.empty()
-        );
+                Optional.empty());
         store.upsert(instance);
         lastTame.put(player.getUniqueId(), Instant.now());
         save();
@@ -147,28 +148,38 @@ public final class FamiliarServiceImpl implements FamiliarService {
     @Override
     public CheckResult summon(Player player, String typeId) {
         List<String> reasons = new ArrayList<>();
+
         FamiliarType type = getType(typeId, reasons);
+        if (!reasons.isEmpty()) {
+            return CheckResult.denied(reasons);
+        }
+
         FamiliarInstance instance = getInstance(player.getUniqueId(), typeId);
         if (instance == null) {
-            reasons.add("Familiar not tamed: " + typeId);
-        } else if (instance.state() == FamiliarState.SUMMONED) {
-            if (instance.summonedEntityId().isPresent() && Bukkit.getEntity(instance.summonedEntityId().get()) != null) {
-                reasons.add("Familiar already summoned: " + typeId);
-            } else {
-                instance = new FamiliarInstance(instance.owner(), instance.typeId(), instance.level(), instance.xp(),
-                        FamiliarState.IDLE, Optional.empty());
-                store.upsert(instance);
-                save();
+            return CheckResult.denied(List.of("Familiar not tamed: " + typeId));
+        }
+
+        if (instance.state() == FamiliarState.SUMMONED) {
+            if (instance.summonedEntityId().isPresent()
+                    && Bukkit.getEntity(instance.summonedEntityId().get()) != null) {
+                return CheckResult.denied(List.of("Familiar already summoned: " + typeId));
             }
+
+            // сущность пропала — сбрасываем состояние и продолжаем призыв
+            instance = new FamiliarInstance(
+                    instance.owner(),
+                    instance.typeId(),
+                    instance.level(),
+                    instance.xp(),
+                    FamiliarState.IDLE,
+                    Optional.empty());
+            store.upsert(instance);
+            save();
         }
 
         CheckResult rulesCheck = canSummon(player, typeId);
         if (!rulesCheck.allowed()) {
-            reasons.addAll(rulesCheck.reasons());
-        }
-
-        if (!reasons.isEmpty()) {
-            return CheckResult.denied(reasons);
+            return CheckResult.denied(rulesCheck.reasons());
         }
 
         Entity spawned = spawnEntity(player, type);
@@ -182,12 +193,13 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 instance.level(),
                 instance.xp(),
                 FamiliarState.SUMMONED,
-                Optional.of(spawned.getUniqueId())
-        );
+                Optional.of(spawned.getUniqueId()));
+
         store.upsert(summoned);
         registerBehavior(player.getUniqueId(), typeId, FamiliarBehavior.FOLLOW, spawned);
         lastSummon.put(player.getUniqueId(), Instant.now());
         save();
+
         return CheckResult.allowed(List.of());
     }
 
@@ -209,8 +221,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 instance.level(),
                 instance.xp(),
                 FamiliarState.IDLE,
-                Optional.empty()
-        );
+                Optional.empty());
         store.upsert(updated);
         removeBehavior(instance.owner(), instance.typeId());
         save();
@@ -250,8 +261,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
                     instance.level(),
                     instance.xp(),
                     FamiliarState.IDLE,
-                    Optional.empty()
-            );
+                    Optional.empty());
             store.upsert(updated);
             removeBehavior(instance.owner(), instance.typeId());
         }
@@ -270,8 +280,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 instance.level(),
                 instance.xp(),
                 FamiliarState.IDLE,
-                Optional.empty()
-        );
+                Optional.empty());
         store.upsert(updated);
         removeBehavior(instance.owner(), instance.typeId());
         save();
@@ -320,8 +329,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
                         instance.level(),
                         instance.xp(),
                         FamiliarState.IDLE,
-                        Optional.empty()
-                );
+                        Optional.empty());
                 store.upsert(updated);
             }
         }
@@ -435,23 +443,22 @@ public final class FamiliarServiceImpl implements FamiliarService {
         if (!(entity instanceof LivingEntity living)) {
             return;
         }
-        if (behavior == FamiliarBehavior.STAY) {
-            living.setAI(false);
-            if (entity instanceof Tameable tameable) {
-                tameable.setSitting(true);
-            }
-        } else {
-            living.setAI(true);
-            if (entity instanceof Tameable tameable) {
-                tameable.setSitting(false);
-            }
+
+        boolean stay = behavior == FamiliarBehavior.STAY;
+
+        // AI выключаем при STAY
+        living.setAI(!stay);
+
+        // Садим ТОЛЬКО если моб это поддерживает
+        if (entity instanceof Sittable sittable) {
+            sittable.setSitting(stay);
         }
+
         PersistentDataContainer container = entity.getPersistentDataContainer();
         container.set(ownerKey, PersistentDataType.STRING, owner.toString());
         container.set(typeKey, PersistentDataType.STRING, typeId);
-        if (living.isCollidable()) {
-            living.setCollidable(false);
-        }
+
+        living.setCollidable(false);
     }
 
     private void startFollowTask() {
@@ -481,8 +488,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
                             instance.level(),
                             instance.xp(),
                             FamiliarState.IDLE,
-                            Optional.empty()
-                    );
+                            Optional.empty());
                     store.upsert(updated);
                     removeBehavior(instance.owner(), instance.typeId());
                     save();
