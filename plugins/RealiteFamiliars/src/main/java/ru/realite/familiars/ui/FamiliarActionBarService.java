@@ -62,6 +62,9 @@ public final class FamiliarActionBarService {
             if (lower.contains("class") && lower.contains("not allowed")) {
                 return Optional.of("actionbar.class");
             }
+            if (lower.contains("mob") && lower.contains("not allowed")) {
+                return Optional.of("actionbar.policy");
+            }
             if (lower.startsWith("limit reached")) {
                 return Optional.of("actionbar.limit");
             }

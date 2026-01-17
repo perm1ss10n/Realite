@@ -6,12 +6,8 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 import ru.realite.familiars.config.Messages;
 import ru.realite.familiars.event.FamiliarTamedEvent;
 import ru.realite.familiars.integration.items.ItemsBridge;
@@ -25,7 +21,6 @@ import java.util.logging.Logger;
 
 public final class FamiliarTamingListener implements Listener {
 
-    private static final NamespacedKey TAMING_TAG_KEY = new NamespacedKey("realite", "realite_familiar_tag");
     private static final NamespacedKey TYPE_KEY = new NamespacedKey("realite", "familiarTypeId");
     private static final String EXPECTED_ITEM_ID = "realite:familiar_taming_tag";
 
@@ -48,23 +43,11 @@ public final class FamiliarTamingListener implements Listener {
     }
 
     @EventHandler(ignoreCancelled = true)
-    public void onInteractEntity(PlayerInteractEntityEvent event) {
-        if (event.getHand() != EquipmentSlot.HAND) {
+    public void onEntityDeath(EntityDeathEvent event) {
+        Player player = event.getEntity().getKiller();
+        if (player == null) {
             return;
         }
-        handleTame(event.getPlayer());
-    }
-
-    @EventHandler(ignoreCancelled = true)
-    public void onInteract(PlayerInteractEvent event) {
-        switch (event.getAction()) {
-            case RIGHT_CLICK_AIR, RIGHT_CLICK_BLOCK -> handleTame(event.getPlayer());
-            default -> {
-            }
-        }
-    }
-
-    private void handleTame(Player player) {
         ItemStack stack = player.getInventory().getItemInMainHand();
         if (stack == null || stack.getType() == Material.AIR) {
             return;
@@ -80,7 +63,7 @@ public final class FamiliarTamingListener implements Listener {
             return;
         }
 
-        TameResult result = service.tame(player, typeId);
+        TameResult result = service.tame(player, typeId, event.getEntityType());
         if (!result.allowed()) {
             if (result.result().reasons().isEmpty()) {
                 player.sendMessage(messages.get("taming.failure"));
@@ -108,28 +91,13 @@ public final class FamiliarTamingListener implements Listener {
     }
 
     private boolean isTamingTag(ItemStack stack) {
-        if (itemsBridge != null) {
-            if (itemsBridge.isAvailable()) {
-                Optional<String> itemId = itemsBridge.getItemId(stack);
-                if (itemId.isEmpty() || !EXPECTED_ITEM_ID.equalsIgnoreCase(itemId.get())) {
-                    return false;
-                }
-                Optional<Integer> tagValue = itemsBridge.readInt(stack, TAMING_TAG_KEY.getKey());
-                if (tagValue.isPresent()) {
-                    return tagValue.get() > 0;
-                }
-            } else {
+        if (itemsBridge == null || !itemsBridge.isAvailable()) {
+            if (itemsBridge != null) {
                 itemsBridge.getItemId(stack);
             }
-        }
-        PersistentDataContainer container = stack.getItemMeta() != null
-                ? stack.getItemMeta().getPersistentDataContainer()
-                : null;
-        if (container == null) {
             return false;
         }
-        Integer value = container.get(TAMING_TAG_KEY, PersistentDataType.INTEGER);
-        return value != null && value > 0;
+        return itemsBridge.isItem(stack, EXPECTED_ITEM_ID);
     }
 
     private String getTypeId(ItemStack stack) {
@@ -139,15 +107,7 @@ public final class FamiliarTamingListener implements Listener {
                 return typeId.get();
             }
         }
-        if (stack.getItemMeta() == null) {
-            return null;
-        }
-        PersistentDataContainer container = stack.getItemMeta().getPersistentDataContainer();
-        String typeId = container.get(TYPE_KEY, PersistentDataType.STRING);
-        if (typeId == null || typeId.isBlank()) {
-            return null;
-        }
-        return typeId;
+        return null;
     }
 
     private void consumeTag(Player player, ItemStack stack) {
