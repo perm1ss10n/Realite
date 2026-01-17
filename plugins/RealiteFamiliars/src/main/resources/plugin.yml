@@ -13,3 +13,6 @@ commands:
   familiars:
     description: "Familiar debug tools"
     usage: /familiars debug <typeId>
+  familiar:
+    description: "Summon or dismiss familiars"
+    usage: /familiar <summon|dismiss|follow|stay> [typeId]

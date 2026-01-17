@@ -6,12 +6,14 @@ import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.CoreModuleEntrypoint;
 import ru.realite.core.api.Platform;
+import ru.realite.familiars.command.FamiliarCommand;
 import ru.realite.familiars.command.FamiliarsCommand;
 import ru.realite.familiars.config.FamiliarTypeRepository;
 import ru.realite.familiars.config.Messages;
 import ru.realite.familiars.config.MessagesRepository;
 import ru.realite.familiars.config.TamingRulesRepository;
 import ru.realite.familiars.core.CoreAccess;
+import ru.realite.familiars.listener.FamiliarSummonListener;
 import ru.realite.familiars.listener.FamiliarTamingListener;
 import ru.realite.familiars.service.FamiliarRepository;
 import ru.realite.familiars.service.FamiliarService;
@@ -73,9 +75,10 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
             FamiliarStore store = new FamiliarStore();
             repository = new YamlFamiliarRepository(this, new File(getDataFolder(), "familiars-store.yml"));
             store.loadAll(repository.load());
-            service = new FamiliarServiceImpl(core, store, repository, getLogger());
+            service = new FamiliarServiceImpl(core, this, store, repository, getLogger());
         }
         service.updateRepositories(typeRepository, rulesRepository);
+        service.resetSummonedStates();
         core.services().replace(FamiliarService.class, service);
 
         registerCommand();
@@ -128,6 +131,12 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
             return;
         }
         command.setExecutor(new FamiliarsCommand(service, messages));
+        PluginCommand familiarCommand = getCommand("familiar");
+        if (familiarCommand == null) {
+            getLogger().warning("Command /familiar not found in plugin.yml; executor not registered.");
+            return;
+        }
+        familiarCommand.setExecutor(new FamiliarCommand(service, messages));
     }
 
     private void registerListeners() {
@@ -136,6 +145,7 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
                 new FamiliarTamingListener(service, messages, itemService, getLogger()),
                 this
         );
+        Bukkit.getPluginManager().registerEvents(new FamiliarSummonListener(service), this);
     }
 
     private Messages defaultMessages() {
@@ -152,6 +162,18 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
         config.set("taming.failure", "{prefix}<red>Failed to tame familiar.</red>");
         config.set("taming.failure-reason", "{prefix}<red>Failed to tame: <reason></red>");
         config.set("taming.missing-type", "{prefix}<red>Tag does not specify a familiar type.</red>");
+        config.set("familiar.usage", "{prefix}<yellow>/familiar <summon|dismiss|follow|stay> [typeId]</yellow>");
+        config.set("familiar.no-service", "{prefix}<red>Familiar service is not available.</red>");
+        config.set("familiar.no-familiars", "{prefix}<red>You have no tamed familiars.</red>");
+        config.set("familiar.specify-type", "{prefix}<yellow>Specify familiar type: {types}</yellow>");
+        config.set("familiar.summon.success", "{prefix}<green>Familiar summoned: <type></green>");
+        config.set("familiar.summon.failure", "{prefix}<red>Failed to summon familiar.</red>");
+        config.set("familiar.dismiss.success", "{prefix}<green>Familiar dismissed: <type></green>");
+        config.set("familiar.dismiss.failure", "{prefix}<red>Failed to dismiss familiar.</red>");
+        config.set("familiar.behavior.follow", "{prefix}<green>Familiar set to follow: <type></green>");
+        config.set("familiar.behavior.stay", "{prefix}<green>Familiar set to stay: <type></green>");
+        config.set("familiar.behavior.failure", "{prefix}<red>Failed to update behavior.</red>");
+        config.set("familiar.reasons", "{prefix}<red>Reasons:</red>");
         return new Messages(config);
     }
 

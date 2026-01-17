@@ -14,3 +14,20 @@ taming:
   failure: "{prefix}<red>Failed to tame familiar.</red>"
   failure-reason: "{prefix}<red>Failed to tame: <reason></red>"
   missing-type: "{prefix}<red>Tag does not specify a familiar type.</red>"
+
+familiar:
+  usage: "{prefix}<yellow>/familiar <summon|dismiss|follow|stay> [typeId]</yellow>"
+  no-service: "{prefix}<red>Familiar service is not available.</red>"
+  no-familiars: "{prefix}<red>You have no tamed familiars.</red>"
+  specify-type: "{prefix}<yellow>Specify familiar type: {types}</yellow>"
+  summon:
+    success: "{prefix}<green>Familiar summoned: <type></green>"
+    failure: "{prefix}<red>Failed to summon familiar.</red>"
+  dismiss:
+    success: "{prefix}<green>Familiar dismissed: <type></green>"
+    failure: "{prefix}<red>Failed to dismiss familiar.</red>"
+  behavior:
+    follow: "{prefix}<green>Familiar set to follow: <type></green>"
+    stay: "{prefix}<green>Familiar set to stay: <type></green>"
+    failure: "{prefix}<red>Failed to update behavior.</red>"
+  reasons: "{prefix}<red>Reasons:</red>"
