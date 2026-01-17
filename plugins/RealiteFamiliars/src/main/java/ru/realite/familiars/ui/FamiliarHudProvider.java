@@ -71,9 +71,19 @@ public final class FamiliarHudProvider implements UiProvider, UiHudTextProvider 
                 double dist = player.getLocation().distance(entity.getLocation());
                 distance = String.format("%.1fm", dist);
                 if (entity instanceof LivingEntity living) {
-                    double max = living.getMaxHealth();
                     double current = Math.max(0.0, living.getHealth());
+
+                    double max = 0.0;
+                    var attr = living.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+                    if (attr != null) {
+                        max = attr.getValue(); // текущее максимальное (с баффами/дебаффами)
+                    } else {
+                        // на всякий случай фоллбек (если у сущности нет атрибута)
+                        max = current;
+                    }
+
                     hp = String.format("%.0f/%.0f", current, max);
+
                 }
             }
         }
@@ -86,8 +96,7 @@ public final class FamiliarHudProvider implements UiProvider, UiHudTextProvider 
                 "xp", String.valueOf(xpPercent),
                 "state", state,
                 "distance", distance,
-                "hp", hp
-        )));
+                "hp", hp)));
     }
 
     @Override

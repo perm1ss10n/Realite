@@ -15,3 +15,10 @@ types:
     baseStats:
       mana: 30
       regen: 2
+  fox:
+    role: "utility"
+    displayKey: "familiar.fox"
+    allowedClasses: []
+    baseStats:
+      speed: 1
+      awareness: 1

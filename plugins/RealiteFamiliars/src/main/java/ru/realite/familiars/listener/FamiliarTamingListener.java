@@ -14,10 +14,10 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import ru.realite.familiars.config.Messages;
 import ru.realite.familiars.event.FamiliarTamedEvent;
+import ru.realite.familiars.integration.items.ItemsBridge;
 import ru.realite.familiars.service.FamiliarService;
 import ru.realite.familiars.service.TameResult;
 import ru.realite.familiars.ui.FamiliarActionBarService;
-import ru.realite.items.service.ItemService;
 
 import java.util.Map;
 import java.util.Optional;
@@ -31,18 +31,18 @@ public final class FamiliarTamingListener implements Listener {
 
     private final FamiliarService service;
     private final Messages messages;
-    private final ItemService itemService;
+    private final ItemsBridge itemsBridge;
     private final Logger logger;
     private final FamiliarActionBarService actionBar;
 
     public FamiliarTamingListener(FamiliarService service,
                                   Messages messages,
-                                  ItemService itemService,
+                                  ItemsBridge itemsBridge,
                                   Logger logger,
                                   FamiliarActionBarService actionBar) {
         this.service = service;
         this.messages = messages;
-        this.itemService = itemService;
+        this.itemsBridge = itemsBridge;
         this.logger = logger;
         this.actionBar = actionBar;
     }
@@ -108,10 +108,18 @@ public final class FamiliarTamingListener implements Listener {
     }
 
     private boolean isTamingTag(ItemStack stack) {
-        if (itemService != null) {
-            Optional<String> itemId = itemService.getItemId(stack);
-            if (itemId.isEmpty() || !EXPECTED_ITEM_ID.equalsIgnoreCase(itemId.get())) {
-                return false;
+        if (itemsBridge != null) {
+            if (itemsBridge.isAvailable()) {
+                Optional<String> itemId = itemsBridge.getItemId(stack);
+                if (itemId.isEmpty() || !EXPECTED_ITEM_ID.equalsIgnoreCase(itemId.get())) {
+                    return false;
+                }
+                Optional<Integer> tagValue = itemsBridge.readInt(stack, TAMING_TAG_KEY.getKey());
+                if (tagValue.isPresent()) {
+                    return tagValue.get() > 0;
+                }
+            } else {
+                itemsBridge.getItemId(stack);
             }
         }
         PersistentDataContainer container = stack.getItemMeta() != null
@@ -125,6 +133,12 @@ public final class FamiliarTamingListener implements Listener {
     }
 
     private String getTypeId(ItemStack stack) {
+        if (itemsBridge != null && itemsBridge.isAvailable()) {
+            Optional<String> typeId = itemsBridge.readString(stack, TYPE_KEY.getKey());
+            if (typeId.isPresent() && !typeId.get().isBlank()) {
+                return typeId.get();
+            }
+        }
         if (stack.getItemMeta() == null) {
             return null;
         }

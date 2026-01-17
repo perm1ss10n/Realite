@@ -6,6 +6,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.CoreModuleEntrypoint;
 import ru.realite.core.api.Platform;
+import ru.realite.core.api.Subscription;
+import ru.realite.core.api.classes.ClassProfileProvider;
 import ru.realite.core.api.ui.UiRegistry;
 import ru.realite.familiars.command.FamiliarCommand;
 import ru.realite.familiars.command.FamiliarsCommand;
@@ -14,6 +16,22 @@ import ru.realite.familiars.config.Messages;
 import ru.realite.familiars.config.MessagesRepository;
 import ru.realite.familiars.config.TamingRulesRepository;
 import ru.realite.familiars.core.CoreAccess;
+import ru.realite.familiars.integration.classes.ClassesBridge;
+import ru.realite.familiars.integration.classes.CoreClassesBridge;
+import ru.realite.familiars.integration.classes.NoopClassesBridge;
+import ru.realite.familiars.integration.items.CoreItemsBridge;
+import ru.realite.familiars.integration.items.ItemsBridge;
+import ru.realite.familiars.integration.items.NoopItemsBridge;
+import ru.realite.familiars.integration.limits.CityGuildBridge;
+import ru.realite.familiars.integration.limits.NoopCityGuildBridge;
+import ru.realite.familiars.integration.magic.MagicBridge;
+import ru.realite.familiars.integration.magic.NoopMagicBridge;
+import ru.realite.familiars.integration.quests.CoreQuestsBridge;
+import ru.realite.familiars.integration.quests.FamiliarQuestXpEvent;
+import ru.realite.familiars.integration.quests.NoopQuestsBridge;
+import ru.realite.familiars.integration.quests.QuestsBridge;
+import ru.realite.familiars.listener.FamiliarCombatListener;
+import ru.realite.familiars.listener.FamiliarXpListener;
 import ru.realite.familiars.listener.FamiliarSummonListener;
 import ru.realite.familiars.listener.FamiliarTamingListener;
 import ru.realite.familiars.menu.FamiliarMenuManager;
@@ -21,6 +39,7 @@ import ru.realite.familiars.service.FamiliarRepository;
 import ru.realite.familiars.service.FamiliarService;
 import ru.realite.familiars.service.FamiliarServiceImpl;
 import ru.realite.familiars.service.FamiliarStore;
+import ru.realite.familiars.service.FamiliarXpSource;
 import ru.realite.familiars.service.YamlFamiliarRepository;
 import ru.realite.familiars.ui.FamiliarActionBarService;
 import ru.realite.familiars.ui.FamiliarHudProvider;
@@ -43,6 +62,12 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
     private FamiliarServiceImpl service;
     private FamiliarActionBarService actionBarService;
     private FamiliarMenuManager menuManager;
+    private ItemsBridge itemsBridge;
+    private ClassesBridge classesBridge;
+    private QuestsBridge questsBridge;
+    private MagicBridge magicBridge;
+    private CityGuildBridge cityGuildBridge;
+    private Subscription questXpSubscription;
     private final RealiteFamiliarsEntrypoint entrypoint = new RealiteFamiliarsEntrypoint(this);
     private boolean initialized;
     private boolean shuttingDown;
@@ -77,17 +102,26 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
 
         reloadConfigs();
 
+        classesBridge = resolveClassesBridge();
+        itemsBridge = resolveItemsBridge();
+        questsBridge = resolveQuestsBridge();
+        magicBridge = resolveMagicBridge();
+        cityGuildBridge = resolveCityGuildBridge();
+
         if (service == null) {
             FamiliarStore store = new FamiliarStore();
             repository = new YamlFamiliarRepository(this, new File(getDataFolder(), "familiars-store.yml"));
             store.loadAll(repository.load());
-            service = new FamiliarServiceImpl(core, this, store, repository, getLogger());
+            service = new FamiliarServiceImpl(this, store, repository, getLogger(),
+                    classesBridge, questsBridge, magicBridge, cityGuildBridge);
         }
         service.updateRepositories(typeRepository, rulesRepository);
         service.resetSummonedStates();
         core.services().replace(FamiliarService.class, service);
         actionBarService = new FamiliarActionBarService(messages);
         menuManager = new FamiliarMenuManager(this, service, messages);
+
+        subscribeQuestXp();
 
         registerCommand();
         registerListeners();
@@ -110,6 +144,10 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
         }
         if (service != null) {
             service.shutdown();
+        }
+        if (questXpSubscription != null) {
+            questXpSubscription.unsubscribe();
+            questXpSubscription = null;
         }
         initialized = false;
         shuttingDown = false;
@@ -149,12 +187,13 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
     }
 
     private void registerListeners() {
-        ItemService itemService = Bukkit.getServicesManager().load(ItemService.class);
         Bukkit.getPluginManager().registerEvents(
-                new FamiliarTamingListener(service, messages, itemService, getLogger(), actionBarService),
+                new FamiliarTamingListener(service, messages, itemsBridge, getLogger(), actionBarService),
                 this
         );
         Bukkit.getPluginManager().registerEvents(new FamiliarSummonListener(service), this);
+        Bukkit.getPluginManager().registerEvents(new FamiliarXpListener(service), this);
+        Bukkit.getPluginManager().registerEvents(new FamiliarCombatListener(service), this);
     }
 
     private void registerUiProvider() {
@@ -164,6 +203,54 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
             return;
         }
         registry.register(new FamiliarHudProvider(service, messages));
+    }
+
+    private ClassesBridge resolveClassesBridge() {
+        CoreClassesBridge coreBridge = new CoreClassesBridge(() -> core.services().get(ClassProfileProvider.class));
+        if (coreBridge.isAvailable()) {
+            return coreBridge;
+        }
+        return new NoopClassesBridge(getLogger());
+    }
+
+    private ItemsBridge resolveItemsBridge() {
+        ItemService itemService = Bukkit.getServicesManager().load(ItemService.class);
+        if (itemService != null) {
+            return new CoreItemsBridge(itemService);
+        }
+        return new NoopItemsBridge(getLogger());
+    }
+
+    private QuestsBridge resolveQuestsBridge() {
+        if (core != null) {
+            return new CoreQuestsBridge(core.events());
+        }
+        return new NoopQuestsBridge(getLogger());
+    }
+
+    private MagicBridge resolveMagicBridge() {
+        return new NoopMagicBridge(getLogger());
+    }
+
+    private CityGuildBridge resolveCityGuildBridge() {
+        return new NoopCityGuildBridge(getLogger());
+    }
+
+    private void subscribeQuestXp() {
+        if (core == null || service == null) {
+            return;
+        }
+        if (questXpSubscription != null) {
+            questXpSubscription.unsubscribe();
+        }
+        questXpSubscription = core.events().subscribe(FamiliarQuestXpEvent.class, this::handleQuestXp);
+    }
+
+    private void handleQuestXp(FamiliarQuestXpEvent event) {
+        if (event == null || service == null) {
+            return;
+        }
+        service.addExperience(event.ownerId(), event.familiarTypeId(), event.amount(), FamiliarXpSource.QUEST);
     }
 
     private Messages defaultMessages() {
