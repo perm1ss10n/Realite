@@ -1,0 +1,13 @@
+items:
+  realite:familiar_taming_tag:
+    id: "realite:familiar_taming_tag"
+    material: "NAME_TAG"
+    nameKey: "items.familiar_taming_tag.name"
+    loreKeys:
+      - "items.familiar_taming_tag.lore-1"
+      - "items.familiar_taming_tag.lore-2"
+    glow: true
+    unstackable: true
+    tags:
+      realite_familiar_tag: true
+      familiarTypeId: "wolf"

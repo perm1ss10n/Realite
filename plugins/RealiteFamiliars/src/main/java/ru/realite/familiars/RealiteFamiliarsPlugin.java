@@ -1,6 +1,7 @@
 package ru.realite.familiars;
 
 import org.bukkit.command.PluginCommand;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.CoreModuleEntrypoint;
@@ -11,9 +12,13 @@ import ru.realite.familiars.config.Messages;
 import ru.realite.familiars.config.MessagesRepository;
 import ru.realite.familiars.config.TamingRulesRepository;
 import ru.realite.familiars.core.CoreAccess;
+import ru.realite.familiars.listener.FamiliarTamingListener;
+import ru.realite.familiars.service.FamiliarRepository;
 import ru.realite.familiars.service.FamiliarService;
 import ru.realite.familiars.service.FamiliarServiceImpl;
 import ru.realite.familiars.service.FamiliarStore;
+import ru.realite.familiars.service.YamlFamiliarRepository;
+import ru.realite.items.service.ItemService;
 
 import java.io.File;
 import java.io.InputStream;
@@ -27,6 +32,7 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
     private FamiliarTypeRepository typeRepository;
     private TamingRulesRepository rulesRepository;
     private Messages messages;
+    private FamiliarRepository repository;
 
     private FamiliarServiceImpl service;
     private final RealiteFamiliarsEntrypoint entrypoint = new RealiteFamiliarsEntrypoint(this);
@@ -64,12 +70,16 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
         reloadConfigs();
 
         if (service == null) {
-            service = new FamiliarServiceImpl(core, new FamiliarStore());
+            FamiliarStore store = new FamiliarStore();
+            repository = new YamlFamiliarRepository(this, new File(getDataFolder(), "familiars-store.yml"));
+            store.loadAll(repository.load());
+            service = new FamiliarServiceImpl(core, store, repository, getLogger());
         }
         service.updateRepositories(typeRepository, rulesRepository);
         core.services().replace(FamiliarService.class, service);
 
         registerCommand();
+        registerListeners();
 
         initialized = true;
         platform.info("RealiteFamiliars enabled");
@@ -120,6 +130,14 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
         command.setExecutor(new FamiliarsCommand(service, messages));
     }
 
+    private void registerListeners() {
+        ItemService itemService = Bukkit.getServicesManager().load(ItemService.class);
+        Bukkit.getPluginManager().registerEvents(
+                new FamiliarTamingListener(service, messages, itemService, getLogger()),
+                this
+        );
+    }
+
     private Messages defaultMessages() {
         org.bukkit.configuration.file.YamlConfiguration config = new org.bukkit.configuration.file.YamlConfiguration();
         config.set("prefix", "<gray>[Familiars]</gray> ");
@@ -130,6 +148,10 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
         config.set("debug.can-summon", "{prefix}Can summon: {result}");
         config.set("debug.reasons", "{prefix}<red>Reasons:</red>");
         config.set("debug.notes", "{prefix}<gray>Notes:</gray>");
+        config.set("taming.success", "{prefix}<green>Familiar tamed: <type></green>");
+        config.set("taming.failure", "{prefix}<red>Failed to tame familiar.</red>");
+        config.set("taming.failure-reason", "{prefix}<red>Failed to tame: <reason></red>");
+        config.set("taming.missing-type", "{prefix}<red>Tag does not specify a familiar type.</red>");
         return new Messages(config);
     }
 

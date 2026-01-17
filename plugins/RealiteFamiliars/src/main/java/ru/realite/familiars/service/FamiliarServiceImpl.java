@@ -6,27 +6,35 @@ import ru.realite.core.api.classes.ClassTagProvider;
 import ru.realite.familiars.config.FamiliarTypeRepository;
 import ru.realite.familiars.config.TamingRules;
 import ru.realite.familiars.config.TamingRulesRepository;
+import ru.realite.familiars.model.FamiliarInstance;
 import ru.realite.familiars.model.FamiliarType;
+import ru.realite.familiars.model.FamiliarState;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 public final class FamiliarServiceImpl implements FamiliarService {
 
     private final CoreApi core;
     private final FamiliarStore store;
+    private final FamiliarRepository repository;
+    private final Logger logger;
     private FamiliarTypeRepository typeRepository;
     private TamingRulesRepository rulesRepository;
     private final Map<UUID, Instant> lastTame = new ConcurrentHashMap<>();
     private final Map<UUID, Instant> lastSummon = new ConcurrentHashMap<>();
 
-    public FamiliarServiceImpl(CoreApi core, FamiliarStore store) {
+    public FamiliarServiceImpl(CoreApi core, FamiliarStore store, FamiliarRepository repository, Logger logger) {
         this.core = core;
         this.store = store;
+        this.repository = repository;
+        this.logger = logger;
     }
 
     public void updateRepositories(FamiliarTypeRepository typeRepository, TamingRulesRepository rulesRepository) {
@@ -40,6 +48,10 @@ public final class FamiliarServiceImpl implements FamiliarService {
         List<String> notes = new ArrayList<>();
         FamiliarType type = getType(typeId, reasons);
         TamingRules rules = getRules(reasons);
+
+        if (store.countActive(player.getUniqueId()) > 0) {
+            reasons.add("Player already has a familiar");
+        }
 
         if (type != null) {
             checkAllowedClasses(player, type, reasons, notes);
@@ -86,7 +98,28 @@ public final class FamiliarServiceImpl implements FamiliarService {
         return CheckResult.allowed(notes);
     }
 
+    @Override
+    public TameResult tame(Player player, String typeId) {
+        CheckResult check = canTame(player, typeId);
+        if (!check.allowed()) {
+            return new TameResult(check, null);
+        }
+        FamiliarInstance instance = new FamiliarInstance(
+                player.getUniqueId(),
+                typeId,
+                1,
+                0,
+                FamiliarState.IDLE,
+                Optional.empty()
+        );
+        store.upsert(instance);
+        lastTame.put(player.getUniqueId(), Instant.now());
+        save();
+        return new TameResult(check, instance);
+    }
+
     public void shutdown() {
+        save();
         store.clear();
         lastTame.clear();
         lastSummon.clear();
@@ -126,6 +159,16 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 .anyMatch(entry -> entry.equalsIgnoreCase(className));
         if (!allowed) {
             reasons.add("Class '" + className + "' not allowed");
+        }
+    }
+
+    private void save() {
+        if (repository == null) {
+            return;
+        }
+        repository.save(store.snapshot());
+        if (logger != null) {
+            logger.fine("Saved familiars store.");
         }
     }
 }

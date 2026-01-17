@@ -8,3 +8,9 @@ debug:
   can-summon: "{prefix}Can summon: {result}"
   reasons: "{prefix}<red>Reasons:</red>"
   notes: "{prefix}<gray>Notes:</gray>"
+
+taming:
+  success: "{prefix}<green>Familiar tamed: <type></green>"
+  failure: "{prefix}<red>Failed to tame familiar.</red>"
+  failure-reason: "{prefix}<red>Failed to tame: <reason></red>"
+  missing-type: "{prefix}<red>Tag does not specify a familiar type.</red>"
