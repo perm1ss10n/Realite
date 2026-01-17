@@ -2,6 +2,8 @@ name: RealiteItems
 version: 1.0.0
 main: ru.realite.items.RealiteItemsPlugin
 api-version: "1.21"
+softdepend:
+  - RealiteCore
 
 commands:
   ritems:
