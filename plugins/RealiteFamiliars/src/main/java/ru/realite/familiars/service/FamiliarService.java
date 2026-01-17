@@ -43,6 +43,14 @@ public interface FamiliarService {
 
     CheckResult setBehavior(Player player, String typeId, FamiliarBehavior behavior);
 
+    CheckResult canRelease(Player player, String typeId);
+
+    CheckResult releaseFamiliar(Player player, String typeId);
+
+    default CheckResult releaseFamiliar(Player player, int slot) {
+        return CheckResult.denied(List.of("Release by slot is not supported."));
+    }
+
     void handleLogout(UUID owner);
 
     void handleFamiliarDeath(UUID owner, String typeId);

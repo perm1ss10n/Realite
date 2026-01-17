@@ -26,6 +26,7 @@ import ru.realite.familiars.config.TamingRules;
 import ru.realite.familiars.config.TamingRulesRepository;
 import ru.realite.familiars.core.CoreAccess;
 import ru.realite.familiars.event.FamiliarLeveledEvent;
+import ru.realite.familiars.event.FamiliarReleasedEvent;
 import ru.realite.familiars.integration.classes.ClassesBridge;
 import ru.realite.familiars.integration.limits.CityGuildBridge;
 import ru.realite.familiars.integration.magic.MagicBridge;
@@ -40,13 +41,14 @@ import ru.realite.familiars.model.FamiliarType;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Locale;
-import java.util.OptionalInt;
 import java.util.logging.Logger;
 
 public final class FamiliarServiceImpl implements FamiliarService {
@@ -397,6 +399,60 @@ public final class FamiliarServiceImpl implements FamiliarService {
         }
         registerBehavior(instance.owner(), instance.typeId(), behavior, entity);
         return CheckResult.allowed(List.of());
+    }
+
+    @Override
+    public CheckResult canRelease(Player player, String typeId) {
+        if (player == null || typeId == null || typeId.isBlank()) {
+            return CheckResult.denied(List.of("Invalid familiar id."));
+        }
+        FamiliarInstance instance = getInstance(player.getUniqueId(), typeId);
+        if (instance == null) {
+            return CheckResult.denied(List.of("Familiar not tamed: " + typeId));
+        }
+        return CheckResult.allowed(List.of());
+    }
+
+    @Override
+    public CheckResult releaseFamiliar(Player player, String typeId) {
+        CheckResult canRelease = canRelease(player, typeId);
+        if (!canRelease.allowed()) {
+            return canRelease;
+        }
+        UUID owner = player.getUniqueId();
+        Optional<FamiliarInstance> removed = store.remove(owner, typeId);
+        if (removed.isEmpty()) {
+            return CheckResult.denied(List.of("Familiar not found: " + typeId));
+        }
+        FamiliarInstance instance = removed.get();
+        if (instance.state() == FamiliarState.SUMMONED) {
+            instance.summonedEntityId()
+                    .map(Bukkit::getEntity)
+                    .ifPresent(Entity::remove);
+        }
+        removeBehavior(instance.owner(), instance.typeId());
+        magicBridge.clear(player, instance);
+        save();
+        Bukkit.getPluginManager().callEvent(new FamiliarReleasedEvent(player, instance));
+        publishUiInvalidate(player);
+        return CheckResult.allowed(List.of());
+    }
+
+    @Override
+    public CheckResult releaseFamiliar(Player player, int slot) {
+        if (player == null) {
+            return CheckResult.denied(List.of("Player not found."));
+        }
+        if (slot <= 0) {
+            return CheckResult.denied(List.of("Invalid familiar slot."));
+        }
+        List<FamiliarInstance> ordered = store.getInstances(player.getUniqueId()).stream()
+                .sorted(Comparator.comparing(FamiliarInstance::typeId, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        if (slot > ordered.size()) {
+            return CheckResult.denied(List.of("Familiar slot out of range."));
+        }
+        return releaseFamiliar(player, ordered.get(slot - 1).typeId());
     }
 
     @Override

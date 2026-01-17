@@ -15,6 +15,9 @@ taming:
   failure: "{prefix}<red>Failed to tame familiar.</red>"
   failure-reason: "{prefix}<red>Failed to tame: <reason></red>"
   missing-type: "{prefix}<red>Tag does not specify a familiar type.</red>"
+  limit:
+    reached: "{prefix}<red>Familiar limit reached.</red>"
+    open-manager: "<yellow>Open familiar manager</yellow>"
 
 familiar:
   usage: "{prefix}<yellow>/familiar <list|summon|dismiss|follow|stay|ui> [slot|typeId]</yellow>"

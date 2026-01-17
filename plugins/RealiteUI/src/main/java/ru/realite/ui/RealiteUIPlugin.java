@@ -15,6 +15,7 @@ import ru.realite.ui.command.UiCommand;
 import ru.realite.ui.familiars.FamiliarHudProvider;
 import ru.realite.ui.familiars.screen.FamiliarDetailsScreen;
 import ru.realite.ui.familiars.screen.FamiliarManagerScreen;
+import ru.realite.ui.familiars.screen.FamiliarReleaseScreen;
 import ru.realite.ui.hud.UiHudService;
 import ru.realite.ui.menu.MenuListener;
 import ru.realite.ui.pagination.UiPaginationServiceImpl;
@@ -107,6 +108,7 @@ public final class RealiteUIPlugin extends JavaPlugin {
         if (screenRegistry != null) {
             screenRegistry.register(new FamiliarManagerScreen(core, messages));
             screenRegistry.register(new FamiliarDetailsScreen(core, messages));
+            screenRegistry.register(new FamiliarReleaseScreen(core, messages));
         }
     }
 
