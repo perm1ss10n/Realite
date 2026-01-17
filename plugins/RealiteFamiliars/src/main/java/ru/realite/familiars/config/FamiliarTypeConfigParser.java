@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public final class FamiliarTypeConfigParser {
 
@@ -35,6 +36,7 @@ public final class FamiliarTypeConfigParser {
             }
             String role = section.getString("role");
             String displayKey = section.getString("displayKey");
+            String modelId = section.getString("modelId");
             if (role == null || role.isBlank()) {
                 errors.add("Type '" + id + "' missing role");
             }
@@ -62,7 +64,11 @@ public final class FamiliarTypeConfigParser {
             }
 
             if (role != null && !role.isBlank() && displayKey != null && !displayKey.isBlank() && !baseStats.isEmpty()) {
-                types.put(id, new FamiliarType(id, role, displayKey, List.copyOf(allowedClasses), Map.copyOf(baseStats)));
+                Optional<String> modelIdValue = modelId == null || modelId.isBlank()
+                        ? Optional.empty()
+                        : Optional.of(modelId);
+                types.put(id, new FamiliarType(id, role, displayKey, modelIdValue,
+                        List.copyOf(allowedClasses), Map.copyOf(baseStats)));
             }
         }
 

@@ -68,6 +68,7 @@ public final class FamiliarHudProvider implements UiProvider, UiHudTextProvider 
         String distance = active.distanceMeters().isPresent()
                 ? String.format("%.1fm", active.distanceMeters().getAsDouble())
                 : "-";
+        String model = active.modelId().orElse("-");
         return Optional.of(messages.get("ui.familiars.hud.actionbar", Map.of(
                 "count", String.valueOf(hud.count()),
                 "max", String.valueOf(hud.max()),
@@ -76,6 +77,7 @@ public final class FamiliarHudProvider implements UiProvider, UiHudTextProvider 
                 "role", active.role(),
                 "hp", hp,
                 "distance", distance,
+                "model", model,
                 "hint", hint)));
     }
 

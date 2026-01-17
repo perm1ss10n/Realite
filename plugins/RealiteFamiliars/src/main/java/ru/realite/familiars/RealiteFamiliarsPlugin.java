@@ -10,6 +10,7 @@ import ru.realite.core.api.Subscription;
 import ru.realite.core.api.classes.ClassProfileProvider;
 import ru.realite.core.api.classes.ClassTagProvider;
 import ru.realite.core.api.familiars.FamiliarUiService;
+import ru.realite.core.api.models.ModelsBridge;
 import ru.realite.core.api.ui.UiScreenRegistry;
 import ru.realite.familiars.command.FamiliarCommand;
 import ru.realite.familiars.command.FamiliarsCommand;
@@ -30,6 +31,7 @@ import ru.realite.familiars.integration.limits.CityGuildBridge;
 import ru.realite.familiars.integration.limits.NoopCityGuildBridge;
 import ru.realite.familiars.integration.magic.MagicBridge;
 import ru.realite.familiars.integration.magic.NoopMagicBridge;
+import ru.realite.familiars.integration.models.NoopModelsBridge;
 import ru.realite.familiars.integration.quests.CoreQuestsBridge;
 import ru.realite.familiars.integration.quests.FamiliarQuestXpEvent;
 import ru.realite.familiars.integration.quests.NoopQuestsBridge;
@@ -77,6 +79,7 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
     private QuestsBridge questsBridge;
     private MagicBridge magicBridge;
     private CityGuildBridge cityGuildBridge;
+    private ModelsBridge modelsBridge;
     private FamiliarLimitService limitService;
     private Subscription questXpSubscription;
     private final RealiteFamiliarsEntrypoint entrypoint = new RealiteFamiliarsEntrypoint(this);
@@ -120,6 +123,7 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
         questsBridge = resolveQuestsBridge();
         magicBridge = resolveMagicBridge();
         cityGuildBridge = resolveCityGuildBridge();
+        modelsBridge = resolveModelsBridge();
         limitService = new FamiliarLimitService(classesBridge, limitsRepository);
 
         if (service == null) {
@@ -127,7 +131,7 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
             repository = new YamlFamiliarRepository(this, new File(getDataFolder(), "familiars-store.yml"));
             store.loadAll(repository.load());
             service = new FamiliarServiceImpl(this, store, repository, getLogger(),
-                    classesBridge, questsBridge, magicBridge, cityGuildBridge, limitService);
+                    classesBridge, questsBridge, magicBridge, cityGuildBridge, modelsBridge, limitService);
         }
         service.updateRepositories(typeRepository, rulesRepository, limitsRepository, policyRepository);
         service.resetSummonedStates();
@@ -261,6 +265,17 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
 
     private CityGuildBridge resolveCityGuildBridge() {
         return new NoopCityGuildBridge(getLogger());
+    }
+
+    private ModelsBridge resolveModelsBridge() {
+        if (core == null) {
+            return new NoopModelsBridge(getLogger());
+        }
+        ModelsBridge bridge = core.services().get(ModelsBridge.class);
+        if (bridge != null && bridge.isAvailable()) {
+            return bridge;
+        }
+        return new NoopModelsBridge(getLogger());
     }
 
     private void subscribeQuestXp() {

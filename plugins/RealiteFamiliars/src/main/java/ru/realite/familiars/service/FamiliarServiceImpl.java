@@ -17,6 +17,8 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 import ru.realite.core.api.familiars.FamiliarUiService;
+import ru.realite.core.api.models.ModelContext;
+import ru.realite.core.api.models.ModelsBridge;
 import ru.realite.core.api.ui.UiInvalidateEvent;
 import ru.realite.familiars.config.FamiliarLimitsRepository;
 import ru.realite.familiars.config.FamiliarTypeRepository;
@@ -46,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Locale;
@@ -61,6 +64,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
     private final QuestsBridge questsBridge;
     private final MagicBridge magicBridge;
     private final CityGuildBridge cityGuildBridge;
+    private final ModelsBridge modelsBridge;
     private final FamiliarLimitService limitService;
     private FamiliarTypeRepository typeRepository;
     private TamingRulesRepository rulesRepository;
@@ -85,6 +89,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
             QuestsBridge questsBridge,
             MagicBridge magicBridge,
             CityGuildBridge cityGuildBridge,
+            ModelsBridge modelsBridge,
             FamiliarLimitService limitService) {
         this.plugin = plugin;
         this.store = store;
@@ -94,6 +99,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
         this.questsBridge = questsBridge;
         this.magicBridge = magicBridge;
         this.cityGuildBridge = cityGuildBridge;
+        this.modelsBridge = modelsBridge;
         this.limitService = limitService;
         startFollowTask();
     }
@@ -331,6 +337,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
         if (spawned == null) {
             return CheckResult.denied(List.of("Failed to spawn familiar entity"));
         }
+        applyModel(player, spawned, type);
 
         FamiliarInstance summoned = new FamiliarInstance(
                 player.getUniqueId(),
@@ -367,7 +374,10 @@ public final class FamiliarServiceImpl implements FamiliarService {
         }
         instance.summonedEntityId()
                 .map(Bukkit::getEntity)
-                .ifPresent(Entity::remove);
+                .ifPresent(entity -> {
+                    clearModel(entity);
+                    entity.remove();
+                });
         FamiliarInstance updated = new FamiliarInstance(
                 instance.owner(),
                 instance.typeId(),
@@ -428,7 +438,10 @@ public final class FamiliarServiceImpl implements FamiliarService {
         if (instance.state() == FamiliarState.SUMMONED) {
             instance.summonedEntityId()
                     .map(Bukkit::getEntity)
-                    .ifPresent(Entity::remove);
+                    .ifPresent(entity -> {
+                        clearModel(entity);
+                        entity.remove();
+                    });
         }
         removeBehavior(instance.owner(), instance.typeId());
         magicBridge.clear(player, instance);
@@ -464,7 +477,10 @@ public final class FamiliarServiceImpl implements FamiliarService {
             }
             instance.summonedEntityId()
                     .map(Bukkit::getEntity)
-                    .ifPresent(Entity::remove);
+                    .ifPresent(entity -> {
+                        clearModel(entity);
+                        entity.remove();
+                    });
             FamiliarInstance updated = new FamiliarInstance(
                     instance.owner(),
                     instance.typeId(),
@@ -716,6 +732,29 @@ public final class FamiliarServiceImpl implements FamiliarService {
         container.set(typeKey, PersistentDataType.STRING, typeId);
 
         living.setCollidable(false);
+    }
+
+    private void applyModel(Player player, Entity entity, FamiliarType type) {
+        if (player == null || entity == null || type == null || modelsBridge == null) {
+            return;
+        }
+        if (!modelsBridge.isAvailable()) {
+            return;
+        }
+        Optional<String> modelId = type.modelId();
+        if (modelId.isEmpty() || modelId.get().isBlank()) {
+            return;
+        }
+        ModelContext ctx = ModelContext.profile("familiars", player.getUniqueId(), null, type.id(),
+                Set.of("familiar", type.id()));
+        modelsBridge.apply(entity, modelId.get(), ctx);
+    }
+
+    private void clearModel(Entity entity) {
+        if (entity == null || modelsBridge == null || !modelsBridge.isAvailable()) {
+            return;
+        }
+        modelsBridge.clear(entity);
     }
 
     private void startFollowTask() {

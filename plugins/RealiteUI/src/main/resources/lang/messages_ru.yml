@@ -29,7 +29,7 @@ ui:
       cooldown: "<yellow>перезарядка</yellow>"
     hud:
       hint: "<yellow>Открыть управление</yellow>"
-      actionbar: "<yellow>Фамильяры</yellow> <gray>{count}/{max}</gray> <white>{name}</white> <gray>Lv {level}</gray> <aqua>{role}</aqua> <red>{hp}</red> <gray>{distance}</gray> <dark_gray>·</dark_gray> <yellow>{hint}</yellow>"
+      actionbar: "<yellow>Фамильяры</yellow> <gray>{count}/{max}</gray> <white>{name}</white> <gray>Lv {level}</gray> <aqua>{role}</aqua> <red>{hp}</red> <gray>{distance}</gray> <dark_gray>·</dark_gray> <gray>Model:</gray> <white>{model}</white> <dark_gray>·</dark_gray> <yellow>{hint}</yellow>"
       actionbar_empty: "<yellow>Фамильяры</yellow> <gray>{count}/{max}</gray> <dark_gray>·</dark_gray> <yellow>{hint}</yellow>"
     manager:
       title: "<gold>Управление фамильярами</gold>"
@@ -57,6 +57,7 @@ ui:
         title: "<yellow>Статы</yellow>"
         empty: "<gray>Нет данных.</gray>"
         entry: "<gray>{stat}: <white>{value}</white></gray>"
+      model: "<gray>Model: <white>{model}</white></gray>"
       progress:
         title: "<yellow>Прогресс</yellow>"
         level: "<gray>Уровень: <white>{level}</white></gray>"
