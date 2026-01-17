@@ -33,4 +33,8 @@ public final class Messages {
         }
         return MINI.deserialize(formatted);
     }
+
+    public String raw(String key) {
+        return config.getString(key);
+    }
 }

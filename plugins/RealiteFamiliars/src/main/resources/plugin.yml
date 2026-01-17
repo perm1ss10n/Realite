@@ -15,4 +15,4 @@ commands:
     usage: /familiars debug <typeId>
   familiar:
     description: "Summon or dismiss familiars"
-    usage: /familiar <summon|dismiss|follow|stay> [typeId]
+    usage: /familiar <summon|dismiss|follow|stay|ui> [typeId]

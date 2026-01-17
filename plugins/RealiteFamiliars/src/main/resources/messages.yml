@@ -16,7 +16,7 @@ taming:
   missing-type: "{prefix}<red>Tag does not specify a familiar type.</red>"
 
 familiar:
-  usage: "{prefix}<yellow>/familiar <summon|dismiss|follow|stay> [typeId]</yellow>"
+  usage: "{prefix}<yellow>/familiar <summon|dismiss|follow|stay|ui> [typeId]</yellow>"
   no-service: "{prefix}<red>Familiar service is not available.</red>"
   no-familiars: "{prefix}<red>You have no tamed familiars.</red>"
   specify-type: "{prefix}<yellow>Specify familiar type: {types}</yellow>"
@@ -31,3 +31,42 @@ familiar:
     stay: "{prefix}<green>Familiar set to stay: <type></green>"
     failure: "{prefix}<red>Failed to update behavior.</red>"
   reasons: "{prefix}<red>Reasons:</red>"
+  menu:
+    unavailable: "{prefix}<red>Familiar menu is unavailable.</red>"
+
+actionbar:
+  tamed: "<green>приручено</green>"
+  class: "<red>нельзя: класс</red>"
+  limit: "<red>лимит</red>"
+  cooldown: "<red>кд</red>"
+
+hud:
+  actionbar: "<yellow>{type}</yellow> <gray>{role}</gray> <white>Lv {level}</white> <green>{xp}%</green> <gray>{state}</gray> <gray>{distance}</gray> <red>{hp}</red>"
+  state:
+    tamed: "<yellow>tamed</yellow>"
+    summoned: "<green>summoned</green>"
+
+menu:
+  title: "<gold>Familiars</gold>"
+  empty: "<gray>No familiars.</gray>"
+  close: "<red>Close</red>"
+  action:
+    summon: "<green>Summon</green>"
+    dismiss: "<red>Dismiss</red>"
+    follow: "<green>Follow</green>"
+    stay: "<yellow>Stay</yellow>"
+    rename: "<gray>Rename</gray>"
+    rename_soon: "<gray>Soon.</gray>"
+    back: "<yellow>Back</yellow>"
+    unavailable: "<dark_gray>Unavailable</dark_gray>"
+  familiar:
+    name: "<white>{type}</white> <gray>Lv {level}</gray>"
+    title: "<gold>{type}</gold>"
+    missing: "<red>Familiar not found.</red>"
+    lore:
+      role: "<gray>Role: <white>{role}</white></gray>"
+      level: "<gray>Level: <white>{level}</white> <gray>XP: <white>{xp}%</white></gray>"
+      state: "<gray>Status: <white>{state}</white></gray>"
+  state:
+    tamed: "<yellow>tamed</yellow>"
+    summoned: "<green>summoned</green>"
