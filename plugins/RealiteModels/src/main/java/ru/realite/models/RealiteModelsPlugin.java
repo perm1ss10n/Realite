@@ -7,7 +7,9 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import ru.realite.core.api.CoreApi;
+import ru.realite.core.api.models.ModelAssetRegistry;
 import ru.realite.core.api.models.ModelsBridge;
+import ru.realite.models.command.ModelsCommand;
 import ru.realite.models.service.ModelsBridgeImpl;
 
 public final class RealiteModelsPlugin extends JavaPlugin {
@@ -21,11 +23,13 @@ public final class RealiteModelsPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        bridge = new ModelsBridgeImpl();
+        bridge = new ModelsBridgeImpl(this::resolveModelRegistry);
 
         if (!attemptRegisterBridge()) {
             startCorePolling();
         }
+
+        registerCommands();
     }
 
     @Override
@@ -111,6 +115,25 @@ public final class RealiteModelsPlugin extends JavaPlugin {
             return null;
         }
         return provider.getProvider();
+    }
+
+    private ModelAssetRegistry resolveModelRegistry() {
+        CoreApi core = resolveCore();
+        if (core == null) {
+            return null;
+        }
+        return core.services().get(ModelAssetRegistry.class);
+    }
+
+    private void registerCommands() {
+        var command = getCommand("models");
+        if (command == null) {
+            getLogger().warning("Command /models not found in plugin.yml; executor not registered.");
+            return;
+        }
+        ModelsCommand executor = new ModelsCommand(this::resolveModelRegistry);
+        command.setExecutor(executor);
+        command.setTabCompleter(executor);
     }
 
     private void sendConsole(Component message) {

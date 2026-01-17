@@ -4,3 +4,7 @@ main: ru.realite.models.RealiteModelsPlugin
 api-version: "1.21"
 softdepend:
   - RealiteCore
+
+commands:
+  models:
+    description: "RealiteModels debug commands"
