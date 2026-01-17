@@ -23,6 +23,8 @@ public interface FamiliarService {
 
     Optional<FamiliarInstance> getSummoned(UUID owner);
 
+    FamiliarLimitInfo getLimitInfo(Player player);
+
     void addExperience(UUID owner, String typeId, int amount, FamiliarXpSource source);
 
     CheckResult summon(Player player, String typeId);

@@ -1,13 +1,14 @@
 prefix: "<gray>[Familiars]</gray> "
 
 debug:
-  usage: "{prefix}<yellow>/familiars debug <typeId></yellow>"
+  usage: "{prefix}<yellow>/familiars debug <typeId|limits></yellow>"
   no-service: "{prefix}<red>Familiar service is not available.</red>"
   header: "{prefix}<yellow>Debug for <type></yellow>"
   can-tame: "{prefix}Can tame: {result}"
   can-summon: "{prefix}Can summon: {result}"
   reasons: "{prefix}<red>Reasons:</red>"
   notes: "{prefix}<gray>Notes:</gray>"
+  limits: "{prefix}<yellow>Limit: <white>{limit}</white> <gray>({source})</gray></yellow>"
 
 taming:
   success: "{prefix}<green>Familiar tamed: <type></green>"

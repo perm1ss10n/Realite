@@ -48,30 +48,17 @@ public final class YamlFamiliarRepository implements FamiliarRepository {
                 continue;
             }
             List<FamiliarInstance> instances = new ArrayList<>();
-            for (String typeId : ownerSection.getKeys(false)) {
-                ConfigurationSection instanceSection = ownerSection.getConfigurationSection(typeId);
-                if (instanceSection == null) {
-                    continue;
-                }
-                int level = instanceSection.getInt("level", 1);
-                int xp = instanceSection.getInt("xp", 0);
-                String stateRaw = instanceSection.getString("state", FamiliarState.IDLE.name());
-                FamiliarState state;
-                try {
-                    state = FamiliarState.valueOf(stateRaw.toUpperCase());
-                } catch (IllegalArgumentException e) {
-                    state = FamiliarState.IDLE;
-                }
-                String summonedRaw = instanceSection.getString("summonedEntityId", "");
-                Optional<UUID> summoned = Optional.empty();
-                if (summonedRaw != null && !summonedRaw.isBlank()) {
-                    try {
-                        summoned = Optional.of(UUID.fromString(summonedRaw));
-                    } catch (IllegalArgumentException e) {
-                        plugin.getLogger().warning("Invalid summoned entity UUID for " + ownerId + ":" + typeId);
+            String legacyTypeId = ownerSection.getString("typeId");
+            if (legacyTypeId != null && !legacyTypeId.isBlank()) {
+                instances.add(readInstance(ownerId, owner, legacyTypeId, ownerSection));
+            } else {
+                for (String typeId : ownerSection.getKeys(false)) {
+                    ConfigurationSection instanceSection = ownerSection.getConfigurationSection(typeId);
+                    if (instanceSection == null) {
+                        continue;
                     }
+                    instances.add(readInstance(ownerId, owner, typeId, instanceSection));
                 }
-                instances.add(new FamiliarInstance(owner, typeId, level, xp, state, summoned));
             }
             if (!instances.isEmpty()) {
                 result.put(owner, instances);
@@ -103,5 +90,27 @@ public final class YamlFamiliarRepository implements FamiliarRepository {
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to save familiars store: " + e.getMessage());
         }
+    }
+
+    private FamiliarInstance readInstance(String ownerId, UUID owner, String typeId, ConfigurationSection section) {
+        int level = section.getInt("level", 1);
+        int xp = section.getInt("xp", 0);
+        String stateRaw = section.getString("state", FamiliarState.IDLE.name());
+        FamiliarState state;
+        try {
+            state = FamiliarState.valueOf(stateRaw.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            state = FamiliarState.IDLE;
+        }
+        String summonedRaw = section.getString("summonedEntityId", "");
+        Optional<UUID> summoned = Optional.empty();
+        if (summonedRaw != null && !summonedRaw.isBlank()) {
+            try {
+                summoned = Optional.of(UUID.fromString(summonedRaw));
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Invalid summoned entity UUID for " + ownerId + ":" + typeId);
+            }
+        }
+        return new FamiliarInstance(owner, typeId, level, xp, state, summoned);
     }
 }

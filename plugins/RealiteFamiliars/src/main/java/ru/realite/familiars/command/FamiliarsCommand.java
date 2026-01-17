@@ -7,6 +7,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import ru.realite.familiars.config.Messages;
 import ru.realite.familiars.service.CheckResult;
+import ru.realite.familiars.service.FamiliarLimitInfo;
 import ru.realite.familiars.service.FamiliarService;
 
 import java.util.HashMap;
@@ -41,18 +42,30 @@ public final class FamiliarsCommand implements CommandExecutor {
             sender.sendMessage(messages.get("debug.usage"));
             return true;
         }
-        String typeId = args[1];
+        String target = args[1];
+        if ("limits".equalsIgnoreCase(target)) {
+            sendLimits(sender, player);
+            return true;
+        }
         Map<String, String> placeholders = new HashMap<>();
-        placeholders.put("type", typeId);
+        placeholders.put("type", target);
         sender.sendMessage(messages.get("debug.header", placeholders));
 
-        CheckResult tameResult = service.canTame(player, typeId);
-        CheckResult summonResult = service.canSummon(player, typeId);
+        CheckResult tameResult = service.canTame(player, target);
+        CheckResult summonResult = service.canSummon(player, target);
 
         sendResult(sender, "debug.can-tame", tameResult);
         sendResult(sender, "debug.can-summon", summonResult);
 
         return true;
+    }
+
+    private void sendLimits(CommandSender sender, Player player) {
+        FamiliarLimitInfo info = service.getLimitInfo(player);
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("limit", String.valueOf(info.limit()));
+        placeholders.put("source", info.source());
+        sender.sendMessage(messages.get("debug.limits", placeholders));
     }
 
     private void sendResult(CommandSender sender, String key, CheckResult result) {

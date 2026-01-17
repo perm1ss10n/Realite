@@ -15,6 +15,7 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
+import ru.realite.familiars.config.FamiliarLimitsRepository;
 import ru.realite.familiars.config.FamiliarTypeRepository;
 import ru.realite.familiars.config.TamingRules;
 import ru.realite.familiars.config.TamingRulesRepository;
@@ -52,6 +53,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
     private final QuestsBridge questsBridge;
     private final MagicBridge magicBridge;
     private final CityGuildBridge cityGuildBridge;
+    private final FamiliarLimitService limitService;
     private FamiliarTypeRepository typeRepository;
     private TamingRulesRepository rulesRepository;
     private final Map<UUID, Instant> lastTame = new ConcurrentHashMap<>();
@@ -73,7 +75,8 @@ public final class FamiliarServiceImpl implements FamiliarService {
             ClassesBridge classesBridge,
             QuestsBridge questsBridge,
             MagicBridge magicBridge,
-            CityGuildBridge cityGuildBridge) {
+            CityGuildBridge cityGuildBridge,
+            FamiliarLimitService limitService) {
         this.plugin = plugin;
         this.store = store;
         this.repository = repository;
@@ -82,12 +85,18 @@ public final class FamiliarServiceImpl implements FamiliarService {
         this.questsBridge = questsBridge;
         this.magicBridge = magicBridge;
         this.cityGuildBridge = cityGuildBridge;
+        this.limitService = limitService;
         startFollowTask();
     }
 
-    public void updateRepositories(FamiliarTypeRepository typeRepository, TamingRulesRepository rulesRepository) {
+    public void updateRepositories(FamiliarTypeRepository typeRepository,
+                                   TamingRulesRepository rulesRepository,
+                                   FamiliarLimitsRepository limitsRepository) {
         this.typeRepository = typeRepository;
         this.rulesRepository = rulesRepository;
+        if (limitService != null) {
+            limitService.updateRepository(limitsRepository);
+        }
     }
 
     @Override
@@ -97,8 +106,9 @@ public final class FamiliarServiceImpl implements FamiliarService {
         FamiliarType type = getType(typeId, reasons);
         TamingRules rules = getRules(reasons);
 
-        if (store.countActive(player.getUniqueId()) > 0) {
-            reasons.add("Player already has a familiar");
+        FamiliarLimitInfo limitInfo = resolveLimit(player);
+        if (store.countActive(player.getUniqueId()) >= limitInfo.limit()) {
+            reasons.add("Limit reached: familiars=" + limitInfo.limit() + " (" + limitInfo.source() + ")");
         }
 
         if (type != null) {
@@ -199,6 +209,11 @@ public final class FamiliarServiceImpl implements FamiliarService {
             }
         }
         return Optional.empty();
+    }
+
+    @Override
+    public FamiliarLimitInfo getLimitInfo(Player player) {
+        return resolveLimit(player);
     }
 
     @Override
@@ -474,6 +489,13 @@ public final class FamiliarServiceImpl implements FamiliarService {
             }
         }
         return null;
+    }
+
+    private FamiliarLimitInfo resolveLimit(Player player) {
+        if (limitService == null) {
+            return new FamiliarLimitInfo(1, "default");
+        }
+        return limitService.resolveLimit(player);
     }
 
     private void checkAllowedClasses(Player player, FamiliarType type, List<String> reasons, List<String> notes) {

@@ -7,5 +7,13 @@ public interface ClassesBridge {
 
     boolean isAvailable();
 
-    @Nullable String getActiveClassId(Player player);
+    @Nullable ClassTierInfo getActiveClassInfo(Player player);
+
+    default @Nullable String getActiveClassId(Player player) {
+        ClassTierInfo info = getActiveClassInfo(player);
+        if (info == null) {
+            return null;
+        }
+        return info.classId();
+    }
 }
