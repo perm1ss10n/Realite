@@ -54,6 +54,6 @@ public final class FamiliarCombatListener implements Listener {
         if (type == null || !"combat".equalsIgnoreCase(type.role())) {
             return;
         }
-        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, CONTROL_DURATION_TICKS, 0, true, false, false));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, CONTROL_DURATION_TICKS, 0, true, false, false));
     }
 }

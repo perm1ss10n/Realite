@@ -654,7 +654,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
         if (!(entity instanceof LivingEntity living)) {
             return;
         }
-        living.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, COMBAT_BUFF_DURATION_TICKS, 0, true,
+        living.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, COMBAT_BUFF_DURATION_TICKS, 0, true,
                 false, false));
     }
 
