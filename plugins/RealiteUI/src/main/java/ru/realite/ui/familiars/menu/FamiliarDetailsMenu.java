@@ -120,6 +120,12 @@ public final class FamiliarDetailsMenu extends BaseMenu {
 
         setButton(42, Material.NAME_TAG, messages.get("ui.familiars.manager.action.rename"),
                 List.of(messages.get("ui.common.coming_soon")), null);
+        setButton(43, Material.TNT, messages.get("ui.familiars.manager.action.release"), null,
+                p -> {
+                    if (screenRegistry != null) {
+                        screenRegistry.open(p, "familiars.release:type=" + data.typeId() + ";back=details");
+                    }
+                });
         setButton(44, Material.ARROW, messages.get("ui.common.back"), null, this::openManager);
         setButton(36, Material.OAK_DOOR, messages.get("ui.common.close"), null, Player::closeInventory);
     }

@@ -22,5 +22,9 @@ public interface FamiliarUiService {
 
     FamiliarActionResult setActive(Player player, String typeId);
 
+    FamiliarActionResult canRelease(Player player, String typeId);
+
+    FamiliarActionResult release(Player player, String typeId);
+
     FamiliarActionResult rename(Player player, String typeId, String name);
 }

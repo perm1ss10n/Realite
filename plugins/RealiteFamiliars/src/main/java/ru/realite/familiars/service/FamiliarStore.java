@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -53,6 +54,31 @@ public final class FamiliarStore {
             updated.add(instance);
             return updated;
         });
+    }
+
+    public Optional<FamiliarInstance> remove(UUID owner, String typeId) {
+        if (owner == null || typeId == null) {
+            return Optional.empty();
+        }
+        List<FamiliarInstance> list = instances.get(owner);
+        if (list == null || list.isEmpty()) {
+            return Optional.empty();
+        }
+        FamiliarInstance removed = null;
+        List<FamiliarInstance> updated = new ArrayList<>(list);
+        for (FamiliarInstance instance : list) {
+            if (instance.typeId().equalsIgnoreCase(typeId)) {
+                removed = instance;
+                updated.remove(instance);
+                break;
+            }
+        }
+        if (updated.isEmpty()) {
+            instances.remove(owner);
+        } else {
+            instances.put(owner, updated);
+        }
+        return Optional.ofNullable(removed);
     }
 
     public void clear() {

@@ -44,7 +44,12 @@ ui:
         dismiss: "<red>Отпустить</red>"
         set_active: "<yellow>Сделать активным</yellow>"
         details: "<aqua>Детали</aqua>"
+        release: "<red>Отпустить</red>"
         rename: "<gray>Переименовать</gray>"
+    release:
+      title: "<gold>Отпустить: {name}</gold>"
+      warning: "<red>Отпустить {name}? Действие нельзя отменить.</red>"
+      confirm: "<green>Подтвердить отпуск</green>"
     details:
       title: "<gold>Фамильяр: {name}</gold>"
       missing: "<red>Фамильяр не найден.</red>"

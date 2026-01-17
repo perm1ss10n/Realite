@@ -163,6 +163,33 @@ public final class FamiliarUiServiceImpl implements FamiliarUiService {
     }
 
     @Override
+    public FamiliarActionResult canRelease(Player player, String typeId) {
+        if (player == null || typeId == null || typeId.isBlank()) {
+            return FamiliarActionResult.denied(List.of("Invalid familiar id."));
+        }
+        CheckResult result = service.canRelease(player, typeId);
+        if (result.allowed()) {
+            return FamiliarActionResult.success();
+        }
+        return FamiliarActionResult.denied(result.reasons());
+    }
+
+    @Override
+    public FamiliarActionResult release(Player player, String typeId) {
+        if (player == null || typeId == null || typeId.isBlank()) {
+            return FamiliarActionResult.denied(List.of("Invalid familiar id."));
+        }
+        CheckResult result = service.releaseFamiliar(player, typeId);
+        if (result.allowed()) {
+            activeSelections.computeIfPresent(player.getUniqueId(),
+                    (key, value) -> value.equalsIgnoreCase(typeId) ? null : value);
+            publishInvalidate(player);
+            return FamiliarActionResult.success();
+        }
+        return FamiliarActionResult.denied(result.reasons());
+    }
+
+    @Override
     public FamiliarActionResult rename(Player player, String typeId, String name) {
         return FamiliarActionResult.denied(List.of("Rename not supported yet."));
     }

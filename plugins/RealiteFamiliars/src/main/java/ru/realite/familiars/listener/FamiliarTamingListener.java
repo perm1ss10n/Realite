@@ -8,6 +8,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.ItemStack;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import ru.realite.familiars.config.Messages;
 import ru.realite.familiars.event.FamiliarTamedEvent;
 import ru.realite.familiars.integration.items.ItemsBridge;
@@ -77,6 +79,12 @@ public final class FamiliarTamingListener implements Listener {
                 player.sendMessage(messages.get("taming.failure-reason", Map.of("reason", reason)));
                 debug("Taming failed for " + player.getName() + " type=" + typeId + " reason=" + reason);
             }
+            if (isLimitReached(result.result().reasons())) {
+                player.sendMessage(messages.get("taming.limit.reached"));
+                Component openManager = messages.get("taming.limit.open-manager")
+                        .clickEvent(ClickEvent.runCommand("/familiar ui"));
+                player.sendMessage(openManager);
+            }
             return;
         }
 
@@ -123,5 +131,14 @@ public final class FamiliarTamingListener implements Listener {
         if (logger != null) {
             logger.fine("[Familiars] " + message);
         }
+    }
+
+    private boolean isLimitReached(Iterable<String> reasons) {
+        for (String reason : reasons) {
+            if (reason != null && reason.toLowerCase().startsWith("limit reached")) {
+                return true;
+            }
+        }
+        return false;
     }
 }

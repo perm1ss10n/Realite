@@ -128,6 +128,12 @@ public final class FamiliarManagerMenu extends BaseMenu {
                 screenRegistry.open(p, "familiars.details:" + summary.typeId());
             }
         });
+        setButton(52, Material.TNT, messages.get("ui.familiars.manager.action.release"), null, p -> {
+            if (screenRegistry != null) {
+                screenRegistry.open(p, "familiars.release:type=" + summary.typeId()
+                        + ";back=manager;selection=" + selection);
+            }
+        });
         setButton(53, Material.NAME_TAG, messages.get("ui.familiars.manager.action.rename"),
                 List.of(messages.get("ui.common.coming_soon")), null);
     }
@@ -138,6 +144,8 @@ public final class FamiliarManagerMenu extends BaseMenu {
         setButton(49, Material.GRAY_DYE, messages.get("ui.familiars.manager.action.set_active"),
                 List.of(messages.get("ui.action.unavailable")), null);
         setButton(51, Material.GRAY_DYE, messages.get("ui.familiars.manager.action.details"),
+                List.of(messages.get("ui.action.unavailable")), null);
+        setButton(52, Material.GRAY_DYE, messages.get("ui.familiars.manager.action.release"),
                 List.of(messages.get("ui.action.unavailable")), null);
         setButton(53, Material.NAME_TAG, messages.get("ui.familiars.manager.action.rename"),
                 List.of(messages.get("ui.common.coming_soon")), null);

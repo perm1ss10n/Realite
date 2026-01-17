@@ -44,7 +44,12 @@ ui:
         dismiss: "<red>Dismiss</red>"
         set_active: "<yellow>Set active</yellow>"
         details: "<aqua>Details</aqua>"
+        release: "<red>Release</red>"
         rename: "<gray>Rename</gray>"
+    release:
+      title: "<gold>Release: {name}</gold>"
+      warning: "<red>Release {name}? This cannot be undone.</red>"
+      confirm: "<green>Confirm release</green>"
     details:
       title: "<gold>Familiar: {name}</gold>"
       missing: "<red>Familiar not found.</red>"
