@@ -17,6 +17,8 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 import ru.realite.familiars.config.FamiliarLimitsRepository;
 import ru.realite.familiars.config.FamiliarTypeRepository;
+import ru.realite.familiars.config.TamePolicy;
+import ru.realite.familiars.config.TamePolicyRepository;
 import ru.realite.familiars.config.TamingRules;
 import ru.realite.familiars.config.TamingRulesRepository;
 import ru.realite.familiars.event.FamiliarLeveledEvent;
@@ -56,6 +58,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
     private final FamiliarLimitService limitService;
     private FamiliarTypeRepository typeRepository;
     private TamingRulesRepository rulesRepository;
+    private TamePolicyRepository policyRepository;
     private final Map<UUID, Instant> lastTame = new ConcurrentHashMap<>();
     private final Map<UUID, Instant> lastSummon = new ConcurrentHashMap<>();
     private final Map<UUID, Instant> lastCombat = new ConcurrentHashMap<>();
@@ -91,9 +94,11 @@ public final class FamiliarServiceImpl implements FamiliarService {
 
     public void updateRepositories(FamiliarTypeRepository typeRepository,
                                    TamingRulesRepository rulesRepository,
-                                   FamiliarLimitsRepository limitsRepository) {
+                                   FamiliarLimitsRepository limitsRepository,
+                                   TamePolicyRepository policyRepository) {
         this.typeRepository = typeRepository;
         this.rulesRepository = rulesRepository;
+        this.policyRepository = policyRepository;
         if (limitService != null) {
             limitService.updateRepository(limitsRepository);
         }
@@ -101,6 +106,11 @@ public final class FamiliarServiceImpl implements FamiliarService {
 
     @Override
     public CheckResult canTame(Player player, String typeId) {
+        return canTame(player, typeId, null);
+    }
+
+    @Override
+    public CheckResult canTame(Player player, String typeId, EntityType entityType) {
         List<String> reasons = new ArrayList<>();
         List<String> notes = new ArrayList<>();
         FamiliarType type = getType(typeId, reasons);
@@ -114,6 +124,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
         if (type != null) {
             checkAllowedClasses(player, type, reasons, notes);
         }
+        checkTamePolicy(player, typeId, entityType, reasons, notes);
 
         if (rules != null) {
             int active = store.countActive(player.getUniqueId());
@@ -166,7 +177,12 @@ public final class FamiliarServiceImpl implements FamiliarService {
 
     @Override
     public TameResult tame(Player player, String typeId) {
-        CheckResult check = canTame(player, typeId);
+        return tame(player, typeId, null);
+    }
+
+    @Override
+    public TameResult tame(Player player, String typeId, EntityType entityType) {
+        CheckResult check = canTame(player, typeId, entityType);
         if (!check.allowed()) {
             return new TameResult(check, null);
         }
@@ -511,6 +527,37 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 .anyMatch(entry -> entry.equalsIgnoreCase(classId));
         if (!allowed) {
             reasons.add("Class '" + classId + "' not allowed");
+        }
+    }
+
+    private void checkTamePolicy(Player player, String typeId, EntityType entityType,
+                                 List<String> reasons, List<String> notes) {
+        if (policyRepository == null) {
+            return;
+        }
+        TamePolicy policy = policyRepository.policy();
+        if (policy == null) {
+            return;
+        }
+        String classId = classesBridge.getActiveClassId(player);
+        if (classId == null || classId.isBlank()) {
+            notes.add("Class bridge missing; skipping tame policy check");
+            return;
+        }
+        Optional<List<String>> allowedMobs = policy.allowedMobs(classId);
+        if (allowedMobs.isEmpty()) {
+            return;
+        }
+        boolean allowed = false;
+        if (entityType != null) {
+            allowed |= allowedMobs.get().contains(entityType.name().toLowerCase(Locale.ROOT));
+        }
+        if (typeId != null) {
+            allowed |= allowedMobs.get().contains(typeId.toLowerCase(Locale.ROOT));
+        }
+        if (!allowed) {
+            String mobLabel = entityType != null ? entityType.name() : typeId;
+            reasons.add("Mob '" + mobLabel + "' not allowed for class '" + classId + "'");
         }
     }
 

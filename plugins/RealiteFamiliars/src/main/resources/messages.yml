@@ -17,10 +17,17 @@ taming:
   missing-type: "{prefix}<red>Tag does not specify a familiar type.</red>"
 
 familiar:
-  usage: "{prefix}<yellow>/familiar <summon|dismiss|follow|stay|ui> [typeId]</yellow>"
+  usage: "{prefix}<yellow>/familiar <list|summon|dismiss|follow|stay|ui> [slot|typeId]</yellow>"
   no-service: "{prefix}<red>Familiar service is not available.</red>"
   no-familiars: "{prefix}<red>You have no tamed familiars.</red>"
-  specify-type: "{prefix}<yellow>Specify familiar type: {types}</yellow>"
+  invalid-slot: "{prefix}<red>Invalid familiar slot.</red>"
+  specify-type: "{prefix}<yellow>Specify familiar slot or type: {types}</yellow>"
+  list:
+    header: "{prefix}<yellow>Your familiars:</yellow>"
+    entry: "{prefix}<gray>{slot}. <white>{type}</white> <gray>({state})</gray></gray>"
+    state:
+      tamed: "<yellow>tamed</yellow>"
+      summoned: "<green>summoned</green>"
   summon:
     success: "{prefix}<green>Familiar summoned: <type></green>"
     failure: "{prefix}<red>Failed to summon familiar.</red>"
@@ -38,6 +45,7 @@ familiar:
 actionbar:
   tamed: "<green>приручено</green>"
   class: "<red>нельзя: класс</red>"
+  policy: "<red>нельзя: моб</red>"
   limit: "<red>лимит</red>"
   cooldown: "<red>кд</red>"
 

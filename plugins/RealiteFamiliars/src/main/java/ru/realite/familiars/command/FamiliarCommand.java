@@ -16,6 +16,7 @@ import ru.realite.familiars.ui.FamiliarActionBarService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 public final class FamiliarCommand implements CommandExecutor {
@@ -52,6 +53,7 @@ public final class FamiliarCommand implements CommandExecutor {
 
         String sub = args[0].toLowerCase();
         switch (sub) {
+            case "list" -> handleList(player);
             case "summon" -> handleSummon(player, resolveType(player, args, 1));
             case "dismiss" -> handleDismiss(player, resolveType(player, args, 1));
             case "follow" -> handleBehavior(player, resolveType(player, args, 1), FamiliarBehavior.FOLLOW);
@@ -65,9 +67,9 @@ public final class FamiliarCommand implements CommandExecutor {
 
     private String resolveType(Player player, String[] args, int index) {
         if (args.length > index) {
-            return args[index];
+            return resolveSlotOrType(player, args[index]);
         }
-        List<FamiliarInstance> familiars = service.getFamiliars(player.getUniqueId());
+        List<FamiliarInstance> familiars = getOrderedFamiliars(player);
         if (familiars.isEmpty()) {
             player.sendMessage(messages.get("familiar.no-familiars"));
             return null;
@@ -75,14 +77,65 @@ public final class FamiliarCommand implements CommandExecutor {
         if (familiars.size() == 1) {
             return familiars.get(0).typeId();
         }
-        String types = familiars.stream()
-                .map(FamiliarInstance::typeId)
-                .sorted()
-                .collect(Collectors.joining(", "));
+        String types = formatSlotList(familiars);
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("types", types);
         player.sendMessage(messages.get("familiar.specify-type", placeholders));
         return null;
+    }
+
+    private String resolveSlotOrType(Player player, String input) {
+        if (input == null || input.isBlank()) {
+            return null;
+        }
+        try {
+            int slot = Integer.parseInt(input);
+            List<FamiliarInstance> familiars = getOrderedFamiliars(player);
+            if (slot <= 0 || slot > familiars.size()) {
+                player.sendMessage(messages.get("familiar.invalid-slot"));
+                return null;
+            }
+            return familiars.get(slot - 1).typeId();
+        } catch (NumberFormatException ignored) {
+            return input;
+        }
+    }
+
+    private void handleList(Player player) {
+        List<FamiliarInstance> familiars = getOrderedFamiliars(player);
+        if (familiars.isEmpty()) {
+            player.sendMessage(messages.get("familiar.no-familiars"));
+            return;
+        }
+        player.sendMessage(messages.get("familiar.list.header"));
+        for (int i = 0; i < familiars.size(); i++) {
+            FamiliarInstance instance = familiars.get(i);
+            String state = instance.state() == ru.realite.familiars.model.FamiliarState.SUMMONED
+                    ? messages.raw("familiar.list.state.summoned")
+                    : messages.raw("familiar.list.state.tamed");
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("slot", String.valueOf(i + 1));
+            placeholders.put("type", instance.typeId());
+            placeholders.put("state", state == null ? instance.state().name().toLowerCase() : state);
+            player.sendMessage(messages.get("familiar.list.entry", placeholders));
+        }
+    }
+
+    private List<FamiliarInstance> getOrderedFamiliars(Player player) {
+        return service.getFamiliars(player.getUniqueId()).stream()
+                .sorted(Comparator.comparing(FamiliarInstance::typeId, String.CASE_INSENSITIVE_ORDER))
+                .collect(Collectors.toList());
+    }
+
+    private String formatSlotList(List<FamiliarInstance> familiars) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < familiars.size(); i++) {
+            if (i > 0) {
+                builder.append(", ");
+            }
+            builder.append(i + 1).append(": ").append(familiars.get(i).typeId());
+        }
+        return builder.toString();
     }
 
     private void handleSummon(Player player, String typeId) {

@@ -16,6 +16,7 @@ import ru.realite.familiars.config.FamiliarLimitsRepository;
 import ru.realite.familiars.config.FamiliarTypeRepository;
 import ru.realite.familiars.config.Messages;
 import ru.realite.familiars.config.MessagesRepository;
+import ru.realite.familiars.config.TamePolicyRepository;
 import ru.realite.familiars.config.TamingRulesRepository;
 import ru.realite.familiars.core.CoreAccess;
 import ru.realite.familiars.integration.classes.ClassesBridge;
@@ -60,6 +61,7 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
     private FamiliarTypeRepository typeRepository;
     private TamingRulesRepository rulesRepository;
     private FamiliarLimitsRepository limitsRepository;
+    private TamePolicyRepository policyRepository;
     private Messages messages;
     private FamiliarRepository repository;
 
@@ -104,6 +106,7 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
         saveIfNotExists("familiars.yml");
         saveIfNotExists("taming.yml");
         saveIfNotExists("limits.yml");
+        saveIfNotExists("tame-policy.yml");
         saveIfNotExists("messages.yml");
 
         reloadConfigs();
@@ -122,7 +125,7 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
             service = new FamiliarServiceImpl(this, store, repository, getLogger(),
                     classesBridge, questsBridge, magicBridge, cityGuildBridge, limitService);
         }
-        service.updateRepositories(typeRepository, rulesRepository, limitsRepository);
+        service.updateRepositories(typeRepository, rulesRepository, limitsRepository, policyRepository);
         service.resetSummonedStates();
         core.services().replace(FamiliarService.class, service);
         actionBarService = new FamiliarActionBarService(messages);
@@ -169,6 +172,8 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
         rulesRepository = TamingRulesRepository.load(new File(dataFolder, "taming.yml"), getLogger())
                 .orElse(null);
         limitsRepository = FamiliarLimitsRepository.load(new File(dataFolder, "limits.yml"), getLogger())
+                .orElse(null);
+        policyRepository = TamePolicyRepository.load(new File(dataFolder, "tame-policy.yml"), getLogger())
                 .orElse(null);
         messages = MessagesRepository.load(new File(dataFolder, "messages.yml"), getLogger())
                 .map(MessagesRepository::messages)
@@ -282,10 +287,15 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
         config.set("taming.failure", "{prefix}<red>Failed to tame familiar.</red>");
         config.set("taming.failure-reason", "{prefix}<red>Failed to tame: <reason></red>");
         config.set("taming.missing-type", "{prefix}<red>Tag does not specify a familiar type.</red>");
-        config.set("familiar.usage", "{prefix}<yellow>/familiar <summon|dismiss|follow|stay|ui> [typeId]</yellow>");
+        config.set("familiar.usage", "{prefix}<yellow>/familiar <list|summon|dismiss|follow|stay|ui> [slot|typeId]</yellow>");
         config.set("familiar.no-service", "{prefix}<red>Familiar service is not available.</red>");
         config.set("familiar.no-familiars", "{prefix}<red>You have no tamed familiars.</red>");
-        config.set("familiar.specify-type", "{prefix}<yellow>Specify familiar type: {types}</yellow>");
+        config.set("familiar.invalid-slot", "{prefix}<red>Invalid familiar slot.</red>");
+        config.set("familiar.specify-type", "{prefix}<yellow>Specify familiar slot or type: {types}</yellow>");
+        config.set("familiar.list.header", "{prefix}<yellow>Your familiars:</yellow>");
+        config.set("familiar.list.entry", "{prefix}<gray>{slot}. <white>{type}</white> <gray>({state})</gray></gray>");
+        config.set("familiar.list.state.tamed", "<yellow>tamed</yellow>");
+        config.set("familiar.list.state.summoned", "<green>summoned</green>");
         config.set("familiar.summon.success", "{prefix}<green>Familiar summoned: <type></green>");
         config.set("familiar.summon.failure", "{prefix}<red>Failed to summon familiar.</red>");
         config.set("familiar.dismiss.success", "{prefix}<green>Familiar dismissed: <type></green>");
@@ -297,6 +307,7 @@ public final class RealiteFamiliarsPlugin extends JavaPlugin implements CoreModu
         config.set("familiar.menu.unavailable", "{prefix}<red>Familiar menu is unavailable.</red>");
         config.set("actionbar.tamed", "<green>приручено</green>");
         config.set("actionbar.class", "<red>нельзя: класс</red>");
+        config.set("actionbar.policy", "<red>нельзя: моб</red>");
         config.set("actionbar.limit", "<red>лимит</red>");
         config.set("actionbar.cooldown", "<red>кд</red>");
         config.set("hud.actionbar", "<yellow>{type}</yellow> <gray>{role}</gray> <white>Lv {level}</white> "
