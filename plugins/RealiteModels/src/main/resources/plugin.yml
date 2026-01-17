@@ -1,0 +1,6 @@
+name: RealiteModels
+version: 1.0.0
+main: ru.realite.models.RealiteModelsPlugin
+api-version: "1.21"
+softdepend:
+  - RealiteCore
