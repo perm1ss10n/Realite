@@ -15,6 +15,61 @@ ui:
   hud:
     bossbar: "<yellow>{provider}</yellow> <gray>{current}/{max}</gray>"
     actionbar: "<yellow>{provider}</yellow> <gray>{current}/{max}</gray>"
+  provider:
+    familiars:
+      status: "<yellow>Familiar</yellow>"
+  familiars:
+    unavailable: "<red>Familiar control is unavailable.</red>"
+    empty: "<gray>No familiars.</gray>"
+    action:
+      failed: "<red>Action failed.</red>"
+    state:
+      idle: "<gray>tamed</gray>"
+      summoned: "<green>summoned</green>"
+      cooldown: "<yellow>cooldown</yellow>"
+    hud:
+      hint: "<yellow>Open control</yellow>"
+      actionbar: "<yellow>Familiars</yellow> <gray>{count}/{max}</gray> <white>{name}</white> <gray>Lv {level}</gray> <aqua>{role}</aqua> <red>{hp}</red> <gray>{distance}</gray> <dark_gray>·</dark_gray> <gray>Model:</gray> <white>{model}</white> <dark_gray>·</dark_gray> <yellow>{hint}</yellow>"
+      actionbar_empty: "<yellow>Familiars</yellow> <gray>{count}/{max}</gray> <dark_gray>·</dark_gray> <yellow>{hint}</yellow>"
+    manager:
+      title: "<gold>Familiar Manager</gold>"
+      card:
+        name: "<white>{name}</white> <gray>Lv {level}</gray>"
+        mob: "<gray>Mob: <white>{mob}</white></gray>"
+        role: "<gray>Role: <white>{role}</white></gray>"
+        state: "<gray>State: <white>{state}</white></gray>"
+        active: "<green>Active</green>"
+      action:
+        summon: "<green>Summon</green>"
+        dismiss: "<red>Dismiss</red>"
+        set_active: "<yellow>Set active</yellow>"
+        details: "<aqua>Details</aqua>"
+        release: "<red>Release</red>"
+        rename: "<gray>Rename</gray>"
+    release:
+      title: "<gold>Release: {name}</gold>"
+      warning: "<red>Release {name}? This cannot be undone.</red>"
+      confirm: "<green>Confirm release</green>"
+    details:
+      title: "<gold>Familiar: {name}</gold>"
+      missing: "<red>Familiar not found.</red>"
+      stats:
+        title: "<yellow>Stats</yellow>"
+        empty: "<gray>No data.</gray>"
+        entry: "<gray>{stat}: <white>{value}</white></gray>"
+      model: "<gray>Model: <white>{model}</white></gray>"
+      progress:
+        title: "<yellow>Progress</yellow>"
+        level: "<gray>Level: <white>{level}</white></gray>"
+        xp: "<gray>XP: <white>{xp}</white>/<white>{max}</white></gray>"
+      talents:
+        title: "<yellow>Talents</yellow>"
+        empty: "<gray>Empty.</gray>"
+        entry: "<gray>{talent}</gray>"
+      inventory:
+        title: "<yellow>Inventory</yellow>"
+        empty: "<gray>Empty.</gray>"
+        entry: "<gray>{item}</gray>"
   menu:
     filler: "<gray> </gray>"
     page: "<gray>Page <white>{page}</white>/<white>{pages}</white></gray>"

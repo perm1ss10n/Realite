@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+    id 'com.gradleup.shadow' version '8.3.1'
+}
+
+group = 'ru.realite'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+}
+
+dependencies {
+    compileOnly "io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT"
+    compileOnly "net.kyori:adventure-api:4.17.0"
+    compileOnly "net.kyori:adventure-text-minimessage:4.17.0"
+
+    compileOnly project(":RealiteCore")
+    compileOnly project(":plugins:RealiteItems")
+
+    testImplementation "io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT" // <-- добавь
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}
+
+tasks.jar {
+    enabled = false
+}
+
+tasks.shadowJar {
+    archiveClassifier.set("")
+}
+
+tasks.build {
+    dependsOn tasks.shadowJar
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

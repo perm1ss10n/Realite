@@ -14,6 +14,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.realite.core.api.ui.UiProvider;
+import ru.realite.core.api.ui.UiHudTextProvider;
 import ru.realite.core.api.ui.UiProviderId;
 import ru.realite.core.api.ui.UiRegistry;
 import ru.realite.core.api.ui.UiSlot;
@@ -83,31 +84,35 @@ public final class UiHudService implements Listener {
             return;
         }
         UiSnapshot data = snapshot.get();
+        Optional<Component> customText = Optional.empty();
+        if (provider instanceof UiHudTextProvider textProvider) {
+            customText = textProvider.text(player, slot);
+        }
         String providerName = UiText.providerName(messages, providerId);
         switch (slot) {
-            case BOSSBAR -> showBossBar(player, providerName, data);
-            case ACTION_BAR -> showActionBar(player, providerName, data);
+            case BOSSBAR -> showBossBar(player, providerName, data, customText);
+            case ACTION_BAR -> showActionBar(player, providerName, data, customText);
         }
     }
 
-    private void showBossBar(Player player, String providerName, UiSnapshot snapshot) {
+    private void showBossBar(Player player, String providerName, UiSnapshot snapshot, Optional<Component> customText) {
         double progress = snapshot.max() <= 0 ? 0.0 : (double) snapshot.current() / snapshot.max();
         BossBar bar = bossBars.computeIfAbsent(player.getUniqueId(),
                 id -> BossBar.bossBar(Component.empty(), 0f, BossBar.Color.BLUE, BossBar.Overlay.PROGRESS));
-        Component title = messages.get("ui.hud.bossbar", Map.of(
+        Component title = customText.orElseGet(() -> messages.get("ui.hud.bossbar", Map.of(
                 "provider", providerName,
                 "current", String.valueOf(snapshot.current()),
-                "max", String.valueOf(snapshot.max())));
+                "max", String.valueOf(snapshot.max()))));
         bar.name(title);
         bar.progress((float) Math.max(0.0, Math.min(1.0, progress)));
         player.showBossBar(bar);
     }
 
-    private void showActionBar(Player player, String providerName, UiSnapshot snapshot) {
-        Component message = messages.get("ui.hud.actionbar", Map.of(
+    private void showActionBar(Player player, String providerName, UiSnapshot snapshot, Optional<Component> customText) {
+        Component message = customText.orElseGet(() -> messages.get("ui.hud.actionbar", Map.of(
                 "provider", providerName,
                 "current", String.valueOf(snapshot.current()),
-                "max", String.valueOf(snapshot.max())));
+                "max", String.valueOf(snapshot.max()))));
         player.sendActionBar(message);
     }
 

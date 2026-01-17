@@ -1,0 +1,205 @@
+package ru.realite.familiars.command;
+
+import net.kyori.adventure.text.Component;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+import ru.realite.core.api.ui.UiScreenRegistry;
+import ru.realite.familiars.config.Messages;
+import ru.realite.familiars.model.FamiliarBehavior;
+import ru.realite.familiars.model.FamiliarInstance;
+import ru.realite.familiars.service.CheckResult;
+import ru.realite.familiars.service.FamiliarService;
+import ru.realite.familiars.ui.FamiliarActionBarService;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Comparator;
+import java.util.stream.Collectors;
+
+public final class FamiliarCommand implements CommandExecutor {
+
+    private final FamiliarService service;
+    private final Messages messages;
+    private final FamiliarActionBarService actionBar;
+    private final UiScreenRegistry screenRegistry;
+
+    public FamiliarCommand(FamiliarService service,
+                           Messages messages,
+                           FamiliarActionBarService actionBar,
+                           UiScreenRegistry screenRegistry) {
+        this.service = service;
+        this.messages = messages;
+        this.actionBar = actionBar;
+        this.screenRegistry = screenRegistry;
+    }
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(Component.text("Only players can use this command."));
+            return true;
+        }
+        if (service == null) {
+            sender.sendMessage(messages.get("familiar.no-service"));
+            return true;
+        }
+        if (args.length == 0) {
+            sender.sendMessage(messages.get("familiar.usage"));
+            return true;
+        }
+
+        String sub = args[0].toLowerCase();
+        switch (sub) {
+            case "list" -> handleList(player);
+            case "summon" -> handleSummon(player, resolveType(player, args, 1));
+            case "dismiss" -> handleDismiss(player, resolveType(player, args, 1));
+            case "follow" -> handleBehavior(player, resolveType(player, args, 1), FamiliarBehavior.FOLLOW);
+            case "stay" -> handleBehavior(player, resolveType(player, args, 1), FamiliarBehavior.STAY);
+            case "ui", "menu" -> handleMenu(player);
+            default -> sender.sendMessage(messages.get("familiar.usage"));
+        }
+
+        return true;
+    }
+
+    private String resolveType(Player player, String[] args, int index) {
+        if (args.length > index) {
+            return resolveSlotOrType(player, args[index]);
+        }
+        List<FamiliarInstance> familiars = getOrderedFamiliars(player);
+        if (familiars.isEmpty()) {
+            player.sendMessage(messages.get("familiar.no-familiars"));
+            return null;
+        }
+        if (familiars.size() == 1) {
+            return familiars.get(0).typeId();
+        }
+        String types = formatSlotList(familiars);
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("types", types);
+        player.sendMessage(messages.get("familiar.specify-type", placeholders));
+        return null;
+    }
+
+    private String resolveSlotOrType(Player player, String input) {
+        if (input == null || input.isBlank()) {
+            return null;
+        }
+        try {
+            int slot = Integer.parseInt(input);
+            List<FamiliarInstance> familiars = getOrderedFamiliars(player);
+            if (slot <= 0 || slot > familiars.size()) {
+                player.sendMessage(messages.get("familiar.invalid-slot"));
+                return null;
+            }
+            return familiars.get(slot - 1).typeId();
+        } catch (NumberFormatException ignored) {
+            return input;
+        }
+    }
+
+    private void handleList(Player player) {
+        List<FamiliarInstance> familiars = getOrderedFamiliars(player);
+        if (familiars.isEmpty()) {
+            player.sendMessage(messages.get("familiar.no-familiars"));
+            return;
+        }
+        player.sendMessage(messages.get("familiar.list.header"));
+        for (int i = 0; i < familiars.size(); i++) {
+            FamiliarInstance instance = familiars.get(i);
+            String state = instance.state() == ru.realite.familiars.model.FamiliarState.SUMMONED
+                    ? messages.raw("familiar.list.state.summoned")
+                    : messages.raw("familiar.list.state.tamed");
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("slot", String.valueOf(i + 1));
+            placeholders.put("type", instance.typeId());
+            placeholders.put("state", state == null ? instance.state().name().toLowerCase() : state);
+            player.sendMessage(messages.get("familiar.list.entry", placeholders));
+        }
+    }
+
+    private List<FamiliarInstance> getOrderedFamiliars(Player player) {
+        return service.getFamiliars(player.getUniqueId()).stream()
+                .sorted(Comparator.comparing(FamiliarInstance::typeId, String.CASE_INSENSITIVE_ORDER))
+                .collect(Collectors.toList());
+    }
+
+    private String formatSlotList(List<FamiliarInstance> familiars) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < familiars.size(); i++) {
+            if (i > 0) {
+                builder.append(", ");
+            }
+            builder.append(i + 1).append(": ").append(familiars.get(i).typeId());
+        }
+        return builder.toString();
+    }
+
+    private void handleSummon(Player player, String typeId) {
+        if (typeId == null) {
+            return;
+        }
+        CheckResult result = service.summon(player, typeId);
+        if (result.allowed()) {
+            sendSimple(player, "familiar.summon.success", typeId);
+        } else {
+            sendFailure(player, "familiar.summon.failure", result);
+        }
+    }
+
+    private void handleDismiss(Player player, String typeId) {
+        if (typeId == null) {
+            return;
+        }
+        CheckResult result = service.dismiss(player, typeId);
+        if (result.allowed()) {
+            sendSimple(player, "familiar.dismiss.success", typeId);
+        } else {
+            sendFailure(player, "familiar.dismiss.failure", result);
+        }
+    }
+
+    private void handleBehavior(Player player, String typeId, FamiliarBehavior behavior) {
+        if (typeId == null) {
+            return;
+        }
+        CheckResult result = service.setBehavior(player, typeId, behavior);
+        if (result.allowed()) {
+            String key = behavior == FamiliarBehavior.FOLLOW
+                    ? "familiar.behavior.follow"
+                    : "familiar.behavior.stay";
+            sendSimple(player, key, typeId);
+        } else {
+            sendFailure(player, "familiar.behavior.failure", result);
+        }
+    }
+
+    private void handleMenu(Player player) {
+        if (screenRegistry == null || !screenRegistry.open(player, "familiars.manager")) {
+            player.sendMessage(messages.get("familiar.menu.unavailable"));
+            return;
+        }
+    }
+
+    private void sendSimple(Player player, String key, String typeId) {
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("type", typeId);
+        player.sendMessage(messages.get(key, placeholders));
+    }
+
+    private void sendFailure(Player player, String key, CheckResult result) {
+        player.sendMessage(messages.get(key));
+        if (actionBar != null) {
+            actionBar.sendForReasons(player, result.reasons());
+        }
+        if (!result.reasons().isEmpty()) {
+            player.sendMessage(messages.get("familiar.reasons"));
+            for (String reason : result.reasons()) {
+                player.sendMessage(Component.text(" - " + reason));
+            }
+        }
+    }
+}

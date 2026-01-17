@@ -15,6 +15,61 @@ ui:
   hud:
     bossbar: "<yellow>{provider}</yellow> <gray>{current}/{max}</gray>"
     actionbar: "<yellow>{provider}</yellow> <gray>{current}/{max}</gray>"
+  provider:
+    familiars:
+      status: "<yellow>Фамильяр</yellow>"
+  familiars:
+    unavailable: "<red>Управление фамильярами недоступно.</red>"
+    empty: "<gray>Питомцев нет.</gray>"
+    action:
+      failed: "<red>Действие не выполнено.</red>"
+    state:
+      idle: "<gray>приручен</gray>"
+      summoned: "<green>призван</green>"
+      cooldown: "<yellow>перезарядка</yellow>"
+    hud:
+      hint: "<yellow>Открыть управление</yellow>"
+      actionbar: "<yellow>Фамильяры</yellow> <gray>{count}/{max}</gray> <white>{name}</white> <gray>Lv {level}</gray> <aqua>{role}</aqua> <red>{hp}</red> <gray>{distance}</gray> <dark_gray>·</dark_gray> <gray>Model:</gray> <white>{model}</white> <dark_gray>·</dark_gray> <yellow>{hint}</yellow>"
+      actionbar_empty: "<yellow>Фамильяры</yellow> <gray>{count}/{max}</gray> <dark_gray>·</dark_gray> <yellow>{hint}</yellow>"
+    manager:
+      title: "<gold>Управление фамильярами</gold>"
+      card:
+        name: "<white>{name}</white> <gray>ур. {level}</gray>"
+        mob: "<gray>Тип: <white>{mob}</white></gray>"
+        role: "<gray>Роль: <white>{role}</white></gray>"
+        state: "<gray>Состояние: <white>{state}</white></gray>"
+        active: "<green>Активный</green>"
+      action:
+        summon: "<green>Призвать</green>"
+        dismiss: "<red>Отпустить</red>"
+        set_active: "<yellow>Сделать активным</yellow>"
+        details: "<aqua>Детали</aqua>"
+        release: "<red>Отпустить</red>"
+        rename: "<gray>Переименовать</gray>"
+    release:
+      title: "<gold>Отпустить: {name}</gold>"
+      warning: "<red>Отпустить {name}? Действие нельзя отменить.</red>"
+      confirm: "<green>Подтвердить отпуск</green>"
+    details:
+      title: "<gold>Фамильяр: {name}</gold>"
+      missing: "<red>Фамильяр не найден.</red>"
+      stats:
+        title: "<yellow>Статы</yellow>"
+        empty: "<gray>Нет данных.</gray>"
+        entry: "<gray>{stat}: <white>{value}</white></gray>"
+      model: "<gray>Model: <white>{model}</white></gray>"
+      progress:
+        title: "<yellow>Прогресс</yellow>"
+        level: "<gray>Уровень: <white>{level}</white></gray>"
+        xp: "<gray>Опыт: <white>{xp}</white>/<white>{max}</white></gray>"
+      talents:
+        title: "<yellow>Таланты</yellow>"
+        empty: "<gray>Пока пусто.</gray>"
+        entry: "<gray>{talent}</gray>"
+      inventory:
+        title: "<yellow>Инвентарь</yellow>"
+        empty: "<gray>Пусто.</gray>"
+        entry: "<gray>{item}</gray>"
   menu:
     filler: "<gray> </gray>"
     page: "<gray>Страница <white>{page}</white>/<white>{pages}</white></gray>"

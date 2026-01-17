@@ -1,0 +1,6 @@
+default: 1
+classes:
+  warrior:
+    tiers:
+      1: 1
+      2: 2

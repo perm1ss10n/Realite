@@ -1,0 +1,25 @@
+types:
+  wolf:
+    role: "combat"
+    displayKey: "familiar.wolf"
+    allowedClasses:
+      - "warrior"
+      - "ranger"
+    baseStats:
+      health: 20
+      damage: 4
+  fairy:
+    role: "support"
+    displayKey: "familiar.fairy"
+    allowedClasses: []
+    baseStats:
+      mana: 30
+      regen: 2
+  fox:
+    role: "utility"
+    displayKey: "familiar.fox"
+    modelId: "realite:fox_01"
+    allowedClasses: []
+    baseStats:
+      speed: 1
+      awareness: 1

@@ -1,0 +1,8 @@
+classes:
+  warrior:
+    allowedMobs:
+      - ZOMBIE
+      - WOLF
+  mage:
+    allowedMobs:
+      - FAIRY

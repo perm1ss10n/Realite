@@ -17,6 +17,11 @@ items:
     lore-1: "&7Helps you find the way."
     lore-2: "&7Technical item from RealiteItems."
 
+  familiar_taming_tag:
+    name: "&dFamiliar Taming Tag"
+    lore-1: "&7Use to tame a familiar."
+    lore-2: "&7Bound to a specific familiar type."
+
   magic_staff_basic:
     name: "&dApprentice Staff"
     lore-1: "&7Basic focus for spellcasting."

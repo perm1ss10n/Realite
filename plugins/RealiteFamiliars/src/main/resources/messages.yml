@@ -1,0 +1,84 @@
+prefix: "<gray>[Familiars]</gray> "
+
+debug:
+  usage: "{prefix}<yellow>/familiars debug <typeId|limits></yellow>"
+  no-service: "{prefix}<red>Familiar service is not available.</red>"
+  header: "{prefix}<yellow>Debug for <type></yellow>"
+  can-tame: "{prefix}Can tame: {result}"
+  can-summon: "{prefix}Can summon: {result}"
+  reasons: "{prefix}<red>Reasons:</red>"
+  notes: "{prefix}<gray>Notes:</gray>"
+  limits: "{prefix}<yellow>Limit: <white>{limit}</white> <gray>({source})</gray></yellow>"
+
+taming:
+  success: "{prefix}<green>Familiar tamed: <type></green>"
+  failure: "{prefix}<red>Failed to tame familiar.</red>"
+  failure-reason: "{prefix}<red>Failed to tame: <reason></red>"
+  missing-type: "{prefix}<red>Tag does not specify a familiar type.</red>"
+  limit:
+    reached: "{prefix}<red>Familiar limit reached.</red>"
+    open-manager: "<yellow>Open familiar manager</yellow>"
+
+familiar:
+  usage: "{prefix}<yellow>/familiar <list|summon|dismiss|follow|stay|ui> [slot|typeId]</yellow>"
+  no-service: "{prefix}<red>Familiar service is not available.</red>"
+  no-familiars: "{prefix}<red>You have no tamed familiars.</red>"
+  invalid-slot: "{prefix}<red>Invalid familiar slot.</red>"
+  specify-type: "{prefix}<yellow>Specify familiar slot or type: {types}</yellow>"
+  list:
+    header: "{prefix}<yellow>Your familiars:</yellow>"
+    entry: "{prefix}<gray>{slot}. <white>{type}</white> <gray>({state})</gray></gray>"
+    state:
+      tamed: "<yellow>tamed</yellow>"
+      summoned: "<green>summoned</green>"
+  summon:
+    success: "{prefix}<green>Familiar summoned: <type></green>"
+    failure: "{prefix}<red>Failed to summon familiar.</red>"
+  dismiss:
+    success: "{prefix}<green>Familiar dismissed: <type></green>"
+    failure: "{prefix}<red>Failed to dismiss familiar.</red>"
+  behavior:
+    follow: "{prefix}<green>Familiar set to follow: <type></green>"
+    stay: "{prefix}<green>Familiar set to stay: <type></green>"
+    failure: "{prefix}<red>Failed to update behavior.</red>"
+  reasons: "{prefix}<red>Reasons:</red>"
+  menu:
+    unavailable: "{prefix}<red>Familiar menu is unavailable.</red>"
+
+actionbar:
+  tamed: "<green>приручено</green>"
+  class: "<red>нельзя: класс</red>"
+  policy: "<red>нельзя: моб</red>"
+  limit: "<red>лимит</red>"
+  cooldown: "<red>кд</red>"
+
+hud:
+  actionbar: "<yellow>{type}</yellow> <gray>{role}</gray> <white>Lv {level}</white> <green>{xp}%</green> <gray>{state}</gray> <gray>{distance}</gray> <red>{hp}</red>"
+  state:
+    tamed: "<yellow>tamed</yellow>"
+    summoned: "<green>summoned</green>"
+
+menu:
+  title: "<gold>Familiars</gold>"
+  empty: "<gray>No familiars.</gray>"
+  close: "<red>Close</red>"
+  action:
+    summon: "<green>Summon</green>"
+    dismiss: "<red>Dismiss</red>"
+    follow: "<green>Follow</green>"
+    stay: "<yellow>Stay</yellow>"
+    rename: "<gray>Rename</gray>"
+    rename_soon: "<gray>Soon.</gray>"
+    back: "<yellow>Back</yellow>"
+    unavailable: "<dark_gray>Unavailable</dark_gray>"
+  familiar:
+    name: "<white>{type}</white> <gray>Lv {level}</gray>"
+    title: "<gold>{type}</gold>"
+    missing: "<red>Familiar not found.</red>"
+    lore:
+      role: "<gray>Role: <white>{role}</white></gray>"
+      level: "<gray>Level: <white>{level}</white> <gray>XP: <white>{xp}%</white></gray>"
+      state: "<gray>Status: <white>{state}</white></gray>"
+  state:
+    tamed: "<yellow>tamed</yellow>"
+    summoned: "<green>summoned</green>"

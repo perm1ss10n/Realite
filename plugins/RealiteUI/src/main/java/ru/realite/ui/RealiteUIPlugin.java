@@ -12,6 +12,10 @@ import ru.realite.core.api.ui.UiRegistry;
 import ru.realite.core.api.ui.UiScreenRegistry;
 import ru.realite.core.i18n.MiniMessageMessages;
 import ru.realite.ui.command.UiCommand;
+import ru.realite.ui.familiars.FamiliarHudProvider;
+import ru.realite.ui.familiars.screen.FamiliarDetailsScreen;
+import ru.realite.ui.familiars.screen.FamiliarManagerScreen;
+import ru.realite.ui.familiars.screen.FamiliarReleaseScreen;
 import ru.realite.ui.hud.UiHudService;
 import ru.realite.ui.menu.MenuListener;
 import ru.realite.ui.pagination.UiPaginationServiceImpl;
@@ -56,6 +60,8 @@ public final class RealiteUIPlugin extends JavaPlugin {
         hudService = new UiHudService(this, messages, registry, settingsStore);
         getServer().getPluginManager().registerEvents(hudService, this);
 
+        registerFamiliarUi(core, registry);
+
         uiSubscription = core.events().subscribe(
                 UiInvalidateEvent.class,
                 event -> hudService.refreshIfMatches(event.player(), event.providerId()));
@@ -91,6 +97,19 @@ public final class RealiteUIPlugin extends JavaPlugin {
 
     public MiniMessageMessages messages() {
         return messages;
+    }
+
+    private void registerFamiliarUi(CoreApi core, UiRegistry registry) {
+        if (core == null || registry == null) {
+            return;
+        }
+        registry.register(new FamiliarHudProvider(core, messages));
+        UiScreenRegistry screenRegistry = core.services().get(UiScreenRegistry.class);
+        if (screenRegistry != null) {
+            screenRegistry.register(new FamiliarManagerScreen(core, messages));
+            screenRegistry.register(new FamiliarDetailsScreen(core, messages));
+            screenRegistry.register(new FamiliarReleaseScreen(core, messages));
+        }
     }
 
     private String resolveLanguage() {
