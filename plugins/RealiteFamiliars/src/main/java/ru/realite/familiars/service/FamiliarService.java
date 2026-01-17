@@ -6,4 +6,6 @@ public interface FamiliarService {
     CheckResult canTame(Player player, String typeId);
 
     CheckResult canSummon(Player player, String typeId);
+
+    TameResult tame(Player player, String typeId);
 }

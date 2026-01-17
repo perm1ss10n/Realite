@@ -18,6 +18,24 @@ public final class FamiliarStore {
         return instances.getOrDefault(owner, Collections.emptyList());
     }
 
+    public Map<UUID, List<FamiliarInstance>> snapshot() {
+        Map<UUID, List<FamiliarInstance>> snapshot = new ConcurrentHashMap<>();
+        for (Map.Entry<UUID, List<FamiliarInstance>> entry : instances.entrySet()) {
+            snapshot.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+        }
+        return snapshot;
+    }
+
+    public void loadAll(Map<UUID, List<FamiliarInstance>> loaded) {
+        instances.clear();
+        if (loaded == null || loaded.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<UUID, List<FamiliarInstance>> entry : loaded.entrySet()) {
+            instances.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+        }
+    }
+
     public int countActive(UUID owner) {
         return getInstances(owner).size();
     }
