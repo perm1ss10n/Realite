@@ -29,7 +29,7 @@ ui:
       cooldown: "<yellow>cooldown</yellow>"
     hud:
       hint: "<yellow>Open control</yellow>"
-      actionbar: "<yellow>Familiars</yellow> <gray>{count}/{max}</gray> <white>{name}</white> <gray>Lv {level}</gray> <aqua>{role}</aqua> <red>{hp}</red> <gray>{distance}</gray> <dark_gray>·</dark_gray> <yellow>{hint}</yellow>"
+      actionbar: "<yellow>Familiars</yellow> <gray>{count}/{max}</gray> <white>{name}</white> <gray>Lv {level}</gray> <aqua>{role}</aqua> <red>{hp}</red> <gray>{distance}</gray> <dark_gray>·</dark_gray> <gray>Model:</gray> <white>{model}</white> <dark_gray>·</dark_gray> <yellow>{hint}</yellow>"
       actionbar_empty: "<yellow>Familiars</yellow> <gray>{count}/{max}</gray> <dark_gray>·</dark_gray> <yellow>{hint}</yellow>"
     manager:
       title: "<gold>Familiar Manager</gold>"
@@ -57,6 +57,7 @@ ui:
         title: "<yellow>Stats</yellow>"
         empty: "<gray>No data.</gray>"
         entry: "<gray>{stat}: <white>{value}</white></gray>"
+      model: "<gray>Model: <white>{model}</white></gray>"
       progress:
         title: "<yellow>Progress</yellow>"
         level: "<gray>Level: <white>{level}</white></gray>"

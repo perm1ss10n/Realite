@@ -64,6 +64,8 @@ public final class FamiliarDetailsMenu extends BaseMenu {
             data.stats().forEach((key, value) -> statsLore.add(messages.get("ui.familiars.details.stats.entry",
                     Map.of("stat", key, "value", String.valueOf(value)))));
         }
+        statsLore.add(messages.get("ui.familiars.details.model",
+                Map.of("model", data.modelId().orElse("-"))));
         setButton(11, Material.BOOK, messages.get("ui.familiars.details.stats.title"), statsLore, null);
 
         List<Component> progressLore = List.of(

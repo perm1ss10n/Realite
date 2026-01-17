@@ -18,6 +18,7 @@ types:
   fox:
     role: "utility"
     displayKey: "familiar.fox"
+    modelId: "realite:fox_01"
     allowedClasses: []
     baseStats:
       speed: 1

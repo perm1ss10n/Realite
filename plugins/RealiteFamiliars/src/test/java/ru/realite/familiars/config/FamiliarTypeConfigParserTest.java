@@ -18,6 +18,7 @@ class FamiliarTypeConfigParserTest {
                   wolf:
                     role: combat
                     displayKey: familiar.wolf
+                    modelId: realite:wolf_01
                     allowedClasses: [warrior]
                     baseStats:
                       health: 20
@@ -30,6 +31,8 @@ class FamiliarTypeConfigParserTest {
         assertEquals(1, types.size());
         assertTrue(types.containsKey("wolf"));
         assertEquals("combat", types.get("wolf").role());
+        assertTrue(types.get("wolf").modelId().isPresent());
+        assertEquals("realite:wolf_01", types.get("wolf").modelId().orElseThrow());
     }
 
     @Test

@@ -104,6 +104,7 @@ public final class FamiliarUiServiceImpl implements FamiliarUiService {
                 clampXp(instance.xp()),
                 XP_MAX,
                 type != null ? type.role() : "-",
+                type != null ? type.modelId() : Optional.empty(),
                 mapState(instance.state()),
                 stats,
                 List.of(),
@@ -280,6 +281,7 @@ public final class FamiliarUiServiceImpl implements FamiliarUiService {
                 name,
                 instance.level(),
                 role,
+                type != null ? type.modelId() : Optional.empty(),
                 hpCurrent,
                 hpMax,
                 distance));
