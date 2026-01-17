@@ -5,10 +5,10 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import ru.realite.core.api.ui.UiScreenRegistry;
 import ru.realite.familiars.config.Messages;
 import ru.realite.familiars.model.FamiliarBehavior;
 import ru.realite.familiars.model.FamiliarInstance;
-import ru.realite.familiars.menu.FamiliarMenuManager;
 import ru.realite.familiars.service.CheckResult;
 import ru.realite.familiars.service.FamiliarService;
 import ru.realite.familiars.ui.FamiliarActionBarService;
@@ -24,16 +24,16 @@ public final class FamiliarCommand implements CommandExecutor {
     private final FamiliarService service;
     private final Messages messages;
     private final FamiliarActionBarService actionBar;
-    private final FamiliarMenuManager menuManager;
+    private final UiScreenRegistry screenRegistry;
 
     public FamiliarCommand(FamiliarService service,
                            Messages messages,
                            FamiliarActionBarService actionBar,
-                           FamiliarMenuManager menuManager) {
+                           UiScreenRegistry screenRegistry) {
         this.service = service;
         this.messages = messages;
         this.actionBar = actionBar;
-        this.menuManager = menuManager;
+        this.screenRegistry = screenRegistry;
     }
 
     @Override
@@ -178,11 +178,10 @@ public final class FamiliarCommand implements CommandExecutor {
     }
 
     private void handleMenu(Player player) {
-        if (menuManager == null) {
+        if (screenRegistry == null || !screenRegistry.open(player, "familiars.manager")) {
             player.sendMessage(messages.get("familiar.menu.unavailable"));
             return;
         }
-        menuManager.openMain(player);
     }
 
     private void sendSimple(Player player, String key, String typeId) {
