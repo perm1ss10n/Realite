@@ -19,9 +19,12 @@ public final class ModelsBridgeImpl implements ModelsBridge {
 
     private final Map<UUID, ModelInfo> applied = new ConcurrentHashMap<>();
     private final Supplier<ModelAssetRegistry> registrySupplier;
+    private final ModelWrapperService wrapperService;
 
-    public ModelsBridgeImpl(Supplier<ModelAssetRegistry> registrySupplier) {
+    public ModelsBridgeImpl(Supplier<ModelAssetRegistry> registrySupplier, ModelWrapperService wrapperService) {
         this.registrySupplier = Objects.requireNonNull(registrySupplier, "registrySupplier");
+        this.wrapperService = Objects.requireNonNull(wrapperService, "wrapperService");
+        this.wrapperService.setAppliedRemover(this::forget);
     }
 
     @Override
@@ -46,6 +49,10 @@ public final class ModelsBridgeImpl implements ModelsBridge {
         if (assetInfo.asset().kind() != ModelAssetKind.ENTITY) {
             return ApplyResult.fail("Model asset kind must be ENTITY for model: " + modelId);
         }
+        var result = wrapperService.apply(target, assetInfo);
+        if (!result.success()) {
+            return result;
+        }
 
         applied.put(target.getUniqueId(), new ModelInfo(modelId, ctx));
         return ApplyResult.ok();
@@ -54,6 +61,7 @@ public final class ModelsBridgeImpl implements ModelsBridge {
     @Override
     public void clear(Entity target) {
         Objects.requireNonNull(target, "target");
+        wrapperService.clear(target);
         applied.remove(target.getUniqueId());
     }
 
@@ -61,5 +69,9 @@ public final class ModelsBridgeImpl implements ModelsBridge {
     public Optional<ModelInfo> getApplied(Entity target) {
         Objects.requireNonNull(target, "target");
         return Optional.ofNullable(applied.get(target.getUniqueId()));
+    }
+
+    private void forget(UUID targetId) {
+        applied.remove(targetId);
     }
 }

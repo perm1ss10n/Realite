@@ -7,6 +7,7 @@ import ru.realite.core.api.models.ModelAsset;
 import ru.realite.core.api.models.ModelAssetInfo;
 import ru.realite.core.api.models.ModelAssetKind;
 import ru.realite.core.api.models.ModelAssetRegistry;
+import ru.realite.core.api.models.ModelDisplaySpec;
 import ru.realite.core.api.models.ModelOffset;
 import ru.realite.core.api.models.ModelRendererHint;
 import ru.realite.core.api.models.ModelVisualProfile;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import org.bukkit.Material;
 
 public final class ModelAssetRegistryImpl implements ModelAssetRegistry {
 
@@ -65,7 +67,7 @@ public final class ModelAssetRegistryImpl implements ModelAssetRegistry {
                     continue;
                 }
 
-                String rendererHintRaw = section.getString("rendererHint", "NONE");
+                String rendererHintRaw = section.getString("rendererHint", "DISPLAY");
                 ModelRendererHint rendererHint = parseRendererHint(rendererHintRaw);
                 if (rendererHint == null) {
                     plugin.getLogger().warning("Invalid rendererHint '" + rendererHintRaw + "' for model " + modelId + " in " + file.getName());
@@ -73,7 +75,8 @@ public final class ModelAssetRegistryImpl implements ModelAssetRegistry {
                 }
 
                 ModelVisualProfile visualProfile = parseVisualProfile(section.getConfigurationSection("visualProfile"));
-                ModelAsset asset = new ModelAsset(modelId, kind, visualProfile, rendererHint);
+                ModelDisplaySpec displaySpec = parseDisplaySpec(section.getConfigurationSection("display"));
+                ModelAsset asset = new ModelAsset(modelId, kind, visualProfile, rendererHint, displaySpec);
                 assets.put(modelId, new ModelAssetInfo(asset, file.getName()));
             }
         }
@@ -110,6 +113,22 @@ public final class ModelAssetRegistryImpl implements ModelAssetRegistry {
             z = offsetSection.getDouble("z", 0.0);
         }
         return new ModelVisualProfile(scale, new ModelOffset(x, y, z), anchor);
+    }
+
+    private ModelDisplaySpec parseDisplaySpec(ConfigurationSection section) {
+        if (section == null) {
+            return new ModelDisplaySpec(Material.STICK, null);
+        }
+        String materialName = section.getString("material", "STICK");
+        Material material = Material.matchMaterial(materialName);
+        if (material == null) {
+            plugin.getLogger().warning("Invalid display material '" + materialName + "', falling back to STICK.");
+            material = Material.STICK;
+        }
+        Integer customModelData = section.contains("customModelData")
+                ? section.getInt("customModelData")
+                : null;
+        return new ModelDisplaySpec(material, customModelData);
     }
 
     private ModelAssetKind parseKind(String raw) {

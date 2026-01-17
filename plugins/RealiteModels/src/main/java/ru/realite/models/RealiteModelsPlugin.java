@@ -10,6 +10,7 @@ import ru.realite.core.api.CoreApi;
 import ru.realite.core.api.models.ModelAssetRegistry;
 import ru.realite.core.api.models.ModelsBridge;
 import ru.realite.models.command.ModelsCommand;
+import ru.realite.models.service.ModelWrapperService;
 import ru.realite.models.service.ModelsBridgeImpl;
 
 public final class RealiteModelsPlugin extends JavaPlugin {
@@ -20,10 +21,13 @@ public final class RealiteModelsPlugin extends JavaPlugin {
     private boolean bridgeRegistered;
     private boolean registrationConflictLogged;
     private ModelsBridgeImpl bridge;
+    private ModelWrapperService wrapperService;
 
     @Override
     public void onEnable() {
-        bridge = new ModelsBridgeImpl(this::resolveModelRegistry);
+        wrapperService = new ModelWrapperService(this);
+        wrapperService.start();
+        bridge = new ModelsBridgeImpl(this::resolveModelRegistry, wrapperService);
 
         if (!attemptRegisterBridge()) {
             startCorePolling();
@@ -37,6 +41,10 @@ public final class RealiteModelsPlugin extends JavaPlugin {
         if (corePollingTask != null) {
             corePollingTask.cancel();
             corePollingTask = null;
+        }
+        if (wrapperService != null) {
+            wrapperService.stop();
+            wrapperService = null;
         }
         unregisterBridge();
     }

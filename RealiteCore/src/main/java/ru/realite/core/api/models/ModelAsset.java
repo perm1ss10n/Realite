@@ -5,12 +5,14 @@ import java.util.Objects;
 public record ModelAsset(String modelId,
                          ModelAssetKind kind,
                          ModelVisualProfile visualProfile,
-                         ModelRendererHint rendererHint) {
+                         ModelRendererHint rendererHint,
+                         ModelDisplaySpec displaySpec) {
 
     public ModelAsset {
         Objects.requireNonNull(modelId, "modelId");
         Objects.requireNonNull(kind, "kind");
         Objects.requireNonNull(visualProfile, "visualProfile");
         Objects.requireNonNull(rendererHint, "rendererHint");
+        Objects.requireNonNull(displaySpec, "displaySpec");
     }
 }
