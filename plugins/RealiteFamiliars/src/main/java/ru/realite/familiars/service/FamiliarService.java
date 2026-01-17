@@ -21,6 +21,10 @@ public interface FamiliarService {
 
     Optional<FamiliarType> getType(String typeId);
 
+    Optional<FamiliarInstance> getSummoned(UUID owner);
+
+    void addExperience(UUID owner, String typeId, int amount, FamiliarXpSource source);
+
     CheckResult summon(Player player, String typeId);
 
     CheckResult dismiss(Player player, String typeId);
@@ -34,4 +38,6 @@ public interface FamiliarService {
     boolean isFamiliarEntity(Entity entity);
 
     Optional<FamiliarEntityData> getFamiliarEntityData(Entity entity);
+
+    void recordOwnerCombat(UUID owner);
 }

@@ -9,15 +9,22 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Sittable;
 import org.bukkit.entity.Tameable;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
-import ru.realite.core.api.CoreApi;
-import ru.realite.core.api.classes.ClassTagProvider;
 import ru.realite.familiars.config.FamiliarTypeRepository;
 import ru.realite.familiars.config.TamingRules;
 import ru.realite.familiars.config.TamingRulesRepository;
+import ru.realite.familiars.event.FamiliarLeveledEvent;
+import ru.realite.familiars.integration.classes.ClassesBridge;
+import ru.realite.familiars.integration.limits.CityGuildBridge;
+import ru.realite.familiars.integration.magic.MagicBridge;
+import ru.realite.familiars.integration.quests.FamiliarQuestEvent;
+import ru.realite.familiars.integration.quests.FamiliarQuestEventType;
+import ru.realite.familiars.integration.quests.QuestsBridge;
 import ru.realite.familiars.model.FamiliarBehavior;
 import ru.realite.familiars.model.FamiliarInstance;
 import ru.realite.familiars.model.FamiliarState;
@@ -31,32 +38,50 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Locale;
+import java.util.OptionalInt;
 import java.util.logging.Logger;
 
 public final class FamiliarServiceImpl implements FamiliarService {
 
-    private final CoreApi core;
     private final Plugin plugin;
     private final FamiliarStore store;
     private final FamiliarRepository repository;
     private final Logger logger;
+    private final ClassesBridge classesBridge;
+    private final QuestsBridge questsBridge;
+    private final MagicBridge magicBridge;
+    private final CityGuildBridge cityGuildBridge;
     private FamiliarTypeRepository typeRepository;
     private TamingRulesRepository rulesRepository;
     private final Map<UUID, Instant> lastTame = new ConcurrentHashMap<>();
     private final Map<UUID, Instant> lastSummon = new ConcurrentHashMap<>();
+    private final Map<UUID, Instant> lastCombat = new ConcurrentHashMap<>();
     private final Map<UUID, Map<String, FamiliarBehavior>> behaviors = new ConcurrentHashMap<>();
     private final NamespacedKey ownerKey = new NamespacedKey("realite", "familiar_owner");
     private final NamespacedKey typeKey = new NamespacedKey("realite", "familiar_type");
     private final double followDistance = 3.5;
     private final double teleportDistance = 12.0;
+    private static final int XP_PER_LEVEL = 100;
+    private static final int SUPPORT_BUFF_DURATION_TICKS = 60;
+    private static final int UTILITY_BUFF_DURATION_TICKS = 60;
+    private static final int COMBAT_BUFF_DURATION_TICKS = 60;
+    private static final int OUT_OF_COMBAT_SECONDS = 10;
 
-    public FamiliarServiceImpl(CoreApi core, Plugin plugin, FamiliarStore store, FamiliarRepository repository,
-            Logger logger) {
-        this.core = core;
+    public FamiliarServiceImpl(Plugin plugin, FamiliarStore store, FamiliarRepository repository,
+            Logger logger,
+            ClassesBridge classesBridge,
+            QuestsBridge questsBridge,
+            MagicBridge magicBridge,
+            CityGuildBridge cityGuildBridge) {
         this.plugin = plugin;
         this.store = store;
         this.repository = repository;
         this.logger = logger;
+        this.classesBridge = classesBridge;
+        this.questsBridge = questsBridge;
+        this.magicBridge = magicBridge;
+        this.cityGuildBridge = cityGuildBridge;
         startFollowTask();
     }
 
@@ -90,6 +115,10 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 reasons.add("Tame cooldown not finished");
             }
         }
+        OptionalInt maxActive = cityGuildBridge.maxActive(player);
+        if (maxActive.isPresent() && store.countActive(player.getUniqueId()) >= maxActive.getAsInt()) {
+            reasons.add("Limit reached: city-guild-max-active=" + maxActive.getAsInt());
+        }
 
         if (!reasons.isEmpty()) {
             return CheckResult.denied(reasons);
@@ -114,6 +143,10 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 reasons.add("Summon cooldown not finished");
             }
         }
+        OptionalInt maxSummoned = cityGuildBridge.maxSummoned(player);
+        if (maxSummoned.isPresent() && store.countSummoned(player.getUniqueId()) >= maxSummoned.getAsInt()) {
+            reasons.add("Limit reached: city-guild-max-summoned=" + maxSummoned.getAsInt());
+        }
 
         if (!reasons.isEmpty()) {
             return CheckResult.denied(reasons);
@@ -137,6 +170,11 @@ public final class FamiliarServiceImpl implements FamiliarService {
         store.upsert(instance);
         lastTame.put(player.getUniqueId(), Instant.now());
         save();
+        questsBridge.publish(new FamiliarQuestEvent(
+                FamiliarQuestEventType.TAME,
+                player.getUniqueId(),
+                typeId,
+                instance.level()));
         return new TameResult(check, instance);
     }
 
@@ -151,6 +189,62 @@ public final class FamiliarServiceImpl implements FamiliarService {
             return Optional.empty();
         }
         return Optional.ofNullable(typeRepository.get(typeId));
+    }
+
+    @Override
+    public Optional<FamiliarInstance> getSummoned(UUID owner) {
+        for (FamiliarInstance instance : store.getInstances(owner)) {
+            if (instance.state() == FamiliarState.SUMMONED) {
+                return Optional.of(instance);
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public void addExperience(UUID owner, String typeId, int amount, FamiliarXpSource source) {
+        if (owner == null || typeId == null || amount <= 0) {
+            return;
+        }
+        FamiliarInstance instance = getInstance(owner, typeId);
+        if (instance == null) {
+            return;
+        }
+        int xp = instance.xp() + amount;
+        int level = instance.level();
+        Player player = Bukkit.getPlayer(owner);
+        while (xp >= XP_PER_LEVEL) {
+            xp -= XP_PER_LEVEL;
+            int previous = level;
+            level += 1;
+            FamiliarInstance leveled = new FamiliarInstance(
+                    instance.owner(),
+                    instance.typeId(),
+                    level,
+                    xp,
+                    instance.state(),
+                    instance.summonedEntityId());
+            if (player != null) {
+                Bukkit.getPluginManager().callEvent(new FamiliarLeveledEvent(player, leveled, previous, level));
+            }
+            questsBridge.publish(new FamiliarQuestEvent(
+                    FamiliarQuestEventType.LEVEL,
+                    owner,
+                    instance.typeId(),
+                    level));
+        }
+        if (level == instance.level() && xp == instance.xp()) {
+            return;
+        }
+        FamiliarInstance updated = new FamiliarInstance(
+                instance.owner(),
+                instance.typeId(),
+                level,
+                xp,
+                instance.state(),
+                instance.summonedEntityId());
+        store.upsert(updated);
+        save();
     }
 
     @Override
@@ -207,6 +301,12 @@ public final class FamiliarServiceImpl implements FamiliarService {
         registerBehavior(player.getUniqueId(), typeId, FamiliarBehavior.FOLLOW, spawned);
         lastSummon.put(player.getUniqueId(), Instant.now());
         save();
+        questsBridge.publish(new FamiliarQuestEvent(
+                FamiliarQuestEventType.SUMMON,
+                player.getUniqueId(),
+                typeId,
+                summoned.level()));
+        magicBridge.refresh(player, summoned);
 
         return CheckResult.allowed(List.of());
     }
@@ -232,6 +332,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 Optional.empty());
         store.upsert(updated);
         removeBehavior(instance.owner(), instance.typeId());
+        magicBridge.clear(player, instance);
         save();
         return CheckResult.allowed(List.of());
     }
@@ -273,6 +374,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
             store.upsert(updated);
             removeBehavior(instance.owner(), instance.typeId());
         }
+        lastCombat.remove(owner);
         save();
     }
 
@@ -322,6 +424,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
         store.clear();
         lastTame.clear();
         lastSummon.clear();
+        lastCombat.clear();
         behaviors.clear();
     }
 
@@ -377,16 +480,15 @@ public final class FamiliarServiceImpl implements FamiliarService {
         if (type.allowedClasses().isEmpty()) {
             return;
         }
-        ClassTagProvider provider = core.services().get(ClassTagProvider.class);
-        if (provider == null) {
-            notes.add("Class provider missing; skipping allowedClasses check");
+        String classId = classesBridge.getActiveClassId(player);
+        if (classId == null || classId.isBlank()) {
+            notes.add("Class bridge missing; skipping allowedClasses check");
             return;
         }
-        String className = provider.getTag(player).displayName();
         boolean allowed = type.allowedClasses().stream()
-                .anyMatch(entry -> entry.equalsIgnoreCase(className));
+                .anyMatch(entry -> entry.equalsIgnoreCase(classId));
         if (!allowed) {
-            reasons.add("Class '" + className + "' not allowed");
+            reasons.add("Class '" + classId + "' not allowed");
         }
     }
 
@@ -443,6 +545,7 @@ public final class FamiliarServiceImpl implements FamiliarService {
         return switch (id) {
             case "wolf" -> EntityType.WOLF;
             case "fairy" -> EntityType.ALLAY;
+            case "fox" -> EntityType.FOX;
             default -> EntityType.WOLF;
         };
     }
@@ -504,6 +607,8 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 }
                 FamiliarBehavior behavior = behaviorEntry.getValue();
                 applyBehavior(entity, behavior, owner.getUniqueId(), instance.typeId());
+                FamiliarType type = getType(instance.typeId()).orElse(null);
+                applyRoleEffects(owner, entity, type);
                 if (behavior == FamiliarBehavior.STAY) {
                     continue;
                 }
@@ -529,5 +634,65 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 entity.setVelocity(velocity);
             }
         }
+    }
+
+    private void applyRoleEffects(Player owner, Entity entity, FamiliarType type) {
+        if (owner == null || type == null) {
+            return;
+        }
+        String role = type.role().toLowerCase(Locale.ROOT);
+        switch (role) {
+            case "combat" -> applyCombatRole(entity);
+            case "support" -> applySupportRole(owner);
+            case "utility" -> applyUtilityRole(owner);
+            default -> {
+            }
+        }
+    }
+
+    private void applyCombatRole(Entity entity) {
+        if (!(entity instanceof LivingEntity living)) {
+            return;
+        }
+        living.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, COMBAT_BUFF_DURATION_TICKS, 0, true,
+                false, false));
+    }
+
+    private void applySupportRole(Player owner) {
+        applyPlayerEffect(owner, PotionEffectType.REGENERATION, SUPPORT_BUFF_DURATION_TICKS, 0);
+    }
+
+    private void applyUtilityRole(Player owner) {
+        if (!isOutOfCombat(owner.getUniqueId())) {
+            return;
+        }
+        applyPlayerEffect(owner, PotionEffectType.SPEED, UTILITY_BUFF_DURATION_TICKS, 0);
+    }
+
+    private void applyPlayerEffect(Player player, PotionEffectType type, int durationTicks, int amplifier) {
+        if (player == null || type == null) {
+            return;
+        }
+        PotionEffect existing = player.getPotionEffect(type);
+        if (existing != null && existing.getDuration() > durationTicks / 2) {
+            return;
+        }
+        player.addPotionEffect(new PotionEffect(type, durationTicks, amplifier, true, false, false));
+    }
+
+    private boolean isOutOfCombat(UUID owner) {
+        Instant last = lastCombat.get(owner);
+        if (last == null) {
+            return true;
+        }
+        return last.plusSeconds(OUT_OF_COMBAT_SECONDS).isBefore(Instant.now());
+    }
+
+    @Override
+    public void recordOwnerCombat(UUID owner) {
+        if (owner == null) {
+            return;
+        }
+        lastCombat.put(owner, Instant.now());
     }
 }
