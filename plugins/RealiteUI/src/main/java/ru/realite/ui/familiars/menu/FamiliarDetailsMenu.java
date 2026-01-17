@@ -86,7 +86,12 @@ public final class FamiliarDetailsMenu extends BaseMenu {
                     : data.inventory().stream()
                             .map(item -> messages.get("ui.familiars.details.inventory.entry", Map.of("item", item)))
                             .toList();
-            setButton(29, Material.CHEST, messages.get("ui.familiars.details.inventory.title"), inventoryLore, null);
+            setButton(29, Material.CHEST, messages.get("ui.familiars.details.inventory.title"), inventoryLore,
+                    p -> {
+                        if (!uiService.openInventory(p, data.typeId())) {
+                            p.sendMessage(messages.get("ui.action.unavailable"));
+                        }
+                    });
         } else {
             setButton(29, Material.GRAY_DYE, messages.get("ui.familiars.details.inventory.title"),
                     List.of(messages.get("ui.action.unavailable")), null);

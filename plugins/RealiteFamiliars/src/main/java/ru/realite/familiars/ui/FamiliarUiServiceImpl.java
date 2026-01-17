@@ -31,16 +31,19 @@ import ru.realite.familiars.model.FamiliarType;
 import ru.realite.familiars.service.CheckResult;
 import ru.realite.familiars.service.FamiliarLimitInfo;
 import ru.realite.familiars.service.FamiliarService;
+import ru.realite.familiars.service.VirtualInventoryService;
 
 public final class FamiliarUiServiceImpl implements FamiliarUiService {
 
     private static final int XP_MAX = 100;
 
     private final FamiliarService service;
+    private final VirtualInventoryService inventoryService;
     private final Map<UUID, String> activeSelections = new ConcurrentHashMap<>();
 
-    public FamiliarUiServiceImpl(FamiliarService service) {
+    public FamiliarUiServiceImpl(FamiliarService service, VirtualInventoryService inventoryService) {
         this.service = service;
+        this.inventoryService = inventoryService;
     }
 
     @Override
@@ -89,6 +92,10 @@ public final class FamiliarUiServiceImpl implements FamiliarUiService {
         }
         FamiliarType type = service.getType(instance.typeId()).orElse(null);
         Map<String, Integer> stats = type != null ? type.baseStats() : Map.of();
+        boolean inventoryEnabled = inventoryService != null;
+        List<String> inventory = inventoryService != null
+                ? inventoryService.describe(instance.inventory())
+                : List.of();
         FamiliarDetailsData data = new FamiliarDetailsData(
                 instance.typeId(),
                 resolveName(instance, type),
@@ -100,9 +107,32 @@ public final class FamiliarUiServiceImpl implements FamiliarUiService {
                 mapState(instance.state()),
                 stats,
                 List.of(),
-                false,
-                List.of());
+                inventoryEnabled,
+                inventory);
         return Optional.of(data);
+    }
+
+    @Override
+    public boolean openInventory(Player player, String typeId) {
+        if (player == null || typeId == null || typeId.isBlank()) {
+            return false;
+        }
+        FamiliarInstance instance = findInstance(player.getUniqueId(), typeId);
+        if (instance == null) {
+            return false;
+        }
+        if (instance.state() == FamiliarState.SUMMONED && instance.summonedEntityId().isPresent()) {
+            Entity entity = Bukkit.getEntity(instance.summonedEntityId().get());
+            if (entity instanceof org.bukkit.inventory.InventoryHolder holder) {
+                player.openInventory(holder.getInventory());
+                return true;
+            }
+        }
+        if (inventoryService == null) {
+            return false;
+        }
+        FamiliarType type = service.getType(instance.typeId()).orElse(null);
+        return inventoryService.open(player, instance, resolveName(instance, type));
     }
 
     @Override

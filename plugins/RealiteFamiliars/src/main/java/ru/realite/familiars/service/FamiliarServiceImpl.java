@@ -9,6 +9,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Sittable;
 import org.bukkit.entity.Tameable;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -195,7 +196,8 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 1,
                 0,
                 FamiliarState.IDLE,
-                Optional.empty());
+                Optional.empty(),
+                List.of());
         store.upsert(instance);
         lastTame.put(player.getUniqueId(), Instant.now());
         save();
@@ -258,7 +260,8 @@ public final class FamiliarServiceImpl implements FamiliarService {
                     level,
                     xp,
                     instance.state(),
-                    instance.summonedEntityId());
+                    instance.summonedEntityId(),
+                    instance.inventory());
             if (player != null) {
                 Bukkit.getPluginManager().callEvent(new FamiliarLeveledEvent(player, leveled, previous, level));
             }
@@ -277,7 +280,8 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 level,
                 xp,
                 instance.state(),
-                instance.summonedEntityId());
+                instance.summonedEntityId(),
+                instance.inventory());
         store.upsert(updated);
         save();
         publishUiInvalidate(player);
@@ -310,7 +314,8 @@ public final class FamiliarServiceImpl implements FamiliarService {
                     instance.level(),
                     instance.xp(),
                     FamiliarState.IDLE,
-                    Optional.empty());
+                    Optional.empty(),
+                    instance.inventory());
             store.upsert(instance);
             save();
         }
@@ -331,7 +336,8 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 instance.level(),
                 instance.xp(),
                 FamiliarState.SUMMONED,
-                Optional.of(spawned.getUniqueId()));
+                Optional.of(spawned.getUniqueId()),
+                instance.inventory());
 
         store.upsert(summoned);
         registerBehavior(player.getUniqueId(), typeId, FamiliarBehavior.FOLLOW, spawned);
@@ -366,7 +372,8 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 instance.level(),
                 instance.xp(),
                 FamiliarState.IDLE,
-                Optional.empty());
+                Optional.empty(),
+                instance.inventory());
         store.upsert(updated);
         removeBehavior(instance.owner(), instance.typeId());
         magicBridge.clear(player, instance);
@@ -408,7 +415,8 @@ public final class FamiliarServiceImpl implements FamiliarService {
                     instance.level(),
                     instance.xp(),
                     FamiliarState.IDLE,
-                    Optional.empty());
+                    Optional.empty(),
+                    instance.inventory());
             store.upsert(updated);
             removeBehavior(instance.owner(), instance.typeId());
         }
@@ -430,7 +438,8 @@ public final class FamiliarServiceImpl implements FamiliarService {
                 instance.level(),
                 instance.xp(),
                 FamiliarState.IDLE,
-                Optional.empty());
+                Optional.empty(),
+                instance.inventory());
         store.upsert(updated);
         removeBehavior(instance.owner(), instance.typeId());
         save();
@@ -482,7 +491,8 @@ public final class FamiliarServiceImpl implements FamiliarService {
                         instance.level(),
                         instance.xp(),
                         FamiliarState.IDLE,
-                        Optional.empty());
+                        Optional.empty(),
+                        instance.inventory());
                 store.upsert(updated);
             }
         }
@@ -679,7 +689,8 @@ public final class FamiliarServiceImpl implements FamiliarService {
                             instance.level(),
                             instance.xp(),
                             FamiliarState.IDLE,
-                            Optional.empty());
+                            Optional.empty(),
+                            instance.inventory());
                     store.upsert(updated);
                     removeBehavior(instance.owner(), instance.typeId());
                     save();
@@ -774,6 +785,27 @@ public final class FamiliarServiceImpl implements FamiliarService {
             return;
         }
         lastCombat.put(owner, Instant.now());
+    }
+
+    @Override
+    public void updateInventory(UUID owner, String typeId, List<ItemStack> inventory) {
+        if (owner == null || typeId == null) {
+            return;
+        }
+        FamiliarInstance instance = getInstance(owner, typeId);
+        if (instance == null) {
+            return;
+        }
+        FamiliarInstance updated = new FamiliarInstance(
+                instance.owner(),
+                instance.typeId(),
+                instance.level(),
+                instance.xp(),
+                instance.state(),
+                instance.summonedEntityId(),
+                inventory);
+        store.upsert(updated);
+        save();
     }
 
     private void publishUiInvalidate(Player player) {
