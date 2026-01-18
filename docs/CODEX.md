@@ -18,6 +18,14 @@
 - Проверить RealiteUI: есть ли уже паттерн “Manager screen / Details screen / Confirm dialog”.
 - RealiteModels UI не рисует вообще.
 
+### Resource pack fallback (обязательное правило)
+- Все кастомные предметы и модели обязаны иметь ванильный fallback.
+- Resource pack улучшает визуал, но не обязателен для геймплея.
+- `ModelsBridge.apply(...)` возвращает `APPLIED`, `FALLBACK` или `FAILED`; `FALLBACK` — нормальное состояние.
+- В примерах конфигов фиксируем, что `customModelData` и model-ресурсы опциональны, без RP всё выглядит нормально.
+- Smoke-test: предмет с `customModelData` и предмет без него должны корректно идентифицироваться
+  при принятом и отклонённом RP (без визуальных ошибок).
+
 ### Adventure compliance
 - Запрещено: `ChatColor`, legacy цвет-коды, `player.sendMessage(String)` с секциями.
 - Разрешено: `Component`, `MiniMessage`, централизованные message keys.

@@ -75,12 +75,12 @@ public final class ModelWrapperService implements Listener {
         Objects.requireNonNull(assetInfo, "assetInfo");
 
         if (assetInfo.asset().rendererHint() != ModelRendererHint.DISPLAY) {
-            return ApplyResult.fail("Model renderer hint is not DISPLAY for model: " + assetInfo.asset().modelId());
+            return ApplyResult.failed("Model renderer hint is not DISPLAY for model: " + assetInfo.asset().modelId());
         }
 
         ItemDisplay wrapper = ensureWrapper(target, assetInfo);
         if (wrapper == null) {
-            return ApplyResult.fail("Failed to create display wrapper for model: " + assetInfo.asset().modelId());
+            return ApplyResult.failed("Failed to create display wrapper for model: " + assetInfo.asset().modelId());
         }
 
         UUID wrapperId = wrapper.getUniqueId();
@@ -88,7 +88,7 @@ public final class ModelWrapperService implements Listener {
         markTarget(target, assetInfo.asset().modelId(), wrapperId);
         markWrapper(wrapper, assetInfo.asset().modelId(), target.getUniqueId());
         syncWrapper(target, wrapper, assetInfo.asset().visualProfile());
-        return ApplyResult.ok();
+        return ApplyResult.applied();
     }
 
     public void clear(Entity target) {

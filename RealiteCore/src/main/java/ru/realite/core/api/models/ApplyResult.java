@@ -2,21 +2,38 @@ package ru.realite.core.api.models;
 
 import java.util.Objects;
 
-public record ApplyResult(boolean success, String message) {
+public record ApplyResult(ApplyState state, String message) {
 
     public ApplyResult {
+        Objects.requireNonNull(state, "state");
         Objects.requireNonNull(message, "message");
     }
 
-    public static ApplyResult ok() {
-        return new ApplyResult(true, "");
+    public boolean applied() {
+        return state == ApplyState.APPLIED;
     }
 
-    public static ApplyResult ok(String message) {
-        return new ApplyResult(true, message == null ? "" : message);
+    public boolean fallback() {
+        return state == ApplyState.FALLBACK;
     }
 
-    public static ApplyResult fail(String message) {
-        return new ApplyResult(false, message == null ? "" : message);
+    public boolean failed() {
+        return state == ApplyState.FAILED;
+    }
+
+    public static ApplyResult applied() {
+        return new ApplyResult(ApplyState.APPLIED, "");
+    }
+
+    public static ApplyResult applied(String message) {
+        return new ApplyResult(ApplyState.APPLIED, message == null ? "" : message);
+    }
+
+    public static ApplyResult fallback(String message) {
+        return new ApplyResult(ApplyState.FALLBACK, message == null ? "" : message);
+    }
+
+    public static ApplyResult failed(String message) {
+        return new ApplyResult(ApplyState.FAILED, message == null ? "" : message);
     }
 }

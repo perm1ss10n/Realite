@@ -59,12 +59,13 @@ Centralized item provider for the entire platform.
 - YAML-based item registry (stable itemId)
 - support for:
   - `material`
-  - `customModelData`
+  - `customModelData` (optional; vanilla material is the required fallback)
   - localization keys for name and lore
   - glow
   - unstackable items
 - strict server-side identification (not chat-name based)
 - public integration via `ItemsBridge`
+- resource pack is optional; items always render as vanilla material without it
 
 ### 🔮 Magic and Spells (RealiteMagic)
 A magic system designed for extensibility and balance.
@@ -251,7 +252,8 @@ Purpose:
 - registers `ModelsBridge` in RealiteCore
 - applies custom visual models to entities
 - uses assets from RealiteItems
-- optional with graceful fallback
+- resource pack is optional; models fall back to vanilla entities when missing
+- `ModelsBridge.apply` returns `APPLIED`, `FALLBACK`, or `FAILED`
 
 ---
 

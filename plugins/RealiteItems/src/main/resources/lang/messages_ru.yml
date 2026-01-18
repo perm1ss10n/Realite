@@ -17,6 +17,10 @@ items:
     lore-1: "&7Помогает находить путь."
     lore-2: "&7Технический предмет RealiteItems."
 
+  example_plain_compass:
+    name: "&eОбычный компас"
+    lore-1: "&7Пример ванильного fallback."
+
   familiar_taming_tag:
     name: "&dБирка приручения"
     lore-1: "&7Используйте, чтобы приручить фамильяра."
