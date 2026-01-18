@@ -13,6 +13,7 @@ import ru.realite.core.api.models.ModelAssetInfo;
 import ru.realite.core.api.models.ModelAssetKind;
 import ru.realite.core.api.models.ModelAssetRegistry;
 import ru.realite.core.api.models.ModelInfo;
+import ru.realite.core.api.models.ModelRendererHint;
 import ru.realite.core.api.models.ModelsBridge;
 
 public final class ModelsBridgeImpl implements ModelsBridge {
@@ -49,9 +50,13 @@ public final class ModelsBridgeImpl implements ModelsBridge {
         if (assetInfo.asset().kind() != ModelAssetKind.ENTITY) {
             return ApplyResult.fail("Model asset kind must be ENTITY for model: " + modelId);
         }
-        var result = wrapperService.apply(target, assetInfo);
-        if (!result.success()) {
-            return result;
+        if (assetInfo.asset().rendererHint() == ModelRendererHint.DISPLAY) {
+            var result = wrapperService.apply(target, assetInfo);
+            if (!result.success()) {
+                return result;
+            }
+        } else if (assetInfo.asset().rendererHint() != ModelRendererHint.NONE) {
+            return ApplyResult.fail("Model renderer hint is not supported for model: " + modelId);
         }
 
         applied.put(target.getUniqueId(), new ModelInfo(modelId, ctx));
