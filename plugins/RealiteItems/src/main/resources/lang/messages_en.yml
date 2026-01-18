@@ -17,6 +17,10 @@ items:
     lore-1: "&7Helps you find the way."
     lore-2: "&7Technical item from RealiteItems."
 
+  example_plain_compass:
+    name: "&ePlain Compass"
+    lore-1: "&7Vanilla fallback example."
+
   familiar_taming_tag:
     name: "&dFamiliar Taming Tag"
     lore-1: "&7Use to tame a familiar."

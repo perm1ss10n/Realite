@@ -27,7 +27,7 @@ public final class NoopModelsBridge implements ModelsBridge {
     @Override
     public ApplyResult apply(Entity target, String modelId, ModelContext ctx) {
         warning.warnOnce();
-        return ApplyResult.fail("Models bridge not available.");
+        return ApplyResult.fallback("Models bridge not available.");
     }
 
     @Override

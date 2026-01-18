@@ -4,16 +4,11 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.io.BukkitObjectInputStream;
-import org.bukkit.util.io.BukkitObjectOutputStream;
 import ru.realite.familiars.model.FamiliarInstance;
 import ru.realite.familiars.model.FamiliarState;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,11 +31,13 @@ public final class YamlFamiliarRepository implements FamiliarRepository {
         if (!file.exists()) {
             return result;
         }
+
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
         ConfigurationSection owners = config.getConfigurationSection("owners");
         if (owners == null) {
             return result;
         }
+
         for (String ownerId : owners.getKeys(false)) {
             UUID owner;
             try {
@@ -49,11 +46,15 @@ public final class YamlFamiliarRepository implements FamiliarRepository {
                 plugin.getLogger().warning("Invalid owner UUID in familiars store: " + ownerId);
                 continue;
             }
+
             ConfigurationSection ownerSection = owners.getConfigurationSection(ownerId);
             if (ownerSection == null) {
                 continue;
             }
+
             List<FamiliarInstance> instances = new ArrayList<>();
+
+            // legacy: owners.<uuid>.typeId + owners.<uuid>.(fields)
             String legacyTypeId = ownerSection.getString("typeId");
             if (legacyTypeId != null && !legacyTypeId.isBlank()) {
                 instances.add(readInstance(ownerId, owner, legacyTypeId, ownerSection));
@@ -66,10 +67,12 @@ public final class YamlFamiliarRepository implements FamiliarRepository {
                     instances.add(readInstance(ownerId, owner, typeId, instanceSection));
                 }
             }
+
             if (!instances.isEmpty()) {
                 result.put(owner, instances);
             }
         }
+
         return result;
     }
 
@@ -77,20 +80,25 @@ public final class YamlFamiliarRepository implements FamiliarRepository {
     public void save(Map<UUID, List<FamiliarInstance>> data) {
         YamlConfiguration config = new YamlConfiguration();
         ConfigurationSection owners = config.createSection("owners");
+
         if (data != null) {
             for (Map.Entry<UUID, List<FamiliarInstance>> entry : data.entrySet()) {
                 String ownerId = entry.getKey().toString();
                 ConfigurationSection ownerSection = owners.createSection(ownerId);
+
                 for (FamiliarInstance instance : entry.getValue()) {
                     ConfigurationSection instanceSection = ownerSection.createSection(instance.typeId());
                     instanceSection.set("level", instance.level());
                     instanceSection.set("xp", instance.xp());
                     instanceSection.set("state", instance.state().name());
                     instanceSection.set("summonedEntityId", instance.summonedEntityId().map(UUID::toString).orElse(""));
+
+                    // ✅ inventory as YAML list of maps
                     instanceSection.set("inventory", serializeInventory(instance.inventory()));
                 }
             }
         }
+
         try {
             file.getParentFile().mkdirs();
             config.save(file);
@@ -102,6 +110,7 @@ public final class YamlFamiliarRepository implements FamiliarRepository {
     private FamiliarInstance readInstance(String ownerId, UUID owner, String typeId, ConfigurationSection section) {
         int level = section.getInt("level", 1);
         int xp = section.getInt("xp", 0);
+
         String stateRaw = section.getString("state", FamiliarState.IDLE.name());
         FamiliarState state;
         try {
@@ -109,6 +118,7 @@ public final class YamlFamiliarRepository implements FamiliarRepository {
         } catch (IllegalArgumentException e) {
             state = FamiliarState.IDLE;
         }
+
         String summonedRaw = section.getString("summonedEntityId", "");
         Optional<UUID> summoned = Optional.empty();
         if (summonedRaw != null && !summonedRaw.isBlank()) {
@@ -118,47 +128,64 @@ public final class YamlFamiliarRepository implements FamiliarRepository {
                 plugin.getLogger().warning("Invalid summoned entity UUID for " + ownerId + ":" + typeId);
             }
         }
-        List<ItemStack> inventory = deserializeInventory(section.getStringList("inventory"));
+
+        // ✅ read inventory maps
+        List<ItemStack> inventory = deserializeInventory(section.getList("inventory"));
+
         return new FamiliarInstance(owner, typeId, level, xp, state, summoned, inventory);
     }
 
-    private List<String> serializeInventory(List<ItemStack> items) {
+    /**
+     * Store inventory as List<Map<String, Object>>.
+     * Each item uses Bukkit's ConfigurationSerializable map from
+     * ItemStack#serialize().
+     */
+    private List<Map<String, Object>> serializeInventory(List<ItemStack> items) {
         if (items == null || items.isEmpty()) {
             return List.of();
         }
-        List<String> encoded = new ArrayList<>();
+
+        List<Map<String, Object>> out = new ArrayList<>(items.size());
         for (ItemStack stack : items) {
             if (stack == null) {
-                encoded.add("");
+                out.add(null);
                 continue;
             }
-            try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                 BukkitObjectOutputStream out = new BukkitObjectOutputStream(bytes)) {
-                out.writeObject(stack);
-                out.flush();
-                encoded.add(Base64.getEncoder().encodeToString(bytes.toByteArray()));
+            try {
+                out.add(stack.serialize());
             } catch (Exception e) {
                 plugin.getLogger().warning("Failed to serialize familiar item: " + e.getMessage());
-                encoded.add("");
+                out.add(null);
             }
         }
-        return encoded;
+        return out;
     }
 
-    private List<ItemStack> deserializeInventory(List<String> encoded) {
-        if (encoded == null || encoded.isEmpty()) {
+    /**
+     * Read inventory from YAML list. Expected elements:
+     * - null
+     * - Map<String, Object> produced by ItemStack#serialize()
+     */
+    @SuppressWarnings("unchecked")
+    private List<ItemStack> deserializeInventory(Object rawList) {
+        if (!(rawList instanceof List<?> list) || list.isEmpty()) {
             return List.of();
         }
-        List<ItemStack> items = new ArrayList<>();
-        for (String raw : encoded) {
-            if (raw == null || raw.isBlank()) {
+
+        List<ItemStack> items = new ArrayList<>(list.size());
+        for (Object el : list) {
+            if (el == null) {
                 items.add(null);
                 continue;
             }
-            try (ByteArrayInputStream bytes = new ByteArrayInputStream(Base64.getDecoder().decode(raw));
-                 BukkitObjectInputStream in = new BukkitObjectInputStream(bytes)) {
-                Object obj = in.readObject();
-                items.add(obj instanceof ItemStack stack ? stack : null);
+            if (!(el instanceof Map<?, ?> mapAny)) {
+                items.add(null);
+                continue;
+            }
+
+            try {
+                Map<String, Object> map = (Map<String, Object>) mapAny;
+                items.add(ItemStack.deserialize(map));
             } catch (Exception e) {
                 plugin.getLogger().warning("Failed to deserialize familiar item: " + e.getMessage());
                 items.add(null);
