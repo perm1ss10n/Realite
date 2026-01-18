@@ -52,7 +52,7 @@ public final class ModelsBridgeImpl implements ModelsBridge {
         }
         if (assetInfo.asset().rendererHint() == ModelRendererHint.DISPLAY) {
             var result = wrapperService.apply(target, assetInfo);
-            if (result.failed()) {
+            if (result.isFailed()) {
                 return ApplyResult.fallback(result.message());
             }
         } else if (assetInfo.asset().rendererHint() != ModelRendererHint.NONE) {
