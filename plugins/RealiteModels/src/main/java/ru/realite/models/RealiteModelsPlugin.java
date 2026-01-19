@@ -7,11 +7,15 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import ru.realite.core.api.CoreApi;
+import ru.realite.core.api.ConfigService;
 import ru.realite.core.api.models.ModelAssetRegistry;
 import ru.realite.core.api.models.ModelsBridge;
 import ru.realite.models.command.ModelsCommand;
+import ru.realite.models.config.ModelsConfig;
 import ru.realite.models.service.ModelWrapperService;
 import ru.realite.models.service.ModelsBridgeImpl;
+import java.nio.file.Path;
+import org.bukkit.configuration.file.YamlConfiguration;
 
 public final class RealiteModelsPlugin extends JavaPlugin {
 
@@ -22,10 +26,13 @@ public final class RealiteModelsPlugin extends JavaPlugin {
     private boolean registrationConflictLogged;
     private ModelsBridgeImpl bridge;
     private ModelWrapperService wrapperService;
+    private ModelsConfig modelsConfig = ModelsConfig.empty();
+    private boolean coreConfigLoaded;
 
     @Override
     public void onEnable() {
-        wrapperService = new ModelWrapperService(this);
+        loadModelsConfig(resolveCore());
+        wrapperService = new ModelWrapperService(this, this::getModelsConfig);
         wrapperService.start();
         bridge = new ModelsBridgeImpl(this::resolveModelRegistry, wrapperService);
 
@@ -59,6 +66,8 @@ public final class RealiteModelsPlugin extends JavaPlugin {
             }
             return false;
         }
+
+        loadModelsConfig(core);
 
         boolean registered = core.services().registerIfAbsent(ModelsBridge.class, bridge);
         if (registered) {
@@ -139,12 +148,35 @@ public final class RealiteModelsPlugin extends JavaPlugin {
             getLogger().warning("Command /models not found in plugin.yml; executor not registered.");
             return;
         }
-        ModelsCommand executor = new ModelsCommand(this::resolveModelRegistry);
+        ModelsCommand executor = new ModelsCommand(this::resolveModelRegistry, wrapperService, this::getModelsConfig);
         command.setExecutor(executor);
         command.setTabCompleter(executor);
     }
 
     private void sendConsole(Component message) {
         getServer().getConsoleSender().sendMessage(message);
+    }
+
+    private ModelsConfig getModelsConfig() {
+        return modelsConfig;
+    }
+
+    private void loadModelsConfig(CoreApi core) {
+        if (core == null && coreConfigLoaded) {
+            return;
+        }
+        Path configPath = getDataFolder().toPath().resolve("models.yml");
+        if (core != null) {
+            ConfigService configs = core.services().get(ConfigService.class);
+            if (configs != null) {
+                configs.loadOrCreateDefault(configPath, "models.yml", getClass().getClassLoader());
+                coreConfigLoaded = true;
+            }
+        }
+        if (!configPath.toFile().exists()) {
+            saveResource("models.yml", false);
+        }
+        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(configPath.toFile());
+        modelsConfig = ModelsConfig.load(yaml, getLogger());
     }
 }
