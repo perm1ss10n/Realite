@@ -31,7 +31,7 @@ public final class ModelsConfig {
     private final Map<String, ArmorModelDefinition> armorModels;
 
     private ModelsConfig(Map<String, EntityModelDefinition> entityModels,
-                         Map<String, ArmorModelDefinition> armorModels) {
+            Map<String, ArmorModelDefinition> armorModels) {
         this.entityModels = Map.copyOf(entityModels);
         this.armorModels = Map.copyOf(armorModels);
     }
@@ -107,8 +107,8 @@ public final class ModelsConfig {
     }
 
     private static EntityModelDefinition parseEntityDefinition(String modelId,
-                                                               ConfigurationSection section,
-                                                               Logger logger) {
+            ConfigurationSection section,
+            Logger logger) {
         String entityKey = section.getString("entity");
         if (entityKey == null || entityKey.isBlank()) {
             logger.warning("[Models] Missing entity for model: " + modelId);
@@ -162,8 +162,8 @@ public final class ModelsConfig {
     }
 
     private static ArmorModelDefinition parseArmorDefinition(String itemId,
-                                                             ConfigurationSection section,
-                                                             Logger logger) {
+            ConfigurationSection section,
+            Logger logger) {
         String slotRaw = section.getString("slot", "");
         EquipmentSlot slot = parseEnum(EquipmentSlot.class, slotRaw);
         if (slot == null) {
@@ -195,14 +195,14 @@ public final class ModelsConfig {
     }
 
     private static ArmorElement parseArmorElement(String itemId,
-                                                  Map<?, ?> raw,
-                                                  int index,
-                                                  Logger logger) {
+            Map<?, ?> raw,
+            int index,
+            Logger logger) {
         if (raw == null) {
             return null;
         }
         String elementId = Objects.toString(raw.get("id"), "element_" + index);
-        String itemKey = Objects.toString(raw.getOrDefault("item", "minecraft:stick"), "minecraft:stick");
+        String itemKey = Objects.toString(raw.get("item"), "minecraft:stick");
         Material material = parseMaterial(itemKey);
         if (material == null) {
             logger.warning("[Models] Unknown material " + itemKey + " for armor " + itemId + ", using stick.");
@@ -229,11 +229,11 @@ public final class ModelsConfig {
     }
 
     private static Integer validateCustomModelData(int value,
-                                                   int min,
-                                                   int max,
-                                                   Logger logger,
-                                                   String label,
-                                                   String id) {
+            int min,
+            int max,
+            Logger logger,
+            String label,
+            String id) {
         if (value < min || value > max) {
             logger.warning("[Models] Custom model data " + value + " for " + label + " " + id
                     + " is outside of range " + min + "-" + max + "; ignoring.");
@@ -337,11 +337,11 @@ public final class ModelsConfig {
     }
 
     public record AttachmentSpec(Material material, Integer customModelData, Vector3f offset,
-                                 Vector3f rotation, Vector3f scale) {
+            Vector3f rotation, Vector3f scale) {
     }
 
     public record EntityModelDefinition(String id, EntityType entityType, ModelCondition condition,
-                                        HorseAppearance horseAppearance, AttachmentSpec attachment) {
+            HorseAppearance horseAppearance, AttachmentSpec attachment) {
         public boolean matches(Entity entity) {
             if (!matchesEntity(entity.getType())) {
                 return false;
