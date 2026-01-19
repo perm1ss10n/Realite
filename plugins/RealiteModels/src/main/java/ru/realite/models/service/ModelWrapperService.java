@@ -1,6 +1,10 @@
 package ru.realite.models.service;
 
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -14,14 +18,20 @@ import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Horse;
 import org.bukkit.entity.ItemDisplay;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
+import org.bukkit.event.player.PlayerArmorChangeEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -30,25 +40,35 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import ru.realite.core.api.items.ItemPdcKeys;
 import ru.realite.core.api.models.ApplyResult;
 import ru.realite.core.api.models.ModelAssetInfo;
 import ru.realite.core.api.models.ModelDisplaySpec;
+import ru.realite.core.api.models.ModelPdcKeys;
 import ru.realite.core.api.models.ModelRendererHint;
 import ru.realite.core.api.models.ModelVisualProfile;
 import ru.realite.models.config.ModelsConfig;
 import ru.realite.models.config.ModelsConfig.AttachmentSpec;
+import ru.realite.models.config.ModelsConfig.ArmorElement;
+import ru.realite.models.config.ModelsConfig.ArmorModelDefinition;
 import ru.realite.models.config.ModelsConfig.HorseAppearance;
-import ru.realite.models.config.ModelsConfig.ModelDefinition;
+import ru.realite.models.config.ModelsConfig.EntityModelDefinition;
 
 public final class ModelWrapperService implements Listener {
 
     private static final NamespacedKey DISPLAY_MODEL_ID_KEY = key("realite:modelId");
     private static final NamespacedKey DISPLAY_WRAPPER_ID_KEY = key("realite:wrapperId");
     private static final NamespacedKey DISPLAY_WRAPPER_TARGET_KEY = key("realite:wrapperTarget");
-    private static final NamespacedKey VANILLA_MODEL_ID_KEY = key("realite:model_id");
-    private static final NamespacedKey VANILLA_ATTACHMENT_ID_KEY = key("realite:model_attachment_uuid");
-    private static final NamespacedKey VANILLA_MODEL_VERSION_KEY = key("realite:model_version");
+    private static final NamespacedKey VANILLA_MODEL_ID_KEY = ModelPdcKeys.MODEL_ID;
+    private static final NamespacedKey VANILLA_ATTACHMENT_ID_KEY = ModelPdcKeys.MODEL_ATTACHMENT_UUID;
+    private static final NamespacedKey VANILLA_MODEL_VERSION_KEY = ModelPdcKeys.MODEL_VERSION;
+    private static final NamespacedKey ARMOR_ATTACHMENTS_KEY = ModelPdcKeys.ARMOR_ATTACHMENTS;
     private static final int VANILLA_MODEL_VERSION = 1;
+    private static final List<EquipmentSlot> ARMOR_SLOTS = List.of(
+            EquipmentSlot.HEAD,
+            EquipmentSlot.CHEST,
+            EquipmentSlot.LEGS,
+            EquipmentSlot.FEET);
 
     private final JavaPlugin plugin;
     private final Map<UUID, WrapperState> wrappers = new ConcurrentHashMap<>();
@@ -108,7 +128,7 @@ public final class ModelWrapperService implements Listener {
         return ApplyResult.applied();
     }
 
-    public ApplyResult applyModel(Entity target, String modelId) {
+    public ApplyResult applyEntityModel(Entity target, String modelId) {
         Objects.requireNonNull(target, "target");
         Objects.requireNonNull(modelId, "modelId");
 
@@ -116,7 +136,7 @@ public final class ModelWrapperService implements Listener {
             return ApplyResult.failed("Target must be a horse.");
         }
 
-        ModelDefinition definition = resolveDefinition(modelId).orElse(null);
+        EntityModelDefinition definition = resolveEntityDefinition(modelId).orElse(null);
         if (definition == null) {
             return ApplyResult.failed("Model not found: " + modelId);
         }
@@ -124,7 +144,7 @@ public final class ModelWrapperService implements Listener {
             return ApplyResult.failed("Model " + modelId + " cannot be applied to " + target.getType());
         }
 
-        clearModel(target);
+        clearEntityModel(target);
         ItemDisplay attachment = ensureVanillaAttachment(horse, definition);
         if (attachment == null) {
             return ApplyResult.failed("Failed to create attachment for model: " + modelId);
@@ -145,7 +165,7 @@ public final class ModelWrapperService implements Listener {
         appliedRemover.accept(target.getUniqueId());
     }
 
-    public void clearModel(Entity target) {
+    public void clearEntityModel(Entity target) {
         Objects.requireNonNull(target, "target");
         VanillaState state = vanillaModels.remove(target.getUniqueId());
         if (state != null) {
@@ -156,7 +176,7 @@ public final class ModelWrapperService implements Listener {
         clearVanillaMarkers(target);
     }
 
-    public void reapplyIfNeeded(Entity target) {
+    public void reapplyEntityModelIfNeeded(Entity target) {
         Objects.requireNonNull(target, "target");
         if (!(target instanceof Horse horse)) {
             return;
@@ -168,9 +188,9 @@ public final class ModelWrapperService implements Listener {
             return;
         }
 
-        ModelDefinition definition = resolveDefinition(modelId).orElse(null);
+        EntityModelDefinition definition = resolveEntityDefinition(modelId).orElse(null);
         if (definition == null || !definition.matchesEntity(target.getType())) {
-            clearModel(target);
+            clearEntityModel(target);
             return;
         }
 
@@ -201,6 +221,67 @@ public final class ModelWrapperService implements Listener {
         return Optional.of(new ModelInstanceInfo(modelId, attachmentId, version));
     }
 
+    public void syncArmorAttachments(Player player) {
+        Objects.requireNonNull(player, "player");
+        ModelsConfig config = modelsConfigSupplier.get();
+        if (config == null) {
+            return;
+        }
+
+        Map<EquipmentSlot, ArmorModelDefinition> equippedModels = new HashMap<>();
+        for (EquipmentSlot slot : ARMOR_SLOTS) {
+            ItemStack item = getArmorItem(player, slot);
+            String itemId = resolveItemId(item).orElse(null);
+            if (itemId == null) {
+                continue;
+            }
+            ArmorModelDefinition definition = config.findArmorModel(itemId).orElse(null);
+            if (definition != null && definition.slot() == slot) {
+                equippedModels.put(slot, definition);
+            }
+        }
+
+        PersistentDataContainer pdc = player.getPersistentDataContainer();
+        Map<EquipmentSlot, List<UUID>> stored = readArmorAttachments(pdc);
+        for (EquipmentSlot slot : ARMOR_SLOTS) {
+            ArmorModelDefinition definition = equippedModels.get(slot);
+            List<UUID> existing = stored.getOrDefault(slot, List.of());
+            if (definition == null) {
+                removeAttachments(existing);
+                stored.remove(slot);
+                continue;
+            }
+            List<UUID> updated = syncArmorSlot(player, definition, existing);
+            if (updated.isEmpty()) {
+                stored.remove(slot);
+            } else {
+                stored.put(slot, updated);
+            }
+        }
+
+        writeArmorAttachments(pdc, stored);
+    }
+
+    public void clearArmorAttachments(Player player) {
+        Objects.requireNonNull(player, "player");
+        PersistentDataContainer pdc = player.getPersistentDataContainer();
+        Map<EquipmentSlot, List<UUID>> stored = readArmorAttachments(pdc);
+        for (List<UUID> uuids : stored.values()) {
+            removeAttachments(uuids);
+        }
+        stored.clear();
+        writeArmorAttachments(pdc, stored);
+    }
+
+    public Optional<ArmorAttachmentInfo> getArmorAttachmentInfo(Player player) {
+        Objects.requireNonNull(player, "player");
+        PersistentDataContainer pdc = player.getPersistentDataContainer();
+        if (!pdc.has(ARMOR_ATTACHMENTS_KEY, PersistentDataType.STRING)) {
+            return Optional.empty();
+        }
+        return Optional.of(new ArmorAttachmentInfo(readArmorAttachments(pdc)));
+    }
+
     public void clearAll() {
         for (WrapperState state : wrappers.values()) {
             removeWrapperEntity(state.wrapperId());
@@ -220,6 +301,10 @@ public final class ModelWrapperService implements Listener {
             }
         }
         vanillaModels.clear();
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            clearArmorAttachments(player);
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -229,7 +314,7 @@ public final class ModelWrapperService implements Listener {
             clear(entity);
         }
         if (vanillaModels.containsKey(entity.getUniqueId())) {
-            clearModel(entity);
+            clearEntityModel(entity);
         }
     }
 
@@ -253,9 +338,29 @@ public final class ModelWrapperService implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        syncArmorAttachments(event.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPlayerRespawn(PlayerRespawnEvent event) {
+        Bukkit.getScheduler().runTask(plugin, () -> syncArmorAttachments(event.getPlayer()));
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        clearArmorAttachments(event.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onArmorChange(PlayerArmorChangeEvent event) {
+        syncArmorAttachments(event.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onChunkLoad(ChunkLoadEvent event) {
         for (Entity entity : event.getChunk().getEntities()) {
-            reapplyIfNeeded(entity);
+            reapplyEntityModelIfNeeded(entity);
             tryAutoApply(entity);
         }
     }
@@ -413,7 +518,7 @@ public final class ModelWrapperService implements Listener {
         Bukkit.getScheduler().runTask(plugin, () -> {
             for (var world : Bukkit.getWorlds()) {
                 for (Entity entity : world.getEntities()) {
-                    reapplyIfNeeded(entity);
+                    reapplyEntityModelIfNeeded(entity);
                     tryAutoApply(entity);
                 }
             }
@@ -429,9 +534,9 @@ public final class ModelWrapperService implements Listener {
                 continue;
             }
 
-            ModelDefinition definition = resolveDefinition(state.modelId()).orElse(null);
+            EntityModelDefinition definition = resolveEntityDefinition(state.modelId()).orElse(null);
             if (definition == null || !definition.matchesEntity(target.getType())) {
-                clearModel(target);
+                clearEntityModel(target);
                 continue;
             }
 
@@ -463,23 +568,23 @@ public final class ModelWrapperService implements Listener {
         if (config == null) {
             return;
         }
-        Optional<ModelDefinition> matched = config.matchingFor(entity);
-        matched.ifPresent(definition -> applyModel(horse, definition.id()));
+        Optional<EntityModelDefinition> matched = config.matchingFor(entity);
+        matched.ifPresent(definition -> applyEntityModel(horse, definition.id()));
     }
 
     private boolean hasVanillaModel(Entity entity) {
         return entity.getPersistentDataContainer().has(VANILLA_MODEL_ID_KEY, PersistentDataType.STRING);
     }
 
-    private Optional<ModelDefinition> resolveDefinition(String modelId) {
+    private Optional<EntityModelDefinition> resolveEntityDefinition(String modelId) {
         ModelsConfig config = modelsConfigSupplier.get();
         if (config == null) {
             return Optional.empty();
         }
-        return config.find(modelId);
+        return config.findEntityModel(modelId);
     }
 
-    private ItemDisplay ensureVanillaAttachment(Horse horse, ModelDefinition definition) {
+    private ItemDisplay ensureVanillaAttachment(Horse horse, EntityModelDefinition definition) {
         PersistentDataContainer pdc = horse.getPersistentDataContainer();
         ItemDisplay existing = resolveVanillaAttachment(pdc).orElse(null);
         if (existing != null) {
@@ -497,7 +602,7 @@ public final class ModelWrapperService implements Listener {
         });
     }
 
-    private void updateVanillaAttachment(Horse horse, ItemDisplay display, ModelDefinition definition) {
+    private void updateVanillaAttachment(Horse horse, ItemDisplay display, EntityModelDefinition definition) {
         AttachmentSpec attachment = definition.attachment();
         ItemStack stack = new ItemStack(attachment.material());
         if (attachment.customModelData() != null) {
@@ -576,10 +681,167 @@ public final class ModelWrapperService implements Listener {
                 vanillaModels.remove(state.targetId());
                 Entity target = Bukkit.getEntity(state.targetId());
                 if (target != null) {
-                    reapplyIfNeeded(target);
+                    reapplyEntityModelIfNeeded(target);
                 }
                 return;
             }
+        }
+    }
+
+    private List<UUID> syncArmorSlot(Player player, ArmorModelDefinition definition, List<UUID> existing) {
+        List<UUID> updated = new ArrayList<>();
+        List<ArmorElement> elements = definition.elements();
+        for (int i = 0; i < elements.size(); i++) {
+            ArmorElement element = elements.get(i);
+            UUID existingId = i < existing.size() ? existing.get(i) : null;
+            ItemDisplay display = resolveDisplay(existingId);
+            if (display == null) {
+                display = ensureArmorAttachment(player, element);
+                if (display == null) {
+                    continue;
+                }
+            } else {
+                updateArmorAttachment(player, display, element);
+            }
+            updated.add(display.getUniqueId());
+        }
+        for (int i = elements.size(); i < existing.size(); i++) {
+            removeWrapperEntity(existing.get(i));
+        }
+        return updated;
+    }
+
+    private ItemDisplay ensureArmorAttachment(Player player, ArmorElement element) {
+        return player.getWorld().spawn(player.getLocation(), ItemDisplay.class, display -> {
+            updateArmorAttachment(player, display, element);
+            display.setPersistent(false);
+            display.setTeleportDuration(2);
+            display.setInterpolationDuration(2);
+            display.setInterpolationDelay(0);
+            display.setBillboard(Display.Billboard.CENTER);
+        });
+    }
+
+    private void updateArmorAttachment(Player player, ItemDisplay display, ArmorElement element) {
+        AttachmentSpec attachment = element.attachment();
+        ItemStack stack = new ItemStack(attachment.material());
+        if (attachment.customModelData() != null) {
+            var meta = stack.getItemMeta();
+            meta.setCustomModelData(attachment.customModelData());
+            stack.setItemMeta(meta);
+        }
+        display.setItemStack(stack);
+        display.setTransformation(buildTransformation(attachment));
+        display.setBillboard(Display.Billboard.CENTER);
+
+        if (display.getVehicle() != player) {
+            player.addPassenger(display);
+        }
+    }
+
+    private ItemDisplay resolveDisplay(UUID uuid) {
+        if (uuid == null) {
+            return null;
+        }
+        Entity entity = Bukkit.getEntity(uuid);
+        if (entity instanceof ItemDisplay display) {
+            return display;
+        }
+        return null;
+    }
+
+    private ItemStack getArmorItem(Player player, EquipmentSlot slot) {
+        return switch (slot) {
+            case HEAD -> player.getInventory().getHelmet();
+            case CHEST -> player.getInventory().getChestplate();
+            case LEGS -> player.getInventory().getLeggings();
+            case FEET -> player.getInventory().getBoots();
+            default -> null;
+        };
+    }
+
+    private Optional<String> resolveItemId(ItemStack stack) {
+        if (stack == null || stack.getType().isAir()) {
+            return Optional.empty();
+        }
+        var meta = stack.getItemMeta();
+        if (meta == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(meta.getPersistentDataContainer().get(ItemPdcKeys.ITEM_ID, PersistentDataType.STRING));
+    }
+
+    private void removeAttachments(List<UUID> uuids) {
+        for (UUID uuid : uuids) {
+            removeWrapperEntity(uuid);
+        }
+    }
+
+    private Map<EquipmentSlot, List<UUID>> readArmorAttachments(PersistentDataContainer pdc) {
+        Map<EquipmentSlot, List<UUID>> result = new HashMap<>();
+        String raw = pdc.get(ARMOR_ATTACHMENTS_KEY, PersistentDataType.STRING);
+        if (raw == null || raw.isBlank()) {
+            return result;
+        }
+        String[] entries = raw.split(";");
+        for (String entry : entries) {
+            if (entry == null || entry.isBlank()) {
+                continue;
+            }
+            String[] parts = entry.split("=", 2);
+            if (parts.length == 0 || parts[0].isBlank()) {
+                continue;
+            }
+            EquipmentSlot slot = parseSlot(parts[0]);
+            if (slot == null) {
+                continue;
+            }
+            List<UUID> ids = new ArrayList<>();
+            if (parts.length > 1 && !parts[1].isBlank()) {
+                String[] values = parts[1].split(",");
+                for (String value : values) {
+                    parseUuid(value).ifPresent(ids::add);
+                }
+            }
+            result.put(slot, ids);
+        }
+        return result;
+    }
+
+    private void writeArmorAttachments(PersistentDataContainer pdc, Map<EquipmentSlot, List<UUID>> data) {
+        if (data == null || data.isEmpty()) {
+            pdc.remove(ARMOR_ATTACHMENTS_KEY);
+            return;
+        }
+        StringBuilder builder = new StringBuilder();
+        for (EquipmentSlot slot : ARMOR_SLOTS) {
+            List<UUID> values = data.get(slot);
+            if (values == null || values.isEmpty()) {
+                continue;
+            }
+            if (builder.length() > 0) {
+                builder.append(';');
+            }
+            builder.append(slot.name()).append('=');
+            for (int i = 0; i < values.size(); i++) {
+                if (i > 0) {
+                    builder.append(',');
+                }
+                builder.append(values.get(i));
+            }
+        }
+        if (builder.length() == 0) {
+            pdc.remove(ARMOR_ATTACHMENTS_KEY);
+            return;
+        }
+        pdc.set(ARMOR_ATTACHMENTS_KEY, PersistentDataType.STRING, builder.toString());
+    }
+
+    private EquipmentSlot parseSlot(String raw) {
+        try {
+            return EquipmentSlot.valueOf(raw.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            return null;
         }
     }
 
@@ -609,5 +871,8 @@ public final class ModelWrapperService implements Listener {
     }
 
     public record ModelInstanceInfo(String modelId, UUID attachmentId, int version) {
+    }
+
+    public record ArmorAttachmentInfo(Map<EquipmentSlot, List<UUID>> attachments) {
     }
 }

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,6 +20,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Horse;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
 import ru.realite.core.api.models.ApplyResult;
 import ru.realite.core.api.models.ModelAssetInfo;
 import ru.realite.core.api.models.ModelAssetRegistry;
@@ -28,6 +30,8 @@ import ru.realite.models.config.ModelsConfig;
 import ru.realite.models.service.ModelWrapperService;
 
 public final class ModelsCommand implements CommandExecutor, TabCompleter {
+
+    private static final String UNICORN_MODEL_ID = "unicorn_horse";
 
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final Supplier<ModelAssetRegistry> registrySupplier;
@@ -49,122 +53,24 @@ public final class ModelsCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         String sub = args[0].toLowerCase(Locale.ROOT);
-        switch (sub) {
-            case "apply" -> {
-                if (args.length < 3) {
-                    sender.sendMessage(miniMessage.deserialize("<red>Usage: /models apply <modelId> <target></red>"));
-                    return true;
-                }
-                String modelId = args[1];
-                List<Entity> targets = resolveTargets(sender, args[2]);
-                if (targets.isEmpty()) {
-                    sender.sendMessage(miniMessage.deserialize("<red>No targets found.</red>"));
-                    return true;
-                }
-                int applied = 0;
-                for (Entity target : targets) {
-                    ApplyResult result = wrapperService.applyModel(target, modelId);
-                    if (result.isApplied()) {
-                        applied++;
-                    } else {
-                        sender.sendMessage(miniMessage.deserialize(
-                                "<red>Failed to apply model to <target>: <reason></red>",
-                                Placeholder.parsed("target", describeTarget(target)),
-                                Placeholder.parsed("reason", result.message())));
-                    }
-                }
-                sender.sendMessage(miniMessage.deserialize(
-                        "<green>Applied model <modelId> to <count> target(s).</green>",
-                        Placeholder.parsed("modelId", modelId),
-                        Placeholder.parsed("count", Integer.toString(applied))));
-                return true;
-            }
-            case "clear" -> {
-                if (args.length < 2) {
-                    sender.sendMessage(miniMessage.deserialize("<red>Usage: /models clear <target></red>"));
-                    return true;
-                }
-                List<Entity> targets = resolveTargets(sender, args[1]);
-                if (targets.isEmpty()) {
-                    sender.sendMessage(miniMessage.deserialize("<red>No targets found.</red>"));
-                    return true;
-                }
-                for (Entity target : targets) {
-                    wrapperService.clearModel(target);
-                }
-                sender.sendMessage(miniMessage.deserialize(
-                        "<green>Cleared models for <count> target(s).</green>",
-                        Placeholder.parsed("count", Integer.toString(targets.size()))));
-                return true;
-            }
-            case "info" -> {
-                if (args.length < 2) {
-                    sender.sendMessage(miniMessage.deserialize("<red>Usage: /models info <target></red>"));
-                    return true;
-                }
-                List<Entity> targets = resolveTargets(sender, args[1]);
-                if (targets.isEmpty()) {
-                    sender.sendMessage(miniMessage.deserialize("<red>No targets found.</red>"));
-                    return true;
-                }
-                for (Entity target : targets) {
-                    Optional<ModelWrapperService.ModelInstanceInfo> info = wrapperService.getModelInfo(target);
-                    if (info.isEmpty()) {
-                        sender.sendMessage(miniMessage.deserialize(
-                                "<gray>No model applied on <target>.</gray>",
-                                Placeholder.parsed("target", describeTarget(target))));
-                        continue;
-                    }
-                    sendModelInfo(sender, target, info.get());
-                }
-                return true;
-            }
-            case "debug" -> {
-                if (args.length < 2 || !"asset".equalsIgnoreCase(args[1])) {
-                    sendHelp(sender);
-                    return true;
-                }
-                if (args.length < 3) {
-                    sender.sendMessage(miniMessage.deserialize("<red>Usage: /models debug asset <modelId></red>"));
-                    return true;
-                }
-                String modelId = args[2];
-                ModelAssetRegistry registry = registrySupplier.get();
-                if (registry == null) {
-                    sender.sendMessage(miniMessage.deserialize("<red>Model assets registry is not available.</red>"));
-                    return true;
-                }
-                Optional<ModelAssetInfo> assetInfo = registry.find(modelId);
-                if (assetInfo.isEmpty()) {
-                    sender.sendMessage(miniMessage.deserialize(
-                            "<red>Model asset not found: <modelId></red>",
-                            Placeholder.parsed("modelId", modelId)));
-                    return true;
-                }
-                sendAssetInfo(sender, assetInfo.get());
-                return true;
-            }
+        return switch (sub) {
+            case "unicorn" -> handleUnicorn(sender, args);
+            case "armor" -> handleArmor(sender, args);
+            case "debug" -> handleDebug(sender, args);
             default -> {
                 sendHelp(sender);
-                return true;
+                yield true;
             }
-        }
+        };
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return matchPrefix(args[0], List.of("apply", "clear", "info", "debug"));
+            return matchPrefix(args[0], List.of("unicorn", "armor", "debug"));
         }
-        if (args.length == 2 && "apply".equalsIgnoreCase(args[0])) {
-            ModelsConfig config = configSupplier.get();
-            if (config == null) {
-                return Collections.emptyList();
-            }
-            return matchPrefix(args[1], new ArrayList<>(config.all().keySet()));
-        }
-        if (args.length == 2 && ("clear".equalsIgnoreCase(args[0]) || "info".equalsIgnoreCase(args[0]))) {
-            return matchPrefix(args[1], List.of("nearest"));
+        if (args.length == 2 && ("unicorn".equalsIgnoreCase(args[0]) || "armor".equalsIgnoreCase(args[0]))) {
+            return matchPrefix(args[1], List.of("apply", "clear", "info"));
         }
         if (args.length == 2 && "debug".equalsIgnoreCase(args[0])) {
             return matchPrefix(args[1], List.of("asset"));
@@ -176,14 +82,155 @@ public final class ModelsCommand implements CommandExecutor, TabCompleter {
             }
             return matchPrefix(args[2], new ArrayList<>(registry.all().keySet()));
         }
+        if (args.length == 3 && "unicorn".equalsIgnoreCase(args[0])) {
+            return matchPrefix(args[2], List.of("nearest"));
+        }
+        if (args.length == 3 && "armor".equalsIgnoreCase(args[0])) {
+            List<String> options = new ArrayList<>();
+            options.add("self");
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                options.add(player.getName());
+            }
+            return matchPrefix(args[2], options);
+        }
         return Collections.emptyList();
+    }
+
+    private boolean handleUnicorn(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(miniMessage.deserialize("<red>Usage: /models unicorn <apply|clear|info> <horse></red>"));
+            return true;
+        }
+        ModelsConfig config = configSupplier.get();
+        if (config == null || config.findEntityModel(UNICORN_MODEL_ID).isEmpty()) {
+            sender.sendMessage(miniMessage.deserialize("<red>Unicorn model is not configured.</red>"));
+            return true;
+        }
+        String action = args[1].toLowerCase(Locale.ROOT);
+        List<Entity> targets = resolveHorseTargets(sender, args[2]);
+        if (targets.isEmpty()) {
+            sender.sendMessage(miniMessage.deserialize("<red>No horses found.</red>"));
+            return true;
+        }
+        switch (action) {
+            case "apply" -> {
+                int applied = 0;
+                for (Entity target : targets) {
+                    ApplyResult result = wrapperService.applyEntityModel(target, UNICORN_MODEL_ID);
+                    if (result.isApplied()) {
+                        applied++;
+                    } else {
+                        sender.sendMessage(miniMessage.deserialize(
+                                "<red>Failed to apply unicorn to <target>: <reason></red>",
+                                Placeholder.parsed("target", describeTarget(target)),
+                                Placeholder.parsed("reason", result.message())));
+                    }
+                }
+                sender.sendMessage(miniMessage.deserialize(
+                        "<green>Applied unicorn model to <count> target(s).</green>",
+                        Placeholder.parsed("count", Integer.toString(applied))));
+            }
+            case "clear" -> {
+                for (Entity target : targets) {
+                    wrapperService.clearEntityModel(target);
+                }
+                sender.sendMessage(miniMessage.deserialize(
+                        "<green>Cleared unicorn model for <count> target(s).</green>",
+                        Placeholder.parsed("count", Integer.toString(targets.size()))));
+            }
+            case "info" -> {
+                for (Entity target : targets) {
+                    Optional<ModelWrapperService.ModelInstanceInfo> info = wrapperService.getModelInfo(target);
+                    if (info.isEmpty()) {
+                        sender.sendMessage(miniMessage.deserialize(
+                                "<gray>No unicorn model on <target>.</gray>",
+                                Placeholder.parsed("target", describeTarget(target))));
+                        continue;
+                    }
+                    sendModelInfo(sender, target, info.get());
+                }
+            }
+            default -> sender.sendMessage(miniMessage.deserialize("<red>Usage: /models unicorn <apply|clear|info> <horse></red>"));
+        }
+        return true;
+    }
+
+    private boolean handleArmor(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(miniMessage.deserialize("<red>Usage: /models armor <apply|clear|info> <player></red>"));
+            return true;
+        }
+        String action = args[1].toLowerCase(Locale.ROOT);
+        List<Player> targets = resolvePlayers(sender, args[2]);
+        if (targets.isEmpty()) {
+            sender.sendMessage(miniMessage.deserialize("<red>No players found.</red>"));
+            return true;
+        }
+        switch (action) {
+            case "apply" -> {
+                for (Player target : targets) {
+                    wrapperService.syncArmorAttachments(target);
+                }
+                sender.sendMessage(miniMessage.deserialize(
+                        "<green>Synced armor attachments for <count> player(s).</green>",
+                        Placeholder.parsed("count", Integer.toString(targets.size()))));
+            }
+            case "clear" -> {
+                for (Player target : targets) {
+                    wrapperService.clearArmorAttachments(target);
+                }
+                sender.sendMessage(miniMessage.deserialize(
+                        "<green>Cleared armor attachments for <count> player(s).</green>",
+                        Placeholder.parsed("count", Integer.toString(targets.size()))));
+            }
+            case "info" -> {
+                for (Player target : targets) {
+                    Optional<ModelWrapperService.ArmorAttachmentInfo> info =
+                            wrapperService.getArmorAttachmentInfo(target);
+                    if (info.isEmpty()) {
+                        sender.sendMessage(miniMessage.deserialize(
+                                "<gray>No armor attachments on <target>.</gray>",
+                                Placeholder.parsed("target", target.getName())));
+                        continue;
+                    }
+                    sendArmorInfo(sender, target, info.get());
+                }
+            }
+            default -> sender.sendMessage(miniMessage.deserialize("<red>Usage: /models armor <apply|clear|info> <player></red>"));
+        }
+        return true;
+    }
+
+    private boolean handleDebug(CommandSender sender, String[] args) {
+        if (args.length < 2 || !"asset".equalsIgnoreCase(args[1])) {
+            sendHelp(sender);
+            return true;
+        }
+        if (args.length < 3) {
+            sender.sendMessage(miniMessage.deserialize("<red>Usage: /models debug asset <modelId></red>"));
+            return true;
+        }
+        String modelId = args[2];
+        ModelAssetRegistry registry = registrySupplier.get();
+        if (registry == null) {
+            sender.sendMessage(miniMessage.deserialize("<red>Model assets registry is not available.</red>"));
+            return true;
+        }
+        Optional<ModelAssetInfo> assetInfo = registry.find(modelId);
+        if (assetInfo.isEmpty()) {
+            sender.sendMessage(miniMessage.deserialize(
+                    "<red>Model asset not found: <modelId></red>",
+                    Placeholder.parsed("modelId", modelId)));
+            return true;
+        }
+        sendAssetInfo(sender, assetInfo.get());
+        return true;
     }
 
     private void sendHelp(CommandSender sender) {
         sender.sendMessage(miniMessage.deserialize("<gray>Models commands:</gray>"));
-        sender.sendMessage(miniMessage.deserialize("<yellow>/models apply <modelId> <target></yellow>"));
-        sender.sendMessage(miniMessage.deserialize("<yellow>/models clear <target></yellow>"));
-        sender.sendMessage(miniMessage.deserialize("<yellow>/models info <target></yellow>"));
+        sender.sendMessage(miniMessage.deserialize("<yellow>/models unicorn <apply|clear|info> <horse></yellow>"));
+        sender.sendMessage(miniMessage.deserialize("<yellow>/models armor <apply|clear|info> <player></yellow>"));
         sender.sendMessage(miniMessage.deserialize("<yellow>/models debug asset <modelId></yellow>"));
     }
 
@@ -236,7 +283,23 @@ public final class ModelsCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(version);
     }
 
-    private List<Entity> resolveTargets(CommandSender sender, String raw) {
+    private void sendArmorInfo(CommandSender sender, Player target, ModelWrapperService.ArmorAttachmentInfo info) {
+        Component header = miniMessage.deserialize(
+                "<gray>Armor attachments for <target>:</gray>",
+                Placeholder.parsed("target", target.getName()));
+        sender.sendMessage(header);
+        Map<EquipmentSlot, List<UUID>> attachments = info.attachments();
+        for (EquipmentSlot slot : List.of(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET)) {
+            List<UUID> uuids = attachments.getOrDefault(slot, List.of());
+            String value = uuids.isEmpty() ? "-" : joinUuids(uuids);
+            sender.sendMessage(miniMessage.deserialize(
+                    "<gray><slot>:</gray> <white><uuids></white>",
+                    Placeholder.parsed("slot", slot.name()),
+                    Placeholder.parsed("uuids", value)));
+        }
+    }
+
+    private List<Entity> resolveHorseTargets(CommandSender sender, String raw) {
         if (raw == null || raw.isBlank()) {
             return Collections.emptyList();
         }
@@ -247,7 +310,13 @@ public final class ModelsCommand implements CommandExecutor, TabCompleter {
         }
         if (raw.startsWith("@")) {
             try {
-                return Bukkit.selectEntities(sender, raw);
+                List<Entity> result = new ArrayList<>();
+                for (Entity entity : Bukkit.selectEntities(sender, raw)) {
+                    if (entity instanceof Horse) {
+                        result.add(entity);
+                    }
+                }
+                return result;
             } catch (IllegalArgumentException ex) {
                 return Collections.emptyList();
             }
@@ -255,8 +324,42 @@ public final class ModelsCommand implements CommandExecutor, TabCompleter {
         Optional<UUID> uuid = parseUuid(raw);
         if (uuid.isPresent()) {
             Entity entity = Bukkit.getEntity(uuid.get());
-            if (entity != null) {
+            if (entity instanceof Horse) {
                 return List.of(entity);
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    private List<Player> resolvePlayers(CommandSender sender, String raw) {
+        if (raw == null || raw.isBlank()) {
+            return Collections.emptyList();
+        }
+        if ("self".equalsIgnoreCase(raw) && sender instanceof Player player) {
+            return List.of(player);
+        }
+        if (raw.startsWith("@")) {
+            try {
+                List<Player> result = new ArrayList<>();
+                for (Entity entity : Bukkit.selectEntities(sender, raw)) {
+                    if (entity instanceof Player player) {
+                        result.add(player);
+                    }
+                }
+                return result;
+            } catch (IllegalArgumentException ex) {
+                return Collections.emptyList();
+            }
+        }
+        Player player = Bukkit.getPlayerExact(raw);
+        if (player != null) {
+            return List.of(player);
+        }
+        Optional<UUID> uuid = parseUuid(raw);
+        if (uuid.isPresent()) {
+            Player byUuid = Bukkit.getPlayer(uuid.get());
+            if (byUuid != null) {
+                return List.of(byUuid);
             }
         }
         return Collections.emptyList();
@@ -310,5 +413,16 @@ public final class ModelsCommand implements CommandExecutor, TabCompleter {
             return Long.toString((long) value);
         }
         return String.format(Locale.ROOT, "%.3f", value);
+    }
+
+    private String joinUuids(List<UUID> uuids) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < uuids.size(); i++) {
+            if (i > 0) {
+                builder.append(", ");
+            }
+            builder.append(uuids.get(i));
+        }
+        return builder.toString();
     }
 }

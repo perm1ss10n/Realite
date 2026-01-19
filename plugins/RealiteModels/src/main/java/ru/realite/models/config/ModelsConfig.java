@@ -17,55 +17,88 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Horse;
+import org.bukkit.inventory.EquipmentSlot;
 import org.joml.Vector3f;
 
 public final class ModelsConfig {
 
-    private final Map<String, ModelDefinition> models;
+    private static final int ENTITY_CMD_MIN = 12000;
+    private static final int ENTITY_CMD_MAX = 12999;
+    private static final int ARMOR_CMD_MIN = 40000;
+    private static final int ARMOR_CMD_MAX = 49999;
 
-    private ModelsConfig(Map<String, ModelDefinition> models) {
-        this.models = Map.copyOf(models);
+    private final Map<String, EntityModelDefinition> entityModels;
+    private final Map<String, ArmorModelDefinition> armorModels;
+
+    private ModelsConfig(Map<String, EntityModelDefinition> entityModels,
+                         Map<String, ArmorModelDefinition> armorModels) {
+        this.entityModels = Map.copyOf(entityModels);
+        this.armorModels = Map.copyOf(armorModels);
     }
 
     public static ModelsConfig empty() {
-        return new ModelsConfig(Map.of());
+        return new ModelsConfig(Map.of(), Map.of());
     }
 
     public static ModelsConfig load(YamlConfiguration config, Logger logger) {
         Objects.requireNonNull(config, "config");
         Objects.requireNonNull(logger, "logger");
 
-        ConfigurationSection modelsSection = config.getConfigurationSection("models");
-        if (modelsSection == null) {
-            return empty();
+        Map<String, EntityModelDefinition> entityDefinitions = new HashMap<>();
+        ConfigurationSection entitySection = config.getConfigurationSection("entity_models");
+        if (entitySection == null) {
+            entitySection = config.getConfigurationSection("models");
+        }
+        if (entitySection != null) {
+            for (String modelId : entitySection.getKeys(false)) {
+                ConfigurationSection modelSection = entitySection.getConfigurationSection(modelId);
+                if (modelSection == null) {
+                    continue;
+                }
+                EntityModelDefinition definition = parseEntityDefinition(modelId, modelSection, logger);
+                if (definition != null) {
+                    entityDefinitions.put(modelId, definition);
+                }
+            }
         }
 
-        Map<String, ModelDefinition> definitions = new HashMap<>();
-        for (String modelId : modelsSection.getKeys(false)) {
-            ConfigurationSection modelSection = modelsSection.getConfigurationSection(modelId);
-            if (modelSection == null) {
-                continue;
-            }
-            ModelDefinition definition = parseDefinition(modelId, modelSection, logger);
-            if (definition != null) {
-                definitions.put(modelId, definition);
+        Map<String, ArmorModelDefinition> armorDefinitions = new HashMap<>();
+        ConfigurationSection armorSection = config.getConfigurationSection("armor_models");
+        if (armorSection != null) {
+            for (String itemId : armorSection.getKeys(false)) {
+                ConfigurationSection modelSection = armorSection.getConfigurationSection(itemId);
+                if (modelSection == null) {
+                    continue;
+                }
+                ArmorModelDefinition definition = parseArmorDefinition(itemId, modelSection, logger);
+                if (definition != null) {
+                    armorDefinitions.put(itemId, definition);
+                }
             }
         }
 
-        return new ModelsConfig(definitions);
+        return new ModelsConfig(entityDefinitions, armorDefinitions);
     }
 
-    public Optional<ModelDefinition> find(String modelId) {
-        return Optional.ofNullable(models.get(modelId));
+    public Optional<EntityModelDefinition> findEntityModel(String modelId) {
+        return Optional.ofNullable(entityModels.get(modelId));
     }
 
-    public Map<String, ModelDefinition> all() {
-        return Collections.unmodifiableMap(models);
+    public Optional<ArmorModelDefinition> findArmorModel(String itemId) {
+        return Optional.ofNullable(armorModels.get(itemId));
     }
 
-    public Optional<ModelDefinition> matchingFor(Entity entity) {
+    public Map<String, EntityModelDefinition> allEntityModels() {
+        return Collections.unmodifiableMap(entityModels);
+    }
+
+    public Map<String, ArmorModelDefinition> allArmorModels() {
+        return Collections.unmodifiableMap(armorModels);
+    }
+
+    public Optional<EntityModelDefinition> matchingFor(Entity entity) {
         Objects.requireNonNull(entity, "entity");
-        for (ModelDefinition definition : models.values()) {
+        for (EntityModelDefinition definition : entityModels.values()) {
             if (definition.matches(entity)) {
                 return Optional.of(definition);
             }
@@ -73,7 +106,9 @@ public final class ModelsConfig {
         return Optional.empty();
     }
 
-    private static ModelDefinition parseDefinition(String modelId, ConfigurationSection section, Logger logger) {
+    private static EntityModelDefinition parseEntityDefinition(String modelId,
+                                                               ConfigurationSection section,
+                                                               Logger logger) {
         String entityKey = section.getString("entity");
         if (entityKey == null || entityKey.isBlank()) {
             logger.warning("[Models] Missing entity for model: " + modelId);
@@ -113,7 +148,9 @@ public final class ModelsConfig {
 
         Integer customModelData = null;
         if (section.contains("apply.attachment.custom_model_data")) {
-            customModelData = section.getInt("apply.attachment.custom_model_data");
+            int raw = section.getInt("apply.attachment.custom_model_data");
+            customModelData = validateCustomModelData(raw, ENTITY_CMD_MIN, ENTITY_CMD_MAX, logger,
+                    "entity model", modelId);
         }
 
         Vector3f offset = parseVector(section, "apply.attachment.transform.offset", new Vector3f(0f, 0f, 0f));
@@ -121,7 +158,102 @@ public final class ModelsConfig {
         Vector3f scale = parseVector(section, "apply.attachment.transform.scale", new Vector3f(1f, 1f, 1f));
 
         AttachmentSpec attachment = new AttachmentSpec(material, customModelData, offset, rotation, scale);
-        return new ModelDefinition(modelId, entityType, condition, appearance, attachment);
+        return new EntityModelDefinition(modelId, entityType, condition, appearance, attachment);
+    }
+
+    private static ArmorModelDefinition parseArmorDefinition(String itemId,
+                                                             ConfigurationSection section,
+                                                             Logger logger) {
+        String slotRaw = section.getString("slot", "");
+        EquipmentSlot slot = parseEnum(EquipmentSlot.class, slotRaw);
+        if (slot == null) {
+            logger.warning("[Models] Unknown armor slot " + slotRaw + " for item " + itemId);
+            return null;
+        }
+
+        List<Map<?, ?>> rawElements = section.getMapList("elements");
+        if (rawElements == null || rawElements.isEmpty()) {
+            logger.warning("[Models] Missing armor elements for item " + itemId);
+            return null;
+        }
+
+        List<ArmorElement> elements = new ArrayList<>();
+        int index = 0;
+        for (Map<?, ?> raw : rawElements) {
+            index++;
+            ArmorElement element = parseArmorElement(itemId, raw, index, logger);
+            if (element != null) {
+                elements.add(element);
+            }
+        }
+        if (elements.isEmpty()) {
+            logger.warning("[Models] No valid armor elements for item " + itemId);
+            return null;
+        }
+
+        return new ArmorModelDefinition(itemId, slot, List.copyOf(elements));
+    }
+
+    private static ArmorElement parseArmorElement(String itemId,
+                                                  Map<?, ?> raw,
+                                                  int index,
+                                                  Logger logger) {
+        if (raw == null) {
+            return null;
+        }
+        String elementId = Objects.toString(raw.get("id"), "element_" + index);
+        String itemKey = Objects.toString(raw.getOrDefault("item", "minecraft:stick"), "minecraft:stick");
+        Material material = parseMaterial(itemKey);
+        if (material == null) {
+            logger.warning("[Models] Unknown material " + itemKey + " for armor " + itemId + ", using stick.");
+            material = Material.STICK;
+        }
+
+        Integer customModelData = null;
+        if (raw.containsKey("custom_model_data")) {
+            Object cmdRaw = raw.get("custom_model_data");
+            Integer parsed = parseInteger(cmdRaw);
+            if (parsed != null) {
+                customModelData = validateCustomModelData(parsed, ARMOR_CMD_MIN, ARMOR_CMD_MAX, logger,
+                        "armor model", itemId);
+            }
+        }
+
+        Map<?, ?> transform = raw.get("transform") instanceof Map<?, ?> map ? map : Map.of();
+        Vector3f offset = parseVector(transform.get("offset"), new Vector3f(0f, 0f, 0f));
+        Vector3f rotation = parseVector(transform.get("rotation"), new Vector3f(0f, 0f, 0f));
+        Vector3f scale = parseVector(transform.get("scale"), new Vector3f(1f, 1f, 1f));
+
+        AttachmentSpec attachment = new AttachmentSpec(material, customModelData, offset, rotation, scale);
+        return new ArmorElement(elementId, attachment);
+    }
+
+    private static Integer validateCustomModelData(int value,
+                                                   int min,
+                                                   int max,
+                                                   Logger logger,
+                                                   String label,
+                                                   String id) {
+        if (value < min || value > max) {
+            logger.warning("[Models] Custom model data " + value + " for " + label + " " + id
+                    + " is outside of range " + min + "-" + max + "; ignoring.");
+            return null;
+        }
+        return value;
+    }
+
+    private static Integer parseInteger(Object raw) {
+        if (raw instanceof Number number) {
+            return number.intValue();
+        }
+        if (raw instanceof String str) {
+            try {
+                return Integer.parseInt(str);
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 
     private static Material parseMaterial(String key) {
@@ -147,6 +279,28 @@ public final class ModelsConfig {
                 try {
                     values.add(Float.parseFloat(raw.get(i)));
                 } catch (NumberFormatException ignored) {
+                    return new Vector3f(fallback);
+                }
+            }
+            return new Vector3f(values.get(0), values.get(1), values.get(2));
+        }
+        return new Vector3f(fallback);
+    }
+
+    private static Vector3f parseVector(Object raw, Vector3f fallback) {
+        if (raw instanceof List<?> list && list.size() >= 3) {
+            List<Float> values = new ArrayList<>();
+            for (int i = 0; i < 3; i++) {
+                Object entry = list.get(i);
+                if (entry instanceof Number number) {
+                    values.add(number.floatValue());
+                } else if (entry instanceof String str) {
+                    try {
+                        values.add(Float.parseFloat(str));
+                    } catch (NumberFormatException ignored) {
+                        return new Vector3f(fallback);
+                    }
+                } else {
                     return new Vector3f(fallback);
                 }
             }
@@ -186,8 +340,8 @@ public final class ModelsConfig {
                                  Vector3f rotation, Vector3f scale) {
     }
 
-    public record ModelDefinition(String id, EntityType entityType, ModelCondition condition,
-                                  HorseAppearance horseAppearance, AttachmentSpec attachment) {
+    public record EntityModelDefinition(String id, EntityType entityType, ModelCondition condition,
+                                        HorseAppearance horseAppearance, AttachmentSpec attachment) {
         public boolean matches(Entity entity) {
             if (!matchesEntity(entity.getType())) {
                 return false;
@@ -201,5 +355,11 @@ public final class ModelsConfig {
         public boolean matchesEntity(EntityType type) {
             return entityType == type;
         }
+    }
+
+    public record ArmorElement(String id, AttachmentSpec attachment) {
+    }
+
+    public record ArmorModelDefinition(String itemId, EquipmentSlot slot, List<ArmorElement> elements) {
     }
 }

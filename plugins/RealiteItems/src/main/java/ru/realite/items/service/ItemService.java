@@ -8,6 +8,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
+import ru.realite.core.api.items.ItemPdcKeys;
 
 import ru.realite.items.i18n.ItemMessages;
 import ru.realite.items.model.ItemDefinition;
@@ -20,8 +21,8 @@ import java.util.UUID;
 
 public final class ItemService {
 
-    public static final NamespacedKey ITEM_ID_KEY = new NamespacedKey("realite", "item_id");
-    public static final NamespacedKey UID_KEY = new NamespacedKey("realite", "uid");
+    public static final NamespacedKey ITEM_ID_KEY = ItemPdcKeys.ITEM_ID;
+    public static final NamespacedKey UID_KEY = ItemPdcKeys.UID;
 
     private final JavaPlugin plugin;
     private final ItemRegistry registry;
