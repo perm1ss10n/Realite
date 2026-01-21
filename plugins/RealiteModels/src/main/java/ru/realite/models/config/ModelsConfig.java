@@ -8,7 +8,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.logging.Logger;
+
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -325,11 +330,12 @@ public final class ModelsConfig {
             if (nameContains == null || nameContains.isBlank()) {
                 return false;
             }
-            String customName = entity.getCustomName();
-            if (customName == null) {
+            Component custom = entity.customName(); // Adventure, НЕ deprecated
+            if (custom == null) {
                 return false;
             }
-            return customName.contains(nameContains);
+            String plain = PlainTextComponentSerializer.plainText().serialize(custom);
+            return plain != null && plain.contains(nameContains);
         }
     }
 

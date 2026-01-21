@@ -1,6 +1,7 @@
 package ru.realite.core.boss.core;
 
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -38,7 +39,8 @@ public final class BossManager implements Listener {
     private BukkitTask task;
     private int tickCounter;
 
-    public BossManager(JavaPlugin plugin, BossConfigLoader configLoader, BossUIController uiController, int uiUpdateTicks) {
+    public BossManager(JavaPlugin plugin, BossConfigLoader configLoader, BossUIController uiController,
+            int uiUpdateTicks) {
         this.plugin = plugin;
         this.configLoader = configLoader;
         this.uiController = uiController;
@@ -148,6 +150,7 @@ public final class BossManager implements Listener {
         if (boss == null) {
             return;
         }
+
         Optional<LivingEntity> damager = Optional.empty();
         if (event instanceof EntityDamageByEntityEvent byEntity) {
             if (byEntity.getDamager() instanceof LivingEntity living) {
@@ -167,6 +170,7 @@ public final class BossManager implements Listener {
         if (boss == null) {
             return;
         }
+
         Optional<LivingEntity> killer = Optional.ofNullable(event.getEntity().getKiller());
         boss.onDeath(new DeathContext(event, killer));
         cleanupBoss(boss, DespawnReason.DEATH);
@@ -174,8 +178,11 @@ public final class BossManager implements Listener {
 
     @EventHandler
     public void onChunkUnload(ChunkUnloadEvent event) {
-        for (LivingEntity entity : event.getChunk().getEntitiesByClass(LivingEntity.class)) {
-            UUID instanceId = entityToInstance.get(entity.getUniqueId());
+        for (Entity ent : event.getChunk().getEntities()) {
+            if (!(ent instanceof LivingEntity living)) {
+                continue;
+            }
+            UUID instanceId = entityToInstance.get(living.getUniqueId());
             if (instanceId == null) {
                 continue;
             }
@@ -188,8 +195,34 @@ public final class BossManager implements Listener {
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
+        // Оптимизация: PlayerMoveEvent срабатывает даже при повороте головы.
+        // Если игрок не сменил блок — видимость не пересчитываем.
+        if (event.getTo() == null) {
+            return;
+        }
+
+        var from = event.getFrom();
+        var to = event.getTo();
+
+        if (from.getWorld() == to.getWorld()
+                && from.getBlockX() == to.getBlockX()
+                && from.getBlockY() == to.getBlockY()
+                && from.getBlockZ() == to.getBlockZ()) {
+            return;
+        }
+
         Player player = event.getPlayer();
-        for (RealiteBoss boss : activeBosses.values()) {
+
+        // Доп. мелкая оптимизация: работаем только с боссами в мире игрока (и у которых
+        // есть entity).
+        for (RealiteBoss boss : new HashSet<>(activeBosses.values())) {
+            LivingEntity e = boss.getEntity();
+            if (e == null || e.getWorld() != player.getWorld()) {
+                // если босс в другом мире — гарантированно скрываем (на случай телепорта/смены
+                // мира)
+                hideBossFromPlayer(boss, player);
+                continue;
+            }
             updateVisibilityForPlayer(boss, player);
         }
     }
