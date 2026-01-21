@@ -58,3 +58,67 @@
 - [ ] Нет прямого использования vanilla BossBar.
 - [ ] BossBar управляется только через `BossUIController`.
 - [ ] Есть fallback без RP (модель/экипировка/визуалы).
+
+## YAML-шаблон конфигурации босса (эталон)
+
+Файл: `bosses/<bossId>.yml`
+
+```yaml
+bossId: "stone_guardian"
+tier: 3
+
+entity:
+  type: "IRON_GOLEM"
+
+stats:
+  maxHp: 5000
+  baseDamage: 18
+  movementSpeed: 0.25
+
+phases:
+  - id: "phase_1"
+    enterAtHpPercent: 100
+    exitAtHpPercent: 60
+  - id: "phase_2"
+    enterAtHpPercent: 60
+    exitAtHpPercent: 0
+
+abilities:
+  - id: "slam"
+    cooldown: 12s
+    params:
+      radius: 5
+      knockback: 1.2
+  - id: "stone_shards"
+    cooldown: 20s
+    params:
+      projectiles: 6
+
+loot:
+  guaranteed:
+    - itemId: "realite:boss_core"
+      amount: 1
+  table:
+    - itemId: "realite:stone_fragment"
+      weight: 60
+      min: 2
+      max: 5
+    - itemId: "minecraft:diamond"
+      weight: 5
+      min: 1
+      max: 2
+  rolls: 2
+
+ui:
+  bossbar:
+    titleKey: "boss.stone_guardian.name"
+    color: "RED"
+    style: "SEGMENTED_10"
+    visibilityRadius: 48
+    showForParticipantsOnly: true
+```
+
+Примечания:
+- `ui` трактуется только RealiteUI (vanilla BossBar не используется).
+- `abilities[].id` обязаны совпадать с зарегистрированными `BossAbility`, иначе логируется понятная ошибка.
+- RP опционален: при отсутствии ресурспака должны работать фолбэки для модели/визуала.
