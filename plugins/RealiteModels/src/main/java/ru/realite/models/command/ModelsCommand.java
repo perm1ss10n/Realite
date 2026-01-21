@@ -9,9 +9,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
+
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -21,6 +24,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Horse;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
+
 import ru.realite.core.api.models.ApplyResult;
 import ru.realite.core.api.models.ModelAssetInfo;
 import ru.realite.core.api.models.ModelAssetRegistry;
@@ -39,8 +43,8 @@ public final class ModelsCommand implements CommandExecutor, TabCompleter {
     private final Supplier<ModelsConfig> configSupplier;
 
     public ModelsCommand(Supplier<ModelAssetRegistry> registrySupplier,
-                         ModelWrapperService wrapperService,
-                         Supplier<ModelsConfig> configSupplier) {
+            ModelWrapperService wrapperService,
+            Supplier<ModelsConfig> configSupplier) {
         this.registrySupplier = Objects.requireNonNull(registrySupplier, "registrySupplier");
         this.wrapperService = Objects.requireNonNull(wrapperService, "wrapperService");
         this.configSupplier = Objects.requireNonNull(configSupplier, "configSupplier");
@@ -150,7 +154,8 @@ public final class ModelsCommand implements CommandExecutor, TabCompleter {
                     sendModelInfo(sender, target, info.get());
                 }
             }
-            default -> sender.sendMessage(miniMessage.deserialize("<red>Usage: /models unicorn <apply|clear|info> <horse></red>"));
+            default -> sender.sendMessage(
+                    miniMessage.deserialize("<red>Usage: /models unicorn <apply|clear|info> <horse></red>"));
         }
         return true;
     }
@@ -185,8 +190,8 @@ public final class ModelsCommand implements CommandExecutor, TabCompleter {
             }
             case "info" -> {
                 for (Player target : targets) {
-                    Optional<ModelWrapperService.ArmorAttachmentInfo> info =
-                            wrapperService.getArmorAttachmentInfo(target);
+                    Optional<ModelWrapperService.ArmorAttachmentInfo> info = wrapperService
+                            .getArmorAttachmentInfo(target);
                     if (info.isEmpty()) {
                         sender.sendMessage(miniMessage.deserialize(
                                 "<gray>No armor attachments on <target>.</gray>",
@@ -196,7 +201,8 @@ public final class ModelsCommand implements CommandExecutor, TabCompleter {
                     sendArmorInfo(sender, target, info.get());
                 }
             }
-            default -> sender.sendMessage(miniMessage.deserialize("<red>Usage: /models armor <apply|clear|info> <player></red>"));
+            default -> sender.sendMessage(
+                    miniMessage.deserialize("<red>Usage: /models armor <apply|clear|info> <player></red>"));
         }
         return true;
     }
@@ -289,7 +295,8 @@ public final class ModelsCommand implements CommandExecutor, TabCompleter {
                 Placeholder.parsed("target", target.getName()));
         sender.sendMessage(header);
         Map<EquipmentSlot, List<UUID>> attachments = info.attachments();
-        for (EquipmentSlot slot : List.of(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET)) {
+        for (EquipmentSlot slot : List.of(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS,
+                EquipmentSlot.FEET)) {
             List<UUID> uuids = attachments.getOrDefault(slot, List.of());
             String value = uuids.isEmpty() ? "-" : joinUuids(uuids);
             sender.sendMessage(miniMessage.deserialize(
@@ -386,10 +393,14 @@ public final class ModelsCommand implements CommandExecutor, TabCompleter {
         }
     }
 
+    // FIX: Adventure-only, без deprecated getCustomName()
     private String describeTarget(Entity target) {
-        String name = target.getCustomName();
-        if (name != null && !name.isBlank()) {
-            return name;
+        Component custom = target.customName(); // НЕ deprecated
+        if (custom != null) {
+            String plain = PlainTextComponentSerializer.plainText().serialize(custom).trim();
+            if (!plain.isEmpty()) {
+                return plain;
+            }
         }
         return target.getType().name().toLowerCase(Locale.ROOT) + ":" + target.getUniqueId();
     }
