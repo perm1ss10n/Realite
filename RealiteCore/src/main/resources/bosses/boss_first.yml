@@ -1,0 +1,10 @@
+id: boss_first
+name: "First Boss"
+entity: ZOMBIE
+max_hp: 200
+phases:
+  - id: PHASE_1
+    enter_at: 1.0
+  - id: PHASE_2
+    enter_at: 0.5
+abilities: []
