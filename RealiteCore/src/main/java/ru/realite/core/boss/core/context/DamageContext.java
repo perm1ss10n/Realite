@@ -10,5 +10,6 @@ public record DamageContext(EntityDamageEvent event, Optional<LivingEntity> dama
         if (event == null) {
             throw new IllegalArgumentException("event is null");
         }
+        damager = damager == null ? Optional.empty() : damager;
     }
 }

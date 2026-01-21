@@ -10,5 +10,6 @@ public record DeathContext(EntityDeathEvent event, Optional<LivingEntity> killer
         if (event == null) {
             throw new IllegalArgumentException("event is null");
         }
+        killer = killer == null ? Optional.empty() : killer;
     }
 }
