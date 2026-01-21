@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -33,9 +34,11 @@ public final class BossManager implements Listener {
     private final BossRegistry registry;
     private final BossAbilityRegistry abilityRegistry;
     private final BossUIController uiController;
+
     private final Map<UUID, RealiteBoss> activeBosses = new HashMap<>();
     private final Map<UUID, UUID> entityToInstance = new HashMap<>();
     private final Map<UUID, Set<UUID>> visiblePlayers = new HashMap<>();
+
     private final int uiUpdateTicks;
     private BukkitTask task;
     private int tickCounter;
@@ -50,6 +53,7 @@ public final class BossManager implements Listener {
         this.abilityRegistry = abilityRegistry;
         this.uiController = uiController;
         this.uiUpdateTicks = Math.max(1, uiUpdateTicks);
+
         Bukkit.getPluginManager().registerEvents(this, plugin);
         startTicking();
     }
@@ -57,10 +61,13 @@ public final class BossManager implements Listener {
     public RealiteBoss spawn(String bossId, SpawnContext ctx) {
         BossDefinition definition = registry.requireDefinition(bossId);
         RealiteBoss boss = new ConfigurableBoss(definition, abilityRegistry);
+
         boss.spawn(ctx);
         registerBoss(boss);
+
         uiController.attach(boss);
         refreshVisibility(boss);
+
         return boss;
     }
 
@@ -68,7 +75,7 @@ public final class BossManager implements Listener {
         if (task != null) {
             task.cancel();
         }
-        for (RealiteBoss boss : activeBosses.values()) {
+        for (RealiteBoss boss : new HashSet<>(activeBosses.values())) {
             uiController.detach(boss, DespawnReason.RESTART);
             boss.despawn(DespawnReason.RESTART);
         }
@@ -96,7 +103,9 @@ public final class BossManager implements Listener {
                 cleanupBoss(boss, DespawnReason.DEATH);
                 continue;
             }
+
             boss.tick();
+
             if (tickCounter % uiUpdateTicks == 0) {
                 uiController.update(boss);
             }
@@ -106,10 +115,14 @@ public final class BossManager implements Listener {
     private void cleanupBoss(RealiteBoss boss, DespawnReason reason) {
         uiController.detach(boss, reason);
         boss.despawn(reason);
+
         activeBosses.remove(boss.instanceId());
-        if (boss.getEntity() != null) {
-            entityToInstance.remove(boss.getEntity().getUniqueId());
+
+        LivingEntity entity = boss.getEntity();
+        if (entity != null) {
+            entityToInstance.remove(entity.getUniqueId());
         }
+
         visiblePlayers.remove(boss.instanceId());
     }
 
@@ -125,6 +138,7 @@ public final class BossManager implements Listener {
             hideBossFromPlayer(boss, player);
             return;
         }
+
         double range = boss.bossBarRange();
         if (entity.getLocation().distanceSquared(player.getLocation()) <= range * range) {
             showBossToPlayer(boss, player);
@@ -134,7 +148,8 @@ public final class BossManager implements Listener {
     }
 
     private void showBossToPlayer(RealiteBoss boss, Player player) {
-        visiblePlayers.computeIfAbsent(boss.instanceId(), id -> new HashSet<>()).add(player.getUniqueId());
+        visiblePlayers.computeIfAbsent(boss.instanceId(), id -> new HashSet<>())
+                .add(player.getUniqueId());
         uiController.showTo(boss, player);
     }
 
@@ -152,33 +167,50 @@ public final class BossManager implements Listener {
         if (!(entity instanceof LivingEntity)) {
             return;
         }
+
         UUID instanceId = entityToInstance.get(entity.getUniqueId());
         if (instanceId == null) {
             return;
         }
+
         RealiteBoss boss = activeBosses.get(instanceId);
         if (boss == null) {
             return;
         }
-        Optional<Entity> damager = Optional.empty();
-        if (event instanceof EntityDamageByEntityEvent damageByEntityEvent) {
-            damager = Optional.ofNullable(damageByEntityEvent.getDamager());
+
+        Optional<LivingEntity> damager = Optional.empty();
+
+        if (event instanceof EntityDamageByEntityEvent e) {
+            Entity d = e.getDamager();
+
+            // Прямой урон (игрок/моб)
+            if (d instanceof LivingEntity le) {
+                damager = Optional.of(le);
+            }
+            // Урон снарядом (стрелы/трезубец/и т.п.)
+            else if (d instanceof Projectile p && p.getShooter() instanceof LivingEntity le) {
+                damager = Optional.of(le);
+            }
         }
+
         boss.onDamage(new DamageContext(event, damager));
     }
 
     @EventHandler
     public void onDeath(EntityDeathEvent event) {
         LivingEntity entity = event.getEntity();
+
         UUID instanceId = entityToInstance.get(entity.getUniqueId());
         if (instanceId == null) {
             return;
         }
+
         RealiteBoss boss = activeBosses.get(instanceId);
         if (boss == null) {
             return;
         }
-        boss.onDeath(new DeathContext(event, Optional.ofNullable(event.getEntity().getKiller())));
+
+        boss.onDeath(new DeathContext(event, Optional.ofNullable(entity.getKiller())));
         cleanupBoss(boss, DespawnReason.DEATH);
     }
 
@@ -198,13 +230,19 @@ public final class BossManager implements Listener {
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
+        if (event.getTo() == null) {
+            return;
+        }
+
         Player player = event.getPlayer();
+
         if (!event.getFrom().getWorld().equals(event.getTo().getWorld())) {
             for (RealiteBoss boss : new HashSet<>(activeBosses.values())) {
                 hideBossFromPlayer(boss, player);
             }
             return;
         }
+
         for (RealiteBoss boss : activeBosses.values()) {
             updateVisibilityForPlayer(boss, player);
         }

@@ -2,6 +2,8 @@ package ru.realite.core.boss.core;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import ru.realite.core.boss.api.BossAbility;
 import ru.realite.core.boss.api.BossPhase;
@@ -20,8 +22,7 @@ public final class ConfigurableBoss extends AbstractRealiteBoss {
                 definition.id(),
                 definition.maxHp(),
                 toPhases(definition.phases()),
-                toAbilities(definition.abilityIds(), abilityRegistry)
-        );
+                toAbilities(definition.abilityIds(), abilityRegistry));
         this.definition = definition;
         this.displayName = definition.name();
     }
@@ -29,15 +30,30 @@ public final class ConfigurableBoss extends AbstractRealiteBoss {
     @Override
     protected LivingEntity spawnEntity(SpawnContext ctx) {
         Location location = ctx.location();
-        if (location.getWorld() == null) {
+        World world = location.getWorld();
+        if (world == null) {
             throw new IllegalStateException("Spawn location has no world");
         }
-        return (LivingEntity) location.getWorld().spawnEntity(location, definition.entityType(), spawned -> {
-            if (displayName != null) {
-                spawned.customName(Component.text(displayName));
-                spawned.setCustomNameVisible(true);
-            }
-        });
+
+        // ВАЖНО: в твоей версии API нет перегрузки с Consumer, поэтому спавним обычным
+        // способом
+        Entity spawned = world.spawnEntity(location, definition.entityType());
+
+        if (!(spawned instanceof LivingEntity living)) {
+            spawned.remove();
+            throw new IllegalStateException("Configured entityType is not a LivingEntity: " + definition.entityType());
+        }
+
+        // Кастомизация после спавна
+        if (displayName != null && !displayName.isBlank()) {
+            living.customName(Component.text(displayName));
+            living.setCustomNameVisible(true);
+        }
+
+        // Опционально: если захочешь сразу агрить на инициатора:
+        // ctx.initiator().ifPresent(player -> { ... });
+
+        return living;
     }
 
     private static List<BossPhase> toPhases(List<BossPhaseDefinition> phases) {
