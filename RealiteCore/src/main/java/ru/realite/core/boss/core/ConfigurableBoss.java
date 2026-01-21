@@ -5,11 +5,14 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import ru.realite.core.boss.api.BossAbility;
 import ru.realite.core.boss.api.BossPhase;
 import ru.realite.core.boss.core.context.SpawnContext;
 import ru.realite.core.boss.data.BossDefinition;
 import ru.realite.core.boss.data.BossPhaseDefinition;
+import ru.realite.core.boss.data.BossStatsDefinition;
 
 import java.util.List;
 
@@ -20,7 +23,7 @@ public final class ConfigurableBoss extends AbstractRealiteBoss {
     public ConfigurableBoss(BossDefinition definition, BossAbilityRegistry abilityRegistry) {
         super(
                 definition.id(),
-                definition.maxHp(),
+                definition.stats().maxHp(),
                 toPhases(definition.phases()),
                 toAbilities(definition.abilityIds(), abilityRegistry));
         this.definition = definition;
@@ -54,6 +57,26 @@ public final class ConfigurableBoss extends AbstractRealiteBoss {
         // ctx.initiator().ifPresent(player -> { ... });
 
         return living;
+    }
+
+    @Override
+    protected void onSpawned(SpawnContext ctx) {
+        applyStats(definition.stats());
+    }
+
+    private void applyStats(BossStatsDefinition stats) {
+        LivingEntity living = getEntity();
+        if (living == null || stats == null) {
+            return;
+        }
+        AttributeInstance damage = living.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
+        if (damage != null && stats.baseDamage() > 0.0) {
+            damage.setBaseValue(stats.baseDamage());
+        }
+        AttributeInstance speed = living.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
+        if (speed != null && stats.movementSpeed() > 0.0) {
+            speed.setBaseValue(stats.movementSpeed());
+        }
     }
 
     private static List<BossPhase> toPhases(List<BossPhaseDefinition> phases) {

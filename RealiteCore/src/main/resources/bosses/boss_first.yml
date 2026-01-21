@@ -1,10 +1,38 @@
-id: boss_first
+bossId: "boss_first"
+tier: 1
+
 name: "First Boss"
-entity: ZOMBIE
-max_hp: 200
+
+entity:
+  type: "HUSK"
+  modelId: "realite:boss_humanoid_t1"
+  equipment:
+    mainHand: "realite:boss_t1_blade"
+    helmet: "realite:boss_t1_helm"
+    chestplate: "realite:boss_t1_chest"
+    leggings: "realite:boss_t1_legs"
+    boots: "realite:boss_t1_boots"
+
+stats:
+  maxHp: 200
+  baseDamage: 7
+  movementSpeed: 0.25
+
 phases:
-  - id: PHASE_1
-    enter_at: 1.0
-  - id: PHASE_2
-    enter_at: 0.5
-abilities: []
+  - id: "phase_1"
+    enterAtHpPercent: 100
+  - id: "phase_2"
+    enterAtHpPercent: 50
+
+abilities:
+  - id: "dash_strike"
+  - id: "ground_slam"
+
+loot:
+  guaranteed:
+    - itemId: "realite:boss_trophy_t1"
+      amount: 1
+  table: []
+  rolls: 0
+
+maxActiveInstances: 1

@@ -20,6 +20,7 @@ import ru.realite.core.boss.core.context.DamageContext;
 import ru.realite.core.boss.core.context.DeathContext;
 import ru.realite.core.boss.core.context.SpawnContext;
 import ru.realite.core.boss.data.BossDefinition;
+import ru.realite.core.boss.impl.BossFirst;
 import ru.realite.core.boss.ui.BossUIController;
 
 import java.util.HashMap;
@@ -54,13 +55,21 @@ public final class BossManager implements Listener {
         this.uiController = uiController;
         this.uiUpdateTicks = Math.max(1, uiUpdateTicks);
 
+        BossAbilityDefaults.registerDefaults(abilityRegistry);
         Bukkit.getPluginManager().registerEvents(this, plugin);
         startTicking();
     }
 
     public RealiteBoss spawn(String bossId, SpawnContext ctx) {
         BossDefinition definition = registry.requireDefinition(bossId);
-        RealiteBoss boss = new ConfigurableBoss(definition, abilityRegistry);
+        int maxInstances = definition.maxActiveInstances();
+        if (maxInstances > 0 && countActiveInstances(bossId) >= maxInstances) {
+            throw new IllegalStateException("Boss " + bossId + " reached maxActiveInstances: " + maxInstances);
+        }
+
+        RealiteBoss boss = BossFirst.ID.equals(bossId)
+                ? new BossFirst(definition, abilityRegistry)
+                : new ConfigurableBoss(definition, abilityRegistry);
 
         boss.spawn(ctx);
         registerBoss(boss);
@@ -69,6 +78,16 @@ public final class BossManager implements Listener {
         refreshVisibility(boss);
 
         return boss;
+    }
+
+    private int countActiveInstances(String bossId) {
+        int count = 0;
+        for (RealiteBoss boss : activeBosses.values()) {
+            if (boss.bossId().equalsIgnoreCase(bossId)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     public void shutdown() {

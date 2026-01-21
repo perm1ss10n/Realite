@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-public final class ItemService {
+public final class ItemService implements ru.realite.core.api.items.ItemService {
 
     public static final NamespacedKey ITEM_ID_KEY = ItemPdcKeys.ITEM_ID;
     public static final NamespacedKey UID_KEY = ItemPdcKeys.UID;
