@@ -24,12 +24,26 @@ public final class DashStrikeAbility implements BossAbility {
     private static final double HIT_RADIUS = 2.6;
     private static final double DAMAGE = 6.0;
 
+    // Базовый кд (если фаза не известна / фаза 1). Фаза 2 будет уменьшать кд в
+    // логике.
+    private static final long BASE_COOLDOWN_TICKS = 90L;
+
     private final Set<UUID> hitTargets = new HashSet<>();
 
-    private int cooldownTicks;
+    private int cooldownLeft;
     private Stage stage = Stage.IDLE;
     private int stageTicks;
     private UUID targetId;
+
+    @Override
+    public String id() {
+        return ID;
+    }
+
+    @Override
+    public long cooldownTicks() {
+        return BASE_COOLDOWN_TICKS;
+    }
 
     @Override
     public boolean canCast(RealiteBoss boss, AbilityContext ctx) {
@@ -38,7 +52,8 @@ public final class DashStrikeAbility implements BossAbility {
 
     @Override
     public void cast(RealiteBoss boss, AbilityContext ctx) {
-        // Управляем кастом через tick().
+        // Эта способность управляется через tick().
+        // Если захочешь запуск "по требованию" — можно переводить в TELEGRAPH отсюда.
     }
 
     @Override
@@ -60,8 +75,8 @@ public final class DashStrikeAbility implements BossAbility {
     }
 
     private void tickIdle(RealiteBoss boss, LivingEntity entity) {
-        if (cooldownTicks > 0) {
-            cooldownTicks--;
+        if (cooldownLeft > 0) {
+            cooldownLeft--;
             return;
         }
 
@@ -69,6 +84,7 @@ public final class DashStrikeAbility implements BossAbility {
         if (target == null) {
             return;
         }
+
         double distance = target.getLocation().distance(entity.getLocation());
         if (distance < 4.0 || distance > 20.0) {
             return;
@@ -77,6 +93,7 @@ public final class DashStrikeAbility implements BossAbility {
         this.targetId = target.getUniqueId();
         this.stage = Stage.TELEGRAPH;
         this.stageTicks = TELEGRAPH_TICKS;
+
         World world = entity.getWorld();
         world.playSound(entity.getLocation(), Sound.ENTITY_ENDERMAN_SCREAM, 1.1f, 1.2f);
     }
@@ -84,6 +101,7 @@ public final class DashStrikeAbility implements BossAbility {
     private void tickTelegraph(LivingEntity entity) {
         World world = entity.getWorld();
         world.spawnParticle(Particle.CRIT, entity.getLocation().add(0, 1.0, 0), 12, 0.4, 0.6, 0.4, 0.0);
+
         stageTicks--;
         if (stageTicks <= 0) {
             startDash(entity);
@@ -96,12 +114,14 @@ public final class DashStrikeAbility implements BossAbility {
         hitTargets.clear();
 
         Player target = resolveTarget(entity);
-        Vector direction = target == null
+        Vector direction = (target == null)
                 ? entity.getLocation().getDirection()
                 : target.getLocation().toVector().subtract(entity.getLocation().toVector());
+
         if (direction.lengthSquared() < 0.0001) {
             direction = entity.getLocation().getDirection();
         }
+
         Vector velocity = direction.normalize().multiply(DASH_SPEED);
         velocity.setY(Math.min(0.6, velocity.getY() + 0.1));
         entity.setVelocity(velocity);
@@ -112,23 +132,32 @@ public final class DashStrikeAbility implements BossAbility {
     private void tickDash(RealiteBoss boss, LivingEntity entity) {
         World world = entity.getWorld();
         world.spawnParticle(Particle.SWEEP_ATTACK, entity.getLocation().add(0, 1.0, 0), 1, 0.2, 0.2, 0.2, 0.0);
+
         for (Player player : world.getPlayers()) {
             if (hitTargets.contains(player.getUniqueId())) {
+                continue;
+            }
+            if (player.isDead() || !player.getWorld().equals(entity.getWorld())) {
                 continue;
             }
             if (player.getLocation().distanceSquared(entity.getLocation()) > HIT_RADIUS * HIT_RADIUS) {
                 continue;
             }
+
             hitTargets.add(player.getUniqueId());
             player.damage(DAMAGE, entity);
-            Vector knockback = player.getLocation().toVector().subtract(entity.getLocation().toVector()).normalize().multiply(0.8);
+
+            Vector knockback = player.getLocation().toVector()
+                    .subtract(entity.getLocation().toVector())
+                    .normalize()
+                    .multiply(0.8);
             knockback.setY(0.35);
             player.setVelocity(knockback);
         }
 
         stageTicks--;
         if (stageTicks <= 0) {
-            cooldownTicks = cooldownForPhase(boss.getPhase());
+            cooldownLeft = cooldownForPhase(boss.getPhase());
             stage = Stage.IDLE;
             targetId = null;
         }
@@ -136,14 +165,19 @@ public final class DashStrikeAbility implements BossAbility {
 
     private int cooldownForPhase(BossPhase phase) {
         if (phase == null) {
-            return 90;
+            return (int) BASE_COOLDOWN_TICKS;
         }
-        return "phase_2".equalsIgnoreCase(phase.id()) ? 60 : 90;
+        // ВАЖНО: ты у себя фазы задаёшь как phase.id() из конфига.
+        // Если у тебя id фаз = "1"/"2" — подправь условие под реальный формат.
+        return "2".equalsIgnoreCase(phase.id()) || "phase_2".equalsIgnoreCase(phase.id())
+                ? 60
+                : (int) BASE_COOLDOWN_TICKS;
     }
 
     private Player findTarget(LivingEntity entity) {
         Player nearest = null;
         double nearestSq = Double.MAX_VALUE;
+
         for (Player player : entity.getWorld().getPlayers()) {
             if (player.isDead() || !player.getWorld().equals(entity.getWorld())) {
                 continue;
@@ -161,16 +195,18 @@ public final class DashStrikeAbility implements BossAbility {
         if (targetId == null) {
             return null;
         }
-        return entity.getWorld().getPlayers().stream()
-                .filter(player -> player.getUniqueId().equals(targetId))
-                .findFirst()
-                .orElse(null);
+        for (Player p : entity.getWorld().getPlayers()) {
+            if (p.getUniqueId().equals(targetId)) {
+                return p;
+            }
+        }
+        return null;
     }
 
     private void reset() {
         stage = Stage.IDLE;
         stageTicks = 0;
-        cooldownTicks = 0;
+        cooldownLeft = 0;
         hitTargets.clear();
         targetId = null;
     }
