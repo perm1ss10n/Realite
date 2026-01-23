@@ -19,7 +19,7 @@ The project focuses on:
 
 ```
 Realite/
-├── RealiteCore/                        # Platform core (API / services / bridges)
+├── RealiteCore/                        # Platform core (API / services / bridges) + Bosses
 └── plugins/
     ├── RealiteClasses/                 # Classes, evolutions, mastery (integration hooks)
     ├── RealiteChat/                    # Chat formatting + guild chat bridge
