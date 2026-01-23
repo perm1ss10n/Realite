@@ -1,0 +1,45 @@
+items:
+  boss_trophy_t1:
+    id: "realite:boss_trophy_t1"
+    material: "NETHER_STAR"
+    nameKey: "items.boss_trophy_t1.name"
+    loreKeys:
+      - "items.boss_trophy_t1.lore-1"
+    glow: true
+    unstackable: true
+
+  boss_t1_blade:
+    id: "realite:boss_t1_blade"
+    material: "IRON_SWORD"
+    nameKey: "items.boss_t1_blade.name"
+    loreKeys:
+      - "items.boss_t1_blade.lore-1"
+    glow: true
+
+  boss_t1_helm:
+    id: "realite:boss_t1_helm"
+    material: "IRON_HELMET"
+    nameKey: "items.boss_t1_helm.name"
+    loreKeys:
+      - "items.boss_t1_helm.lore-1"
+
+  boss_t1_chest:
+    id: "realite:boss_t1_chest"
+    material: "IRON_CHESTPLATE"
+    nameKey: "items.boss_t1_chest.name"
+    loreKeys:
+      - "items.boss_t1_chest.lore-1"
+
+  boss_t1_legs:
+    id: "realite:boss_t1_legs"
+    material: "IRON_LEGGINGS"
+    nameKey: "items.boss_t1_legs.name"
+    loreKeys:
+      - "items.boss_t1_legs.lore-1"
+
+  boss_t1_boots:
+    id: "realite:boss_t1_boots"
+    material: "IRON_BOOTS"
+    nameKey: "items.boss_t1_boots.name"
+    loreKeys:
+      - "items.boss_t1_boots.lore-1"

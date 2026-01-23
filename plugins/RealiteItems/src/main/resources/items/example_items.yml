@@ -1,4 +1,5 @@
 items:
+  # customModelData is optional; vanilla material is the required fallback.
   example_compass:
     id: "example_compass"
     material: "COMPASS"
@@ -9,3 +10,9 @@ items:
       - "items.example_compass.lore-2"
     glow: true
     unstackable: true
+  example_plain_compass:
+    id: "example_plain_compass"
+    material: "COMPASS"
+    nameKey: "items.example_plain_compass.name"
+    loreKeys:
+      - "items.example_plain_compass.lore-1"

@@ -40,6 +40,7 @@ public final class RealiteItemsPlugin extends JavaPlugin {
         saveIfNotExists("items/example_items.yml");
         saveIfNotExists("items/magic_items.yml");
         saveIfNotExists("items/familiars_items.yml");
+        saveIfNotExists("items/boss_items.yml");
         saveIfNotExists("models/example_models.yml");
 
         reloadAll();
@@ -55,6 +56,7 @@ public final class RealiteItemsPlugin extends JavaPlugin {
 
         Bukkit.getPluginManager().registerEvents(new ItemRefreshListener(this, itemService), this);
         Bukkit.getPluginManager().registerEvents(new ResourcePackListener(this, messages), this);
+        Bukkit.getServicesManager().register(ru.realite.core.api.items.ItemService.class, itemService, this, ServicePriority.Normal);
         Bukkit.getServicesManager().register(ItemService.class, itemService, this, ServicePriority.Normal);
         registerModelRegistry();
         Banners.REALITE_ITEMS(this);

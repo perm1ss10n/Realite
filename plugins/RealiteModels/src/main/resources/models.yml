@@ -1,0 +1,46 @@
+entity_models:
+  unicorn_horse:
+    entity: "minecraft:horse"
+    when:
+      name_contains: "[Unicorn]"
+    apply:
+      horse:
+        color: "WHITE"
+        style: "NONE"
+      attachment:
+        type: "ITEM_DISPLAY"
+        item: "minecraft:stick"
+        custom_model_data: 12001
+        transform:
+          offset: [0.0, 1.55, 0.25]
+          rotation: [0.0, 0.0, 0.0]
+          scale: [0.7, 0.7, 0.7]
+
+armor_models:
+  realite:steel_helmet:
+    slot: "HEAD"
+    elements:
+      - id: "steel_helmet_decor"
+        item: "minecraft:stick"
+        custom_model_data: 40001
+        transform:
+          offset: [0.0, 1.85, 0.15]
+          rotation: [0.0, 0.0, 0.0]
+          scale: [0.7, 0.7, 0.7]
+  realite:steel_chestplate:
+    slot: "CHEST"
+    elements:
+      - id: "shoulder_left"
+        item: "minecraft:stick"
+        custom_model_data: 40010
+        transform:
+          offset: [-0.2, 1.4, 0.15]
+          rotation: [0.0, 0.0, 0.0]
+          scale: [0.7, 0.7, 0.7]
+      - id: "shoulder_right"
+        item: "minecraft:stick"
+        custom_model_data: 40011
+        transform:
+          offset: [0.2, 1.4, 0.15]
+          rotation: [0.0, 0.0, 0.0]
+          scale: [0.7, 0.7, 0.7]

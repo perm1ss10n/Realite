@@ -104,9 +104,12 @@ public final class VirtualInventoryServiceImpl implements VirtualInventoryServic
     }
 
     private List<ItemStack> normalize(List<ItemStack> items) {
-        List<ItemStack> normalized = new ArrayList<>();
+        List<ItemStack> safe = (items == null) ? List.of() : items;
+
+        List<ItemStack> normalized = new ArrayList<>(SLOT_COUNT);
         for (int i = 0; i < SLOT_COUNT; i++) {
-            ItemStack stack = i < (items == null ? 0 : items.size()) ? items.get(i) : null;
+            ItemStack stack = (i < safe.size()) ? safe.get(i) : null;
+
             if (stack == null || stack.getType() == Material.AIR) {
                 normalized.add(null);
             } else {

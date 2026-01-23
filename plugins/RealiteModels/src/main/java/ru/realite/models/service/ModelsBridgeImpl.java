@@ -13,6 +13,7 @@ import ru.realite.core.api.models.ModelAssetInfo;
 import ru.realite.core.api.models.ModelAssetKind;
 import ru.realite.core.api.models.ModelAssetRegistry;
 import ru.realite.core.api.models.ModelInfo;
+import ru.realite.core.api.models.ModelRendererHint;
 import ru.realite.core.api.models.ModelsBridge;
 
 public final class ModelsBridgeImpl implements ModelsBridge {
@@ -40,22 +41,26 @@ public final class ModelsBridgeImpl implements ModelsBridge {
 
         ModelAssetRegistry registry = registrySupplier.get();
         if (registry == null) {
-            return ApplyResult.fail("Model assets registry is not available.");
+            return ApplyResult.fallback("Model assets registry is not available.");
         }
         ModelAssetInfo assetInfo = registry.find(modelId).orElse(null);
         if (assetInfo == null) {
-            return ApplyResult.fail("Model asset not found: " + modelId);
+            return ApplyResult.fallback("Model asset not found: " + modelId);
         }
         if (assetInfo.asset().kind() != ModelAssetKind.ENTITY) {
-            return ApplyResult.fail("Model asset kind must be ENTITY for model: " + modelId);
+            return ApplyResult.failed("Model asset kind must be ENTITY for model: " + modelId);
         }
-        var result = wrapperService.apply(target, assetInfo);
-        if (!result.success()) {
-            return result;
+        if (assetInfo.asset().rendererHint() == ModelRendererHint.DISPLAY) {
+            var result = wrapperService.apply(target, assetInfo);
+            if (result.isFailed()) {
+                return ApplyResult.fallback(result.message());
+            }
+        } else if (assetInfo.asset().rendererHint() != ModelRendererHint.NONE) {
+            return ApplyResult.failed("Model renderer hint is not supported for model: " + modelId);
         }
 
         applied.put(target.getUniqueId(), new ModelInfo(modelId, ctx));
-        return ApplyResult.ok();
+        return ApplyResult.applied();
     }
 
     @Override
