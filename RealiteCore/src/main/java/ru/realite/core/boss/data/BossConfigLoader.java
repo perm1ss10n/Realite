@@ -19,6 +19,7 @@ import java.util.Map;
 
 public final class BossConfigLoader {
     private static final String DEFAULT_BOSS_RESOURCE = "bosses/boss_first.yml";
+    private static final String DEFAULT_BOSS_SECOND_RESOURCE = "bosses/boss_second.yml";
 
     private final JavaPlugin plugin;
     private final BossRegistry registry;
@@ -70,14 +71,19 @@ public final class BossConfigLoader {
     }
 
     private void saveDefaultBossConfig(Path bossesDir) {
-        Path defaultConfig = bossesDir.resolve("boss_first.yml");
-        if (Files.exists(defaultConfig)) {
+        saveResourceIfMissing(bossesDir, "boss_first.yml", DEFAULT_BOSS_RESOURCE);
+        saveResourceIfMissing(bossesDir, "boss_second.yml", DEFAULT_BOSS_SECOND_RESOURCE);
+    }
+
+    private void saveResourceIfMissing(Path bossesDir, String filename, String resourcePath) {
+        Path configPath = bossesDir.resolve(filename);
+        if (Files.exists(configPath)) {
             return;
         }
-        if (plugin.getResource(DEFAULT_BOSS_RESOURCE) == null) {
+        if (plugin.getResource(resourcePath) == null) {
             return;
         }
-        plugin.saveResource(DEFAULT_BOSS_RESOURCE, false);
+        plugin.saveResource(resourcePath, false);
     }
 
     private void loadSingle(File file, List<String> errors) {

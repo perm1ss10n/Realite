@@ -4,6 +4,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.LivingEntity;
 import ru.realite.core.boss.api.BossAbility;
+import ru.realite.core.boss.api.BossAbilityCleanup;
 import ru.realite.core.boss.api.BossPhase;
 import ru.realite.core.boss.api.RealiteBoss;
 import ru.realite.core.boss.core.context.DamageContext;
@@ -126,6 +127,11 @@ public abstract class AbstractRealiteBoss implements RealiteBoss {
 
     @Override
     public void despawn(DespawnReason reason) {
+        for (BossAbility ability : abilities) {
+            if (ability instanceof BossAbilityCleanup cleanup) {
+                cleanup.cleanup(this);
+            }
+        }
         if (entity != null) {
             entity.remove();
         }
