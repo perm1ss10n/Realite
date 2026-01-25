@@ -21,6 +21,7 @@ import ru.realite.core.boss.core.context.DeathContext;
 import ru.realite.core.boss.core.context.SpawnContext;
 import ru.realite.core.boss.data.BossDefinition;
 import ru.realite.core.boss.impl.BossFirst;
+import ru.realite.core.boss.impl.BossSecond;
 import ru.realite.core.boss.ui.BossUIController;
 
 import java.util.HashMap;
@@ -67,9 +68,14 @@ public final class BossManager implements Listener {
             throw new IllegalStateException("Boss " + bossId + " reached maxActiveInstances: " + maxInstances);
         }
 
-        RealiteBoss boss = BossFirst.ID.equals(bossId)
-                ? new BossFirst(definition, abilityRegistry)
-                : new ConfigurableBoss(definition, abilityRegistry);
+        RealiteBoss boss;
+        if (BossFirst.ID.equals(bossId)) {
+            boss = new BossFirst(definition, abilityRegistry);
+        } else if (BossSecond.ID.equals(bossId)) {
+            boss = new BossSecond(definition, abilityRegistry);
+        } else {
+            boss = new ConfigurableBoss(definition, abilityRegistry);
+        }
 
         boss.spawn(ctx);
         registerBoss(boss);

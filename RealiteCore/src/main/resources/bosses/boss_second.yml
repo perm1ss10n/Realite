@@ -1,0 +1,49 @@
+bossId: "boss_second"
+tier: 2
+
+name: "Second Boss"
+
+entity:
+  type: "STRAY"
+  modelId: "realite:boss_humanoid_t2"
+  equipment:
+    mainHand: "realite:boss_t1_blade"
+    helmet: "realite:boss_t1_helm"
+    chestplate: "realite:boss_t1_chest"
+    leggings: "realite:boss_t1_legs"
+    boots: "realite:boss_t1_boots"
+
+stats:
+  maxHp: 320
+  baseDamage: 9
+  movementSpeed: 0.26
+
+phases:
+  - id: "phase_1"
+    enterAtHpPercent: 100
+  - id: "phase_2"
+    enterAtHpPercent: 70
+  - id: "phase_3"
+    enterAtHpPercent: 40
+
+abilities:
+  - id: "frost_bolt"
+    cooldownTicks: 70
+  - id: "ice_cage"
+    cooldownTicks: 180
+    durationTicks: 70
+  - id: "blizzard"
+    cooldownTicks: 200
+    durationTicks: 120
+  - id: "summon_icebound"
+    cooldownTicks: 240
+    lifetimeTicks: 360
+
+loot:
+  guaranteed:
+    - itemId: "realite:boss_trophy_t2"
+      amount: 1
+  table: []
+  rolls: 0
+
+maxActiveInstances: 1
